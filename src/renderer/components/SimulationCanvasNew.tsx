@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { Agent, Food } from '../core/Agent'
 import { Camera } from '../core/Camera'
 import { EvolutionManager } from '../core/EvolutionManager'
+import type { SpeciesInfo } from '../core/SpeciesManager'
 import type { SimulationConfig, SimulationStats } from '../types/simulation'
 
 interface SimulationCanvasProps {
@@ -50,6 +51,9 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       
       // Reinitialize evolution manager
       evolutionRef.current.reset()
+      
+      // Repopulate species from loaded agents
+      evolutionRef.current.repopulateSpeciesFromAgents(loadedAgents)
       
       // Regenerate food
       foodRef.current = []
@@ -288,12 +292,21 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     foodRef.current = []
 
     const { AgentCount, DefaultAgentSize, FoodSettings } = config
+    const speciesManager = evolutionRef.current.speciesManager
+
+    // Create initial species
+    const initialSpeciesCount = Math.min(5, Math.ceil(AgentCount / 3))
+    const species: SpeciesInfo[] = []
+    for (let i = 0; i < initialSpeciesCount; i++) {
+      species.push(speciesManager.createNewSpecies())
+    }
 
     // Spawn in a larger area for infinite world
     for (let i = 0; i < AgentCount; i++) {
       const x = (Math.random() - 0.5) * 1000
       const y = (Math.random() - 0.5) * 1000
-      const agent = new Agent(x, y)
+      const selectedSpecies = species[Math.floor(Math.random() * species.length)]
+      const agent = new Agent(x, y, 0, 0, undefined, undefined, selectedSpecies.id, selectedSpecies.baselineTraits)
       agentsRef.current.push(agent)
     }
 

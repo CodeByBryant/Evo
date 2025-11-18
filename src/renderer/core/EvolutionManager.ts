@@ -3,6 +3,7 @@
  */
 
 import { Agent } from './Agent'
+import { SpeciesManager } from './SpeciesManager'
 import type { GeneticTraits } from '../types/simulation'
 
 export interface EvolutionConfig {
@@ -32,6 +33,7 @@ export class EvolutionManager {
   public stats: GenerationStats[] = []
   public totalBirths: number = 0
   public totalDeaths: number = 0
+  public speciesManager: SpeciesManager
 
   constructor(config: Partial<EvolutionConfig> = {}) {
     this.config = {
@@ -43,6 +45,8 @@ export class EvolutionManager {
       maxAge: 1500,
       ...config
     }
+    this.speciesManager = new SpeciesManager()
+    Agent.speciesManager = this.speciesManager
   }
 
   public setConfig(config: EvolutionConfig): void {
@@ -56,12 +60,16 @@ export class EvolutionManager {
     this.stats = []
     this.totalBirths = 0
     this.totalDeaths = 0
+    this.speciesManager.clear()
   }
 
   public update(agents: Agent[]): { agents: Agent[]; newBirths: number; newDeaths: number } {
     this.stepCount++
     let newBirths = 0
     let newDeaths = 0
+
+    // Update species populations
+    this.updateSpeciesPopulations(agents)
 
     // Age all agents and handle death
     for (let i = agents.length - 1; i >= 0; i--) {
@@ -94,7 +102,7 @@ export class EvolutionManager {
             ? potentialMates[Math.floor(Math.random() * potentialMates.length)]
             : null
           
-          const tempChild = new Agent(0, 0, 0, 0, agent.geneticTraits, mate?.geneticTraits)
+          const tempChild = new Agent(0, 0, 0, 0, agent.geneticTraits, mate?.geneticTraits, agent.species)
           const childEnergy = tempChild.geneticTraits.maxEnergyCapacity * 0.5
           
           reproductionPlans.push({ mate, childTraits: tempChild.geneticTraits, childEnergy })
@@ -128,7 +136,11 @@ export class EvolutionManager {
             const child = new Agent(
               agent.position.x + (Math.random() - 0.5) * 50,
               agent.position.y + (Math.random() - 0.5) * 50,
-              0, 0
+              0, 
+              0,
+              undefined,
+              undefined,
+              agent.species
             )
             
             child.geneticTraits = plan.childTraits
@@ -147,7 +159,6 @@ export class EvolutionManager {
             if (Math.random() < child.geneticTraits.mutationRate) {
               child.NeuralNetwork.mutate(mutationIntensity)
             }
-            child.species = agent.species
             child.generation = this.generation
             child.fitness = 0
             child.energy = plan.childEnergy
@@ -209,7 +220,8 @@ export class EvolutionManager {
         0,
         0,
         parent1.geneticTraits,
-        parent1 !== parent2 ? parent2.geneticTraits : undefined
+        parent1 !== parent2 ? parent2.geneticTraits : undefined,
+        parent1.species
       )
 
       if (parent1 !== parent2) {
@@ -223,7 +235,6 @@ export class EvolutionManager {
         child.NeuralNetwork.mutate(mutationIntensity * 0.75)
       }
 
-      child.species = parent1.species
       child.generation = this.generation + 1
       child.energy = child.geneticTraits.maxEnergyCapacity
       child.age = 0
@@ -240,5 +251,84 @@ export class EvolutionManager {
 
   public getLatestStats(): GenerationStats | null {
     return this.stats[this.stats.length - 1] || null
+  }
+
+  private updateSpeciesPopulations(agents: Agent[]): void {
+    const populationMap = new Map<string, number>()
+    
+    for (const agent of agents) {
+      populationMap.set(agent.species, (populationMap.get(agent.species) || 0) + 1)
+      
+      if (!this.speciesManager.getSpecies(agent.species)) {
+        const avgTraits = agent.geneticTraits
+        const speciesInfo = {
+          id: agent.species,
+          baselineTraits: avgTraits,
+          createdAt: Date.now(),
+          population: 0
+        }
+        this.speciesManager.registerSpecies(speciesInfo)
+      }
+    }
+    
+    const allSpecies = this.speciesManager.getAllSpecies()
+    for (const species of allSpecies) {
+      const population = populationMap.get(species.id) || 0
+      this.speciesManager.updatePopulation(species.id, population)
+    }
+    
+    this.speciesManager.removeExtinctSpecies()
+  }
+
+  public repopulateSpeciesFromAgents(agents: Agent[]): void {
+    this.speciesManager.clear()
+    
+    const speciesMap = new Map<string, Agent[]>()
+    for (const agent of agents) {
+      if (!speciesMap.has(agent.species)) {
+        speciesMap.set(agent.species, [])
+      }
+      speciesMap.get(agent.species)!.push(agent)
+    }
+    
+    for (const [speciesId, speciesAgents] of speciesMap.entries()) {
+      const avgTraits = this.calculateAverageTraits(speciesAgents)
+      const speciesInfo = {
+        id: speciesId,
+        baselineTraits: avgTraits,
+        createdAt: Date.now(),
+        population: speciesAgents.length
+      }
+      this.speciesManager.registerSpecies(speciesInfo)
+    }
+  }
+
+  private calculateAverageTraits(agents: Agent[]): GeneticTraits {
+    const count = agents.length
+    const sum: any = {}
+    
+    const firstAgent = agents[0]
+    for (const key in firstAgent.geneticTraits) {
+      sum[key] = 0
+    }
+    
+    for (const agent of agents) {
+      for (const key in agent.geneticTraits) {
+        if (typeof agent.geneticTraits[key as keyof GeneticTraits] === 'number') {
+          sum[key] += agent.geneticTraits[key as keyof GeneticTraits] as number
+        }
+      }
+    }
+    
+    const avgTraits: any = {}
+    for (const key in sum) {
+      if (key === 'colorVision') {
+        avgTraits[key] = agents.filter(a => a.geneticTraits.colorVision).length > count / 2
+      } else {
+        avgTraits[key] = sum[key] / count
+      }
+    }
+    
+    return avgTraits as GeneticTraits
   }
 }

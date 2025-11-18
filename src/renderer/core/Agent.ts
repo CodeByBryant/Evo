@@ -10,10 +10,13 @@
 import { NeuralNetwork, Sensor } from './NeuralNetwork'
 import AgentConfigData from './utilities/AgentConfig.json'
 import type { GeneticTraits } from '../types/simulation'
+import type { SpeciesManager } from './SpeciesManager'
 
 type Vertex = { x: number; y: number }
 
 class Agent {
+  public static speciesManager: SpeciesManager | null = null
+  
   public position: { x: number; y: number; rotation: number }
   public width: number
   public height: number
@@ -34,9 +37,21 @@ class Agent {
   public currentSpeed: number
   public memoryState: number[]
 
-  constructor(x: number = 0, y: number = 0, _width: number = 10, _height: number = 10, parentTraits?: GeneticTraits, mateTraits?: GeneticTraits) {
+  constructor(
+    x: number = 0, 
+    y: number = 0, 
+    _width: number = 10, 
+    _height: number = 10, 
+    parentTraits?: GeneticTraits, 
+    mateTraits?: GeneticTraits,
+    speciesId?: string,
+    speciesBaselineTraits?: GeneticTraits
+  ) {
     this.position = { x: x, y: y, rotation: Math.random() * Math.PI * 2 }
-    this.geneticTraits = parentTraits ? this.inheritTraits(parentTraits, mateTraits) : this.generateDefaultTraits()
+    this.species = speciesId || this.generateSpeciesId()
+    this.geneticTraits = parentTraits 
+      ? this.inheritTraits(parentTraits, mateTraits) 
+      : (speciesBaselineTraits || this.generateDefaultTraits())
     
     this.width = this.geneticTraits.size
     this.height = this.geneticTraits.size
@@ -45,7 +60,6 @@ class Agent {
     this.energy = this.geneticTraits.maxEnergyCapacity
     this.age = 0
     this.generation = 0
-    this.species = this.generateSpeciesId()
     this.id = this.generateId()
     this.parentIds = []
     this.foodEaten = 0
