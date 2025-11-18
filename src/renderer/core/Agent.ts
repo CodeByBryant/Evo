@@ -9,6 +9,7 @@
 
 import { NeuralNetwork, Sensor } from './NeuralNetwork'
 import AgentConfigData from './utilities/AgentConfig.json'
+import type { GeneticTraits } from '../types/simulation'
 
 type Vertex = { x: number; y: number }
 
@@ -29,14 +30,18 @@ class Agent {
   public foodEaten: number
   public distanceTraveled: number
   public lastPosition: { x: number; y: number }
+  public geneticTraits: GeneticTraits
+  public currentSpeed: number
 
-  constructor(x: number = 0, y: number = 0, width: number = 10, height: number = 10) {
+  constructor(x: number = 0, y: number = 0, _width: number = 10, _height: number = 10, parentTraits?: GeneticTraits) {
     this.position = { x: x, y: y, rotation: Math.random() * Math.PI * 2 }
-    this.width = width
-    this.height = height
+    this.geneticTraits = parentTraits ? this.inheritTraits(parentTraits) : this.generateDefaultTraits()
+    
+    this.width = this.geneticTraits.size
+    this.height = this.geneticTraits.size
     this.polygon = this.getgeometry()
     this.fitness = 100
-    this.energy = 100
+    this.energy = this.geneticTraits.maxEnergyCapacity
     this.age = 0
     this.generation = 0
     this.species = this.generateSpeciesId()
@@ -45,10 +50,14 @@ class Agent {
     this.foodEaten = 0
     this.distanceTraveled = 0
     this.lastPosition = { x, y }
+    this.currentSpeed = 0
 
     const configData: any = AgentConfigData
-    const nnConfig = configData.NeuralNetwork || { HiddenLayers: [16, 16, 12], ActivationFunction: 'swish', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
-    const inputSize = AgentConfigData.Sensor.RayCount * 2 + 3
+    const nnConfig = configData.NeuralNetwork || { HiddenLayers: [20, 16, 12], ActivationFunction: 'tanh', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
+    
+    const maxRayCount = 12
+    const colorVisionInputs = this.geneticTraits.colorVision ? maxRayCount * 2 : 0
+    const inputSize = maxRayCount * 2 + 3 + colorVisionInputs
     const layerSizes = [inputSize, ...nnConfig.HiddenLayers, 6]
 
     this.NeuralNetwork = new NeuralNetwork(layerSizes, {
@@ -57,7 +66,72 @@ class Agent {
       MutationStrategy: nnConfig.MutationStrategy as any
     })
 
-    this.Sensor = new Sensor(this, AgentConfigData.Sensor)
+    this.Sensor = new Sensor(this, {
+      RayCount: Math.round(this.geneticTraits.sensorRayCount),
+      RayLength: this.geneticTraits.sensorRayLength,
+      DetectFood: true,
+      DetectAgents: true
+    })
+  }
+
+  private generateDefaultTraits(): GeneticTraits {
+    const config: any = (AgentConfigData as any).GeneticTraits
+    return {
+      size: config.size.default,
+      movementSpeed: config.movementSpeed.default,
+      acceleration: config.acceleration.default,
+      turnRate: config.turnRate.default,
+      drag: config.drag.default,
+      sensorRayCount: config.sensorRayCount.default,
+      sensorRayLength: config.sensorRayLength.default,
+      sensorPrecision: config.sensorPrecision.default,
+      fieldOfView: config.fieldOfView.default,
+      colorVision: Math.random() < config.colorVision.probability,
+      energyEfficiency: config.energyEfficiency.default,
+      digestionRate: config.digestionRate.default,
+      maxEnergyCapacity: config.maxEnergyCapacity.default,
+      mutationRate: config.mutationRate.default,
+      reproductionThreshold: config.reproductionThreshold.default,
+      offspringCount: config.offspringCount.default,
+      learningRate: config.learningRate.default,
+      memoryNeurons: config.memoryNeurons.default,
+      aggression: config.aggression.default
+    }
+  }
+
+  private inheritTraits(parentTraits: GeneticTraits): GeneticTraits {
+    const config: any = (AgentConfigData as any).GeneticTraits
+    const mutationRate = parentTraits.mutationRate
+    
+    const mutate = (value: number, range: any): number => {
+      if (Math.random() < mutationRate) {
+        const mutation = (Math.random() - 0.5) * (range.max - range.min) * 0.2
+        return Math.max(range.min, Math.min(range.max, value + mutation))
+      }
+      return value
+    }
+
+    return {
+      size: mutate(parentTraits.size, config.size),
+      movementSpeed: mutate(parentTraits.movementSpeed, config.movementSpeed),
+      acceleration: mutate(parentTraits.acceleration, config.acceleration),
+      turnRate: mutate(parentTraits.turnRate, config.turnRate),
+      drag: mutate(parentTraits.drag, config.drag),
+      sensorRayCount: Math.round(mutate(parentTraits.sensorRayCount, config.sensorRayCount)),
+      sensorRayLength: mutate(parentTraits.sensorRayLength, config.sensorRayLength),
+      sensorPrecision: mutate(parentTraits.sensorPrecision, config.sensorPrecision),
+      fieldOfView: mutate(parentTraits.fieldOfView, config.fieldOfView),
+      colorVision: Math.random() < mutationRate ? Math.random() < config.colorVision.probability : parentTraits.colorVision,
+      energyEfficiency: mutate(parentTraits.energyEfficiency, config.energyEfficiency),
+      digestionRate: mutate(parentTraits.digestionRate, config.digestionRate),
+      maxEnergyCapacity: mutate(parentTraits.maxEnergyCapacity, config.maxEnergyCapacity),
+      mutationRate: mutate(parentTraits.mutationRate, config.mutationRate),
+      reproductionThreshold: mutate(parentTraits.reproductionThreshold, config.reproductionThreshold),
+      offspringCount: Math.round(mutate(parentTraits.offspringCount, config.offspringCount)),
+      learningRate: mutate(parentTraits.learningRate, config.learningRate),
+      memoryNeurons: Math.round(mutate(parentTraits.memoryNeurons, config.memoryNeurons)),
+      aggression: mutate(parentTraits.aggression, config.aggression)
+    }
   }
 
   public getgeometry(): Vertex[] {
@@ -113,14 +187,28 @@ class Agent {
     this.polygon = this.getgeometry()
     this.Sensor.update(agents, food)
 
+    const maxRayCount = 12
+    const actualRayCount = this.Sensor.rayCount
+    
     const agentOffsets = this.Sensor.agentOutput.map((e) => (e == null ? 0 : 1 - e.offset))
     const foodOffsets = this.Sensor.foodOutput.map((e) => (e == null ? 0 : 1 - e.offset))
+    
+    const paddedAgentOffsets = [...agentOffsets, ...Array(maxRayCount - actualRayCount).fill(0)]
+    const paddedFoodOffsets = [...foodOffsets, ...Array(maxRayCount - actualRayCount).fill(0)]
+    
+    let inputs = [this.position.x / 1000, this.position.y / 1000, this.position.rotation / (Math.PI * 2)]
+      .concat(paddedAgentOffsets)
+      .concat(paddedFoodOffsets)
+    
+    if (this.geneticTraits.colorVision) {
+      const agentColorFlags = this.Sensor.agentOutput.map((e) => e == null ? 0 : 1)
+      const foodColorFlags = this.Sensor.foodOutput.map((e) => e == null ? 0 : 0.5)
+      const paddedAgentColors = [...agentColorFlags, ...Array(maxRayCount - actualRayCount).fill(0)]
+      const paddedFoodColors = [...foodColorFlags, ...Array(maxRayCount - actualRayCount).fill(0)]
+      inputs = inputs.concat(paddedAgentColors).concat(paddedFoodColors)
+    }
 
-    const output = this.NeuralNetwork.feedForward(
-      [this.position.x / 1000, this.position.y / 1000, this.position.rotation / (Math.PI * 2)]
-        .concat(agentOffsets)
-        .concat(foodOffsets)
-    )
+    const output = this.NeuralNetwork.feedForward(inputs)
 
     const FORWARD = output[0]
     const BACKWARD = output[1]
@@ -129,48 +217,68 @@ class Agent {
     const CLOCKWISE_ROTATION = output[4]
     const CCW_ROTATION = output[5]
 
-    const movementSpeed = AgentConfigData.MovementSpeed
-    const rotationSpeed = AgentConfigData.RotationSpeed
-
-    // Forward/backward movement
-    const forwardMovement = (FORWARD - BACKWARD) * movementSpeed
-    // Strafe left/right movement (perpendicular to forward)
-    const strafeMovement = (STRAFE_LEFT - STRAFE_RIGHT) * movementSpeed
+    const targetSpeed = this.geneticTraits.movementSpeed
+    const acceleration = this.geneticTraits.acceleration
+    const drag = this.geneticTraits.drag
+    
+    this.currentSpeed = this.currentSpeed * drag + (targetSpeed - this.currentSpeed) * acceleration * 0.1
+    
+    const forwardMovement = (FORWARD - BACKWARD) * this.currentSpeed
+    const strafeMovement = (STRAFE_LEFT - STRAFE_RIGHT) * this.currentSpeed
     
     const sin = Math.sin(this.position.rotation)
     const cos = Math.cos(this.position.rotation)
     
-    // Combine forward and strafe movements
     const rotatedDx = forwardMovement * sin + strafeMovement * cos
     const rotatedDy = forwardMovement * cos - strafeMovement * sin
 
     this.move(rotatedDx, rotatedDy, canvasWidth, canvasHeight)
 
     if (AgentConfigData.EnableRotation) {
-      this.rotate((CLOCKWISE_ROTATION - CCW_ROTATION) * rotationSpeed)
+      this.rotate((CLOCKWISE_ROTATION - CCW_ROTATION) * this.geneticTraits.turnRate)
     }
 
-    this.energy -= 0.01
+    this.age++
+    this.energy -= this.calculateEnergyCost()
     
-    // Calculate comprehensive fitness
     this.updateFitness()
   }
 
+  private calculateEnergyCost(): number {
+    const baseRate = 0.01 / this.geneticTraits.energyEfficiency
+    
+    const sizeCost = Math.pow(this.geneticTraits.size / 40, 2)
+    
+    const movementIntensity = Math.abs(this.currentSpeed) / this.geneticTraits.movementSpeed
+    const movementCost = movementIntensity * this.geneticTraits.acceleration
+    
+    const sensorCost = (this.geneticTraits.sensorRayCount / 7) * (this.geneticTraits.sensorRayLength / 180) * (this.geneticTraits.fieldOfView / 180)
+    
+    const colorVisionCost = this.geneticTraits.colorVision ? 0.3 : 0
+    
+    return baseRate * (1 + sizeCost + movementCost + sensorCost + colorVisionCost)
+  }
+
+  public eatFood(): void {
+    const baseEnergyGain = 20
+    const energyGain = baseEnergyGain * this.geneticTraits.digestionRate
+    this.energy = Math.min(this.geneticTraits.maxEnergyCapacity, this.energy + energyGain)
+    this.foodEaten++
+  }
+
   private updateFitness(): void {
-    // Fitness starts at 100 and decreases based on inefficiency
-    // The goal is to stay as close to 100 as possible
     let fitnessLoss = 0
     
-    // 1. Starvation Penalty (up to -40) - Losing energy is bad
-    const energyLoss = 100 - this.energy
+    const maxEnergy = this.geneticTraits.maxEnergyCapacity
+    const energyPercentage = (this.energy / maxEnergy) * 100
+    
+    const energyLoss = 100 - energyPercentage
     fitnessLoss += energyLoss * 0.4
     
-    // 2. Aging Penalty (up to -20) - Time without food is costly
     if (this.foodEaten === 0) {
       fitnessLoss += Math.min(this.age * 0.04, 20)
     }
     
-    // 3. Inefficiency Penalty (up to -15) - Poor food-to-age ratio
     if (this.age > 50) {
       const efficiency = this.foodEaten / (this.age / 100)
       if (efficiency < 5) {
@@ -178,34 +286,28 @@ class Agent {
       }
     }
     
-    // 4. Inactivity Penalty (up to -10) - Not exploring enough
     const expectedDistance = this.age * 0.5
     if (this.distanceTraveled < expectedDistance) {
       fitnessLoss += Math.min((expectedDistance - this.distanceTraveled) * 0.01, 10)
     }
     
-    // 5. Death Penalty (-15) - Being dead is very bad
     if (this.energy <= 0) {
       fitnessLoss += 15
     }
     
-    // Bonuses for good performance (can offset penalties)
     let bonuses = 0
     
-    // Food consumption bonus (up to +20)
     bonuses += Math.min(this.foodEaten * 2, 20)
     
-    // Longevity bonus (up to +10) - surviving while eating
     if (this.foodEaten > 0) {
       bonuses += Math.min(this.age * 0.02, 10)
     }
     
-    // Energy efficiency bonus (up to +10) - maintaining high energy
-    if (this.energy > 70) {
-      bonuses += (this.energy - 70) * 0.33
+    const energyThreshold = maxEnergy * 0.7
+    if (this.energy > energyThreshold) {
+      bonuses += ((this.energy - energyThreshold) / maxEnergy) * 100 * 0.33
     }
     
-    // Calculate final fitness: start at 100, subtract losses, add bonuses
     this.fitness = Math.max(0, Math.min(100, 100 - fitnessLoss + bonuses))
   }
 
