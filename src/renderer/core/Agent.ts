@@ -35,7 +35,7 @@ class Agent {
     this.width = width
     this.height = height
     this.polygon = this.getgeometry()
-    this.fitness = 0
+    this.fitness = 100
     this.energy = 100
     this.age = 0
     this.generation = 0
@@ -49,7 +49,7 @@ class Agent {
     const configData: any = AgentConfigData
     const nnConfig = configData.NeuralNetwork || { HiddenLayers: [16, 16, 12], ActivationFunction: 'swish', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
     const inputSize = AgentConfigData.Sensor.RayCount * 2 + 3
-    const layerSizes = [inputSize, ...nnConfig.HiddenLayers, 4]
+    const layerSizes = [inputSize, ...nnConfig.HiddenLayers, 6]
 
     this.NeuralNetwork = new NeuralNetwork(layerSizes, {
       ActivationFunction: nnConfig.ActivationFunction as any,
@@ -124,17 +124,25 @@ class Agent {
 
     const FORWARD = output[0]
     const BACKWARD = output[1]
-    const CLOCKWISE_ROTATION = output[2]
-    const CCW_ROTATION = output[3]
+    const STRAFE_LEFT = output[2]
+    const STRAFE_RIGHT = output[3]
+    const CLOCKWISE_ROTATION = output[4]
+    const CCW_ROTATION = output[5]
 
     const movementSpeed = AgentConfigData.MovementSpeed
     const rotationSpeed = AgentConfigData.RotationSpeed
 
-    const dy = (FORWARD - BACKWARD) * movementSpeed
+    // Forward/backward movement
+    const forwardMovement = (FORWARD - BACKWARD) * movementSpeed
+    // Strafe left/right movement (perpendicular to forward)
+    const strafeMovement = (STRAFE_LEFT - STRAFE_RIGHT) * movementSpeed
+    
     const sin = Math.sin(this.position.rotation)
     const cos = Math.cos(this.position.rotation)
-    const rotatedDx = dy * sin
-    const rotatedDy = dy * cos
+    
+    // Combine forward and strafe movements
+    const rotatedDx = forwardMovement * sin + strafeMovement * cos
+    const rotatedDy = forwardMovement * cos - strafeMovement * sin
 
     this.move(rotatedDx, rotatedDy, canvasWidth, canvasHeight)
 
@@ -149,44 +157,56 @@ class Agent {
   }
 
   private updateFitness(): void {
-    // Baseline fitness floor - all agents start with minimum fitness
-    let newFitness = 1.0
+    // Fitness starts at 100 and decreases based on inefficiency
+    // The goal is to stay as close to 100 as possible
+    let fitnessLoss = 0
     
-    // 1. Food Consumption (40 points max) - Primary survival metric
-    const foodScore = this.foodEaten * 8
-    newFitness += foodScore
+    // 1. Starvation Penalty (up to -40) - Losing energy is bad
+    const energyLoss = 100 - this.energy
+    fitnessLoss += energyLoss * 0.4
     
-    // 2. Survival Time (25 points max) - Reward longevity
-    const survivalScore = Math.min(this.age * 0.05, 25)
-    newFitness += survivalScore
-    
-    // 3. Energy Efficiency (20 points max) - Reward sustainable energy use
-    const energyScore = (this.energy / 100) * 20
-    newFitness += energyScore
-    
-    // 4. Exploration (10 points max) - Reward movement but cap to prevent wandering
-    const explorationScore = Math.min(this.distanceTraveled * 0.002, 10)
-    newFitness += explorationScore
-    
-    // 5. Survival Bonus (5 points) - Extra bonus for staying alive
-    if (this.energy > 0) {
-      newFitness += 5
+    // 2. Aging Penalty (up to -20) - Time without food is costly
+    if (this.foodEaten === 0) {
+      fitnessLoss += Math.min(this.age * 0.04, 20)
     }
     
-    // 6. Food Efficiency Multiplier - Bonus for eating relative to age
-    if (this.age > 0 && this.foodEaten > 0) {
-      const efficiency = this.foodEaten / Math.max(this.age / 100, 1)
-      newFitness += Math.min(efficiency * 2, 10)
+    // 3. Inefficiency Penalty (up to -15) - Poor food-to-age ratio
+    if (this.age > 50) {
+      const efficiency = this.foodEaten / (this.age / 100)
+      if (efficiency < 5) {
+        fitnessLoss += (5 - efficiency) * 3
+      }
     }
     
-    // 7. Energy Conservation Bonus - Reward for not wasting energy
-    if (this.age > 100) {
-      const energyRetention = this.energy / (this.age * 0.01)
-      newFitness += Math.min(energyRetention * 0.5, 5)
+    // 4. Inactivity Penalty (up to -10) - Not exploring enough
+    const expectedDistance = this.age * 0.5
+    if (this.distanceTraveled < expectedDistance) {
+      fitnessLoss += Math.min((expectedDistance - this.distanceTraveled) * 0.01, 10)
     }
     
-    // Ensure minimum fitness floor of 1.0 - no agent should ever have 0 fitness
-    this.fitness = Math.max(1.0, newFitness)
+    // 5. Death Penalty (-15) - Being dead is very bad
+    if (this.energy <= 0) {
+      fitnessLoss += 15
+    }
+    
+    // Bonuses for good performance (can offset penalties)
+    let bonuses = 0
+    
+    // Food consumption bonus (up to +20)
+    bonuses += Math.min(this.foodEaten * 2, 20)
+    
+    // Longevity bonus (up to +10) - surviving while eating
+    if (this.foodEaten > 0) {
+      bonuses += Math.min(this.age * 0.02, 10)
+    }
+    
+    // Energy efficiency bonus (up to +10) - maintaining high energy
+    if (this.energy > 70) {
+      bonuses += (this.energy - 70) * 0.33
+    }
+    
+    // Calculate final fitness: start at 100, subtract losses, add bonuses
+    this.fitness = Math.max(0, Math.min(100, 100 - fitnessLoss + bonuses))
   }
 
   public checkFoodCollision(food: Food[]): Food | null {

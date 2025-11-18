@@ -10,7 +10,8 @@ interface DNAPanelProps {
 
 export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map() }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [activeTab, setActiveTab] = useState<'genome' | 'genealogy'>('genome')
+  const networkCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [activeTab, setActiveTab] = useState<'genome' | 'genealogy' | 'network'>('genome')
 
   useEffect(() => {
     if (!selectedAgent || !canvasRef.current) return
@@ -117,6 +118,12 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
         >
           <i className="bi bi-diagram-3"></i> Genealogy
         </button>
+        <button 
+          className={`tab-button ${activeTab === 'network' ? 'active' : ''}`}
+          onClick={() => setActiveTab('network')}
+        >
+          <i className="bi bi-cpu"></i> Network
+        </button>
       </div>
 
       {activeTab === 'genome' && (
@@ -191,7 +198,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
           <div className="info-item">
             <span className="label">Outputs:</span>
-            <span className="value">4 (Movement)</span>
+            <span className="value">6 (Movement)</span>
           </div>
           <div className="info-item">
             <span className="label">Sensors:</span>
@@ -209,6 +216,12 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
       {activeTab === 'genealogy' && (
         <div className="genealogy-view">
           <GenealogyViewer agent={selectedAgent} allAgents={allAgents} agentHistory={agentHistory} />
+        </div>
+      )}
+
+      {activeTab === 'network' && (
+        <div className="network-view">
+          <NetworkVisualizer agent={selectedAgent} canvasRef={networkCanvasRef} />
         </div>
       )}
     </div>
@@ -381,6 +394,216 @@ const GenealogyViewer: React.FC<GenealogyViewerProps> = ({ agent, allAgents, age
           <p>This agent has {agent.parentIds.length} parent(s), but they are no longer in the current population.</p>
         </div>
       )}
+    </div>
+  )
+}
+
+interface NetworkVisualizerProps {
+  agent: Agent
+  canvasRef: React.RefObject<HTMLCanvasElement | null>
+}
+
+const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef }) => {
+  const [lastOutputs, setLastOutputs] = useState<number[]>([0, 0, 0, 0, 0, 0])
+
+  useEffect(() => {
+    if (!agent || !canvasRef.current) return
+
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    canvas.width = canvas.offsetWidth
+    canvas.height = canvas.offsetHeight
+
+    const drawNetwork = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+      gradient.addColorStop(0, '#0a0a0a')
+      gradient.addColorStop(1, '#050510')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      // Get neural network structure
+      const levels = agent.NeuralNetwork.levels
+      const layerCount = levels.length + 1
+      const maxNeurons = Math.max(...levels.map(l => l.outputs.length))
+
+      // Layout parameters
+      const padding = 40
+      const layerSpacing = (canvas.width - 2 * padding) / (layerCount - 1)
+      const neuronRadius = 8
+
+      // Calculate current outputs for real-time display
+      const agentOffsets = agent.Sensor.agentOutput.map((e) => (e == null ? 0 : 1 - e.offset))
+      const foodOffsets = agent.Sensor.foodOutput.map((e) => (e == null ? 0 : 1 - e.offset))
+      const inputs = [
+        agent.position.x / 1000,
+        agent.position.y / 1000,
+        agent.position.rotation / (Math.PI * 2)
+      ].concat(agentOffsets).concat(foodOffsets)
+
+      const outputs = agent.NeuralNetwork.feedForward(inputs)
+      setLastOutputs(outputs)
+
+      // Get activations for all layers
+      const allActivations: number[][] = []
+      allActivations.push(inputs)
+      
+      let currentActivations = inputs
+      for (let i = 0; i < levels.length; i++) {
+        const level = levels[i]
+        const nextActivations: number[] = []
+        
+        for (let j = 0; j < level.outputs.length; j++) {
+          let sum = level.biases[j]
+          for (let k = 0; k < level.inputs.length; k++) {
+            sum += currentActivations[k] * level.weights[k][j]
+          }
+          nextActivations.push(Math.tanh(sum))
+        }
+        
+        allActivations.push(nextActivations)
+        currentActivations = nextActivations
+      }
+
+      // Draw connections first (behind neurons)
+      ctx.lineWidth = 1
+      for (let l = 0; l < layerCount - 1; l++) {
+        const x1 = padding + l * layerSpacing
+        const x2 = padding + (l + 1) * layerSpacing
+        const neurons1 = allActivations[l].length
+        const neurons2 = allActivations[l + 1].length
+        const spacing1 = (canvas.height - 2 * padding) / (neurons1 + 1)
+        const spacing2 = (canvas.height - 2 * padding) / (neurons2 + 1)
+
+        for (let i = 0; i < neurons1; i++) {
+          for (let j = 0; j < neurons2; j++) {
+            const y1 = padding + (i + 1) * spacing1
+            const y2 = padding + (j + 1) * spacing2
+            
+            const weight = levels[l].weights[i][j]
+            const alpha = Math.min(Math.abs(weight) * 0.3, 0.5)
+            ctx.strokeStyle = weight > 0 ? `rgba(0, 200, 255, ${alpha})` : `rgba(255, 100, 100, ${alpha})`
+            
+            ctx.beginPath()
+            ctx.moveTo(x1, y1)
+            ctx.lineTo(x2, y2)
+            ctx.stroke()
+          }
+        }
+      }
+
+      // Draw neurons
+      for (let l = 0; l < allActivations.length; l++) {
+        const x = padding + l * layerSpacing
+        const neurons = allActivations[l].length
+        const spacing = (canvas.height - 2 * padding) / (neurons + 1)
+
+        for (let i = 0; i < neurons; i++) {
+          const y = padding + (i + 1) * spacing
+          const activation = allActivations[l][i]
+          
+          // Color based on activation
+          const intensity = Math.abs(activation)
+          const hue = activation > 0 ? 120 : 0
+          
+          ctx.shadowBlur = 10
+          ctx.shadowColor = `hsla(${hue}, 80%, 60%, ${intensity})`
+          
+          ctx.fillStyle = `hsla(${hue}, 80%, 50%, ${0.3 + intensity * 0.7})`
+          ctx.beginPath()
+          ctx.arc(x, y, neuronRadius, 0, Math.PI * 2)
+          ctx.fill()
+          
+          ctx.strokeStyle = `hsla(${hue}, 90%, 70%, 0.8)`
+          ctx.lineWidth = 2
+          ctx.stroke()
+          
+          ctx.shadowBlur = 0
+        }
+      }
+
+      // Draw layer labels
+      ctx.fillStyle = '#ffffff'
+      ctx.font = '12px monospace'
+      ctx.textAlign = 'center'
+      
+      const labels = ['Input', ...Array(layerCount - 2).fill(0).map((_, i) => `Hidden ${i + 1}`), 'Output']
+      for (let l = 0; l < allActivations.length; l++) {
+        const x = padding + l * layerSpacing
+        ctx.fillText(labels[l], x, 20)
+        ctx.fillText(`(${allActivations[l].length})`, x, 32)
+      }
+
+      requestAnimationFrame(drawNetwork)
+    }
+
+    drawNetwork()
+  }, [agent, canvasRef])
+
+  const outputLabels = ['Forward', 'Backward', 'Strafe L', 'Strafe R', 'Rotate CW', 'Rotate CCW']
+
+  return (
+    <div className="network-visualizer">
+      <canvas ref={canvasRef} className="network-canvas" />
+      <div className="network-info">
+        <h4><i className="bi bi-cpu"></i> Neural Network Architecture</h4>
+        <div className="info-grid">
+          <div className="info-item">
+            <span className="label">Input Neurons:</span>
+            <span className="value">{agent.Sensor.rayCount * 2 + 3}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Hidden Layers:</span>
+            <span className="value">{agent.NeuralNetwork.levels.length - 1}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Output Neurons:</span>
+            <span className="value">6</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Total Parameters:</span>
+            <span className="value">{agent.NeuralNetwork.getGenomeData().length}</span>
+          </div>
+        </div>
+
+        <h4 style={{ marginTop: '1rem' }}><i className="bi bi-activity"></i> Real-Time Outputs</h4>
+        <div className="output-bars">
+          {lastOutputs.map((output, i) => (
+            <div key={i} className="output-bar-container">
+              <span className="output-label">{outputLabels[i]}</span>
+              <div className="output-bar-bg">
+                <div 
+                  className="output-bar-fill" 
+                  style={{ 
+                    width: `${Math.abs(output) * 100}%`,
+                    backgroundColor: output > 0 ? '#00ff88' : '#ff4444'
+                  }}
+                />
+              </div>
+              <span className="output-value">{output.toFixed(3)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="network-legend">
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: '#00c8ff' }}></span>
+            <span>Positive Weights</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: '#ff6464' }}></span>
+            <span>Negative Weights</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: '#00ff88' }}></span>
+            <span>Active Neurons</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
