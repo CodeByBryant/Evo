@@ -13,7 +13,17 @@ Evo is a cutting-edge neural network-based evolutionary sandbox featuring **full
 Latest enhancements to the evolution simulator:
 
 #### New Features (November 18, 2025)
-1. **Comprehensive Fitness Function**
+1. **Species-Specific Genetic Traits**
+   - Each species has unique baseline genetic characteristics
+   - Baselines randomized from config.json ranges when species is created
+   - Traits mutate with every birth/generation
+   - Offspring inherit from parents with mutation applied
+   - SpeciesManager tracks all species and their populations
+   - Species-specific traits include: size, maxEnergyCapacity, neurons, sensors, speed, etc.
+   - Auto-registration of species from loaded agents
+   - Known limitation: Save/load reconstructs baselines by averaging current population
+
+2. **Comprehensive Fitness Function**
    - Minimum baseline fitness of 1.0 for all agents
    - Multi-factor scoring: food consumption (40%), survival time (25%), energy efficiency (20%), exploration (10%)
    - Food efficiency multiplier based on age
@@ -21,7 +31,7 @@ Latest enhancements to the evolution simulator:
    - Survival bonus for staying alive
    - More meaningful fitness values from birth
 
-2. **Genealogy Viewer Tab**
+3. **Genealogy Viewer Tab**
    - Tab-based interface in DNA Panel (Genome / Genealogy)
    - Complete family tree visualization
    - Parents, grandparents, and great-grandparents display
@@ -30,7 +40,7 @@ Latest enhancements to the evolution simulator:
    - Historical agent tracking across all generations
    - Color-coded species identification for ancestors
 
-3. **Agent History System**
+4. **Agent History System**
    - Persistent tracking of all agents ever created
    - Historical agent lookup for genealogy
    - Extinct agents remain accessible for family tree
