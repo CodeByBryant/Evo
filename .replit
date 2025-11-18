@@ -4,3 +4,32 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
+packages = ["xorg.libxcb", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "mesa", "glib", "gtk3", "pango", "cairo", "cups", "dbus", "nss", "nspr", "atk", "at-spi2-atk", "expat", "libdrm", "libxkbcommon", "alsa-lib", "libglvnd", "wayland", "mesa_glu"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "EvoSquares Dev"
+
+[[workflows.workflow]]
+name = "EvoSquares Dev"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev:web"
+waitForPort = 5000
+
+[[ports]]
+localPort = 5000
+externalPort = 80
