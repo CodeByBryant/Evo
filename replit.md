@@ -8,6 +8,34 @@ Evo is a cutting-edge neural network-based evolutionary sandbox featuring **full
 
 ## Recent Major Update (November 18, 2025)
 
+### Version 3.1: "Genealogy & Fitness Enhancement" 🧬📊
+
+Latest enhancements to the evolution simulator:
+
+#### New Features (November 18, 2025)
+1. **Comprehensive Fitness Function**
+   - Minimum baseline fitness of 1.0 for all agents
+   - Multi-factor scoring: food consumption (40%), survival time (25%), energy efficiency (20%), exploration (10%)
+   - Food efficiency multiplier based on age
+   - Energy conservation bonuses
+   - Survival bonus for staying alive
+   - More meaningful fitness values from birth
+
+2. **Genealogy Viewer Tab**
+   - Tab-based interface in DNA Panel (Genome / Genealogy)
+   - Complete family tree visualization
+   - Parents, grandparents, and great-grandparents display
+   - Extinct ancestor tracking with special cards
+   - Descendant counting and display
+   - Historical agent tracking across all generations
+   - Color-coded species identification for ancestors
+
+3. **Agent History System**
+   - Persistent tracking of all agents ever created
+   - Historical agent lookup for genealogy
+   - Extinct agents remain accessible for family tree
+   - Automatic history management and cleanup
+
 ### Version 3.0: "Evolution Revolution" 🧬
 
 Complete transformation into an advanced evolution simulator:
@@ -21,11 +49,13 @@ Complete transformation into an advanced evolution simulator:
    - Real-time camera position display
 
 2. **DNA Visualization Panel**
+   - Tab interface: Genome & Genealogy
    - Animated double helix visualization
    - Shows actual neural network genome
    - Color-coded based on weight values
    - Displays agent information (species, fitness, energy, age)
    - Click any agent to inspect its DNA
+   - Family tree with extinct ancestor tracking
 
 3. **Full Genetic Algorithm**
    - Sexual reproduction with crossover from two parents
@@ -210,10 +240,18 @@ EvolutionConfig {
 
 ### DNA Panel (Right Side)
 - Appears when agent is selected
-- Animated double helix
-- Real-time genome visualization
-- Agent statistics
-- Parent information
+- Two tabs: Genome and Genealogy
+- **Genome Tab:**
+  - Animated double helix
+  - Real-time genome visualization
+  - Agent statistics
+  - Neural network information
+- **Genealogy Tab:**
+  - Complete family tree
+  - Parents, grandparents, great-grandparents
+  - Extinct ancestor tracking
+  - Descendant listing
+  - Species color-coding
 
 ### Canvas Controls
 - Click: Select agent
