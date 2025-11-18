@@ -410,7 +410,7 @@ class Agent {
 
   public render(context: CanvasRenderingContext2D, isSelected: boolean = false): void {
     if (AgentConfigData.RenderSensor) {
-      this.Sensor.render(context)
+      this.Sensor.render(context, isSelected)
     }
 
     context.beginPath()

@@ -117,6 +117,40 @@ class NeuralNetwork {
     return child
   }
 
+  public transferWeightsFrom(parent1: NeuralNetwork, parent2?: NeuralNetwork): void {
+    for (let i = 0; i < this.levels.length; i++) {
+      const targetLevel = this.levels[i]
+      const parent1Level = parent1.levels[i]
+      const parent2Level = parent2?.levels[i]
+      
+      if (!parent1Level) break
+      
+      const minBiases = Math.min(targetLevel.biases.length, parent1Level.biases.length)
+      for (let j = 0; j < minBiases; j++) {
+        if (parent2Level && parent2Level.biases.length > j && Math.random() < 0.5) {
+          targetLevel.biases[j] = parent2Level.biases[j]
+        } else {
+          targetLevel.biases[j] = parent1Level.biases[j]
+        }
+      }
+      
+      const minInputs = Math.min(targetLevel.weights.length, parent1Level.weights.length)
+      for (let j = 0; j < minInputs; j++) {
+        const minOutputs = Math.min(targetLevel.weights[j].length, parent1Level.weights[j].length)
+        for (let k = 0; k < minOutputs; k++) {
+          if (parent2Level && 
+              parent2Level.weights.length > j && 
+              parent2Level.weights[j].length > k && 
+              Math.random() < 0.5) {
+            targetLevel.weights[j][k] = parent2Level.weights[j][k]
+          } else {
+            targetLevel.weights[j][k] = parent1Level.weights[j][k]
+          }
+        }
+      }
+    }
+  }
+
   public getGenomeData(): number[] {
     const genome: number[] = []
     
@@ -302,9 +336,9 @@ class Sensor {
     }
   }
 
-  public render(context: CanvasRenderingContext2D): void {
-    // Don't render if rays haven't been initialized yet
-    if (!this.rays || this.rays.length === 0 || !this.rays[0]) {
+  public render(context: CanvasRenderingContext2D, isSelected: boolean = false): void {
+    // Don't render if rays haven't been initialized yet or agent is not selected
+    if (!isSelected || !this.rays || this.rays.length === 0 || !this.rays[0]) {
       return
     }
 

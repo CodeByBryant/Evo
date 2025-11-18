@@ -226,8 +226,10 @@ export class EvolutionManager {
 
       if (parent1 !== parent2) {
         child.parentIds = [parent1.id, parent2.id]
+        child.NeuralNetwork.transferWeightsFrom(parent1.NeuralNetwork, parent2.NeuralNetwork)
       } else {
         child.parentIds = [parent1.id]
+        child.NeuralNetwork.transferWeightsFrom(parent1.NeuralNetwork)
       }
 
       const mutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
