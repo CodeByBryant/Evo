@@ -26,7 +26,12 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
-    "electron-updater": "^6.1.7"
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "bootstrap": "^5.3.8",
+    "electron-updater": "^6.1.7",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^2.0.0",
