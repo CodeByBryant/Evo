@@ -190,11 +190,87 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
+        <h4 style={{ marginTop: '1rem' }}>🧬 Genetic Traits</h4>
+        <div className="info-grid">
+          <div className="info-item">
+            <span className="label">Size:</span>
+            <span className="value">{selectedAgent.geneticTraits.size.toFixed(1)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Movement Speed:</span>
+            <span className="value">{selectedAgent.geneticTraits.movementSpeed.toFixed(2)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Acceleration:</span>
+            <span className="value">{selectedAgent.geneticTraits.acceleration.toFixed(2)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Turn Rate:</span>
+            <span className="value">{selectedAgent.geneticTraits.turnRate.toFixed(3)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Drag:</span>
+            <span className="value">{selectedAgent.geneticTraits.drag.toFixed(2)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Sensor Rays:</span>
+            <span className="value">{Math.round(selectedAgent.geneticTraits.sensorRayCount)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Sensor Range:</span>
+            <span className="value">{selectedAgent.geneticTraits.sensorRayLength.toFixed(0)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Field of View:</span>
+            <span className="value">{selectedAgent.geneticTraits.fieldOfView.toFixed(0)}°</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Color Vision:</span>
+            <span className="value">{selectedAgent.geneticTraits.colorVision ? 'Yes' : 'No'}</span>
+          </div>
+        </div>
+
+        <h4 style={{ marginTop: '1rem' }}>⚡ Metabolic Traits</h4>
+        <div className="info-grid">
+          <div className="info-item">
+            <span className="label">Energy Efficiency:</span>
+            <span className="value">{selectedAgent.geneticTraits.energyEfficiency.toFixed(2)}x</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Digestion Rate:</span>
+            <span className="value">{selectedAgent.geneticTraits.digestionRate.toFixed(2)}x</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Max Energy:</span>
+            <span className="value">{selectedAgent.geneticTraits.maxEnergyCapacity.toFixed(0)}</span>
+          </div>
+        </div>
+
+        <h4 style={{ marginTop: '1rem' }}>🔄 Reproductive Traits</h4>
+        <div className="info-grid">
+          <div className="info-item">
+            <span className="label">Mutation Rate:</span>
+            <span className="value">{(selectedAgent.geneticTraits.mutationRate * 100).toFixed(1)}%</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Reproduction Threshold:</span>
+            <span className="value">{selectedAgent.geneticTraits.reproductionThreshold.toFixed(0)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Offspring Count:</span>
+            <span className="value">{Math.round(selectedAgent.geneticTraits.offspringCount)}</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Learning Rate:</span>
+            <span className="value">{selectedAgent.geneticTraits.learningRate.toFixed(2)}x</span>
+          </div>
+        </div>
+
         <h4 style={{ marginTop: '1rem' }}>🧠 Neural Network</h4>
         <div className="info-grid">
           <div className="info-item">
             <span className="label">Inputs:</span>
-            <span className="value">{selectedAgent.Sensor.rayCount * 2 + 3}</span>
+            <span className="value">{selectedAgent.Sensor.rayCount * 2 + 3 + (selectedAgent.geneticTraits.colorVision ? selectedAgent.Sensor.rayCount * 2 : 0)}</span>
           </div>
           <div className="info-item">
             <span className="label">Outputs:</span>

@@ -293,7 +293,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     for (let i = 0; i < AgentCount; i++) {
       const x = (Math.random() - 0.5) * 1000
       const y = (Math.random() - 0.5) * 1000
-      const agent = new Agent(x, y, DefaultAgentSize.width, DefaultAgentSize.height)
+      const agent = new Agent(x, y)
       agentsRef.current.push(agent)
     }
 
@@ -322,8 +322,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
           const y = (Math.random() - 0.5) * 2000
           foodRef.current[index] = new Food(x, y)
         }
-        agent.energy = Math.min(100, agent.energy + 20)
-        agent.fitness += 1
+        agent.eatFood()
       }
     }
   }, [config.FoodSettings.RespawnOnEat])

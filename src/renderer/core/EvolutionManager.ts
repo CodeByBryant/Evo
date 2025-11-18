@@ -76,15 +76,91 @@ export class EvolutionManager {
     }
 
     // Handle reproduction for high-energy agents
-    const reproductionCandidates = agents.filter(a => a.energy >= this.config.reproductionThreshold)
+    const reproductionCandidates = agents.filter(a => a.energy >= a.geneticTraits.reproductionThreshold)
     for (const agent of reproductionCandidates) {
       if (agents.length < this.config.populationSize * 1.5) {
-        const child = this.reproduce(agent, agents)
-        if (child) {
-          agents.push(child)
-          agent.energy -= 30 // Cost of reproduction
-          newBirths++
-          this.totalBirths++
+        const targetOffspringCount = Math.round(agent.geneticTraits.offspringCount)
+        const reproductionPlans: Array<{mate: Agent | null, childTraits: GeneticTraits, childEnergy: number}> = []
+        
+        for (let i = 0; i < targetOffspringCount; i++) {
+          const potentialMates = agents.filter(a => 
+            a !== agent && 
+            a.species === agent.species && 
+            a.energy >= agent.geneticTraits.reproductionThreshold
+          )
+          
+          const mate = (potentialMates.length > 0 && Math.random() > 0.3) 
+            ? potentialMates[Math.floor(Math.random() * potentialMates.length)]
+            : null
+          
+          const tempChild = new Agent(0, 0, 0, 0, agent.geneticTraits, mate?.geneticTraits)
+          const childEnergy = tempChild.geneticTraits.maxEnergyCapacity * 0.5
+          
+          reproductionPlans.push({ mate, childTraits: tempChild.geneticTraits, childEnergy })
+        }
+        
+        const mateEnergyMap = new Map<string, number>()
+        for (const plan of reproductionPlans) {
+          if (plan.mate) {
+            const currentCost = mateEnergyMap.get(plan.mate.id) || 0
+            mateEnergyMap.set(plan.mate.id, currentCost + plan.childEnergy * 0.3)
+          }
+        }
+        
+        let canAfford = true
+        for (const [mateId, totalCost] of mateEnergyMap.entries()) {
+          const mate = agents.find(a => a.id === mateId)
+          if (mate && mate.energy < totalCost) {
+            canAfford = false
+            break
+          }
+        }
+        
+        const totalChildEnergy = reproductionPlans.reduce((sum, plan) => sum + plan.childEnergy, 0)
+        const overhead = agent.geneticTraits.maxEnergyCapacity * 0.1
+        const totalReproductionCost = totalChildEnergy + overhead
+        
+        if (agent.energy >= totalReproductionCost && canAfford) {
+          agent.energy -= totalReproductionCost
+          
+          for (const plan of reproductionPlans) {
+            const child = new Agent(
+              agent.position.x + (Math.random() - 0.5) * 50,
+              agent.position.y + (Math.random() - 0.5) * 50,
+              0, 0
+            )
+            
+            child.geneticTraits = plan.childTraits
+            child.width = child.geneticTraits.size
+            child.height = child.geneticTraits.size
+            child.polygon = child.getgeometry()
+            
+            if (plan.mate) {
+              const mateCost = plan.childEnergy * 0.3
+              plan.mate.energy -= mateCost
+              child.NeuralNetwork = agent.NeuralNetwork.crossover(plan.mate.NeuralNetwork)
+              child.parentIds = [agent.id, plan.mate.id]
+            } else {
+              child.NeuralNetwork = agent.NeuralNetwork.clone()
+              child.parentIds = [agent.id]
+            }
+            
+            const mutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
+            if (Math.random() < child.geneticTraits.mutationRate) {
+              child.NeuralNetwork.mutate(mutationIntensity)
+            }
+            
+            child.Sensor = new Sensor(child, child.geneticTraits.sensorRayCount, child.geneticTraits.sensorRayLength, child.geneticTraits.fieldOfView)
+            child.species = agent.species
+            child.generation = this.generation
+            child.fitness = 0
+            child.energy = plan.childEnergy
+            child.age = 0
+            
+            agents.push(child)
+            newBirths++
+            this.totalBirths++
+          }
         }
       }
     }
@@ -98,46 +174,6 @@ export class EvolutionManager {
     return { agents, newBirths, newDeaths }
   }
 
-  private reproduce(parent: Agent, allAgents: Agent[]): Agent | null {
-    // Find a mate from the same species or create asexual offspring
-    const potentialMates = allAgents.filter(a => 
-      a !== parent && 
-      a.species === parent.species && 
-      a.energy >= this.config.reproductionThreshold
-    )
-
-    const child = new Agent(
-      parent.position.x + (Math.random() - 0.5) * 50,
-      parent.position.y + (Math.random() - 0.5) * 50,
-      parent.width,
-      parent.height
-    )
-
-    if (potentialMates.length > 0 && Math.random() > 0.3) {
-      // Sexual reproduction (crossover)
-      const mate = potentialMates[Math.floor(Math.random() * potentialMates.length)]
-      child.NeuralNetwork = parent.NeuralNetwork.crossover(mate.NeuralNetwork)
-      child.parentIds = [parent.id, mate.id]
-      mate.energy -= 15 // Cost for mate
-    } else {
-      // Asexual reproduction
-      child.NeuralNetwork = parent.NeuralNetwork.clone()
-      child.parentIds = [parent.id]
-    }
-
-    // Mutation
-    if (Math.random() < this.config.mutationRate) {
-      child.NeuralNetwork.mutate(0.2)
-    }
-
-    child.species = parent.species
-    child.generation = this.generation
-    child.fitness = 0
-    child.energy = 50
-    child.age = 0
-
-    return child
-  }
 
   private endGeneration(agents: Agent[]): Agent[] {
     // Calculate stats for this generation
@@ -174,8 +210,10 @@ export class EvolutionManager {
       const child = new Agent(
         Math.random() * 2000 - 1000,
         Math.random() * 2000 - 1000,
-        parent1.width,
-        parent1.height
+        0,
+        0,
+        parent1.geneticTraits,
+        parent1 !== parent2 ? parent2.geneticTraits : undefined
       )
 
       if (parent1 !== parent2) {
@@ -186,13 +224,14 @@ export class EvolutionManager {
         child.parentIds = [parent1.id]
       }
 
-      if (Math.random() < this.config.mutationRate * 2) {
-        child.NeuralNetwork.mutate(0.15)
+      const mutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
+      if (Math.random() < child.geneticTraits.mutationRate * 2) {
+        child.NeuralNetwork.mutate(mutationIntensity * 0.75)
       }
 
       child.species = parent1.species
       child.generation = this.generation + 1
-      child.energy = 100
+      child.energy = child.geneticTraits.maxEnergyCapacity
       child.age = 0
       nextGen.push(child)
     }

@@ -33,9 +33,9 @@ class Agent {
   public geneticTraits: GeneticTraits
   public currentSpeed: number
 
-  constructor(x: number = 0, y: number = 0, _width: number = 10, _height: number = 10, parentTraits?: GeneticTraits) {
+  constructor(x: number = 0, y: number = 0, _width: number = 10, _height: number = 10, parentTraits?: GeneticTraits, mateTraits?: GeneticTraits) {
     this.position = { x: x, y: y, rotation: Math.random() * Math.PI * 2 }
-    this.geneticTraits = parentTraits ? this.inheritTraits(parentTraits) : this.generateDefaultTraits()
+    this.geneticTraits = parentTraits ? this.inheritTraits(parentTraits, mateTraits) : this.generateDefaultTraits()
     
     this.width = this.geneticTraits.size
     this.height = this.geneticTraits.size
@@ -99,9 +99,13 @@ class Agent {
     }
   }
 
-  private inheritTraits(parentTraits: GeneticTraits): GeneticTraits {
+  private inheritTraits(parentTraits: GeneticTraits, mateTraits?: GeneticTraits): GeneticTraits {
     const config: any = (AgentConfigData as any).GeneticTraits
     const mutationRate = parentTraits.mutationRate
+    
+    const blend = (parent1Val: number, parent2Val: number): number => {
+      return parent1Val * 0.5 + parent2Val * 0.5
+    }
     
     const mutate = (value: number, range: any): number => {
       if (Math.random() < mutationRate) {
@@ -111,26 +115,48 @@ class Agent {
       return value
     }
 
+    const baseTraits = mateTraits ? {
+      size: blend(parentTraits.size, mateTraits.size),
+      movementSpeed: blend(parentTraits.movementSpeed, mateTraits.movementSpeed),
+      acceleration: blend(parentTraits.acceleration, mateTraits.acceleration),
+      turnRate: blend(parentTraits.turnRate, mateTraits.turnRate),
+      drag: blend(parentTraits.drag, mateTraits.drag),
+      sensorRayCount: blend(parentTraits.sensorRayCount, mateTraits.sensorRayCount),
+      sensorRayLength: blend(parentTraits.sensorRayLength, mateTraits.sensorRayLength),
+      sensorPrecision: blend(parentTraits.sensorPrecision, mateTraits.sensorPrecision),
+      fieldOfView: blend(parentTraits.fieldOfView, mateTraits.fieldOfView),
+      colorVision: Math.random() < 0.5 ? parentTraits.colorVision : mateTraits.colorVision,
+      energyEfficiency: blend(parentTraits.energyEfficiency, mateTraits.energyEfficiency),
+      digestionRate: blend(parentTraits.digestionRate, mateTraits.digestionRate),
+      maxEnergyCapacity: blend(parentTraits.maxEnergyCapacity, mateTraits.maxEnergyCapacity),
+      mutationRate: blend(parentTraits.mutationRate, mateTraits.mutationRate),
+      reproductionThreshold: blend(parentTraits.reproductionThreshold, mateTraits.reproductionThreshold),
+      offspringCount: blend(parentTraits.offspringCount, mateTraits.offspringCount),
+      learningRate: blend(parentTraits.learningRate, mateTraits.learningRate),
+      memoryNeurons: blend(parentTraits.memoryNeurons, mateTraits.memoryNeurons),
+      aggression: blend(parentTraits.aggression, mateTraits.aggression)
+    } : parentTraits
+
     return {
-      size: mutate(parentTraits.size, config.size),
-      movementSpeed: mutate(parentTraits.movementSpeed, config.movementSpeed),
-      acceleration: mutate(parentTraits.acceleration, config.acceleration),
-      turnRate: mutate(parentTraits.turnRate, config.turnRate),
-      drag: mutate(parentTraits.drag, config.drag),
-      sensorRayCount: Math.round(mutate(parentTraits.sensorRayCount, config.sensorRayCount)),
-      sensorRayLength: mutate(parentTraits.sensorRayLength, config.sensorRayLength),
-      sensorPrecision: mutate(parentTraits.sensorPrecision, config.sensorPrecision),
-      fieldOfView: mutate(parentTraits.fieldOfView, config.fieldOfView),
-      colorVision: Math.random() < mutationRate ? Math.random() < config.colorVision.probability : parentTraits.colorVision,
-      energyEfficiency: mutate(parentTraits.energyEfficiency, config.energyEfficiency),
-      digestionRate: mutate(parentTraits.digestionRate, config.digestionRate),
-      maxEnergyCapacity: mutate(parentTraits.maxEnergyCapacity, config.maxEnergyCapacity),
-      mutationRate: mutate(parentTraits.mutationRate, config.mutationRate),
-      reproductionThreshold: mutate(parentTraits.reproductionThreshold, config.reproductionThreshold),
-      offspringCount: Math.round(mutate(parentTraits.offspringCount, config.offspringCount)),
-      learningRate: mutate(parentTraits.learningRate, config.learningRate),
-      memoryNeurons: Math.round(mutate(parentTraits.memoryNeurons, config.memoryNeurons)),
-      aggression: mutate(parentTraits.aggression, config.aggression)
+      size: mutate(baseTraits.size, config.size),
+      movementSpeed: mutate(baseTraits.movementSpeed, config.movementSpeed),
+      acceleration: mutate(baseTraits.acceleration, config.acceleration),
+      turnRate: mutate(baseTraits.turnRate, config.turnRate),
+      drag: mutate(baseTraits.drag, config.drag),
+      sensorRayCount: Math.round(mutate(baseTraits.sensorRayCount, config.sensorRayCount)),
+      sensorRayLength: mutate(baseTraits.sensorRayLength, config.sensorRayLength),
+      sensorPrecision: mutate(baseTraits.sensorPrecision, config.sensorPrecision),
+      fieldOfView: mutate(baseTraits.fieldOfView, config.fieldOfView),
+      colorVision: Math.random() < mutationRate ? Math.random() < config.colorVision.probability : baseTraits.colorVision,
+      energyEfficiency: mutate(baseTraits.energyEfficiency, config.energyEfficiency),
+      digestionRate: mutate(baseTraits.digestionRate, config.digestionRate),
+      maxEnergyCapacity: mutate(baseTraits.maxEnergyCapacity, config.maxEnergyCapacity),
+      mutationRate: mutate(baseTraits.mutationRate, config.mutationRate),
+      reproductionThreshold: mutate(baseTraits.reproductionThreshold, config.reproductionThreshold),
+      offspringCount: Math.round(mutate(baseTraits.offspringCount, config.offspringCount)),
+      learningRate: mutate(baseTraits.learningRate, config.learningRate),
+      memoryNeurons: Math.round(mutate(baseTraits.memoryNeurons, config.memoryNeurons)),
+      aggression: mutate(baseTraits.aggression, config.aggression)
     }
   }
 
