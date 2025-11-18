@@ -34,12 +34,12 @@ export class EvolutionManager {
 
   constructor(config: Partial<EvolutionConfig> = {}) {
     this.config = {
-      generationTime: 1000,
+      generationTime: 3000,
       selectionRate: 0.3,
       mutationRate: 0.05,
       populationSize: 30,
       reproductionThreshold: 80,
-      maxAge: 500,
+      maxAge: 1500,
       ...config
     }
   }

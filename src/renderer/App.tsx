@@ -5,6 +5,7 @@ import { DNAPanel } from './components/DNAPanel'
 import { StatsChart } from './components/StatsChart'
 import { SaveLoadPanel } from './components/SaveLoadPanel'
 import { EvolutionControls } from './components/EvolutionControls'
+import { SpeciesStats } from './components/SpeciesStats'
 import type { SimulationConfig, SimulationStats } from './types/simulation'
 import type { Agent } from './core/Agent'
 import type { GenerationStats, EvolutionConfig } from './core/EvolutionManager'
@@ -30,12 +31,12 @@ export const App: React.FC = () => {
   const [currentAgents, setCurrentAgents] = useState<Agent[]>([])
   const [loadedAgents, setLoadedAgents] = useState<Agent[] | null>(null)
   const [evolutionConfig, setEvolutionConfig] = useState<EvolutionConfig>({
-    generationTime: 1000,
+    generationTime: 3000,
     selectionRate: 0.3,
     mutationRate: 0.05,
     populationSize: 30,
     reproductionThreshold: 80,
-    maxAge: 500
+    maxAge: 1500
   })
 
   const handleToggleRunning = useCallback(() => {
@@ -116,23 +117,23 @@ export const App: React.FC = () => {
       >
         {/* Evolution Statistics */}
         <div className="evolution-stats">
-          <h4>Evolution Progress</h4>
+          <h4>📈 Evolution Progress</h4>
           <div className="stats-grid">
             <div className="stat">
               <span className="stat-label">Generation</span>
-              <span className="stat-value">{stats.generation || 0}</span>
+              <span className="stat-value" style={{ color: '#00ff88' }}>{stats.generation || 0}</span>
             </div>
             <div className="stat">
               <span className="stat-label">Species</span>
-              <span className="stat-value">{stats.speciesCount || 0}</span>
+              <span className="stat-value" style={{ color: '#ff8800' }}>{stats.speciesCount || 0}</span>
             </div>
             <div className="stat">
               <span className="stat-label">Avg Fitness</span>
-              <span className="stat-value">{(stats.avgFitness || 0).toFixed(1)}</span>
+              <span className="stat-value" style={{ color: '#00ddff' }}>{(stats.avgFitness || 0).toFixed(1)}</span>
             </div>
             <div className="stat">
               <span className="stat-label">Max Fitness</span>
-              <span className="stat-value">{(stats.maxFitness || 0).toFixed(1)}</span>
+              <span className="stat-value" style={{ color: '#ff00ff' }}>{(stats.maxFitness || 0).toFixed(1)}</span>
             </div>
           </div>
           {generationHistory.length > 1 && (
@@ -141,6 +142,9 @@ export const App: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Species Statistics */}
+        <SpeciesStats agents={currentAgents} />
 
         {/* Evolution Controls */}
         <EvolutionControls 

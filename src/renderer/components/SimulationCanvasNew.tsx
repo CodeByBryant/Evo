@@ -207,7 +207,10 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       const y = (Math.random() - 0.5) * 1500
       foodRef.current.push(new Food(x, y))
     }
-  }, [config])
+
+    // Notify parent of initial agents
+    onAgentsChange?.(agentsRef.current)
+  }, [config, onAgentsChange])
 
   useEffect(() => {
     initializeSimulation()
@@ -324,7 +327,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     }
 
     animationFrameRef.current = requestAnimationFrame(animate)
-  }, [speed, onStatsUpdate, drawInfiniteGrid, handleFoodCollisions, initializeSimulation, selectedAgent])
+  }, [speed, onStatsUpdate, onAgentsChange, drawInfiniteGrid, handleFoodCollisions, initializeSimulation, selectedAgent])
 
   const stopAnimation = useCallback(() => {
     if (animationFrameRef.current) {
