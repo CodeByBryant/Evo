@@ -485,8 +485,16 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
             const y2 = padding + (j + 1) * spacing2
             
             const weight = levels[l].weights[i][j]
-            const alpha = Math.min(Math.abs(weight) * 0.3, 0.5)
-            ctx.strokeStyle = weight > 0 ? `rgba(100, 200, 255, ${alpha})` : `rgba(200, 100, 255, ${alpha})`
+            const intensity = Math.abs(weight)
+            const alpha = Math.min(intensity * 0.3, 0.5)
+            
+            // Blend from white (near 0) to cyan (positive) or red (negative)
+            const targetColor = weight > 0 ? [100, 200, 255] : [255, 80, 80]
+            const r = Math.round(255 + (targetColor[0] - 255) * intensity)
+            const g = Math.round(255 + (targetColor[1] - 255) * intensity)
+            const b = Math.round(255 + (targetColor[2] - 255) * intensity)
+            
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`
             
             ctx.beginPath()
             ctx.moveTo(x1, y1)
@@ -506,19 +514,25 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
           const y = padding + (i + 1) * spacing
           const activation = allActivations[l][i]
           
-          // Color based on activation (cyan for positive, purple for negative)
+          // Blend from white (near 0) to cyan (positive) or red (negative)
           const intensity = Math.abs(activation)
-          const hue = activation > 0 ? 200 : 280
+          const targetColor = activation > 0 ? [100, 200, 255] : [255, 80, 80]
+          const r = Math.round(255 + (targetColor[0] - 255) * intensity)
+          const g = Math.round(255 + (targetColor[1] - 255) * intensity)
+          const b = Math.round(255 + (targetColor[2] - 255) * intensity)
           
-          ctx.shadowBlur = 10
-          ctx.shadowColor = `hsla(${hue}, 70%, 60%, ${intensity})`
+          ctx.shadowBlur = 10 * intensity
+          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${intensity * 0.8})`
           
-          ctx.fillStyle = `hsla(${hue}, 70%, 50%, ${0.3 + intensity * 0.7})`
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.4 + intensity * 0.6})`
           ctx.beginPath()
           ctx.arc(x, y, neuronRadius, 0, Math.PI * 2)
           ctx.fill()
           
-          ctx.strokeStyle = `hsla(${hue}, 70%, 65%, 0.8)`
+          const strokeR = Math.round(255 + (targetColor[0] - 255) * intensity * 1.1)
+          const strokeG = Math.round(255 + (targetColor[1] - 255) * intensity * 1.1)
+          const strokeB = Math.round(255 + (targetColor[2] - 255) * intensity * 1.1)
+          ctx.strokeStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, 0.9)`
           ctx.lineWidth = 2
           ctx.stroke()
           
@@ -580,7 +594,7 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
                   className="output-bar-fill" 
                   style={{ 
                     width: `${Math.abs(output) * 100}%`,
-                    backgroundColor: output > 0 ? '#64c8ff' : '#c864ff'
+                    backgroundColor: output > 0 ? '#64c8ff' : '#ff5050'
                   }}
                 />
               </div>
@@ -595,8 +609,12 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
             <span>Positive (Cyan)</span>
           </div>
           <div className="legend-item">
-            <span className="legend-dot" style={{ backgroundColor: '#c864ff' }}></span>
-            <span>Negative (Purple)</span>
+            <span className="legend-dot" style={{ backgroundColor: '#ff5050' }}></span>
+            <span>Negative (Red)</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: '#ffffff', border: '1px solid #666' }}></span>
+            <span>Near Zero (White)</span>
           </div>
           <div className="legend-item">
             <span className="legend-dot" style={{ backgroundColor: '#00ff88' }}></span>
