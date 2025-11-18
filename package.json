@@ -29,6 +29,7 @@
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
     "electron-updater": "^6.1.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
