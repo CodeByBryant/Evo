@@ -149,23 +149,44 @@ class Agent {
   }
 
   private updateFitness(): void {
-    // Comprehensive fitness calculation
-    let newFitness = 0
+    // Baseline fitness floor - all agents start with minimum fitness
+    let newFitness = 1.0
     
-    // 1. Food eaten is most important (50% of fitness)
-    newFitness += this.foodEaten * 10
+    // 1. Food Consumption (40 points max) - Primary survival metric
+    const foodScore = this.foodEaten * 8
+    newFitness += foodScore
     
-    // 2. Survival time bonus (20% of fitness) - reward living longer
-    newFitness += this.age * 0.01
+    // 2. Survival Time (25 points max) - Reward longevity
+    const survivalScore = Math.min(this.age * 0.05, 25)
+    newFitness += survivalScore
     
-    // 3. Energy management (15% of fitness) - reward maintaining high energy
-    newFitness += (this.energy / 100) * 2
+    // 3. Energy Efficiency (20 points max) - Reward sustainable energy use
+    const energyScore = (this.energy / 100) * 20
+    newFitness += energyScore
     
-    // 4. Movement efficiency (15% of fitness) - reward exploration but penalize wasted movement
-    const explorationBonus = Math.min(this.distanceTraveled * 0.001, 5)
-    newFitness += explorationBonus
+    // 4. Exploration (10 points max) - Reward movement but cap to prevent wandering
+    const explorationScore = Math.min(this.distanceTraveled * 0.002, 10)
+    newFitness += explorationScore
     
-    this.fitness = Math.max(0, newFitness)
+    // 5. Survival Bonus (5 points) - Extra bonus for staying alive
+    if (this.energy > 0) {
+      newFitness += 5
+    }
+    
+    // 6. Food Efficiency Multiplier - Bonus for eating relative to age
+    if (this.age > 0 && this.foodEaten > 0) {
+      const efficiency = this.foodEaten / Math.max(this.age / 100, 1)
+      newFitness += Math.min(efficiency * 2, 10)
+    }
+    
+    // 7. Energy Conservation Bonus - Reward for not wasting energy
+    if (this.age > 100) {
+      const energyRetention = this.energy / (this.age * 0.01)
+      newFitness += Math.min(energyRetention * 0.5, 5)
+    }
+    
+    // Ensure minimum fitness floor of 1.0 - no agent should ever have 0 fitness
+    this.fitness = Math.max(1.0, newFitness)
   }
 
   public checkFoodCollision(food: Food[]): Food | null {

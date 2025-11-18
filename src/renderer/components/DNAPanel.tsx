@@ -1,13 +1,16 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Agent } from '../core/Agent'
 
 interface DNAPanelProps {
   selectedAgent: Agent | null
   onClose: () => void
+  allAgents?: Agent[]
+  agentHistory?: Map<string, Agent>
 }
 
-export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose }) => {
+export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map() }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [activeTab, setActiveTab] = useState<'genome' | 'genealogy'>('genome')
 
   useEffect(() => {
     if (!selectedAgent || !canvasRef.current) return
@@ -95,13 +98,31 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose }) =>
   return (
     <div className="dna-panel">
       <div className="dna-panel-header">
-        <h3>DNA Visualization</h3>
+        <h3>Agent Inspector</h3>
         <button className="btn-close" onClick={onClose}>
           <i className="bi bi-x-lg"></i>
         </button>
       </div>
-      <canvas ref={canvasRef} className="dna-canvas" />
-      <div className="dna-info">
+      
+      <div className="dna-tabs">
+        <button 
+          className={`tab-button ${activeTab === 'genome' ? 'active' : ''}`}
+          onClick={() => setActiveTab('genome')}
+        >
+          <i className="bi bi-dna"></i> Genome
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'genealogy' ? 'active' : ''}`}
+          onClick={() => setActiveTab('genealogy')}
+        >
+          <i className="bi bi-diagram-3"></i> Genealogy
+        </button>
+      </div>
+
+      {activeTab === 'genome' && (
+        <>
+          <canvas ref={canvasRef} className="dna-canvas" />
+          <div className="dna-info">
         <h4>🧬 Genetic Information</h4>
         <div className="info-grid">
           <div className="info-item">
@@ -181,7 +202,185 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose }) =>
             <span className="value">{selectedAgent.NeuralNetwork.getGenomeData().length}</span>
           </div>
         </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'genealogy' && (
+        <div className="genealogy-view">
+          <GenealogyViewer agent={selectedAgent} allAgents={allAgents} agentHistory={agentHistory} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface GenealogyViewerProps {
+  agent: Agent
+  allAgents: Agent[]
+  agentHistory: Map<string, Agent>
+}
+
+const GenealogyViewer: React.FC<GenealogyViewerProps> = ({ agent, allAgents, agentHistory }) => {
+  // Create a combined map of current agents and historical agents
+  const agentMap = new Map<string, Agent>(agentHistory)
+  allAgents.forEach(a => agentMap.set(a.id, a))
+
+  // Find parents (including extinct ones)
+  const parentInfo = agent.parentIds.map(id => ({
+    id,
+    agent: agentMap.get(id)
+  }))
+  const parents = parentInfo.filter(p => p.agent).map(p => p.agent) as Agent[]
+  const extinctParents = parentInfo.filter(p => !p.agent)
+  
+  // Find grandparents (including extinct ones)
+  const grandparentInfo: Array<{ id: string; agent: Agent | undefined }> = []
+  parents.forEach(parent => {
+    parent.parentIds.forEach(id => {
+      grandparentInfo.push({ id, agent: agentMap.get(id) })
+    })
+  })
+  const grandparents = grandparentInfo.filter(gp => gp.agent).map(gp => gp.agent) as Agent[]
+  const extinctGrandparents = grandparentInfo.filter(gp => !gp.agent)
+
+  // Find great-grandparents (including extinct ones)
+  const greatGrandparentInfo: Array<{ id: string; agent: Agent | undefined }> = []
+  grandparents.forEach(gp => {
+    gp.parentIds.forEach(id => {
+      greatGrandparentInfo.push({ id, agent: agentMap.get(id) })
+    })
+  })
+  const greatGrandparents = greatGrandparentInfo.filter(ggp => ggp.agent).map(ggp => ggp.agent) as Agent[]
+  const extinctGreatGrandparents = greatGrandparentInfo.filter(ggp => !ggp.agent)
+
+  // Count descendants
+  const descendants = allAgents.filter(a => a.parentIds.includes(agent.id))
+
+  const renderAgentCard = (a: Agent, relationship: string) => {
+    const speciesHue = parseInt(a.species.substring(0, 6), 36) % 360
+    return (
+      <div key={a.id} className="ancestor-card" style={{ borderLeft: `4px solid hsl(${speciesHue}, 70%, 50%)` }}>
+        <div className="ancestor-header">
+          <span className="ancestor-relationship">{relationship}</span>
+          <span className="ancestor-id">{a.id.substring(0, 8)}</span>
+        </div>
+        <div className="ancestor-stats">
+          <div className="stat-item">
+            <i className="bi bi-activity"></i>
+            <span>Fitness: {a.fitness.toFixed(1)}</span>
+          </div>
+          <div className="stat-item">
+            <i className="bi bi-hourglass-split"></i>
+            <span>Gen: {a.generation}</span>
+          </div>
+          <div className="stat-item">
+            <i className="bi bi-lightning-fill"></i>
+            <span>Energy: {a.energy.toFixed(0)}%</span>
+          </div>
+        </div>
       </div>
+    )
+  }
+
+  const renderExtinctCard = (id: string, relationship: string) => {
+    return (
+      <div key={id} className="ancestor-card extinct" style={{ borderLeft: `4px solid #555` }}>
+        <div className="ancestor-header">
+          <span className="ancestor-relationship">{relationship}</span>
+          <span className="ancestor-id">{id.substring(0, 8)}</span>
+        </div>
+        <div className="ancestor-stats">
+          <div className="stat-item">
+            <i className="bi bi-x-circle"></i>
+            <span style={{ color: '#888' }}>Extinct - No longer in population</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="genealogy-container">
+      <div className="genealogy-section">
+        <h4><i className="bi bi-person-fill"></i> Current Agent</h4>
+        <div className="current-agent-info">
+          <div className="info-row">
+            <span>ID:</span>
+            <span className="value">{agent.id.substring(0, 12)}</span>
+          </div>
+          <div className="info-row">
+            <span>Generation:</span>
+            <span className="value">{agent.generation}</span>
+          </div>
+          <div className="info-row">
+            <span>Fitness:</span>
+            <span className="value fitness-value">{agent.fitness.toFixed(2)}</span>
+          </div>
+          <div className="info-row">
+            <span>Species:</span>
+            <span className="value">{agent.species.substring(0, 10)}</span>
+          </div>
+        </div>
+      </div>
+
+      {(parents.length > 0 || extinctParents.length > 0) && (
+        <div className="genealogy-section">
+          <h4><i className="bi bi-people-fill"></i> Parents ({parents.length + extinctParents.length})</h4>
+          <div className="ancestor-grid">
+            {parents.map((p, i) => renderAgentCard(p, `Parent ${i + 1}`))}
+            {extinctParents.map((ep, i) => renderExtinctCard(ep.id, `Parent ${parents.length + i + 1} (Extinct)`))}
+          </div>
+        </div>
+      )}
+
+      {(grandparents.length > 0 || extinctGrandparents.length > 0) && (
+        <div className="genealogy-section">
+          <h4><i className="bi bi-people"></i> Grandparents ({grandparents.length + extinctGrandparents.length})</h4>
+          <div className="ancestor-grid">
+            {grandparents.map((gp, i) => renderAgentCard(gp, `Grandparent ${i + 1}`))}
+            {extinctGrandparents.map((egp, i) => renderExtinctCard(egp.id, `Grandparent ${grandparents.length + i + 1} (Extinct)`))}
+          </div>
+        </div>
+      )}
+
+      {(greatGrandparents.length > 0 || extinctGreatGrandparents.length > 0) && (
+        <div className="genealogy-section">
+          <h4><i className="bi bi-diagram-2"></i> Great-Grandparents ({greatGrandparents.length + extinctGreatGrandparents.length})</h4>
+          <div className="ancestor-grid">
+            {greatGrandparents.map((ggp, i) => renderAgentCard(ggp, `Great-GP ${i + 1}`))}
+            {extinctGreatGrandparents.map((eggp, i) => renderExtinctCard(eggp.id, `Great-GP ${greatGrandparents.length + i + 1} (Extinct)`))}
+          </div>
+        </div>
+      )}
+
+      {descendants.length > 0 && (
+        <div className="genealogy-section">
+          <h4><i className="bi bi-arrow-down-circle"></i> Descendants ({descendants.length})</h4>
+          <div className="ancestor-grid">
+            {descendants.slice(0, 6).map((d, i) => renderAgentCard(d, `Child ${i + 1}`))}
+            {descendants.length > 6 && (
+              <div className="more-indicator">
+                +{descendants.length - 6} more
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {agent.parentIds.length === 0 && (
+        <div className="no-ancestors">
+          <i className="bi bi-exclamation-circle"></i>
+          <p>This is a first-generation agent with no recorded ancestry.</p>
+        </div>
+      )}
+      
+      {agent.parentIds.length > 0 && parents.length === 0 && extinctParents.length === 0 && (
+        <div className="no-ancestors">
+          <i className="bi bi-info-circle"></i>
+          <p>This agent has {agent.parentIds.length} parent(s), but they are no longer in the current population.</p>
+        </div>
+      )}
     </div>
   )
 }

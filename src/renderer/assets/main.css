@@ -857,3 +857,208 @@ input[type="range"]:hover::-moz-range-thumb {
     height: 12px;
   }
 }
+
+/* DNA Panel Tabs */
+.dna-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.tab-button:hover {
+  color: var(--text);
+}
+
+.tab-button.active {
+  color: #00ff88;
+  border-bottom-color: #00ff88;
+}
+
+.tab-button i {
+  font-size: 0.85rem;
+}
+
+/* Genealogy Viewer */
+.genealogy-view {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.genealogy-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.genealogy-section {
+  padding: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.genealogy-section h4 {
+  color: var(--text);
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.genealogy-section h4 i {
+  color: #00ff88;
+}
+
+.current-agent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.info-row span:first-child {
+  color: var(--text-dim);
+}
+
+.info-row .value {
+  color: var(--text);
+  font-family: monospace;
+}
+
+.info-row .fitness-value {
+  color: #00ff88;
+  font-weight: 600;
+}
+
+.ancestor-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ancestor-card {
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.ancestor-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-left-width: 4px;
+}
+
+.ancestor-card.extinct {
+  opacity: 0.6;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.ancestor-card.extinct:hover {
+  opacity: 0.8;
+}
+
+.ancestor-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.ancestor-relationship {
+  font-size: 0.7rem;
+  color: #00ff88;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ancestor-id {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-family: monospace;
+}
+
+.ancestor-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--text);
+}
+
+.stat-item i {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.no-ancestors {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-dim);
+}
+
+.no-ancestors i {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  display: block;
+  opacity: 0.5;
+}
+
+.no-ancestors p {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.more-indicator {
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+}
+
+/* Mobile adjustments for genealogy */
+@media (max-width: 768px) {
+  .genealogy-view {
+    max-height: 400px;
+  }
+  
+  .ancestor-stats {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+}

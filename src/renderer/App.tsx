@@ -29,6 +29,7 @@ export const App: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
   const [generationHistory, setGenerationHistory] = useState<GenerationStats[]>([])
   const [currentAgents, setCurrentAgents] = useState<Agent[]>([])
+  const [agentHistory, setAgentHistory] = useState<Map<string, Agent>>(new Map())
   const [loadedAgents, setLoadedAgents] = useState<Agent[] | null>(null)
   const [evolutionConfig, setEvolutionConfig] = useState<EvolutionConfig>({
     generationTime: 3000,
@@ -48,6 +49,7 @@ export const App: React.FC = () => {
     setIsRunning(true)
     setSelectedAgent(null)
     setGenerationHistory([])
+    setAgentHistory(new Map())
   }, [])
 
   const handleConfigChange = useCallback((newConfig: SimulationConfig) => {
@@ -92,6 +94,17 @@ export const App: React.FC = () => {
 
   const handleAgentsChange = useCallback((agents: Agent[]) => {
     setCurrentAgents(agents)
+    
+    // Update agent history - add new agents to the historical record
+    setAgentHistory(prev => {
+      const newHistory = new Map(prev)
+      agents.forEach(agent => {
+        if (!newHistory.has(agent.id)) {
+          newHistory.set(agent.id, agent)
+        }
+      })
+      return newHistory
+    })
   }, [])
 
   const handleLoadAgents = useCallback((agents: Agent[]) => {
@@ -186,7 +199,7 @@ export const App: React.FC = () => {
         />
       </div>
 
-      <DNAPanel selectedAgent={selectedAgent} onClose={handleCloseDNA} />
+      <DNAPanel selectedAgent={selectedAgent} onClose={handleCloseDNA} allAgents={currentAgents} agentHistory={agentHistory} />
     </div>
   )
 }
