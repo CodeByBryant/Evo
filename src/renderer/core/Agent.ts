@@ -21,6 +21,11 @@ class Agent {
   public Sensor: Sensor
   public fitness: number
   public energy: number
+  public age: number
+  public generation: number
+  public species: string
+  public id: string
+  public parentIds: string[]
 
   constructor(x: number = 0, y: number = 0, width: number = 10, height: number = 10) {
     this.position = { x: x, y: y, rotation: Math.random() * Math.PI * 2 }
@@ -29,6 +34,11 @@ class Agent {
     this.polygon = this.getgeometry()
     this.fitness = 0
     this.energy = 100
+    this.age = 0
+    this.generation = 0
+    this.species = this.generateSpeciesId()
+    this.id = this.generateId()
+    this.parentIds = []
 
     const configData: any = AgentConfigData
     const nnConfig = configData.NeuralNetwork || { HiddenLayers: [16, 16, 12], ActivationFunction: 'swish', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
@@ -137,7 +147,7 @@ class Agent {
     return null
   }
 
-  public render(context: CanvasRenderingContext2D): void {
+  public render(context: CanvasRenderingContext2D, isSelected: boolean = false): void {
     if (AgentConfigData.RenderSensor) {
       this.Sensor.render(context)
     }
@@ -150,18 +160,29 @@ class Agent {
     context.closePath()
 
     const renderConfig: any = AgentConfigData.Rendering
-    context.fillStyle = renderConfig.FillColor
+    
+    // Color based on species
+    const speciesHue = parseInt(this.species.substring(0, 6), 36) % 360
+    context.fillStyle = isSelected ? '#ffff00' : `hsl(${speciesHue}, 70%, 50%)`
     context.fill()
-    context.strokeStyle = renderConfig.StrokeColor || renderConfig.FillColor
-    context.lineWidth = renderConfig.StrokeWidth
+    context.strokeStyle = isSelected ? '#ffaa00' : (renderConfig.StrokeColor || `hsl(${speciesHue}, 70%, 40%)`)
+    context.lineWidth = isSelected ? 3 : renderConfig.StrokeWidth
     context.stroke()
 
-    if (renderConfig.ActiveGlow) {
-      context.shadowBlur = 8
-      context.shadowColor = renderConfig.FillColor
+    if (renderConfig.ActiveGlow || isSelected) {
+      context.shadowBlur = isSelected ? 15 : 8
+      context.shadowColor = isSelected ? '#ffff00' : context.fillStyle as string
       context.stroke()
       context.shadowBlur = 0
     }
+  }
+
+  private generateId(): string {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+  }
+
+  private generateSpeciesId(): string {
+    return Math.random().toString(36).substring(2, 12)
   }
 }
 

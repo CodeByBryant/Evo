@@ -36,4 +36,8 @@ export interface SimulationStats {
   foodCount: number
   fps: number
   running: boolean
+  generation?: number
+  avgFitness?: number
+  maxFitness?: number
+  speciesCount?: number
 }

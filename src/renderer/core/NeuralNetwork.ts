@@ -93,6 +93,42 @@ class NeuralNetwork {
     
     return cloned
   }
+
+  public crossover(other: NeuralNetwork): NeuralNetwork {
+    const child = this.clone()
+    
+    // Crossover: randomly take genes from each parent
+    for (let i = 0; i < this.levels.length && i < other.levels.length; i++) {
+      for (let j = 0; j < child.levels[i].biases.length; j++) {
+        if (Math.random() < 0.5) {
+          child.levels[i].biases[j] = other.levels[i].biases[j]
+        }
+      }
+      
+      for (let j = 0; j < child.levels[i].weights.length; j++) {
+        for (let k = 0; k < child.levels[i].weights[j].length; k++) {
+          if (Math.random() < 0.5) {
+            child.levels[i].weights[j][k] = other.levels[i].weights[j][k]
+          }
+        }
+      }
+    }
+    
+    return child
+  }
+
+  public getGenomeData(): number[] {
+    const genome: number[] = []
+    
+    for (const level of this.levels) {
+      genome.push(...level.biases)
+      for (const weights of level.weights) {
+        genome.push(...weights)
+      }
+    }
+    
+    return genome
+  }
 }
 
 class Sensor {
@@ -250,6 +286,11 @@ class Sensor {
   }
 
   public render(context: CanvasRenderingContext2D): void {
+    // Don't render if rays haven't been initialized yet
+    if (!this.rays || this.rays.length === 0 || !this.rays[0]) {
+      return
+    }
+
     for (let i = 0; i < this.rayCount; i++) {
       const agentEnd = this.agentOutput[i]
       const foodEnd = this.foodOutput[i]

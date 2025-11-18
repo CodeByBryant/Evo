@@ -372,3 +372,295 @@ input[type="range"]:hover::-moz-range-thumb {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-dim);
 }
+
+.dna-panel {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 320px;
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.dna-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dna-panel-header h3 {
+  color: #00ff88;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.btn-close:hover {
+  color: var(--text);
+}
+
+.dna-canvas {
+  width: 100%;
+  height: 200px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #000;
+}
+
+.dna-info {
+  margin-top: 1rem;
+}
+
+.dna-info h4 {
+  color: var(--text);
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.info-item .label {
+  color: var(--text-dim);
+}
+
+.info-item .value {
+  color: #00ff88;
+  font-family: monospace;
+}
+
+.evolution-stats {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.evolution-stats h4 {
+  color: var(--text);
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.stats-chart {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.evolution-controls {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.evolution-controls h4 {
+  color: var(--text);
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.control-row label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.control-row .value {
+  color: #ff8800;
+  font-family: monospace;
+}
+
+.species-list {
+  margin-top: 1rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.species-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.species-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+.species-info {
+  flex: 1;
+}
+
+.species-name {
+  color: var(--text);
+  font-family: monospace;
+  font-size: 0.7rem;
+}
+
+.species-count {
+  color: var(--text-dim);
+  font-size: 0.65rem;
+}
+
+.save-load-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.save-load-panel h4 {
+  color: var(--text);
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.save-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn-small {
+  padding: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.btn-small:hover {
+  background: var(--border);
+  color: #00ff88;
+}
+
+.saves-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.save-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.save-info {
+  flex: 1;
+}
+
+.save-name {
+  font-size: 0.75rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.save-date {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: 0.25rem;
+}
+
+.save-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.save-actions button {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 0.8rem;
+  transition: color 0.2s;
+}
+
+.save-actions button:hover {
+  color: #00ff88;
+}
+
+.save-actions button:last-child:hover {
+  color: #ff4444;
+}
+
+.help-text {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.help-text p {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.help-text strong {
+  color: var(--text);
+}

@@ -11,6 +11,7 @@ interface SidebarProps {
   onSpeedChange: (speed: number) => void
   onReset: () => void
   onConfigChange: (config: SimulationConfig) => void
+  children?: React.ReactNode
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -21,7 +22,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleRunning,
   onSpeedChange,
   onReset,
-  onConfigChange
+  onConfigChange,
+  children
 }) => {
   const [configExpanded, setConfigExpanded] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
@@ -175,6 +177,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
       </div>
+
+          {children}
 
           <div className="sidebar-footer">
             v{BRANDING.VERSION}
