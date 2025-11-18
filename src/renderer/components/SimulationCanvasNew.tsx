@@ -59,7 +59,8 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         foodRef.current.push(new Food(x, y))
       }
       
-      onAgentsChange?.(loadedAgents)
+      // Clone array to ensure React detects state change
+      onAgentsChange?.([...loadedAgents])
     }
   }, [loadedAgents, onAgentsChange, config.FoodSettings.SpawnCount])
 
@@ -171,12 +172,103 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       onAgentSelect?.(closestAgent)
     }
 
+    // Touch event handlers for mobile camera control
+    let touchStartDistance = 0
+    let lastTouchX = 0
+    let lastTouchY = 0
+    let isPanning = false
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        // Pinch to zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        touchStartDistance = Math.sqrt(dx * dx + dy * dy)
+        isPanning = false
+      } else if (e.touches.length === 1) {
+        // Single touch for panning
+        lastTouchX = e.touches[0].clientX
+        lastTouchY = e.touches[0].clientY
+        cameraRef.current.startDrag(lastTouchX, lastTouchY)
+        isPanning = true
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault()
+
+      if (e.touches.length === 2) {
+        // Pinch to zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        
+        if (touchStartDistance > 0) {
+          const delta = distance - touchStartDistance
+          const rect = canvas.getBoundingClientRect()
+          const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left
+          const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top
+          cameraRef.current.zoomAt(centerX, centerY, -delta * 3, canvas.width, canvas.height)
+          touchStartDistance = distance
+        }
+        isPanning = false
+      } else if (e.touches.length === 1 && isPanning) {
+        // Single touch panning
+        const touchX = e.touches[0].clientX
+        const touchY = e.touches[0].clientY
+        cameraRef.current.drag(touchX, touchY)
+        lastTouchX = touchX
+        lastTouchY = touchY
+      }
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        cameraRef.current.stopDrag()
+        isPanning = false
+        touchStartDistance = 0
+
+        // If it was a quick tap, select agent
+        if (e.changedTouches.length === 1) {
+          const rect = canvas.getBoundingClientRect()
+          const touchX = e.changedTouches[0].clientX - rect.left
+          const touchY = e.changedTouches[0].clientY - rect.top
+          const worldPos = cameraRef.current.screenToWorld(touchX, touchY, canvas.width, canvas.height)
+
+          let closestAgent: Agent | null = null
+          let closestDist = Infinity
+
+          for (const agent of agentsRef.current) {
+            const dx = agent.position.x - worldPos.x
+            const dy = agent.position.y - worldPos.y
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < 50 && dist < closestDist) {
+              closestAgent = agent
+              closestDist = dist
+            }
+          }
+
+          if (closestAgent) {
+            setSelectedAgent(closestAgent)
+            onAgentSelect?.(closestAgent)
+          }
+        }
+      }
+    }
+
+    // Mouse events
     canvas.addEventListener('mousedown', handleMouseDown)
     canvas.addEventListener('mousemove', handleMouseMove)
     canvas.addEventListener('mouseup', handleMouseUp)
     canvas.addEventListener('wheel', handleWheel, { passive: false })
     canvas.addEventListener('click', handleClick)
     canvas.addEventListener('contextmenu', (e) => e.preventDefault())
+
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
 
     return () => {
       window.removeEventListener('resize', resizeCanvas)
@@ -185,6 +277,9 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       canvas.removeEventListener('mouseup', handleMouseUp)
       canvas.removeEventListener('wheel', handleWheel)
       canvas.removeEventListener('click', handleClick)
+      canvas.removeEventListener('touchstart', handleTouchStart)
+      canvas.removeEventListener('touchmove', handleTouchMove)
+      canvas.removeEventListener('touchend', handleTouchEnd)
     }
   }, [onAgentSelect])
 
@@ -208,8 +303,8 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       foodRef.current.push(new Food(x, y))
     }
 
-    // Notify parent of initial agents
-    onAgentsChange?.(agentsRef.current)
+    // Notify parent of initial agents with cloned array
+    onAgentsChange?.([...agentsRef.current])
   }, [config, onAgentsChange])
 
   useEffect(() => {
@@ -279,15 +374,16 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       const evolutionResult = evolutionRef.current.update(agentsRef.current)
       agentsRef.current = evolutionResult.agents
 
-      // Notify parent of agent changes
-      onAgentsChange?.(agentsRef.current)
-
       // If population died out, reinitialize
       if (agentsRef.current.length === 0) {
         initializeSimulation()
       }
 
+      // Handle food collisions (updates fitness/energy)
       handleFoodCollisions()
+
+      // Notify parent of agent changes with cloned array so React detects updates
+      onAgentsChange?.([...agentsRef.current])
 
       // Render food
       foodRef.current.forEach((food) => {

@@ -160,11 +160,15 @@ export const App: React.FC = () => {
 
         {/* Controls hint */}
         <div className="sidebar-footer">
-          <p style={{ marginBottom: '0.5rem' }}>🖱️ <strong>Controls:</strong></p>
+          <p style={{ marginBottom: '0.5rem' }}>🖱️ <strong>Desktop Controls:</strong></p>
           <p>• Click agent to view DNA</p>
           <p>• Middle/Right mouse to pan</p>
           <p>• Scroll to zoom</p>
           <p>• Ctrl+Click to pan</p>
+          <p style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>📱 <strong>Mobile Controls:</strong></p>
+          <p>• Tap agent to view DNA</p>
+          <p>• Drag to pan camera</p>
+          <p>• Pinch to zoom</p>
         </div>
       </Sidebar>
       

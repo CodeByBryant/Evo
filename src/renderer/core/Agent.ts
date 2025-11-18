@@ -26,6 +26,9 @@ class Agent {
   public species: string
   public id: string
   public parentIds: string[]
+  public foodEaten: number
+  public distanceTraveled: number
+  public lastPosition: { x: number; y: number }
 
   constructor(x: number = 0, y: number = 0, width: number = 10, height: number = 10) {
     this.position = { x: x, y: y, rotation: Math.random() * Math.PI * 2 }
@@ -39,6 +42,9 @@ class Agent {
     this.species = this.generateSpeciesId()
     this.id = this.generateId()
     this.parentIds = []
+    this.foodEaten = 0
+    this.distanceTraveled = 0
+    this.lastPosition = { x, y }
 
     const configData: any = AgentConfigData
     const nnConfig = configData.NeuralNetwork || { HiddenLayers: [16, 16, 12], ActivationFunction: 'swish', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
@@ -80,6 +86,10 @@ class Agent {
   }
 
   public move(dx: number, dy: number, canvasWidth?: number, canvasHeight?: number): void {
+    // Track distance traveled for fitness
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    this.distanceTraveled += distance
+    
     this.position.x += dx
     this.position.y += dy
     
@@ -91,6 +101,7 @@ class Agent {
     }
     
     this.polygon = this.getgeometry()
+    this.lastPosition = { x: this.position.x, y: this.position.y }
   }
 
   public rotate(dr: number): void {
@@ -132,6 +143,29 @@ class Agent {
     }
 
     this.energy -= 0.01
+    
+    // Calculate comprehensive fitness
+    this.updateFitness()
+  }
+
+  private updateFitness(): void {
+    // Comprehensive fitness calculation
+    let newFitness = 0
+    
+    // 1. Food eaten is most important (50% of fitness)
+    newFitness += this.foodEaten * 10
+    
+    // 2. Survival time bonus (20% of fitness) - reward living longer
+    newFitness += this.age * 0.01
+    
+    // 3. Energy management (15% of fitness) - reward maintaining high energy
+    newFitness += (this.energy / 100) * 2
+    
+    // 4. Movement efficiency (15% of fitness) - reward exploration but penalize wasted movement
+    const explorationBonus = Math.min(this.distanceTraveled * 0.001, 5)
+    newFitness += explorationBonus
+    
+    this.fitness = Math.max(0, newFitness)
   }
 
   public checkFoodCollision(food: Food[]): Food | null {
