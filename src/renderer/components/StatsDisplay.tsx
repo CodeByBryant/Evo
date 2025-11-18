@@ -8,40 +8,40 @@ interface StatsDisplayProps {
 export const StatsDisplay: React.FC<StatsDisplayProps> = ({ stats }) => {
   return (
     <div className="card shadow-sm">
-      <div className="card-header bg-info text-white">
+      <div className="card-header">
         <h5 className="mb-0">
-          <i className="bi bi-graph-up me-2"></i>
-          Statistics
+          <i className="bi bi-speedometer2 me-2"></i>
+          Live Stats
         </h5>
       </div>
       <div className="card-body">
         <div className="row g-3">
           <div className="col-6">
-            <div className="border rounded p-3 text-center">
-              <div className="text-muted small mb-1">Agents</div>
-              <div className="h3 mb-0 text-success">{stats.agentCount}</div>
+            <div className="stat-box">
+              <div className="stat-label">Agents</div>
+              <div className="stat-value text-success">{stats.agentCount}</div>
             </div>
           </div>
           <div className="col-6">
-            <div className="border rounded p-3 text-center">
-              <div className="text-muted small mb-1">Food</div>
-              <div className="h3 mb-0 text-warning">{stats.foodCount}</div>
+            <div className="stat-box">
+              <div className="stat-label">Food</div>
+              <div className="stat-value text-warning">{stats.foodCount}</div>
             </div>
           </div>
           <div className="col-6">
-            <div className="border rounded p-3 text-center">
-              <div className="text-muted small mb-1">FPS</div>
-              <div className="h3 mb-0 text-primary">{stats.fps}</div>
+            <div className="stat-box">
+              <div className="stat-label">FPS</div>
+              <div className="stat-value text-primary">{stats.fps}</div>
             </div>
           </div>
           <div className="col-6">
-            <div className="border rounded p-3 text-center">
-              <div className="text-muted small mb-1">Status</div>
-              <div className="h5 mb-0">
+            <div className="stat-box">
+              <div className="stat-label">Status</div>
+              <div className="h5 mb-0 mt-2">
                 <span
                   className={`badge ${stats.running ? 'bg-success' : 'bg-secondary'}`}
                 >
-                  {stats.running ? 'Running' : 'Paused'}
+                  {stats.running ? 'Active' : 'Paused'}
                 </span>
               </div>
             </div>

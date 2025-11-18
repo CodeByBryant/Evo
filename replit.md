@@ -1,8 +1,8 @@
-# EvoSquares - Neural Evolution Simulation
+# Evo - Neural Evolution Sandbox
 
 ## Overview
 
-EvoSquares is a neural network-based evolutionary simulation where square-shaped agents navigate a 2D environment, sense their surroundings, and make decisions using neural networks. The project features a modern **React + Bootstrap** interface with real-time controls and statistics, while maintaining high-performance canvas rendering through a vanilla TypeScript simulation core.
+Evo is a neural network-based evolutionary sandbox where AI agents navigate a 2D environment, sense their surroundings, and make decisions using neural networks. The project features a modern **React + Bootstrap** interface with real-time controls and statistics, while maintaining high-performance canvas rendering through a vanilla TypeScript core. This sandbox provides an interactive playground for exploring emergent behaviors and evolutionary algorithms.
 
 ## Project Architecture
 
@@ -16,7 +16,7 @@ EvoSquares is a neural network-based evolutionary simulation where square-shaped
 
 ### Directory Structure
 ```
-EvoSquares/
+Evo/
 ├── src/
 │   ├── main/              # Electron main process (desktop only)
 │   │   └── index.ts       # Window creation and app lifecycle
@@ -48,7 +48,7 @@ EvoSquares/
 
 ## Running in Replit
 
-### Web Development Mode (Current Workflow)
+### Web Sandbox Mode (Current Workflow)
 The project is configured to run as a web application in Replit using Vite:
 
 ```bash
@@ -57,8 +57,9 @@ npm run dev:web
 
 This starts a development server on port 5000 with the following features:
 - Hot Module Replacement (HMR) for instant updates
-- Canvas-based simulation rendering
+- Canvas-based sandbox rendering
 - Neural network evolution visualization
+- Interactive agent behaviors
 - Accessible via Replit's webview
 
 ### How It Works
@@ -87,9 +88,18 @@ npm run build:mac   # macOS
 npm run build:linux # Linux
 ```
 
-## Recent Changes (Replit Setup)
+## Recent Changes
 
-### November 18, 2025
+### November 18, 2025 - Version 2.0: "Evo" Rebranding and Major Overhaul
+- **Complete Rebranding**: Renamed from "EvoSquares" to "Evo"
+- **Sandbox Terminology**: Shifted from "simulation" to "sandbox" language throughout
+- **Dark Theme System**: Implemented comprehensive grey/black color scheme with design tokens
+- **Enhanced Neural Networks**: Improved architecture with better activation functions and configurable depth
+- **Optimized Performance**: Added spatial partitioning, React optimization patterns, and simplified food rendering
+- **Improved Agents**: Enhanced behavior, food detection sensors, and visual representation
+- **Code Quality**: Modern React patterns with proper TypeScript typing and state management
+
+### Earlier - November 18, 2025
 - **Refactored Architecture**: Moved simulation logic from Electron main process to renderer process
   - Created `src/renderer/simulation/` directory with Agent, NeuralNetwork, and utilities
   - Removed DOM API usage from main process (was causing errors)
@@ -105,9 +115,9 @@ npm run build:linux # Linux
 
 - **System Dependencies**: Installed X11 and graphics libraries for potential VNC support
 
-## Simulation Configuration
+## Sandbox Configuration
 
-Edit `src/renderer/simulation/utilities/AgentConfig.json` to customize:
+Edit `src/renderer/core/utilities/AgentConfig.json` to customize:
 
 ```json
 {

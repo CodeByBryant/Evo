@@ -1,22 +1,33 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "AgentCount": 10,
-  "DefaultAgentSize": { "width": 50, "height": 50 },
+  "AgentCount": 15,
+  "DefaultAgentSize": { "width": 40, "height": 40 },
   "EnableRotation": true,
-  "MovementSpeed": 1,
-  "RotationSpeed": 0.1,
+  "MovementSpeed": 1.2,
+  "RotationSpeed": 0.08,
   "Rendering": {
-    "FillColor": "#296829",
-    "StrokeWidth": 2
+    "FillColor": "#60a5fa",
+    "StrokeColor": "#3b82f6",
+    "StrokeWidth": 2,
+    "ActiveGlow": true
   },
   "Sensor": {
-    "RayCount": 5,
-    "RayLength": 150
+    "RayCount": 7,
+    "RayLength": 180,
+    "DetectFood": true,
+    "DetectAgents": true
   },
   "RenderSensor": true,
-
+  "NeuralNetwork": {
+    "HiddenLayers": [16, 16, 12],
+    "ActivationFunction": "swish",
+    "InitializationMethod": "he",
+    "MutationStrategy": "gaussian"
+  },
   "FoodSettings": {
-    "SpawnCount": 25,
-    "FoodColor": "#e7e751ce"
+    "SpawnCount": 30,
+    "FoodColor": "#fbbf24",
+    "FoodRadius": 6,
+    "RespawnOnEat": true
   }
 }

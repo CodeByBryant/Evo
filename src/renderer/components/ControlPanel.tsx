@@ -17,10 +17,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => {
   return (
     <div className="card shadow-sm">
-      <div className="card-header bg-primary text-white">
+      <div className="card-header">
         <h5 className="mb-0">
-          <i className="bi bi-controller me-2"></i>
-          Simulation Controls
+          <i className="bi bi-sliders me-2"></i>
+          Sandbox Controls
         </h5>
       </div>
       <div className="card-body">

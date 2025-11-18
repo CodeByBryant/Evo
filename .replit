@@ -16,26 +16,26 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "EvoSquares Dev"
+args = "Evo Sandbox"
 
 [[workflows.workflow]]
-name = "EvoSquares Dev"
+name = "Evo Sandbox"
 author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev:web"
 waitForPort = 5000
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 39471
+localPort = 38709
 externalPort = 3000
 
 [deployment]

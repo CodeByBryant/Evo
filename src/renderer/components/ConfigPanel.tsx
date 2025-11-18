@@ -16,13 +16,13 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange
   return (
     <div className="card shadow-sm">
       <div
-        className="card-header bg-secondary text-white d-flex justify-content-between align-items-center"
+        className="card-header d-flex justify-content-between align-items-center"
         style={{ cursor: 'pointer' }}
         onClick={() => setCollapsed(!collapsed)}
       >
         <h5 className="mb-0">
           <i className="bi bi-gear me-2"></i>
-          Configuration
+          Sandbox Settings
         </h5>
         <i className={`bi bi-chevron-${collapsed ? 'down' : 'up'}`}></i>
       </div>

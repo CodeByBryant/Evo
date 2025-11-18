@@ -1,7 +1,7 @@
 {
-  "name": "evosquares",
-  "version": "1.0.0",
-  "description": "A simulation project that models the evolution of square-shaped agents in a 2D environment.",
+  "name": "evo",
+  "version": "2.0.0",
+  "description": "Evo - An interactive neural evolution sandbox where AI agents learn and adapt in real-time.",
   "main": "./out/main/index.js",
   "author": "CodeByBryant",
   "homepage": "https://electron-vite.org",

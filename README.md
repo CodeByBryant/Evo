@@ -1,16 +1,16 @@
-# EvoSquares
+# Evo
 
-**EvoSquares** is a neural network-based evolutionary simulation where square-shaped agents navigate a 2D environment, sense their surroundings, and make autonomous decisions using neural networks. Built with **React**, **TypeScript**, and **Bootstrap** for a modern, interactive experience.
+**Evo** is a neural network-based evolutionary sandbox where AI agents navigate a 2D environment, sense their surroundings, and make autonomous decisions using neural networks. Built with **React**, **TypeScript**, and **Bootstrap** for a modern, sleek dark-themed experience.
 
 ## ✨ Features
 
-- **🧠 Neural Networks**: Each agent uses a multi-layer perceptron for decision-making
-- **👁️ Raycasting Sensors**: Agents detect their environment using line-of-sight detection
-- **🎮 Interactive Controls**: Real-time pause/resume, speed adjustment, and reset
-- **📊 Live Statistics**: Monitor agent count, food count, FPS, and simulation status
-- **⚙️ Configurable Parameters**: Adjust agent behavior, sensors, and rendering on the fly
-- **🎨 Modern UI**: Clean, responsive Bootstrap interface
-- **⚡ High Performance**: Optimized canvas rendering with vanilla TypeScript core
+- **🧠 Advanced Neural Networks**: Enhanced multi-layer perceptron with configurable architecture and modern activation functions
+- **👁️ Smart Sensors**: Agents detect both other agents and food using intelligent raycasting
+- **🎮 Interactive Sandbox**: Real-time pause/resume, speed adjustment, and reset controls
+- **📊 Live Statistics**: Monitor agent count, food count, FPS, and sandbox status
+- **⚙️ Fully Configurable**: Adjust agent behavior, sensors, and rendering parameters dynamically
+- **🎨 Modern Dark UI**: Sleek grey/black theme with responsive design
+- **⚡ Optimized Performance**: Spatial partitioning, efficient rendering, and React optimization patterns
 
 ## 🚀 Getting Started
 
@@ -22,7 +22,7 @@ This project is optimized for Replit:
 npm run dev:web
 ```
 
-Access the simulation at `http://localhost:5000`
+Access the sandbox at `http://localhost:5000`
 
 ### Local Development
 
@@ -34,8 +34,8 @@ Access the simulation at `http://localhost:5000`
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/CodeByBryant/EvoSquares.git
-   cd EvoSquares
+   git clone https://github.com/CodeByBryant/Evo.git
+   cd Evo
    ```
 
 2. Install dependencies:
@@ -56,7 +56,7 @@ Access the simulation at `http://localhost:5000`
 ## 📁 Project Structure
 
 ```
-EvoSquares/
+Evo/
 ├── src/
 │   ├── main/                 # Electron main process (desktop only)
 │   └── renderer/             # React application
@@ -65,7 +65,7 @@ EvoSquares/
 │       │   ├── ControlPanel.tsx
 │       │   ├── StatsDisplay.tsx
 │       │   └── ConfigPanel.tsx
-│       ├── core/             # Simulation engine (vanilla TS)
+│       ├── core/             # Sandbox engine (vanilla TS)
 │       │   ├── Agent.ts
 │       │   ├── NeuralNetwork.ts
 │       │   └── utilities/

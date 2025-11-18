@@ -6,16 +6,28 @@ export interface SimulationConfig {
   RotationSpeed: number
   Rendering: {
     FillColor: string
+    StrokeColor: string
     StrokeWidth: number
+    ActiveGlow: boolean
   }
   Sensor: {
     RayCount: number
     RayLength: number
+    DetectFood: boolean
+    DetectAgents: boolean
   }
   RenderSensor: boolean
+  NeuralNetwork: {
+    HiddenLayers: number[]
+    ActivationFunction: string
+    InitializationMethod: string
+    MutationStrategy: string
+  }
   FoodSettings: {
     SpawnCount: number
     FoodColor: string
+    FoodRadius: number
+    RespawnOnEat: boolean
   }
 }
 
