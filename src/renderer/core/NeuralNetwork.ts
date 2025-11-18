@@ -155,7 +155,7 @@ class Sensor {
     this.agent = agent
     this.rayCount = config.RayCount
     this.rayLength = config.RayLength
-    this.raySpread = Math.PI * 0.75
+    this.raySpread = (agent.geneticTraits.fieldOfView * Math.PI) / 180
     this.detectFood = config.DetectFood !== false
     this.detectAgents = config.DetectAgents !== false
     this.rays = []
@@ -210,7 +210,13 @@ class Sensor {
     
     const offsets = intersections.map((e) => e.offset)
     const minOffset = Math.min(...offsets)
-    return intersections.find((e) => e.offset === minOffset) || null
+    const result = intersections.find((e) => e.offset === minOffset) || null
+    
+    if (result) {
+      result.offset = this.applySensorPrecision(result.offset)
+    }
+    
+    return result
   }
 
   private getFoodIntersection(
@@ -228,7 +234,18 @@ class Sensor {
       }
     }
 
+    if (closestIntersection) {
+      closestIntersection.offset = this.applySensorPrecision(closestIntersection.offset)
+    }
+
     return closestIntersection
+  }
+
+  private applySensorPrecision(offset: number): number {
+    const precision = this.agent.geneticTraits.sensorPrecision
+    const noiseAmount = (1.0 / precision) * 0.1
+    const noise = (Math.random() - 0.5) * noiseAmount
+    return Math.max(0, Math.min(1, offset + noise))
   }
 
   private rayCircleIntersection(

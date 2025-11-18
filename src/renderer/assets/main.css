@@ -379,12 +379,16 @@ input[type="range"]:hover::-moz-range-thumb {
   right: 20px;
   transform: translateY(-50%);
   width: 320px;
+  max-height: 90vh;
   background: rgba(10, 10, 10, 0.95);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1rem;
   z-index: 1000;
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .dna-panel-header {
@@ -426,6 +430,10 @@ input[type="range"]:hover::-moz-range-thumb {
 
 .dna-info {
   margin-top: 1rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(90vh - 320px);
+  padding-right: 0.5rem;
 }
 
 .dna-info h4 {

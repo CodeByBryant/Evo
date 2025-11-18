@@ -3,6 +3,7 @@
  */
 
 import { Agent } from './Agent'
+import type { GeneticTraits } from '../types/simulation'
 
 export interface EvolutionConfig {
   generationTime: number // Time per generation in steps
@@ -131,26 +132,21 @@ export class EvolutionManager {
             )
             
             child.geneticTraits = plan.childTraits
-            child.width = child.geneticTraits.size
-            child.height = child.geneticTraits.size
-            child.polygon = child.getgeometry()
             
             if (plan.mate) {
               const mateCost = plan.childEnergy * 0.3
               plan.mate.energy -= mateCost
-              child.NeuralNetwork = agent.NeuralNetwork.crossover(plan.mate.NeuralNetwork)
               child.parentIds = [agent.id, plan.mate.id]
             } else {
-              child.NeuralNetwork = agent.NeuralNetwork.clone()
               child.parentIds = [agent.id]
             }
+            
+            child.rebuildNeuralArchitecture()
             
             const mutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
             if (Math.random() < child.geneticTraits.mutationRate) {
               child.NeuralNetwork.mutate(mutationIntensity)
             }
-            
-            child.Sensor = new Sensor(child, child.geneticTraits.sensorRayCount, child.geneticTraits.sensorRayLength, child.geneticTraits.fieldOfView)
             child.species = agent.species
             child.generation = this.generation
             child.fitness = 0
@@ -217,10 +213,8 @@ export class EvolutionManager {
       )
 
       if (parent1 !== parent2) {
-        child.NeuralNetwork = parent1.NeuralNetwork.crossover(parent2.NeuralNetwork)
         child.parentIds = [parent1.id, parent2.id]
       } else {
-        child.NeuralNetwork = parent1.NeuralNetwork.clone()
         child.parentIds = [parent1.id]
       }
 

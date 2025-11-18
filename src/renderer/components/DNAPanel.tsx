@@ -221,6 +221,10 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
             <span className="value">{selectedAgent.geneticTraits.sensorRayLength.toFixed(0)}</span>
           </div>
           <div className="info-item">
+            <span className="label">Sensor Precision:</span>
+            <span className="value">{selectedAgent.geneticTraits.sensorPrecision.toFixed(2)}x</span>
+          </div>
+          <div className="info-item">
             <span className="label">Field of View:</span>
             <span className="value">{selectedAgent.geneticTraits.fieldOfView.toFixed(0)}°</span>
           </div>
@@ -266,11 +270,23 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
+        <h4 style={{ marginTop: '1rem' }}>🧠 Behavioral Traits</h4>
+        <div className="info-grid">
+          <div className="info-item">
+            <span className="label">Aggression:</span>
+            <span className="value">{selectedAgent.geneticTraits.aggression.toFixed(2)}x</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Memory Neurons:</span>
+            <span className="value">{Math.round(selectedAgent.geneticTraits.memoryNeurons)}</span>
+          </div>
+        </div>
+
         <h4 style={{ marginTop: '1rem' }}>🧠 Neural Network</h4>
         <div className="info-grid">
           <div className="info-item">
             <span className="label">Inputs:</span>
-            <span className="value">{selectedAgent.Sensor.rayCount * 2 + 3 + (selectedAgent.geneticTraits.colorVision ? selectedAgent.Sensor.rayCount * 2 : 0)}</span>
+            <span className="value">{selectedAgent.Sensor.rayCount * 2 + 3 + (selectedAgent.geneticTraits.colorVision ? selectedAgent.Sensor.rayCount * 2 : 0) + Math.round(selectedAgent.geneticTraits.memoryNeurons)}</span>
           </div>
           <div className="info-item">
             <span className="label">Outputs:</span>

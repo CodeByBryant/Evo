@@ -32,6 +32,7 @@ class Agent {
   public lastPosition: { x: number; y: number }
   public geneticTraits: GeneticTraits
   public currentSpeed: number
+  public memoryState: number[]
 
   constructor(x: number = 0, y: number = 0, _width: number = 10, _height: number = 10, parentTraits?: GeneticTraits, mateTraits?: GeneticTraits) {
     this.position = { x: x, y: y, rotation: Math.random() * Math.PI * 2 }
@@ -51,13 +52,15 @@ class Agent {
     this.distanceTraveled = 0
     this.lastPosition = { x, y }
     this.currentSpeed = 0
+    this.memoryState = new Array(Math.round(this.geneticTraits.memoryNeurons)).fill(0)
 
     const configData: any = AgentConfigData
     const nnConfig = configData.NeuralNetwork || { HiddenLayers: [20, 16, 12], ActivationFunction: 'tanh', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
     
     const maxRayCount = 12
     const colorVisionInputs = this.geneticTraits.colorVision ? maxRayCount * 2 : 0
-    const inputSize = maxRayCount * 2 + 3 + colorVisionInputs
+    const memoryInputs = Math.round(this.geneticTraits.memoryNeurons)
+    const inputSize = maxRayCount * 2 + 3 + colorVisionInputs + memoryInputs
     const layerSizes = [inputSize, ...nnConfig.HiddenLayers, 6]
 
     this.NeuralNetwork = new NeuralNetwork(layerSizes, {
@@ -72,6 +75,35 @@ class Agent {
       DetectFood: true,
       DetectAgents: true
     })
+  }
+
+  public rebuildNeuralArchitecture(): void {
+    const configData: any = AgentConfigData
+    const nnConfig = configData.NeuralNetwork || { HiddenLayers: [20, 16, 12], ActivationFunction: 'tanh', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
+    
+    const maxRayCount = 12
+    const colorVisionInputs = this.geneticTraits.colorVision ? maxRayCount * 2 : 0
+    const memoryInputs = Math.round(this.geneticTraits.memoryNeurons)
+    const inputSize = maxRayCount * 2 + 3 + colorVisionInputs + memoryInputs
+    const layerSizes = [inputSize, ...nnConfig.HiddenLayers, 6]
+
+    this.NeuralNetwork = new NeuralNetwork(layerSizes, {
+      ActivationFunction: nnConfig.ActivationFunction as any,
+      InitializationMethod: nnConfig.InitializationMethod as any,
+      MutationStrategy: nnConfig.MutationStrategy as any
+    })
+
+    this.Sensor = new Sensor(this, {
+      RayCount: Math.round(this.geneticTraits.sensorRayCount),
+      RayLength: this.geneticTraits.sensorRayLength,
+      DetectFood: true,
+      DetectAgents: true
+    })
+    
+    this.memoryState = new Array(Math.round(this.geneticTraits.memoryNeurons)).fill(0)
+    this.width = this.geneticTraits.size
+    this.height = this.geneticTraits.size
+    this.polygon = this.getgeometry()
   }
 
   private generateDefaultTraits(): GeneticTraits {
@@ -216,8 +248,11 @@ class Agent {
     const maxRayCount = 12
     const actualRayCount = this.Sensor.rayCount
     
-    const agentOffsets = this.Sensor.agentOutput.map((e) => (e == null ? 0 : 1 - e.offset))
-    const foodOffsets = this.Sensor.foodOutput.map((e) => (e == null ? 0 : 1 - e.offset))
+    const aggressionWeight = this.geneticTraits.aggression
+    const foodWeight = 2.0 - aggressionWeight
+    
+    const agentOffsets = this.Sensor.agentOutput.map((e) => (e == null ? 0 : (1 - e.offset) * aggressionWeight))
+    const foodOffsets = this.Sensor.foodOutput.map((e) => (e == null ? 0 : (1 - e.offset) * foodWeight))
     
     const paddedAgentOffsets = [...agentOffsets, ...Array(maxRayCount - actualRayCount).fill(0)]
     const paddedFoodOffsets = [...foodOffsets, ...Array(maxRayCount - actualRayCount).fill(0)]
@@ -233,8 +268,17 @@ class Agent {
       const paddedFoodColors = [...foodColorFlags, ...Array(maxRayCount - actualRayCount).fill(0)]
       inputs = inputs.concat(paddedAgentColors).concat(paddedFoodColors)
     }
+    
+    inputs = inputs.concat(this.memoryState)
 
     const output = this.NeuralNetwork.feedForward(inputs)
+    
+    if (this.memoryState.length > 0) {
+      const memoryDecay = 0.9
+      for (let i = 0; i < this.memoryState.length; i++) {
+        this.memoryState[i] = output[i % output.length] * memoryDecay + this.memoryState[i] * (1 - memoryDecay)
+      }
+    }
 
     const FORWARD = output[0]
     const BACKWARD = output[1]
