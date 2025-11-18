@@ -486,7 +486,7 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
             
             const weight = levels[l].weights[i][j]
             const alpha = Math.min(Math.abs(weight) * 0.3, 0.5)
-            ctx.strokeStyle = weight > 0 ? `rgba(0, 200, 255, ${alpha})` : `rgba(255, 100, 100, ${alpha})`
+            ctx.strokeStyle = weight > 0 ? `rgba(100, 200, 255, ${alpha})` : `rgba(200, 100, 255, ${alpha})`
             
             ctx.beginPath()
             ctx.moveTo(x1, y1)
@@ -506,19 +506,19 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
           const y = padding + (i + 1) * spacing
           const activation = allActivations[l][i]
           
-          // Color based on activation
+          // Color based on activation (cyan for positive, purple for negative)
           const intensity = Math.abs(activation)
-          const hue = activation > 0 ? 120 : 0
+          const hue = activation > 0 ? 200 : 280
           
           ctx.shadowBlur = 10
-          ctx.shadowColor = `hsla(${hue}, 80%, 60%, ${intensity})`
+          ctx.shadowColor = `hsla(${hue}, 70%, 60%, ${intensity})`
           
-          ctx.fillStyle = `hsla(${hue}, 80%, 50%, ${0.3 + intensity * 0.7})`
+          ctx.fillStyle = `hsla(${hue}, 70%, 50%, ${0.3 + intensity * 0.7})`
           ctx.beginPath()
           ctx.arc(x, y, neuronRadius, 0, Math.PI * 2)
           ctx.fill()
           
-          ctx.strokeStyle = `hsla(${hue}, 90%, 70%, 0.8)`
+          ctx.strokeStyle = `hsla(${hue}, 70%, 65%, 0.8)`
           ctx.lineWidth = 2
           ctx.stroke()
           
@@ -580,7 +580,7 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
                   className="output-bar-fill" 
                   style={{ 
                     width: `${Math.abs(output) * 100}%`,
-                    backgroundColor: output > 0 ? '#00ff88' : '#ff4444'
+                    backgroundColor: output > 0 ? '#64c8ff' : '#c864ff'
                   }}
                 />
               </div>
@@ -591,12 +591,12 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
 
         <div className="network-legend">
           <div className="legend-item">
-            <span className="legend-dot" style={{ backgroundColor: '#00c8ff' }}></span>
-            <span>Positive Weights</span>
+            <span className="legend-dot" style={{ backgroundColor: '#64c8ff' }}></span>
+            <span>Positive (Cyan)</span>
           </div>
           <div className="legend-item">
-            <span className="legend-dot" style={{ backgroundColor: '#ff6464' }}></span>
-            <span>Negative Weights</span>
+            <span className="legend-dot" style={{ backgroundColor: '#c864ff' }}></span>
+            <span>Negative (Purple)</span>
           </div>
           <div className="legend-item">
             <span className="legend-dot" style={{ backgroundColor: '#00ff88' }}></span>
