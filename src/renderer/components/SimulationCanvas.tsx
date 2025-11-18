@@ -19,7 +19,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const agentsRef = useRef<Agent[]>([])
   const foodRef = useRef<Food[]>([])
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
   const lastFrameTimeRef = useRef<number>(0)
   const fpsRef = useRef<number>(60)
 
@@ -88,6 +88,16 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   }, [isRunning, speed])
 
   const startAnimation = () => {
+    // Update stats to reflect running state immediately
+    if (onStatsUpdate) {
+      onStatsUpdate({
+        agentCount: agentsRef.current.length,
+        foodCount: foodRef.current.length,
+        fps: fpsRef.current,
+        running: true
+      })
+    }
+    
     const animate = (currentTime: number) => {
       const canvas = canvasRef.current
       const context = canvas?.getContext('2d')
@@ -122,7 +132,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
           agentCount: agentsRef.current.length,
           foodCount: foodRef.current.length,
           fps: fpsRef.current,
-          running: isRunning
+          running: true
         })
       }
 
@@ -135,6 +145,16 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   const stopAnimation = () => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
+    }
+    
+    // Update stats to reflect paused state
+    if (onStatsUpdate) {
+      onStatsUpdate({
+        agentCount: agentsRef.current.length,
+        foodCount: foodRef.current.length,
+        fps: fpsRef.current,
+        running: false
+      })
     }
   }
 

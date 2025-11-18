@@ -2,12 +2,14 @@
 
 ## Overview
 
-EvoSquares is a neural network-based evolutionary simulation where square-shaped agents navigate a 2D environment, sense their surroundings, and make decisions using neural networks. Originally built as an Electron desktop application, it has been adapted to run as a web application in Replit while maintaining the ability to build desktop versions locally.
+EvoSquares is a neural network-based evolutionary simulation where square-shaped agents navigate a 2D environment, sense their surroundings, and make decisions using neural networks. The project features a modern **React + Bootstrap** interface with real-time controls and statistics, while maintaining high-performance canvas rendering through a vanilla TypeScript simulation core.
 
 ## Project Architecture
 
 ### Technology Stack
-- **Frontend Framework**: Vanilla TypeScript with Canvas API
+- **Frontend Framework**: React 18 with TypeScript
+- **UI Library**: Bootstrap 5 with Bootstrap Icons
+- **Simulation Core**: Vanilla TypeScript (for performance)
 - **Build Tool**: Vite (for web) / Electron-Vite (for desktop)
 - **Desktop Framework**: Electron (optional, for local desktop builds)
 - **Neural Network**: Custom implementation with multi-layer perceptron
@@ -20,17 +22,25 @@ EvoSquares/
 │   │   └── index.ts       # Window creation and app lifecycle
 │   ├── preload/           # Electron preload scripts (desktop only)
 │   │   └── index.ts
-│   └── renderer/          # Browser/renderer code (web + desktop)
-│       ├── simulation/    # Core simulation logic
-│       │   ├── Agent.ts           # Agent and Food classes
-│       │   ├── NeuralNetwork.ts   # Neural network implementation
+│   └── renderer/          # React application
+│       ├── components/    # React UI components
+│       │   ├── SimulationCanvas.tsx  # Canvas wrapper component
+│       │   ├── ControlPanel.tsx      # Pause/speed/reset controls
+│       │   ├── StatsDisplay.tsx      # Real-time statistics
+│       │   └── ConfigPanel.tsx       # Parameter configuration
+│       ├── core/          # Simulation engine (vanilla TypeScript)
+│       │   ├── Agent.ts              # Agent and Food classes
+│       │   ├── NeuralNetwork.ts      # Neural network implementation
 │       │   └── utilities/
-│       │       ├── AgentConfig.json  # Simulation configuration
+│       │       ├── AgentConfig.json  # Default configuration
 │       │       └── utilities.ts      # Helper functions
+│       ├── types/         # TypeScript type definitions
+│       │   └── simulation.ts
 │       ├── assets/
-│       │   └── main.css   # Styles
-│       ├── index.html     # Entry HTML
-│       └── main.ts        # Simulation bootstrap
+│       │   └── main.css   # Custom styles
+│       ├── App.tsx        # Main React component
+│       ├── main.tsx       # React entry point
+│       └── index.html     # HTML template
 ├── vite.config.ts         # Vite config for web builds
 ├── electron.vite.config.ts # Electron-Vite config for desktop builds
 └── package.json

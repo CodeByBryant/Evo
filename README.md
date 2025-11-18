@@ -1,107 +1,161 @@
 # EvoSquares
 
-**EvoSquares** is a simulation project that models the evolution of square-shaped agents in a 2D environment. The agents navigate the environment, sense food, and use neural networks to make decisions. Over time, the agents adapt and evolve through genetic algorithms.
+**EvoSquares** is a neural network-based evolutionary simulation where square-shaped agents navigate a 2D environment, sense their surroundings, and make autonomous decisions using neural networks. Built with **React**, **TypeScript**, and **Bootstrap** for a modern, interactive experience.
 
-## Features
+## ✨ Features
 
-- **Agent Movement**: Agents can move, rotate, and interact with their surroundings.
-- **Food Consumption**: Food items are scattered in the simulation, and agents compete to collect them.
-- **Neural Networks**: Each agent uses a neural network for decision-making, allowing them to learn and improve.
-- **Sensors**: Agents are equipped with sensors to detect nearby food and other entities.
-- **Genetic Algorithm**: Simulates evolution by selecting the fittest agents to reproduce and pass their traits to the next generation.
-- **Visualization**: Real-time rendering of agents, food, and interactions.
+- **🧠 Neural Networks**: Each agent uses a multi-layer perceptron for decision-making
+- **👁️ Raycasting Sensors**: Agents detect their environment using line-of-sight detection
+- **🎮 Interactive Controls**: Real-time pause/resume, speed adjustment, and reset
+- **📊 Live Statistics**: Monitor agent count, food count, FPS, and simulation status
+- **⚙️ Configurable Parameters**: Adjust agent behavior, sensors, and rendering on the fly
+- **🎨 Modern UI**: Clean, responsive Bootstrap interface
+- **⚡ High Performance**: Optimized canvas rendering with vanilla TypeScript core
 
----
+## 🚀 Getting Started
 
-## Getting Started
+### Replit (Recommended)
 
-### Prerequisites
+This project is optimized for Replit:
 
-- **Node.js**: Ensure you have Node.js installed on your machine.
-- **TypeScript**: The project uses TypeScript for type safety and development efficiency.
+```bash
+npm run dev:web
+```
 
-### Installation
+Access the simulation at `http://localhost:5000`
+
+### Local Development
+
+#### Prerequisites
+- Node.js (v18 or later)
+- npm or yarn
+
+#### Installation
 
 1. Clone the repository:
-
    ```bash
    git clone https://github.com/CodeByBryant/EvoSquares.git
    cd EvoSquares
    ```
 
 2. Install dependencies:
-
    ```bash
    npm install
    ```
 
-3. Start the simulation:
-
+3. Start the web development server:
    ```bash
-   npm start
+   npm run dev:web
    ```
 
----
+4. (Optional) Run as Electron desktop app:
+   ```bash
+   npm run dev
+   ```
 
-## Repository Structure
+## 📁 Project Structure
 
 ```
 EvoSquares/
 ├── src/
-│   ├── main.ts           # Main entry point of the simulation
-│   ├── Agent.ts          # Defines the Agent and Food classes
-│   ├── NeuralNetwork.ts  # Implements the neural network logic
-|   ├── main.css          # Styles for the simulation
-|   ├── vite-env.d.ts     # Type declerations
-│   ├── utilities/
-│   │   ├── AgentConfig.json  # Configuration file for agents
-│   │   ├── utilities.ts      # Helper functions
-├── package.json
-├── index.html      	  # Webpage for displaying the simulation
-├── tsconfig.json         # TypeScript configuration
-└── README.md             # Project documentation
+│   ├── main/                 # Electron main process (desktop only)
+│   └── renderer/             # React application
+│       ├── components/       # React components
+│       │   ├── SimulationCanvas.tsx
+│       │   ├── ControlPanel.tsx
+│       │   ├── StatsDisplay.tsx
+│       │   └── ConfigPanel.tsx
+│       ├── core/             # Simulation engine (vanilla TS)
+│       │   ├── Agent.ts
+│       │   ├── NeuralNetwork.ts
+│       │   └── utilities/
+│       ├── types/            # TypeScript type definitions
+│       ├── App.tsx           # Main React app
+│       └── main.tsx          # React entry point
+├── vite.config.ts            # Vite configuration
+└── package.json
 ```
 
----
+## 🎮 How to Use
 
-## How It Works
+### Controls
+- **Start/Pause**: Toggle simulation execution
+- **Reset**: Restart simulation with new random agents
+- **Speed Slider**: Adjust simulation speed (0.1x - 3.0x)
 
-1. **Neural Networks** :
+### Configuration
+Click the **Configuration** panel to adjust:
+- **Agent Count**: Number of agents (1-50)
+- **Movement Speed**: How fast agents move
+- **Rotation Speed**: How quickly agents turn
+- **Sensor Rays**: Number of detection rays (3-15)
+- **Sensor Length**: Detection range (50-300)
+- **Show Sensors**: Toggle sensor ray visualization
+- **Enable Rotation**: Allow/prevent agent rotation
 
-   - Agents use a multi-layer neural network with customizable architecture.
-   - Sensor inputs are fed into the network, and outputs dictate movement and rotation.
+## 🧬 How It Works
 
-2. **Sensors** :
+### Neural Networks
+Each agent has a neural network with:
+- **Inputs**: Position (x, y), rotation, and 5 sensor ray offsets (8 total)
+- **Hidden Layers**: Three layers of 20 neurons each
+- **Outputs**: Forward, backward, clockwise rotation, counter-clockwise rotation (4 total)
+- **Activation**: Leaky ReLU
 
-   - Agents sense the environment using raycasting, detecting food and obstacles.
-   - Sensor data is normalized and used as input for the neural network.
+### Sensors
+Agents use raycasting to detect other agents:
+- 5 rays spread in a forward arc
+- Yellow rays show detection distance
+- Normalized values (0-1) feed into the neural network
 
-3. **Evolution** :
+### Movement
+The neural network outputs control:
+- **Forward/Backward**: Linear movement
+- **Rotation**: Angular movement
+- Agents move autonomously based on their perceptions
 
-   - At the end of each generation, agents are evaluated based on fitness (e.g., food collected).
-   - The best-performing agents reproduce, passing their neural network weights to the next generation with mutations.
+## 🛠️ Available Scripts
 
----
+```bash
+# Web development (Replit)
+npm run dev:web      # Start Vite dev server
+npm run build:web    # Build for production
+npm run preview:web  # Preview production build
 
-## Customization
+# Desktop development (Local only)
+npm run dev          # Start Electron app
+npm run build        # Build Electron app
+npm run build:win    # Build for Windows
+npm run build:mac    # Build for macOS
+npm run build:linux  # Build for Linux
 
-- **Agent Behavior**: Modify the neural network architecture or activation functions in `NeuralNetwork.ts`.
-- **Simulation Settings**: Adjust agent movement speed, sensor range, and other parameters in `AgentConfig.json`.
+# Code quality
+npm run lint         # Lint code
+npm run format       # Format code with Prettier
+npm run typecheck    # TypeScript type checking
+```
 
----
+## 🔮 Future Development
 
-## Contributing
+- **Food Interaction**: Agents sense and consume food
+- **Genetic Algorithm**: Evolution through selection and reproduction
+- **Fitness Scoring**: Evaluate agent performance
+- **Generation Tracking**: Monitor evolutionary progress
+- **Persistent Storage**: Save and load best-performing agents
+- **Advanced Statistics**: Detailed analytics dashboard
 
-Contributions are welcome! Feel free to open issues, suggest new features, or submit pull requests.
+## 🤝 Contributing
 
----
+Contributions are welcome! Feel free to open issues or submit pull requests.
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
+## 👨‍💻 Author
+
+Developed with ❤️ by **Bryant Ejorh** ([CodeByBryant](https://github.com/CodeByBryant))
+
 ---
 
-## Author
-
-Developed with ❤️ by **Bryant Ejorh** ([CodeByBryant](https://github.com/CodeByBryant)).
+**Enjoy watching evolution in action!** 🧬✨
