@@ -19,8 +19,8 @@
   },
   "RenderSensor": true,
   "NeuralNetwork": {
-    "HiddenLayers": [16, 16, 12],
-    "ActivationFunction": "swish",
+    "HiddenLayers": [20, 16, 12],
+    "ActivationFunction": "tanh",
     "InitializationMethod": "he",
     "MutationStrategy": "gaussian"
   },
