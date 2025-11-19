@@ -34,6 +34,7 @@ export class EvolutionManager {
   public totalBirths: number = 0
   public totalDeaths: number = 0
   public speciesManager: SpeciesManager
+  private lastGenerationElites: Agent[] = []
 
   constructor(config: Partial<EvolutionConfig> = {}) {
     this.config = {
@@ -196,31 +197,56 @@ export class EvolutionManager {
     }
     this.stats.push(stats)
 
+    let elites: Agent[] = []
+    
     if (agents.length === 0) {
-      // Reset with new random population
-      this.generation++
-      this.stepCount = 0
-      return []
+      // Population died out - resurrect from last generation's gene pool
+      if (this.lastGenerationElites.length > 0) {
+        console.log('Population extinct! Resurrecting from gene pool...')
+        elites = this.lastGenerationElites
+      } else {
+        // Very first generation failure - should not happen normally
+        console.warn('No gene pool available - cannot continue evolution')
+        this.generation++
+        this.stepCount = 0
+        return []
+      }
+    } else {
+      // Select top performers for breeding (no culling - all agents stay alive)
+      const sortedAgents = [...agents].sort((a, b) => b.fitness - a.fitness)
+      const eliteCount = Math.max(2, Math.floor(agents.length * this.config.selectionRate))
+      elites = sortedAgents.slice(0, eliteCount)
+      
+      // Save elite gene pool for potential resurrection
+      this.lastGenerationElites = elites.map(elite => {
+        const clone = new Agent(
+          elite.position.x,
+          elite.position.y,
+          0, 0,
+          elite.geneticTraits,
+          undefined,
+          elite.species
+        )
+        clone.NeuralNetwork.transferWeightsFrom(elite.NeuralNetwork)
+        return clone
+      })
     }
 
-    // Select top performers for breeding (no culling - all agents stay alive)
-    const sortedAgents = [...agents].sort((a, b) => b.fitness - a.fitness)
-    const eliteCount = Math.max(2, Math.floor(agents.length * this.config.selectionRate))
-    const elites = sortedAgents.slice(0, eliteCount)
-
-    // Add elite offspring only if there's room to maintain selective pressure
-    const populationHeadroom = Math.max(0, this.config.populationSize - agents.length)
+    // Spawn offspring based on whether population is extinct or not
+    const targetPopulation = agents.length === 0 ? this.config.populationSize : this.config.populationSize
+    const populationHeadroom = Math.max(0, targetPopulation - agents.length)
     
     if (populationHeadroom > 0) {
-      const baseOffspring = Math.floor(eliteCount * 0.5)
-      const offspringToSpawn = Math.min(populationHeadroom, baseOffspring)
+      const offspringToSpawn = agents.length === 0 
+        ? this.config.populationSize  // Full resurrection
+        : Math.min(populationHeadroom, Math.floor(elites.length * 0.5))  // Normal breeding
 
       for (let i = 0; i < offspringToSpawn; i++) {
         const parent1 = elites[Math.floor(Math.random() * elites.length)]
         const parent2 = elites[Math.floor(Math.random() * elites.length)]
 
-        // Spawn offspring near parent
-        const spawnRadius = 100
+        // Spawn offspring near parent (or at random location if resurrecting)
+        const spawnRadius = agents.length === 0 ? 1000 : 100
         const angle = Math.random() * Math.PI * 2
         const distance = Math.random() * spawnRadius
         const childX = parent1.position.x + Math.cos(angle) * distance

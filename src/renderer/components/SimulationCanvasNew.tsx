@@ -386,10 +386,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       const evolutionResult = evolutionRef.current.update(agentsRef.current)
       agentsRef.current = evolutionResult.agents
 
-      // If population died out, reinitialize
-      if (agentsRef.current.length === 0) {
-        initializeSimulation()
-      }
+      // No more resets - evolution continues via gene pool resurrection
 
       // Handle food collisions (updates fitness/energy)
       handleFoodCollisions()
