@@ -49,6 +49,7 @@ export class EvolutionManager {
     }
     this.speciesManager = new SpeciesManager()
     Agent.speciesManager = this.speciesManager
+    Agent.maxAge = this.config.maxAge
   }
 
   public initializeGenePool(agents: Agent[]): void {
@@ -64,7 +65,9 @@ export class EvolutionManager {
           0, 0,
           elite.geneticTraits,
           undefined,
-          elite.species
+          elite.species,
+          undefined,
+          elite.clusterId
         )
         clone.NeuralNetwork.transferWeightsFrom(elite.NeuralNetwork)
         return clone
@@ -75,6 +78,7 @@ export class EvolutionManager {
 
   public setConfig(config: EvolutionConfig): void {
     this.config = { ...config }
+    Agent.maxAge = this.config.maxAge
     // Config changes take effect immediately
   }
 
@@ -116,8 +120,12 @@ export class EvolutionManager {
       this.stepsWithZeroPopulation = 0
     }
 
-    // Handle reproduction for high-energy agents
-    const reproductionCandidates = agents.filter(a => a.energy >= a.geneticTraits.reproductionThreshold)
+    // Handle reproduction for adult agents with high energy
+    const adultAge = this.config.maxAge / 2
+    const reproductionCandidates = agents.filter(a => 
+      a.age >= adultAge && 
+      a.energy >= a.geneticTraits.reproductionThreshold
+    )
     for (const agent of reproductionCandidates) {
       if (agents.length < this.config.populationSize * 1.5) {
         const targetOffspringCount = Math.round(agent.geneticTraits.offspringCount)
@@ -127,6 +135,7 @@ export class EvolutionManager {
           const potentialMates = agents.filter(a => 
             a !== agent && 
             a.species === agent.species && 
+            a.age >= adultAge &&
             a.energy >= agent.geneticTraits.reproductionThreshold
           )
           
@@ -172,7 +181,9 @@ export class EvolutionManager {
               0,
               undefined,
               undefined,
-              agent.species
+              agent.species,
+              undefined,
+              agent.clusterId
             )
             
             child.geneticTraits = plan.childTraits
@@ -204,135 +215,8 @@ export class EvolutionManager {
       }
     }
 
-    // Check if generation should end
-    // Only end on zero population after grace period to prevent instant cycling
-    const zeroPopulationGracePeriod = 100 // steps to wait before considering extinction
-    const shouldEndFromTime = this.stepCount >= this.config.generationTime
-    const shouldEndFromExtinction = agents.length === 0 && this.stepsWithZeroPopulation >= zeroPopulationGracePeriod
-    
-    if (shouldEndFromTime || shouldEndFromExtinction) {
-      const result = this.endGeneration(agents)
-      this.stepsWithZeroPopulation = 0
-      return { agents: result, newBirths, newDeaths }
-    }
-
+    // No generation transitions - continuous evolution
     return { agents, newBirths, newDeaths }
-  }
-
-
-  private endGeneration(agents: Agent[]): Agent[] {
-    // Calculate stats for this generation
-    const stats: GenerationStats = {
-      generation: this.generation,
-      population: agents.length,
-      avgFitness: agents.reduce((sum, a) => sum + a.fitness, 0) / (agents.length || 1),
-      maxFitness: Math.max(...agents.map(a => a.fitness), 0),
-      avgEnergy: agents.reduce((sum, a) => sum + a.energy, 0) / (agents.length || 1),
-      speciesCount: new Set(agents.map(a => a.species)).size,
-      births: this.totalBirths,
-      deaths: this.totalDeaths
-    }
-    this.stats.push(stats)
-
-    let elites: Agent[] = []
-    
-    if (agents.length === 0) {
-      // Population died out - resurrect from last generation's gene pool
-      if (this.lastGenerationElites.length > 0) {
-        console.log('Population extinct! Resurrecting from gene pool...')
-        elites = this.lastGenerationElites
-      } else {
-        // Very first generation failure - should not happen normally
-        console.warn('No gene pool available - cannot continue evolution')
-        this.generation++
-        this.stepCount = 0
-        return []
-      }
-    } else {
-      // Select top performers for breeding (no culling - all agents stay alive)
-      const sortedAgents = [...agents].sort((a, b) => b.fitness - a.fitness)
-      const eliteCount = Math.max(2, Math.floor(agents.length * this.config.selectionRate))
-      elites = sortedAgents.slice(0, eliteCount)
-      
-      // Save elite gene pool for potential resurrection
-      this.lastGenerationElites = elites.map(elite => {
-        const clone = new Agent(
-          elite.position.x,
-          elite.position.y,
-          0, 0,
-          elite.geneticTraits,
-          undefined,
-          elite.species
-        )
-        clone.NeuralNetwork.transferWeightsFrom(elite.NeuralNetwork)
-        return clone
-      })
-    }
-
-    // Spawn offspring based on whether population is extinct or not
-    const targetPopulation = agents.length === 0 ? this.config.populationSize : this.config.populationSize
-    const populationHeadroom = Math.max(0, targetPopulation - agents.length)
-    
-    if (populationHeadroom > 0) {
-      const offspringToSpawn = agents.length === 0 
-        ? this.config.populationSize  // Full resurrection
-        : Math.min(populationHeadroom, Math.floor(elites.length * 0.5))  // Normal breeding
-
-      for (let i = 0; i < offspringToSpawn; i++) {
-        const parent1 = elites[Math.floor(Math.random() * elites.length)]
-        const parent2 = elites[Math.floor(Math.random() * elites.length)]
-
-        // Spawn offspring near parent (or at random location if resurrecting)
-        const spawnRadius = agents.length === 0 ? 1000 : 100
-        const angle = Math.random() * Math.PI * 2
-        const distance = Math.random() * spawnRadius
-        const childX = parent1.position.x + Math.cos(angle) * distance
-        const childY = parent1.position.y + Math.sin(angle) * distance
-
-        const child = new Agent(
-          childX,
-          childY,
-          0,
-          0,
-          parent1.geneticTraits,
-          parent1 !== parent2 ? parent2.geneticTraits : undefined,
-          parent1.species
-        )
-
-        if (parent1 !== parent2) {
-          child.parentIds = [parent1.id, parent2.id]
-          child.NeuralNetwork.transferWeightsFrom(parent1.NeuralNetwork, parent2.NeuralNetwork)
-        } else {
-          child.parentIds = [parent1.id]
-          child.NeuralNetwork.transferWeightsFrom(parent1.NeuralNetwork)
-        }
-
-        const mutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
-        if (Math.random() < child.geneticTraits.mutationRate * 2) {
-          child.NeuralNetwork.mutate(mutationIntensity * 0.75)
-        }
-
-        child.generation = this.generation + 1
-        child.energy = child.geneticTraits.maxEnergyCapacity
-        child.age = 0
-        agents.push(child)
-      }
-    }
-
-    // Reset fitness for all agents AFTER offspring are added so everyone starts fresh
-    for (const agent of agents) {
-      agent.fitness = 0
-    }
-
-    this.generation++
-    this.stepCount = 0
-    this.totalBirths = 0
-    this.totalDeaths = 0
-
-    // Update species populations
-    this.updateSpeciesPopulations(agents)
-
-    return agents
   }
 
   public getLatestStats(): GenerationStats | null {

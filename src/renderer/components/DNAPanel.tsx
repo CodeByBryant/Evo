@@ -170,6 +170,33 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
+        <h4 style={{ marginTop: '1rem' }}>🌱 Maturity Progress</h4>
+        <div style={{ marginBottom: '1rem' }}>
+          <div style={{ 
+            width: '100%', 
+            height: '20px', 
+            backgroundColor: '#1a1a2e', 
+            borderRadius: '10px', 
+            overflow: 'hidden',
+            border: '1px solid #3a3a5e'
+          }}>
+            <div style={{ 
+              width: `${Math.min(100, selectedAgent.getMaturityProgress() * 100)}%`, 
+              height: '100%', 
+              backgroundColor: selectedAgent.getMaturityProgress() >= 1 ? '#00ff88' : '#4488ff',
+              transition: 'width 0.3s ease',
+              boxShadow: '0 0 10px rgba(68, 136, 255, 0.5)'
+            }} />
+          </div>
+          <div style={{ 
+            marginTop: '0.5rem', 
+            fontSize: '0.85rem', 
+            color: selectedAgent.getMaturityProgress() >= 1 ? '#00ff88' : '#8888ff' 
+          }}>
+            {selectedAgent.getMaturityProgress() >= 1 ? '✓ Adult (Can Reproduce)' : `${(selectedAgent.getMaturityProgress() * 100).toFixed(1)}% - Growing...`}
+          </div>
+        </div>
+
         <h4 style={{ marginTop: '1rem' }}>🎯 Physical Traits</h4>
         <div className="info-grid">
           <div className="info-item">

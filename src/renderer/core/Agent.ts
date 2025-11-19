@@ -16,6 +16,7 @@ type Vertex = { x: number; y: number }
 
 class Agent {
   public static speciesManager: SpeciesManager | null = null
+  public static maxAge: number = 1500
   
   public position: { x: number; y: number; rotation: number }
   public width: number
@@ -36,6 +37,7 @@ class Agent {
   public geneticTraits: GeneticTraits
   public currentSpeed: number
   public memoryState: number[]
+  public clusterId: number
 
   constructor(
     x: number = 0, 
@@ -45,7 +47,8 @@ class Agent {
     parentTraits?: GeneticTraits, 
     mateTraits?: GeneticTraits,
     speciesId?: string,
-    speciesBaselineTraits?: GeneticTraits
+    speciesBaselineTraits?: GeneticTraits,
+    clusterId: number = 0
   ) {
     this.position = { x: x, y: y, rotation: Math.random() * Math.PI * 2 }
     this.species = speciesId || this.generateSpeciesId()
@@ -67,6 +70,7 @@ class Agent {
     this.lastPosition = { x, y }
     this.currentSpeed = 0
     this.memoryState = new Array(Math.round(this.geneticTraits.memoryNeurons)).fill(0)
+    this.clusterId = clusterId
 
     const configData: any = AgentConfigData
     const nnConfig = configData.NeuralNetwork || { HiddenLayers: [20, 16, 12], ActivationFunction: 'tanh', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
@@ -322,7 +326,7 @@ class Agent {
       this.rotate((CLOCKWISE_ROTATION - CCW_ROTATION) * this.geneticTraits.turnRate)
     }
 
-    this.age++
+    // Age is incremented by EvolutionManager, not here
     this.energy -= this.calculateEnergyCost()
     
     this.updateFitness()
@@ -395,13 +399,26 @@ class Agent {
     this.fitness = Math.max(0, Math.min(100, 100 - fitnessLoss + bonuses))
   }
 
+  public getMaturityProgress(): number {
+    const adultAge = Agent.maxAge / 2
+    return Math.min(1, this.age / adultAge)
+  }
+
+  public getAgeScale(): number {
+    const maturity = this.getMaturityProgress()
+    const minScale = 0.3
+    const maxScale = 1.0
+    return minScale + (maxScale - minScale) * maturity
+  }
+
   public checkFoodCollision(food: Food[]): Food | null {
+    const scale = this.getAgeScale()
     for (const f of food) {
       const dx = this.position.x - f.position.x
       const dy = this.position.y - f.position.y
       const distance = Math.sqrt(dx * dx + dy * dy)
       
-      if (distance < this.width / 2 + f.radius) {
+      if (distance < (this.width / 2) * scale + f.radius) {
         return f
       }
     }
@@ -409,6 +426,13 @@ class Agent {
   }
 
   public render(context: CanvasRenderingContext2D, isSelected: boolean = false): void {
+    const ageScale = this.getAgeScale()
+    
+    context.save()
+    context.translate(this.position.x, this.position.y)
+    context.scale(ageScale, ageScale)
+    context.translate(-this.position.x, -this.position.y)
+    
     if (AgentConfigData.RenderSensor) {
       this.Sensor.render(context, isSelected)
     }
@@ -436,6 +460,8 @@ class Agent {
       context.stroke()
       context.shadowBlur = 0
     }
+    
+    context.restore()
   }
 
   private generateId(): string {

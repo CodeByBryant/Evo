@@ -347,7 +347,8 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
             undefined, 
             undefined, 
             clusterSpecies.id, 
-            clusterSpecies.baselineTraits
+            clusterSpecies.baselineTraits,
+            cluster.id
           )
           agentsRef.current.push(agent)
           totalAgentsSpawned++
