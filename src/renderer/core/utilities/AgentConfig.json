@@ -30,6 +30,11 @@
     "FoodRadius": 6,
     "RespawnOnEat": true
   },
+  "ClusterSettings": {
+    "ClusterCount": 3,
+    "ClusterRadius": 400,
+    "ClusterSpacing": 2000
+  },
   "GeneticTraits": {
     "size": { "min": 20, "max": 60, "default": 40 },
     "movementSpeed": { "min": 0.6, "max": 2.0, "default": 1.2 },

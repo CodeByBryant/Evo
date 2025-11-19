@@ -73,6 +73,11 @@ export interface SimulationConfig {
     FoodRadius: number
     RespawnOnEat: boolean
   }
+  ClusterSettings: {
+    ClusterCount: number
+    ClusterRadius: number
+    ClusterSpacing: number
+  }
   GeneticTraits?: TraitRanges
 }
 

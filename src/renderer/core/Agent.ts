@@ -450,11 +450,13 @@ class Agent {
 class Food {
   public position: { x: number; y: number }
   public radius: number
+  public clusterId: number
 
-  constructor(x: number = 0, y: number = 0, size?: number) {
+  constructor(x: number = 0, y: number = 0, size?: number, clusterId: number = 0) {
     this.position = { x: x, y: y }
     const foodSettings: any = AgentConfigData.FoodSettings
     this.radius = size || foodSettings.FoodRadius || 6
+    this.clusterId = clusterId
   }
 
   public render(context: CanvasRenderingContext2D): void {

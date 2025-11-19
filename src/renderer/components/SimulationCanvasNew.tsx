@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react'
+import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { Agent, Food } from '../core/Agent'
 import { Camera } from '../core/Camera'
 import { EvolutionManager } from '../core/EvolutionManager'
+import { ClusterManager } from '../core/ClusterManager'
 import type { SpeciesInfo } from '../core/SpeciesManager'
 import type { SimulationConfig, SimulationStats } from '../types/simulation'
 
@@ -36,6 +37,17 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   const fpsRef = useRef<number>(60)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
 
+  // Create cluster manager synchronously using useMemo
+  const clusterManager = useMemo(() => {
+    // Validate cluster count to prevent division by zero
+    const clusterCount = Math.max(1, config.ClusterSettings.ClusterCount)
+    return new ClusterManager(
+      clusterCount,
+      config.ClusterSettings.ClusterRadius,
+      config.ClusterSettings.ClusterSpacing
+    )
+  }, [config.ClusterSettings.ClusterCount, config.ClusterSettings.ClusterRadius, config.ClusterSettings.ClusterSpacing])
+
   // Update evolution config when it changes
   useEffect(() => {
     if (evolutionConfig) {
@@ -58,12 +70,23 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       // Initialize gene pool from loaded agents to prevent rapid cycling
       evolutionRef.current.initializeGenePool(loadedAgents)
       
-      // Regenerate food
+      // Regenerate food in clusters (including remainders)
+      const clusters = clusterManager.getClusters()
       foodRef.current = []
-      for (let i = 0; i < config.FoodSettings.SpawnCount; i++) {
-        const x = (Math.random() - 0.5) * 1500
-        const y = (Math.random() - 0.5) * 1500
-        foodRef.current.push(new Food(x, y))
+      
+      const baseFoodPerCluster = Math.floor(config.FoodSettings.SpawnCount / clusters.length)
+      const remainderFood = config.FoodSettings.SpawnCount % clusters.length
+      
+      for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
+        const cluster = clusters[clusterIdx]
+        const foodForThisCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
+        
+        for (let i = 0; i < foodForThisCluster; i++) {
+          const pos = clusterManager.getRandomPositionInCluster(cluster.id)
+          if (pos) {
+            foodRef.current.push(new Food(pos.x, pos.y, undefined, cluster.id))
+          }
+        }
       }
       
       // Clone array to ensure React detects state change
@@ -294,37 +317,73 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     agentsRef.current = []
     foodRef.current = []
 
-    const { AgentCount, DefaultAgentSize, FoodSettings } = config
+    const { AgentCount, FoodSettings, ClusterSettings } = config
     const speciesManager = evolutionRef.current.speciesManager
+    const clusters = clusterManager.getClusters()
 
-    // Create initial species
-    const initialSpeciesCount = Math.min(5, Math.ceil(AgentCount / 3))
+    // Create one species per cluster
     const species: SpeciesInfo[] = []
-    for (let i = 0; i < initialSpeciesCount; i++) {
+    for (let i = 0; i < clusters.length; i++) {
       species.push(speciesManager.createNewSpecies())
     }
 
-    // Spawn in a larger area for infinite world
-    for (let i = 0; i < AgentCount; i++) {
-      const x = (Math.random() - 0.5) * 1000
-      const y = (Math.random() - 0.5) * 1000
-      const selectedSpecies = species[Math.floor(Math.random() * species.length)]
-      const agent = new Agent(x, y, 0, 0, undefined, undefined, selectedSpecies.id, selectedSpecies.baselineTraits)
-      agentsRef.current.push(agent)
+    // Distribute agents across clusters respecting AgentCount cap
+    const baseAgentsPerCluster = Math.floor(AgentCount / clusters.length)
+    const remainderAgents = AgentCount % clusters.length
+    let totalAgentsSpawned = 0
+    
+    for (let clusterIdx = 0; clusterIdx < clusters.length && totalAgentsSpawned < AgentCount; clusterIdx++) {
+      const cluster = clusters[clusterIdx]
+      const clusterSpecies = species[clusterIdx]
+      const agentsForThisCluster = baseAgentsPerCluster + (clusterIdx < remainderAgents ? 1 : 0)
+      
+      for (let i = 0; i < agentsForThisCluster && totalAgentsSpawned < AgentCount; i++) {
+        const pos = clusterManager.getRandomPositionInCluster(cluster.id)
+        if (pos) {
+          const agent = new Agent(
+            pos.x, 
+            pos.y, 
+            0, 0, 
+            undefined, 
+            undefined, 
+            clusterSpecies.id, 
+            clusterSpecies.baselineTraits
+          )
+          agentsRef.current.push(agent)
+          totalAgentsSpawned++
+        }
+      }
     }
 
-    for (let i = 0; i < FoodSettings.SpawnCount; i++) {
-      const x = (Math.random() - 0.5) * 1500
-      const y = (Math.random() - 0.5) * 1500
-      foodRef.current.push(new Food(x, y))
+    // Distribute food across clusters (including remainders)
+    const baseFoodPerCluster = Math.floor(FoodSettings.SpawnCount / clusters.length)
+    const remainderFood = FoodSettings.SpawnCount % clusters.length
+    
+    for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
+      const cluster = clusters[clusterIdx]
+      const foodForThisCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
+      
+      for (let i = 0; i < foodForThisCluster; i++) {
+        const pos = clusterManager.getRandomPositionInCluster(cluster.id)
+        if (pos) {
+          foodRef.current.push(new Food(pos.x, pos.y, undefined, cluster.id))
+        }
+      }
     }
 
     // Initialize gene pool with starting population
     evolutionRef.current.initializeGenePool(agentsRef.current)
 
+    // Center camera on first cluster for better initial view
+    if (clusters.length > 0) {
+      const firstCluster = clusters[0]
+      cameraRef.current.x = firstCluster.position.x
+      cameraRef.current.y = firstCluster.position.y
+    }
+
     // Notify parent of initial agents with cloned array
     onAgentsChange?.([...agentsRef.current])
-  }, [config, onAgentsChange])
+  }, [config, onAgentsChange, clusterManager])
 
   useEffect(() => {
     initializeSimulation()
@@ -337,10 +396,12 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         const index = foodRef.current.indexOf(eatenFood)
         if (index !== -1) {
           if (config.FoodSettings.RespawnOnEat) {
-            // Respawn food in infinite world
-            const x = (Math.random() - 0.5) * 2000
-            const y = (Math.random() - 0.5) * 2000
-            foodRef.current[index] = new Food(x, y)
+            // Respawn food in same cluster
+            const clusterId = eatenFood.clusterId
+            const pos = clusterManager.getRandomPositionInCluster(clusterId)
+            if (pos) {
+              foodRef.current[index] = new Food(pos.x, pos.y, undefined, clusterId)
+            }
           } else {
             // Remove eaten food if respawn is disabled
             foodRef.current.splice(index, 1)
@@ -350,19 +411,35 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       }
     }
 
-    // Only maintain minimum food if respawning is enabled
+    // Maintain target food per cluster if respawning is enabled
     if (config.FoodSettings.RespawnOnEat) {
-      const minFoodCount = Math.floor(config.FoodSettings.SpawnCount * 0.5)
-      if (foodRef.current.length < minFoodCount) {
-        const foodToAdd = minFoodCount - foodRef.current.length
-        for (let i = 0; i < foodToAdd; i++) {
-          const x = (Math.random() - 0.5) * 2000
-          const y = (Math.random() - 0.5) * 2000
-          foodRef.current.push(new Food(x, y))
+      const clusters = clusterManager.getClusters()
+      const baseFoodPerCluster = Math.floor(config.FoodSettings.SpawnCount / clusters.length)
+      const remainderFood = config.FoodSettings.SpawnCount % clusters.length
+      
+      // Build food count map for efficiency
+      const foodCountByCluster = new Map<number, number>()
+      for (const food of foodRef.current) {
+        foodCountByCluster.set(food.clusterId, (foodCountByCluster.get(food.clusterId) || 0) + 1)
+      }
+      
+      for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
+        const cluster = clusters[clusterIdx]
+        const targetFoodForCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
+        const foodInCluster = foodCountByCluster.get(cluster.id) || 0
+        
+        if (foodInCluster < targetFoodForCluster) {
+          const foodToAdd = targetFoodForCluster - foodInCluster
+          for (let i = 0; i < foodToAdd; i++) {
+            const pos = clusterManager.getRandomPositionInCluster(cluster.id)
+            if (pos) {
+              foodRef.current.push(new Food(pos.x, pos.y, undefined, cluster.id))
+            }
+          }
         }
       }
     }
-  }, [config.FoodSettings.RespawnOnEat, config.FoodSettings.SpawnCount])
+  }, [config.FoodSettings.RespawnOnEat, config.FoodSettings.SpawnCount, clusterManager])
 
   const startAnimation = useCallback(() => {
     if (onStatsUpdate) {
@@ -400,6 +477,9 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
 
       // Draw infinite grid
       drawInfiniteGrid(context, cameraRef.current, canvas.width, canvas.height)
+
+      // Draw cluster boundaries (after camera transform is applied)
+      clusterManager.renderClusters(context)
 
       // Update agents (no canvas boundaries for infinite world)
       agentsRef.current.forEach((agent) => {
