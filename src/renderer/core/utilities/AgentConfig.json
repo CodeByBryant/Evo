@@ -32,8 +32,8 @@
   },
   "ClusterSettings": {
     "ClusterCount": 3,
-    "ClusterRadius": 700,
-    "ClusterSpacing": 2000
+    "ClusterRadius": 2500,
+    "ClusterSpacing": 
   },
   "GeneticTraits": {
     "size": { "min": 20, "max": 60, "default": 40 },
