@@ -203,44 +203,62 @@ export class EvolutionManager {
       return []
     }
 
-    // Selection: keep top performers
-    agents.sort((a, b) => b.fitness - a.fitness)
-    const survivorCount = Math.max(2, Math.floor(agents.length * this.config.selectionRate))
-    const survivors = agents.slice(0, survivorCount)
+    // Select top performers for breeding (no culling - all agents stay alive)
+    const sortedAgents = [...agents].sort((a, b) => b.fitness - a.fitness)
+    const eliteCount = Math.max(2, Math.floor(agents.length * this.config.selectionRate))
+    const elites = sortedAgents.slice(0, eliteCount)
 
-    // Create next generation
-    const nextGen: Agent[] = []
-    while (nextGen.length < this.config.populationSize) {
-      const parent1 = survivors[Math.floor(Math.random() * survivors.length)]
-      const parent2 = survivors[Math.floor(Math.random() * survivors.length)]
+    // Add elite offspring only if there's room to maintain selective pressure
+    const populationHeadroom = Math.max(0, this.config.populationSize - agents.length)
+    
+    if (populationHeadroom > 0) {
+      const baseOffspring = Math.floor(eliteCount * 0.5)
+      const offspringToSpawn = Math.min(populationHeadroom, baseOffspring)
 
-      const child = new Agent(
-        Math.random() * 2000 - 1000,
-        Math.random() * 2000 - 1000,
-        0,
-        0,
-        parent1.geneticTraits,
-        parent1 !== parent2 ? parent2.geneticTraits : undefined,
-        parent1.species
-      )
+      for (let i = 0; i < offspringToSpawn; i++) {
+        const parent1 = elites[Math.floor(Math.random() * elites.length)]
+        const parent2 = elites[Math.floor(Math.random() * elites.length)]
 
-      if (parent1 !== parent2) {
-        child.parentIds = [parent1.id, parent2.id]
-        child.NeuralNetwork.transferWeightsFrom(parent1.NeuralNetwork, parent2.NeuralNetwork)
-      } else {
-        child.parentIds = [parent1.id]
-        child.NeuralNetwork.transferWeightsFrom(parent1.NeuralNetwork)
+        // Spawn offspring near parent
+        const spawnRadius = 100
+        const angle = Math.random() * Math.PI * 2
+        const distance = Math.random() * spawnRadius
+        const childX = parent1.position.x + Math.cos(angle) * distance
+        const childY = parent1.position.y + Math.sin(angle) * distance
+
+        const child = new Agent(
+          childX,
+          childY,
+          0,
+          0,
+          parent1.geneticTraits,
+          parent1 !== parent2 ? parent2.geneticTraits : undefined,
+          parent1.species
+        )
+
+        if (parent1 !== parent2) {
+          child.parentIds = [parent1.id, parent2.id]
+          child.NeuralNetwork.transferWeightsFrom(parent1.NeuralNetwork, parent2.NeuralNetwork)
+        } else {
+          child.parentIds = [parent1.id]
+          child.NeuralNetwork.transferWeightsFrom(parent1.NeuralNetwork)
+        }
+
+        const mutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
+        if (Math.random() < child.geneticTraits.mutationRate * 2) {
+          child.NeuralNetwork.mutate(mutationIntensity * 0.75)
+        }
+
+        child.generation = this.generation + 1
+        child.energy = child.geneticTraits.maxEnergyCapacity
+        child.age = 0
+        agents.push(child)
       }
+    }
 
-      const mutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
-      if (Math.random() < child.geneticTraits.mutationRate * 2) {
-        child.NeuralNetwork.mutate(mutationIntensity * 0.75)
-      }
-
-      child.generation = this.generation + 1
-      child.energy = child.geneticTraits.maxEnergyCapacity
-      child.age = 0
-      nextGen.push(child)
+    // Reset fitness for all agents AFTER offspring are added so everyone starts fresh
+    for (const agent of agents) {
+      agent.fitness = 0
     }
 
     this.generation++
@@ -248,10 +266,10 @@ export class EvolutionManager {
     this.totalBirths = 0
     this.totalDeaths = 0
 
-    // Update species populations for the new generation to prevent species from being marked as extinct
-    this.updateSpeciesPopulations(nextGen)
+    // Update species populations
+    this.updateSpeciesPopulations(agents)
 
-    return nextGen
+    return agents
   }
 
   public getLatestStats(): GenerationStats | null {
