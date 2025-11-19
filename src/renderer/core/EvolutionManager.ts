@@ -248,6 +248,9 @@ export class EvolutionManager {
     this.totalBirths = 0
     this.totalDeaths = 0
 
+    // Update species populations for the new generation to prevent species from being marked as extinct
+    this.updateSpeciesPopulations(nextGen)
+
     return nextGen
   }
 
