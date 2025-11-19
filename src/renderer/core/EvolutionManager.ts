@@ -35,6 +35,7 @@ export class EvolutionManager {
   public totalDeaths: number = 0
   public speciesManager: SpeciesManager
   private lastGenerationElites: Agent[] = []
+  private stepsWithZeroPopulation: number = 0
 
   constructor(config: Partial<EvolutionConfig> = {}) {
     this.config = {
@@ -50,6 +51,28 @@ export class EvolutionManager {
     Agent.speciesManager = this.speciesManager
   }
 
+  public initializeGenePool(agents: Agent[]): void {
+    if (agents.length > 0) {
+      const sortedAgents = [...agents].sort((a, b) => b.fitness - a.fitness)
+      const eliteCount = Math.max(2, Math.floor(agents.length * this.config.selectionRate))
+      const elites = sortedAgents.slice(0, eliteCount)
+      
+      this.lastGenerationElites = elites.map(elite => {
+        const clone = new Agent(
+          elite.position.x,
+          elite.position.y,
+          0, 0,
+          elite.geneticTraits,
+          undefined,
+          elite.species
+        )
+        clone.NeuralNetwork.transferWeightsFrom(elite.NeuralNetwork)
+        return clone
+      })
+      console.log(`Gene pool initialized with ${this.lastGenerationElites.length} elite templates`)
+    }
+  }
+
   public setConfig(config: EvolutionConfig): void {
     this.config = { ...config }
     // Config changes take effect immediately
@@ -61,6 +84,7 @@ export class EvolutionManager {
     this.stats = []
     this.totalBirths = 0
     this.totalDeaths = 0
+    this.stepsWithZeroPopulation = 0
     this.speciesManager.clear()
   }
 
@@ -83,6 +107,13 @@ export class EvolutionManager {
         newDeaths++
         this.totalDeaths++
       }
+    }
+
+    // Only track zero population when actively running (not paused)
+    if (agents.length === 0) {
+      this.stepsWithZeroPopulation++
+    } else {
+      this.stepsWithZeroPopulation = 0
     }
 
     // Handle reproduction for high-energy agents
@@ -174,8 +205,14 @@ export class EvolutionManager {
     }
 
     // Check if generation should end
-    if (this.stepCount >= this.config.generationTime || agents.length === 0) {
+    // Only end on zero population after grace period to prevent instant cycling
+    const zeroPopulationGracePeriod = 100 // steps to wait before considering extinction
+    const shouldEndFromTime = this.stepCount >= this.config.generationTime
+    const shouldEndFromExtinction = agents.length === 0 && this.stepsWithZeroPopulation >= zeroPopulationGracePeriod
+    
+    if (shouldEndFromTime || shouldEndFromExtinction) {
       const result = this.endGeneration(agents)
+      this.stepsWithZeroPopulation = 0
       return { agents: result, newBirths, newDeaths }
     }
 

@@ -55,6 +55,9 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       // Repopulate species from loaded agents
       evolutionRef.current.repopulateSpeciesFromAgents(loadedAgents)
       
+      // Initialize gene pool from loaded agents to prevent rapid cycling
+      evolutionRef.current.initializeGenePool(loadedAgents)
+      
       // Regenerate food
       foodRef.current = []
       for (let i = 0; i < config.FoodSettings.SpawnCount; i++) {
@@ -316,6 +319,9 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       foodRef.current.push(new Food(x, y))
     }
 
+    // Initialize gene pool with starting population
+    evolutionRef.current.initializeGenePool(agentsRef.current)
+
     // Notify parent of initial agents with cloned array
     onAgentsChange?.([...agentsRef.current])
   }, [config, onAgentsChange])
@@ -327,18 +333,36 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   const handleFoodCollisions = useCallback(() => {
     for (const agent of agentsRef.current) {
       const eatenFood = agent.checkFoodCollision(foodRef.current)
-      if (eatenFood && config.FoodSettings.RespawnOnEat) {
+      if (eatenFood) {
         const index = foodRef.current.indexOf(eatenFood)
         if (index !== -1) {
-          // Respawn food in infinite world near existing food clusters
-          const x = (Math.random() - 0.5) * 2000
-          const y = (Math.random() - 0.5) * 2000
-          foodRef.current[index] = new Food(x, y)
+          if (config.FoodSettings.RespawnOnEat) {
+            // Respawn food in infinite world
+            const x = (Math.random() - 0.5) * 2000
+            const y = (Math.random() - 0.5) * 2000
+            foodRef.current[index] = new Food(x, y)
+          } else {
+            // Remove eaten food if respawn is disabled
+            foodRef.current.splice(index, 1)
+          }
         }
         agent.eatFood()
       }
     }
-  }, [config.FoodSettings.RespawnOnEat])
+
+    // Only maintain minimum food if respawning is enabled
+    if (config.FoodSettings.RespawnOnEat) {
+      const minFoodCount = Math.floor(config.FoodSettings.SpawnCount * 0.5)
+      if (foodRef.current.length < minFoodCount) {
+        const foodToAdd = minFoodCount - foodRef.current.length
+        for (let i = 0; i < foodToAdd; i++) {
+          const x = (Math.random() - 0.5) * 2000
+          const y = (Math.random() - 0.5) * 2000
+          foodRef.current.push(new Food(x, y))
+        }
+      }
+    }
+  }, [config.FoodSettings.RespawnOnEat, config.FoodSettings.SpawnCount])
 
   const startAnimation = useCallback(() => {
     if (onStatsUpdate) {
