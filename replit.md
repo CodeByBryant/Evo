@@ -6,7 +6,44 @@ Evo is a cutting-edge neural network-based evolutionary sandbox featuring **full
 
 **Major Version 3.0** - Complete evolution system with genetic algorithms, infinite worlds, DNA visualization, species tracking, and save/load functionality.
 
-## Recent Major Update (November 18, 2025)
+## Recent Major Update (November 19, 2025)
+
+### Version 3.2: "Territorial Clusters" 🏝️🧬
+
+Revolutionary territorial evolution system with isolated food clusters:
+
+#### New Features (November 19, 2025)
+1. **Territorial Food Clusters**
+   - Configurable number of isolated circular zones (2-10+ clusters)
+   - Food spawns and respawns only within assigned clusters
+   - Geometric positioning in polygon patterns (triangle/square/pentagon/etc)
+   - Empty void between clusters requires high energy to migrate
+   - Each cluster marked with dashed white boundary
+
+2. **ClusterManager System**
+   - Polygon geometry calculations for n-sided layouts
+   - Configurable cluster radius and spacing
+   - Cluster-aware food and agent spawning
+   - Food tracks original cluster for proper respawn location
+   - One species per cluster at initialization
+
+3. **Spatial Distribution**
+   - Base-plus-remainder algorithm for fair resource distribution
+   - Agents distributed across all clusters evenly
+   - Food distributed with remainder handling
+   - Camera auto-centers on first cluster for immediate visibility
+
+4. **Gene Pool Evolution Integration**
+   - Continuous evolution without resets between generations
+   - Gene pool resurrection maintains diversity
+   - Species can evolve in isolation within their clusters
+   - Natural migration possible for high-fitness agents
+
+5. **Performance Optimizations**
+   - Map-based food count tracking per cluster
+   - Synchronous ClusterManager initialization with useMemo
+   - Input validation prevents division by zero
+   - Null safety guards throughout cluster operations
 
 ### Version 3.1: "Genealogy & Fitness Enhancement" 🧬📊
 
