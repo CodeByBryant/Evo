@@ -25,14 +25,14 @@
     "MutationStrategy": "gaussian"
   },
   "FoodSettings": {
-    "SpawnCount": 30,
+    "SpawnCount": 60,
     "FoodColor": "#fbbf24",
     "FoodRadius": 6,
     "RespawnOnEat": true
   },
   "ClusterSettings": {
     "ClusterCount": 3,
-    "ClusterRadius": 400,
+    "ClusterRadius": 700,
     "ClusterSpacing": 2000
   },
   "GeneticTraits": {
