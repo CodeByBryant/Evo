@@ -31,6 +31,7 @@ export const App: React.FC = () => {
   const [currentAgents, setCurrentAgents] = useState<Agent[]>([])
   const [agentHistory, setAgentHistory] = useState<Map<string, Agent>>(new Map())
   const [loadedAgents, setLoadedAgents] = useState<Agent[] | null>(null)
+  const [showHelp, setShowHelp] = useState(false)
   const [evolutionConfig, setEvolutionConfig] = useState<EvolutionConfig>({
     generationTime: 3000,
     selectionRate: 0.3,
@@ -39,6 +40,35 @@ export const App: React.FC = () => {
     reproductionThreshold: 80,
     maxAge: 1500
   })
+
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Spacebar to pause/play
+      if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement
+        // Don't trigger if typing in an input
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault()
+          setIsRunning(prev => !prev)
+        }
+      }
+      // Escape to close DNA panel
+      if (e.code === 'Escape' && selectedAgent) {
+        setSelectedAgent(null)
+      }
+      // H key to toggle help
+      if (e.code === 'KeyH' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          setShowHelp(prev => !prev)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [selectedAgent])
 
   const handleToggleRunning = useCallback(() => {
     setIsRunning(prev => {
@@ -210,6 +240,64 @@ export const App: React.FC = () => {
       </div>
 
       <DNAPanel selectedAgent={selectedAgent} onClose={handleCloseDNA} allAgents={currentAgents} agentHistory={agentHistory} />
+
+      {/* Help Overlay */}
+      {showHelp && (
+        <div className="help-overlay" onClick={() => setShowHelp(false)}>
+          <div className="help-content" onClick={(e) => e.stopPropagation()}>
+            <button className="help-close" onClick={() => setShowHelp(false)}>
+              <i className="bi bi-x-lg"></i>
+            </button>
+            <h2>⌨️ Keyboard Shortcuts</h2>
+            <div className="help-shortcuts">
+              <div className="help-item">
+                <kbd>Space</kbd>
+                <span>Pause / Resume simulation</span>
+              </div>
+              <div className="help-item">
+                <kbd>Esc</kbd>
+                <span>Close DNA panel</span>
+              </div>
+              <div className="help-item">
+                <kbd>H</kbd>
+                <span>Show this help menu</span>
+              </div>
+            </div>
+            <h2>🖱️ Mouse Controls</h2>
+            <div className="help-shortcuts">
+              <div className="help-item">
+                <span className="help-key">Click Agent</span>
+                <span>View DNA and genetic information</span>
+              </div>
+              <div className="help-item">
+                <span className="help-key">Middle/Right Mouse</span>
+                <span>Pan camera around world</span>
+              </div>
+              <div className="help-item">
+                <span className="help-key">Scroll Wheel</span>
+                <span>Zoom in / out</span>
+              </div>
+              <div className="help-item">
+                <span className="help-key">Ctrl + Click</span>
+                <span>Alternative pan control</span>
+              </div>
+            </div>
+            <h2>💡 Tips</h2>
+            <div className="help-tips">
+              <p>• Agents evolve through natural selection - only the fittest survive and reproduce</p>
+              <p>• Each species has a unique color based on their genetic ID</p>
+              <p>• Watch the fitness graphs to see evolution in real-time</p>
+              <p>• Save interesting populations and load them later to continue evolution</p>
+              <p>• Adjust evolution parameters to speed up or slow down the process</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Help Button */}
+      <button className="help-button" onClick={() => setShowHelp(true)} title="Show Help (H)">
+        <i className="bi bi-question-circle"></i>
+      </button>
     </div>
   )
 }

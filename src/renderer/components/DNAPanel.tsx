@@ -53,7 +53,7 @@ interface LifeStageBarProps {
 }
 
 const LifeStageBar: React.FC<LifeStageBarProps> = ({ agent }) => {
-  const ageProgress = agent.age / 5000 // maxAge = 5000
+  const ageProgress = agent.age / Agent.maxAge
   
   // Life stage segments from config
   const segments = [
@@ -351,7 +351,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
             fontSize: '0.85rem', 
             color: '#8888ff' 
           }}>
-            Age: {selectedAgent.age}/{5000} ({((selectedAgent.age / 5000) * 100).toFixed(1)}%)
+            Age: {selectedAgent.age}/{Agent.maxAge} ({((selectedAgent.age / Agent.maxAge) * 100).toFixed(1)}%)
           </div>
         </div>
 
