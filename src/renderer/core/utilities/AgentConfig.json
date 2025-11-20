@@ -28,12 +28,41 @@
     "SpawnCount": 1000,
     "FoodColor": "#fbbf24",
     "FoodRadius": 6,
-    "RespawnOnEat": true
+    "RespawnOnEat": true,
+    "SpawnPoint": [0, 0],
+    "DriftMinDistance": 2.0,
+    "DriftMaxDistance": 3.0,
+    "DriftSpeed": 0.01,
+    "VariableSizes": true,
+    "MinSize": 4,
+    "MaxSize": 10
   },
   "ClusterSettings": {
     "ClusterCount": 5,
     "ClusterRadius": 700,
     "ClusterSpacing": 2000
+  },
+  "LifeStageSettings": {
+    "MaturityYears": 40,
+    "SenescenceStartPct": 0.85,
+    "ReproductionCutoffPct": 0.90,
+    "LifeProgressSegments": {
+      "Embryo": { "start": 0.0, "end": 0.05 },
+      "Child": { "start": 0.05, "end": 0.40 },
+      "Adolescent": { "start": 0.40, "end": 0.60 },
+      "Adult": { "start": 0.60, "end": 0.85 },
+      "Old": { "start": 0.85, "end": 1.0 }
+    }
+  },
+  "ExtinctionMitigation": {
+    "MinPopulationForBoost": 5,
+    "EmergencySpawnRate": 0.01,
+    "ResourceRegenerationRateBoostWhenLowPopulation": 1.5,
+    "DiversityBoostOnReseed": true
+  },
+  "ReproductionSettings": {
+    "EnergyMinToReproduce": 40,
+    "EnergyMaxCap": 100
   },
   "GeneticTraits": {
     "size": { "min": 20, "max": 60, "default": 40 },
