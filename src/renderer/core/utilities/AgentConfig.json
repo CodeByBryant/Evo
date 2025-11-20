@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "AgentCount": 15,
+  "AgentCount": 30,
   "DefaultAgentSize": { "width": 40, "height": 40 },
   "EnableRotation": true,
   "MovementSpeed": 1.2,
@@ -25,15 +25,15 @@
     "MutationStrategy": "gaussian"
   },
   "FoodSettings": {
-    "SpawnCount": 60,
+    "SpawnCount": 1000,
     "FoodColor": "#fbbf24",
     "FoodRadius": 6,
     "RespawnOnEat": true
   },
   "ClusterSettings": {
-    "ClusterCount": 3,
-    "ClusterRadius": 2500,
-    "ClusterSpacing": 
+    "ClusterCount": 5,
+    "ClusterRadius": 700,
+    "ClusterSpacing": 2000
   },
   "GeneticTraits": {
     "size": { "min": 20, "max": 60, "default": 40 },
