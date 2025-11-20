@@ -60,7 +60,9 @@ class Agent {
     this.height = this.geneticTraits.size
     this.polygon = this.getgeometry()
     this.fitness = 100
-    this.energy = this.geneticTraits.maxEnergyCapacity
+    const configData: any = AgentConfigData
+    const energyCap = (configData.ReproductionSettings?.EnergyMaxCap) || 100
+    this.energy = Math.min(energyCap, this.geneticTraits.maxEnergyCapacity)
     this.age = 0
     this.generation = 0
     this.id = this.generateId()
@@ -72,7 +74,6 @@ class Agent {
     this.memoryState = new Array(Math.round(this.geneticTraits.memoryNeurons)).fill(0)
     this.clusterId = clusterId
 
-    const configData: any = AgentConfigData
     const nnConfig = configData.NeuralNetwork || { HiddenLayers: [20, 16, 12], ActivationFunction: 'tanh', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
     
     const maxRayCount = 12
@@ -606,12 +607,12 @@ class Food {
     context.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI)
     
     const sizeRatio = this.radius / 6
-    let fillColor = AgentConfigData.FoodSettings.FoodColor
+    let fillColor = '#22c55e'
     
     if (sizeRatio < 0.8) {
-      fillColor = '#fcd34d'
+      fillColor = '#84cc16'
     } else if (sizeRatio > 1.3) {
-      fillColor = '#f97316'
+      fillColor = '#10b981'
     }
     
     context.fillStyle = fillColor
@@ -619,7 +620,7 @@ class Food {
     
     context.shadowBlur = 6
     context.shadowColor = fillColor
-    context.strokeStyle = '#f59e0b'
+    context.strokeStyle = '#059669'
     context.lineWidth = 1.5
     context.stroke()
     context.shadowBlur = 0

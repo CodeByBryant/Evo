@@ -170,8 +170,29 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
-        <h4 style={{ marginTop: '1rem' }}>🌱 Maturity Progress</h4>
+        <h4 style={{ marginTop: '1rem' }}>🌱 Life Stage & Maturity</h4>
         <div style={{ marginBottom: '1rem' }}>
+          <div className="info-grid" style={{ marginBottom: '0.75rem' }}>
+            <div className="info-item">
+              <span className="label">Current Stage:</span>
+              <span className="value" style={{ 
+                color: selectedAgent.getLifeStage() === 'adult' ? '#00ff88' : 
+                       selectedAgent.getLifeStage() === 'old' ? '#ff8800' : 
+                       '#4488ff',
+                textTransform: 'capitalize'
+              }}>
+                {selectedAgent.getLifeStage()}
+              </span>
+            </div>
+            <div className="info-item">
+              <span className="label">Can Reproduce:</span>
+              <span className="value" style={{ 
+                color: selectedAgent.canReproduce() ? '#00ff88' : '#ff4444'
+              }}>
+                {selectedAgent.canReproduce() ? '✓ Yes' : '✗ No'}
+              </span>
+            </div>
+          </div>
           <div style={{ 
             width: '100%', 
             height: '20px', 
@@ -193,7 +214,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
             fontSize: '0.85rem', 
             color: selectedAgent.getMaturityProgress() >= 1 ? '#00ff88' : '#8888ff' 
           }}>
-            {selectedAgent.getMaturityProgress() >= 1 ? '✓ Adult (Can Reproduce)' : `${(selectedAgent.getMaturityProgress() * 100).toFixed(1)}% - Growing...`}
+            Maturity: {(selectedAgent.getMaturityProgress() * 100).toFixed(1)}% ({selectedAgent.age}/{5000})
           </div>
         </div>
 

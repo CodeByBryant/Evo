@@ -213,10 +213,68 @@ export class EvolutionManager {
 
     // Extinction mitigation: emergency spawning for low population
     const extinctionConfig: any = (AgentConfigData as any).ExtinctionMitigation
-    if (extinctionConfig && agents.length > 0 && agents.length < extinctionConfig.MinPopulationForBoost) {
+    if (extinctionConfig && agents.length < extinctionConfig.MinPopulationForBoost) {
       const emergencySpawnChance = extinctionConfig.EmergencySpawnRate || 0.01
       
-      if (Math.random() < emergencySpawnChance) {
+      // If completely extinct, spawn multiple agents from elite templates or create new ones
+      if (agents.length === 0) {
+        console.log('Population extinct! Triggering emergency repopulation...')
+        const spawnCount = Math.min(this.config.populationSize, 10)
+        
+        for (let i = 0; i < spawnCount; i++) {
+          let template: Agent | null = null
+          
+          // Try to use elite templates first
+          if (this.lastGenerationElites.length > 0) {
+            template = this.lastGenerationElites[Math.floor(Math.random() * this.lastGenerationElites.length)]
+          }
+          
+          // If no elites, create a new random agent
+          const emergencyAgent = template 
+            ? new Agent(
+                Math.random() * 2000,
+                Math.random() * 2000,
+                0, 
+                0,
+                template.geneticTraits,
+                undefined,
+                template.species,
+                undefined,
+                Math.floor(Math.random() * 5)
+              )
+            : new Agent(
+                Math.random() * 2000,
+                Math.random() * 2000,
+                40, 
+                40,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                Math.floor(Math.random() * 5)
+              )
+          
+          emergencyAgent.rebuildNeuralArchitecture()
+          
+          if (template && extinctionConfig.DiversityBoostOnReseed) {
+            emergencyAgent.NeuralNetwork.mutate(template.geneticTraits.mutationRate * 1.5)
+          }
+          
+          emergencyAgent.generation = this.generation
+          emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
+          
+          // Start agents at reproductive age so they can breed immediately
+          const lifeConfig = (AgentConfigData as any).LifeStageSettings
+          const minReproAge = lifeConfig?.LifeProgressSegments?.Adult?.start || 0.15
+          emergencyAgent.age = Math.floor(this.config.maxAge * (minReproAge + 0.05))
+          
+          agents.push(emergencyAgent)
+          newBirths++
+          this.totalBirths++
+        }
+      }
+      // If low population, spawn occasionally
+      else if (Math.random() < emergencySpawnChance) {
         const template = agents[Math.floor(Math.random() * agents.length)]
         const diversity = extinctionConfig.DiversityBoostOnReseed ? 1.5 : 1.0
         
@@ -237,12 +295,40 @@ export class EvolutionManager {
           emergencyAgent.NeuralNetwork.mutate(template.geneticTraits.mutationRate * diversity)
         }
         emergencyAgent.generation = this.generation
-        emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.8
-        emergencyAgent.age = 0
+        emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
+        
+        // Start at reproductive age
+        const lifeConfig = (AgentConfigData as any).LifeStageSettings
+        const minReproAge = lifeConfig?.LifeProgressSegments?.Adult?.start || 0.15
+        emergencyAgent.age = Math.floor(this.config.maxAge * (minReproAge + 0.05))
         
         agents.push(emergencyAgent)
         newBirths++
         this.totalBirths++
+      }
+    }
+
+    // Compute and store stats periodically (every 60 steps to avoid overhead)
+    if (this.stepCount % 60 === 0 && agents.length > 0) {
+      const totalFitness = agents.reduce((sum, a) => sum + a.fitness, 0)
+      const totalEnergy = agents.reduce((sum, a) => sum + a.energy, 0)
+      const speciesCount = this.speciesManager.getAllSpecies().length
+      
+      const stats: GenerationStats = {
+        generation: this.generation,
+        population: agents.length,
+        avgFitness: totalFitness / agents.length,
+        maxFitness: Math.max(...agents.map(a => a.fitness)),
+        avgEnergy: totalEnergy / agents.length,
+        speciesCount: speciesCount,
+        births: newBirths,
+        deaths: newDeaths
+      }
+      
+      this.stats.push(stats)
+      // Keep only last 100 stat entries to prevent memory bloat
+      if (this.stats.length > 100) {
+        this.stats.shift()
       }
     }
 

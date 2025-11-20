@@ -45,24 +45,24 @@
   "LifeStageSettings": {
     "MaturityYears": 40,
     "SenescenceStartPct": 0.85,
-    "ReproductionCutoffPct": 0.90,
+    "ReproductionCutoffPct": 0.95,
     "LifeProgressSegments": {
-      "Embryo": { "start": 0.0, "end": 0.05 },
-      "Child": { "start": 0.05, "end": 0.40 },
-      "Adolescent": { "start": 0.40, "end": 0.60 },
-      "Adult": { "start": 0.60, "end": 0.85 },
+      "Embryo": { "start": 0.0, "end": 0.02 },
+      "Child": { "start": 0.02, "end": 0.08 },
+      "Adolescent": { "start": 0.08, "end": 0.15 },
+      "Adult": { "start": 0.15, "end": 0.85 },
       "Old": { "start": 0.85, "end": 1.0 }
     }
   },
   "ExtinctionMitigation": {
-    "MinPopulationForBoost": 5,
-    "EmergencySpawnRate": 0.01,
+    "MinPopulationForBoost": 10,
+    "EmergencySpawnRate": 0.05,
     "ResourceRegenerationRateBoostWhenLowPopulation": 1.5,
     "DiversityBoostOnReseed": true
   },
   "ReproductionSettings": {
-    "EnergyMinToReproduce": 40,
-    "EnergyMaxCap": 100
+    "EnergyMinToReproduce": 35,
+    "EnergyMaxCap": 150
   },
   "GeneticTraits": {
     "size": { "min": 20, "max": 60, "default": 40 },
