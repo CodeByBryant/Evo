@@ -1,6 +1,151 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Agent } from '../core/Agent'
 
+// Info Icon Component with Tooltip
+interface InfoIconProps {
+  content: string
+}
+
+const InfoIcon: React.FC<InfoIconProps> = ({ content }) => {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  return (
+    <span 
+      className="info-icon"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      onClick={() => setShowTooltip(!showTooltip)}
+      style={{
+        marginLeft: '8px',
+        cursor: 'help',
+        position: 'relative',
+        display: 'inline-block'
+      }}
+    >
+      <i className="bi bi-info-circle" style={{ fontSize: '0.9rem', color: '#8888ff' }}></i>
+      {showTooltip && (
+        <div style={{
+          position: 'absolute',
+          left: '0',
+          top: '20px',
+          backgroundColor: '#1a1a2e',
+          border: '1px solid #3a3a5e',
+          borderRadius: '6px',
+          padding: '8px 12px',
+          fontSize: '0.85rem',
+          color: '#ccc',
+          maxWidth: '250px',
+          width: 'max-content',
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+          lineHeight: '1.4'
+        }}>
+          {content}
+        </div>
+      )}
+    </span>
+  )
+}
+
+// Life Stage Segmented Bar Component
+interface LifeStageBarProps {
+  agent: Agent
+}
+
+const LifeStageBar: React.FC<LifeStageBarProps> = ({ agent }) => {
+  const ageProgress = agent.age / 5000 // maxAge = 5000
+  
+  // Life stage segments from config
+  const segments = [
+    { name: 'Embryo', start: 0.0, end: 0.02, color: '#9b87f5' },
+    { name: 'Child', start: 0.02, end: 0.08, color: '#4488ff' },
+    { name: 'Adolescent', start: 0.08, end: 0.15, color: '#00bfff' },
+    { name: 'Adult', start: 0.15, end: 0.85, color: '#00ff88' },
+    { name: 'Old', start: 0.85, end: 1.0, color: '#ff8800' }
+  ]
+
+  return (
+    <div style={{ 
+      width: '100%', 
+      marginTop: '0.5rem'
+    }}>
+      {/* Segmented bar */}
+      <div style={{ 
+        display: 'flex', 
+        width: '100%', 
+        height: '24px', 
+        borderRadius: '12px', 
+        overflow: 'hidden',
+        border: '1px solid #3a3a5e',
+        backgroundColor: '#0a0a0a'
+      }}>
+        {segments.map((segment, index) => {
+          const segmentWidth = (segment.end - segment.start) * 100
+          const isActive = ageProgress >= segment.start && ageProgress < segment.end
+          const isCompleted = ageProgress >= segment.end
+          
+          return (
+            <div
+              key={index}
+              style={{
+                flex: `0 0 ${segmentWidth}%`,
+                backgroundColor: isCompleted || isActive ? segment.color : '#1a1a1a',
+                opacity: isCompleted || isActive ? 1 : 0.3,
+                position: 'relative',
+                borderRight: index < segments.length - 1 ? '1px solid #0a0a0a' : 'none',
+                transition: 'all 0.3s ease',
+                boxShadow: isActive ? `inset 0 0 12px ${segment.color}80` : 'none'
+              }}
+              title={`${segment.name}: ${(segment.start * 100).toFixed(0)}%-${(segment.end * 100).toFixed(0)}%`}
+            >
+              {/* Fill indicator for active segment */}
+              {isActive && (
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: `${((ageProgress - segment.start) / (segment.end - segment.start)) * 100}%`,
+                  backgroundColor: segment.color,
+                  filter: 'brightness(1.3)',
+                  boxShadow: `0 0 8px ${segment.color}`
+                }} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+      
+      {/* Labels */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        marginTop: '6px',
+        fontSize: '0.75rem',
+        color: '#888'
+      }}>
+        {segments.map((segment, index) => {
+          const isActive = ageProgress >= segment.start && ageProgress < segment.end
+          return (
+            <span 
+              key={index}
+              style={{ 
+                flex: `0 0 ${(segment.end - segment.start) * 100}%`,
+                textAlign: 'center',
+                color: isActive ? segment.color : '#666',
+                fontWeight: isActive ? 'bold' : 'normal',
+                fontSize: isActive ? '0.8rem' : '0.75rem'
+              }}
+            >
+              {segment.name}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 interface DNAPanelProps {
   selectedAgent: Agent | null
   onClose: () => void
