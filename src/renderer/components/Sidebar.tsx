@@ -106,53 +106,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {configExpanded && (
           <div className="config-content">
-            <div className="config-item">
-              <label>
-                <span>Agents</span>
-                <span className="value">{config.AgentCount}</span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="50"
-                value={config.AgentCount}
-                onChange={(e) => updateConfig({ AgentCount: parseInt(e.target.value) })}
-              />
-            </div>
-
-            <div className="config-item">
-              <label>
-                <span>Movement Speed</span>
-                <span className="value">{config.MovementSpeed.toFixed(1)}</span>
-              </label>
-              <input
-                type="range"
-                min="0.1"
-                max="5"
-                step="0.1"
-                value={config.MovementSpeed}
-                onChange={(e) => updateConfig({ MovementSpeed: parseFloat(e.target.value) })}
-              />
-            </div>
-
-            <div className="config-item">
-              <label>
-                <span>Sensor Rays</span>
-                <span className="value">{config.Sensor.RayCount}</span>
-              </label>
-              <input
-                type="range"
-                min="3"
-                max="15"
-                value={config.Sensor.RayCount}
-                onChange={(e) =>
-                  updateConfig({
-                    Sensor: { ...config.Sensor, RayCount: parseInt(e.target.value) }
-                  })
-                }
-              />
-            </div>
-
             <div className="config-toggle">
               <label>
                 <input

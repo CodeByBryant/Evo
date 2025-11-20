@@ -141,10 +141,6 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
             <span className="value">{selectedAgent.NeuralNetwork.getGenomeData().length}</span>
           </div>
           <div className="info-item">
-            <span className="label">Generation:</span>
-            <span className="value">{selectedAgent.generation}</span>
-          </div>
-          <div className="info-item">
             <span className="label">Parents:</span>
             <span className="value">{selectedAgent.parentIds?.length || 0}</span>
           </div>
@@ -170,7 +166,10 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
-        <h4 style={{ marginTop: '1rem' }}>🌱 Life Stage & Maturity</h4>
+        <h4 style={{ marginTop: '1rem' }}>
+          🌱 Life Stage & Maturity
+          <InfoIcon content="Agents progress through 5 life stages: Embryo (0-2%), Child (2-8%), Adolescent (8-15%), Adult (15-85%), Old (85-100%). Can reproduce during Adult stage." />
+        </h4>
         <div style={{ marginBottom: '1rem' }}>
           <div className="info-grid" style={{ marginBottom: '0.75rem' }}>
             <div className="info-item">
@@ -178,7 +177,9 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
               <span className="value" style={{ 
                 color: selectedAgent.getLifeStage() === 'adult' ? '#00ff88' : 
                        selectedAgent.getLifeStage() === 'old' ? '#ff8800' : 
-                       '#4488ff',
+                       selectedAgent.getLifeStage() === 'adolescent' ? '#00bfff' :
+                       selectedAgent.getLifeStage() === 'child' ? '#4488ff' :
+                       '#9b87f5',
                 textTransform: 'capitalize'
               }}>
                 {selectedAgent.getLifeStage()}
@@ -193,28 +194,13 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
               </span>
             </div>
           </div>
-          <div style={{ 
-            width: '100%', 
-            height: '20px', 
-            backgroundColor: '#1a1a2e', 
-            borderRadius: '10px', 
-            overflow: 'hidden',
-            border: '1px solid #3a3a5e'
-          }}>
-            <div style={{ 
-              width: `${Math.min(100, selectedAgent.getMaturityProgress() * 100)}%`, 
-              height: '100%', 
-              backgroundColor: selectedAgent.getMaturityProgress() >= 1 ? '#00ff88' : '#4488ff',
-              transition: 'width 0.3s ease',
-              boxShadow: '0 0 10px rgba(68, 136, 255, 0.5)'
-            }} />
-          </div>
+          <LifeStageBar agent={selectedAgent} />
           <div style={{ 
             marginTop: '0.5rem', 
             fontSize: '0.85rem', 
-            color: selectedAgent.getMaturityProgress() >= 1 ? '#00ff88' : '#8888ff' 
+            color: '#8888ff' 
           }}>
-            Maturity: {(selectedAgent.getMaturityProgress() * 100).toFixed(1)}% ({selectedAgent.age}/{5000})
+            Age: {selectedAgent.age}/{5000} ({((selectedAgent.age / 5000) * 100).toFixed(1)}%)
           </div>
         </div>
 
@@ -238,7 +224,10 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
-        <h4 style={{ marginTop: '1rem' }}>🧬 Genetic Traits</h4>
+        <h4 style={{ marginTop: '1rem' }}>
+          🧬 Genetic Traits
+          <InfoIcon content="Inheritable traits that affect agent behavior and survival. Traits mutate slightly when agents reproduce, driving evolution." />
+        </h4>
         <div className="info-grid">
           <div className="info-item">
             <span className="label">Size:</span>
@@ -282,7 +271,10 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
-        <h4 style={{ marginTop: '1rem' }}>⚡ Metabolic Traits</h4>
+        <h4 style={{ marginTop: '1rem' }}>
+          ⚡ Metabolic Traits
+          <InfoIcon content="Energy efficiency affects how quickly energy depletes. Digestion rate controls how much energy is gained from food. Higher values are better." />
+        </h4>
         <div className="info-grid">
           <div className="info-item">
             <span className="label">Energy Efficiency:</span>
@@ -298,7 +290,10 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
-        <h4 style={{ marginTop: '1rem' }}>🔄 Reproductive Traits</h4>
+        <h4 style={{ marginTop: '1rem' }}>
+          🔄 Reproductive Traits
+          <InfoIcon content="Mutation rate: chance of trait changes in offspring. Reproduction threshold: minimum energy to reproduce. Offspring count: babies per reproduction event." />
+        </h4>
         <div className="info-grid">
           <div className="info-item">
             <span className="label">Mutation Rate:</span>
@@ -330,7 +325,10 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           </div>
         </div>
 
-        <h4 style={{ marginTop: '1rem' }}>🧠 Neural Network</h4>
+        <h4 style={{ marginTop: '1rem' }}>
+          🧠 Neural Network
+          <InfoIcon content="The brain of the agent. Input neurons receive sensor data, hidden layers process it, output neurons control movement. Weights and biases are learned through evolution." />
+        </h4>
         <div className="info-grid">
           <div className="info-item">
             <span className="label">Inputs:</span>
@@ -424,10 +422,6 @@ const GenealogyViewer: React.FC<GenealogyViewerProps> = ({ agent, allAgents, age
             <span>Fitness: {a.fitness.toFixed(1)}</span>
           </div>
           <div className="stat-item">
-            <i className="bi bi-hourglass-split"></i>
-            <span>Gen: {a.generation}</span>
-          </div>
-          <div className="stat-item">
             <i className="bi bi-lightning-fill"></i>
             <span>Energy: {a.energy.toFixed(0)}%</span>
           </div>
@@ -461,10 +455,6 @@ const GenealogyViewer: React.FC<GenealogyViewerProps> = ({ agent, allAgents, age
           <div className="info-row">
             <span>ID:</span>
             <span className="value">{agent.id.substring(0, 12)}</span>
-          </div>
-          <div className="info-row">
-            <span>Generation:</span>
-            <span className="value">{agent.generation}</span>
           </div>
           <div className="info-row">
             <span>Fitness:</span>
@@ -585,7 +575,9 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
         agent.position.rotation / (Math.PI * 2)
       ].concat(agentOffsets).concat(foodOffsets)
 
-      const outputs = agent.NeuralNetwork.feedForward(inputs)
+      const rawOutputs = agent.NeuralNetwork.feedForward(inputs)
+      // Guard against NaN values
+      const outputs = rawOutputs.map(v => isNaN(v) || !isFinite(v) ? 0 : v)
       setLastOutputs(outputs)
 
       // Get activations for all layers
@@ -598,11 +590,16 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
         const nextActivations: number[] = []
         
         for (let j = 0; j < level.outputs.length; j++) {
-          let sum = level.biases[j]
+          let sum = level.biases[j] || 0
           for (let k = 0; k < level.inputs.length; k++) {
-            sum += currentActivations[k] * level.weights[k][j]
+            const weight = level.weights[k]?.[j]
+            const activation = currentActivations[k]
+            if (weight !== undefined && activation !== undefined) {
+              sum += activation * weight
+            }
           }
-          nextActivations.push(Math.tanh(sum))
+          const activation = Math.tanh(sum)
+          nextActivations.push(isNaN(activation) ? 0 : activation)
         }
         
         allActivations.push(nextActivations)
@@ -624,7 +621,7 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
             const y1 = padding + (i + 1) * spacing1
             const y2 = padding + (j + 1) * spacing2
             
-            const weight = levels[l].weights[i][j]
+            const weight = levels[l].weights[i]?.[j] || 0
             const intensity = Math.abs(weight)
             const alpha = Math.min(intensity * 0.3, 0.5)
             
@@ -652,7 +649,7 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
 
         for (let i = 0; i < neurons; i++) {
           const y = padding + (i + 1) * spacing
-          const activation = allActivations[l][i]
+          const activation = allActivations[l][i] || 0
           
           // Blend from white (near 0) to cyan (positive) or red (negative)
           const intensity = Math.abs(activation)
@@ -738,7 +735,7 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
                   }}
                 />
               </div>
-              <span className="output-value">{output.toFixed(3)}</span>
+              <span className="output-value">{(isNaN(output) ? 0 : output).toFixed(3)}</span>
             </div>
           ))}
         </div>
@@ -761,6 +758,151 @@ const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef 
             <span>Active Neurons</span>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Info Icon Component with Tooltip
+interface InfoIconProps {
+  content: string
+}
+
+const InfoIcon: React.FC<InfoIconProps> = ({ content }) => {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  return (
+    <span 
+      className="info-icon"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      onClick={() => setShowTooltip(!showTooltip)}
+      style={{
+        marginLeft: '8px',
+        cursor: 'help',
+        position: 'relative',
+        display: 'inline-block'
+      }}
+    >
+      <i className="bi bi-info-circle" style={{ fontSize: '0.9rem', color: '#8888ff' }}></i>
+      {showTooltip && (
+        <div style={{
+          position: 'absolute',
+          left: '0',
+          top: '20px',
+          backgroundColor: '#1a1a2e',
+          border: '1px solid #3a3a5e',
+          borderRadius: '6px',
+          padding: '8px 12px',
+          fontSize: '0.85rem',
+          color: '#ccc',
+          maxWidth: '250px',
+          width: 'max-content',
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+          lineHeight: '1.4'
+        }}>
+          {content}
+        </div>
+      )}
+    </span>
+  )
+}
+
+// Life Stage Segmented Bar Component
+interface LifeStageBarProps {
+  agent: Agent
+}
+
+const LifeStageBar: React.FC<LifeStageBarProps> = ({ agent }) => {
+  const ageProgress = agent.age / 5000 // maxAge = 5000
+  
+  // Life stage segments from config
+  const segments = [
+    { name: 'Embryo', start: 0.0, end: 0.02, color: '#9b87f5' },
+    { name: 'Child', start: 0.02, end: 0.08, color: '#4488ff' },
+    { name: 'Adolescent', start: 0.08, end: 0.15, color: '#00bfff' },
+    { name: 'Adult', start: 0.15, end: 0.85, color: '#00ff88' },
+    { name: 'Old', start: 0.85, end: 1.0, color: '#ff8800' }
+  ]
+
+  return (
+    <div style={{ 
+      width: '100%', 
+      marginTop: '0.5rem'
+    }}>
+      {/* Segmented bar */}
+      <div style={{ 
+        display: 'flex', 
+        width: '100%', 
+        height: '24px', 
+        borderRadius: '12px', 
+        overflow: 'hidden',
+        border: '1px solid #3a3a5e',
+        backgroundColor: '#0a0a0a'
+      }}>
+        {segments.map((segment, index) => {
+          const segmentWidth = (segment.end - segment.start) * 100
+          const isActive = ageProgress >= segment.start && ageProgress < segment.end
+          const isCompleted = ageProgress >= segment.end
+          
+          return (
+            <div
+              key={index}
+              style={{
+                flex: `0 0 ${segmentWidth}%`,
+                backgroundColor: isCompleted || isActive ? segment.color : '#1a1a1a',
+                opacity: isCompleted || isActive ? 1 : 0.3,
+                position: 'relative',
+                borderRight: index < segments.length - 1 ? '1px solid #0a0a0a' : 'none',
+                transition: 'all 0.3s ease',
+                boxShadow: isActive ? `inset 0 0 12px ${segment.color}80` : 'none'
+              }}
+              title={`${segment.name}: ${(segment.start * 100).toFixed(0)}%-${(segment.end * 100).toFixed(0)}%`}
+            >
+              {/* Fill indicator for active segment */}
+              {isActive && (
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: `${((ageProgress - segment.start) / (segment.end - segment.start)) * 100}%`,
+                  backgroundColor: segment.color,
+                  filter: 'brightness(1.3)',
+                  boxShadow: `0 0 8px ${segment.color}`
+                }} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+      
+      {/* Labels */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        marginTop: '6px',
+        fontSize: '0.75rem',
+        color: '#888'
+      }}>
+        {segments.map((segment, index) => {
+          const isActive = ageProgress >= segment.start && ageProgress < segment.end
+          return (
+            <span 
+              key={index}
+              style={{ 
+                flex: `0 0 ${(segment.end - segment.start) * 100}%`,
+                textAlign: 'center',
+                color: isActive ? segment.color : '#666',
+                fontWeight: isActive ? 'bold' : 'normal',
+                fontSize: isActive ? '0.8rem' : '0.75rem'
+              }}
+            >
+              {segment.name}
+            </span>
+          )
+        })}
       </div>
     </div>
   )

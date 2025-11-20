@@ -529,9 +529,8 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       // Draw UI overlay (camera info)
       context.fillStyle = '#00ff88'
       context.font = '12px monospace'
-      context.fillText(`Zoom: ${cameraRef.current.zoom.toFixed(2)}x`, 10, canvas.height - 60)
-      context.fillText(`Camera: (${cameraRef.current.x.toFixed(0)}, ${cameraRef.current.y.toFixed(0)})`, 10, canvas.height - 40)
-      context.fillText(`Generation: ${evolutionRef.current.generation}`, 10, canvas.height - 20)
+      context.fillText(`Zoom: ${cameraRef.current.zoom.toFixed(2)}x`, 10, canvas.height - 40)
+      context.fillText(`Camera: (${cameraRef.current.x.toFixed(0)}, ${cameraRef.current.y.toFixed(0)})`, 10, canvas.height - 20)
 
       if (onStatsUpdate) {
         const latestStats = evolutionRef.current.getLatestStats()
