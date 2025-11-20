@@ -16,7 +16,7 @@ type Vertex = { x: number; y: number }
 
 class Agent {
   public static speciesManager: SpeciesManager | null = null
-  public static maxAge: number = 1500
+  public static maxAge: number = 5000
   
   public position: { x: number; y: number; rotation: number }
   public width: number
@@ -347,10 +347,13 @@ class Agent {
     return baseRate * (1 + sizeCost + movementCost + sensorCost + colorVisionCost)
   }
 
-  public eatFood(): void {
-    const baseEnergyGain = 20
+  public eatFood(foodSize?: number): void {
+    const configData: any = AgentConfigData
+    const energyCap = (configData.ReproductionSettings?.EnergyMaxCap) || 100
+    
+    const baseEnergyGain = foodSize ? (foodSize / 6) * 20 : 20
     const energyGain = baseEnergyGain * this.geneticTraits.digestionRate
-    this.energy = Math.min(this.geneticTraits.maxEnergyCapacity, this.energy + energyGain)
+    this.energy = Math.min(energyCap, this.energy + energyGain)
     this.foodEaten++
   }
 
@@ -399,9 +402,58 @@ class Agent {
     this.fitness = Math.max(0, Math.min(100, 100 - fitnessLoss + bonuses))
   }
 
+  public getLifeStage(): string {
+    const configData: any = AgentConfigData
+    const lifeConfig = configData.LifeStageSettings
+    
+    if (!lifeConfig) {
+      return 'adult'
+    }
+    
+    const ageProgress = this.age / Agent.maxAge
+    const segments = lifeConfig.LifeProgressSegments
+    
+    if (ageProgress <= segments.Embryo.end) return 'embryo'
+    if (ageProgress <= segments.Child.end) return 'child'
+    if (ageProgress <= segments.Adolescent.end) return 'adolescent'
+    if (ageProgress <= segments.Adult.end) return 'adult'
+    return 'old'
+  }
+
+  public canReproduce(): boolean {
+    const configData: any = AgentConfigData
+    const lifeConfig = configData.LifeStageSettings
+    const reproConfig = configData.ReproductionSettings
+    
+    if (!lifeConfig) {
+      const adultAge = Agent.maxAge / 2
+      return this.age >= adultAge && this.energy >= this.geneticTraits.reproductionThreshold
+    }
+    
+    const ageProgress = this.age / Agent.maxAge
+    const reproductionCutoff = lifeConfig.ReproductionCutoffPct || 0.90
+    const minReproAge = lifeConfig.LifeProgressSegments.Adult.start
+    
+    const globalMinEnergy = reproConfig?.EnergyMinToReproduce || 40
+    const effectiveThreshold = Math.max(globalMinEnergy, this.geneticTraits.reproductionThreshold)
+    const hasEnoughEnergy = this.energy >= effectiveThreshold
+    const isInReproductiveAge = ageProgress >= minReproAge && ageProgress < reproductionCutoff
+    
+    return isInReproductiveAge && hasEnoughEnergy
+  }
+
   public getMaturityProgress(): number {
-    const adultAge = Agent.maxAge / 2
-    return Math.min(1, this.age / adultAge)
+    const configData: any = AgentConfigData
+    const lifeConfig = configData.LifeStageSettings
+    
+    if (!lifeConfig) {
+      const adultAge = Agent.maxAge / 2
+      return Math.min(1, this.age / adultAge)
+    }
+    
+    const maturityAge = lifeConfig.MaturityYears || 40
+    const ageInYears = (this.age / Agent.maxAge) * 100
+    return Math.min(1, ageInYears / maturityAge)
   }
 
   public getAgeScale(): number {
@@ -477,22 +529,96 @@ class Food {
   public position: { x: number; y: number }
   public radius: number
   public clusterId: number
+  public spawnPoint: { x: number; y: number }
+  public driftVelocity: { x: number; y: number }
 
   constructor(x: number = 0, y: number = 0, size?: number, clusterId: number = 0) {
-    this.position = { x: x, y: y }
+    this.spawnPoint = { x, y }
+    
     const foodSettings: any = AgentConfigData.FoodSettings
-    this.radius = size || foodSettings.FoodRadius || 6
+    
+    if (size !== undefined) {
+      this.radius = size
+    } else if (foodSettings.VariableSizes) {
+      const minSize = foodSettings.MinSize || 4
+      const maxSize = foodSettings.MaxSize || 10
+      this.radius = minSize + Math.random() * (maxSize - minSize)
+    } else {
+      this.radius = foodSettings.FoodRadius || 6
+    }
+    
+    const driftMin = foodSettings.DriftMinDistance || 2.0
+    const driftMax = foodSettings.DriftMaxDistance || 3.0
+    const driftDistance = driftMin + Math.random() * (driftMax - driftMin)
+    const driftAngle = Math.random() * Math.PI * 2
+    
+    const targetX = x + Math.cos(driftAngle) * driftDistance
+    const targetY = y + Math.sin(driftAngle) * driftDistance
+    
+    this.position = { x: targetX, y: targetY }
+    
+    const driftSpeed = foodSettings.DriftSpeed || 0.01
+    const velocityMagnitude = driftSpeed * (0.5 + Math.random() * 0.5)
+    const velocityAngle = Math.random() * Math.PI * 2
+    
+    this.driftVelocity = {
+      x: Math.cos(velocityAngle) * velocityMagnitude,
+      y: Math.sin(velocityAngle) * velocityMagnitude
+    }
+    
     this.clusterId = clusterId
+  }
+
+  public update(): void {
+    const foodSettings: any = AgentConfigData.FoodSettings
+    const driftMin = foodSettings.DriftMinDistance || 2.0
+    const driftMax = foodSettings.DriftMaxDistance || 3.0
+    
+    this.position.x += this.driftVelocity.x
+    this.position.y += this.driftVelocity.y
+    
+    const dx = this.position.x - this.spawnPoint.x
+    const dy = this.position.y - this.spawnPoint.y
+    const distanceFromSpawn = Math.sqrt(dx * dx + dy * dy)
+    
+    if (distanceFromSpawn < driftMin || distanceFromSpawn > driftMax) {
+      const driftAngle = Math.atan2(dy, dx)
+      const targetDistance = (driftMin + driftMax) / 2
+      
+      const pullStrength = 0.02
+      const targetX = this.spawnPoint.x + Math.cos(driftAngle) * targetDistance
+      const targetY = this.spawnPoint.y + Math.sin(driftAngle) * targetDistance
+      
+      this.driftVelocity.x += (targetX - this.position.x) * pullStrength
+      this.driftVelocity.y += (targetY - this.position.y) * pullStrength
+      
+      const speed = Math.sqrt(this.driftVelocity.x ** 2 + this.driftVelocity.y ** 2)
+      const maxSpeed = foodSettings.DriftSpeed || 0.01
+      if (speed > maxSpeed) {
+        this.driftVelocity.x = (this.driftVelocity.x / speed) * maxSpeed
+        this.driftVelocity.y = (this.driftVelocity.y / speed) * maxSpeed
+      }
+    }
   }
 
   public render(context: CanvasRenderingContext2D): void {
     context.beginPath()
     context.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI)
-    context.fillStyle = AgentConfigData.FoodSettings.FoodColor
+    
+    const sizeRatio = this.radius / 6
+    let fillColor = AgentConfigData.FoodSettings.FoodColor
+    
+    if (sizeRatio < 0.8) {
+      fillColor = '#fcd34d'
+    } else if (sizeRatio > 1.3) {
+      fillColor = '#f97316'
+    }
+    
+    context.fillStyle = fillColor
     context.fill()
     
     context.shadowBlur = 6
-    context.shadowColor = AgentConfigData.FoodSettings.FoodColor
+    context.shadowColor = fillColor
     context.strokeStyle = '#f59e0b'
     context.lineWidth = 1.5
     context.stroke()

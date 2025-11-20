@@ -5,6 +5,7 @@
 import { Agent } from './Agent'
 import { SpeciesManager } from './SpeciesManager'
 import type { GeneticTraits } from '../types/simulation'
+import AgentConfigData from './utilities/AgentConfig.json'
 
 export interface EvolutionConfig {
   generationTime: number // Time per generation in steps
@@ -44,7 +45,7 @@ export class EvolutionManager {
       mutationRate: 0.05,
       populationSize: 30,
       reproductionThreshold: 80,
-      maxAge: 1500,
+      maxAge: 5000,
       ...config
     }
     this.speciesManager = new SpeciesManager()
@@ -120,12 +121,8 @@ export class EvolutionManager {
       this.stepsWithZeroPopulation = 0
     }
 
-    // Handle reproduction for adult agents with high energy
-    const adultAge = this.config.maxAge / 2
-    const reproductionCandidates = agents.filter(a => 
-      a.age >= adultAge && 
-      a.energy >= a.geneticTraits.reproductionThreshold
-    )
+    // Handle reproduction for agents in reproductive age range
+    const reproductionCandidates = agents.filter(a => a.canReproduce())
     for (const agent of reproductionCandidates) {
       if (agents.length < this.config.populationSize * 1.5) {
         const targetOffspringCount = Math.round(agent.geneticTraits.offspringCount)
@@ -135,8 +132,7 @@ export class EvolutionManager {
           const potentialMates = agents.filter(a => 
             a !== agent && 
             a.species === agent.species && 
-            a.age >= adultAge &&
-            a.energy >= agent.geneticTraits.reproductionThreshold
+            a.canReproduce()
           )
           
           const mate = (potentialMates.length > 0 && Math.random() > 0.3) 
@@ -212,6 +208,41 @@ export class EvolutionManager {
             this.totalBirths++
           }
         }
+      }
+    }
+
+    // Extinction mitigation: emergency spawning for low population
+    const extinctionConfig: any = (AgentConfigData as any).ExtinctionMitigation
+    if (extinctionConfig && agents.length > 0 && agents.length < extinctionConfig.MinPopulationForBoost) {
+      const emergencySpawnChance = extinctionConfig.EmergencySpawnRate || 0.01
+      
+      if (Math.random() < emergencySpawnChance) {
+        const template = agents[Math.floor(Math.random() * agents.length)]
+        const diversity = extinctionConfig.DiversityBoostOnReseed ? 1.5 : 1.0
+        
+        const emergencyAgent = new Agent(
+          template.position.x + (Math.random() - 0.5) * 200,
+          template.position.y + (Math.random() - 0.5) * 200,
+          0, 
+          0,
+          template.geneticTraits,
+          undefined,
+          template.species,
+          undefined,
+          template.clusterId
+        )
+        
+        emergencyAgent.rebuildNeuralArchitecture()
+        if (diversity > 1.0) {
+          emergencyAgent.NeuralNetwork.mutate(template.geneticTraits.mutationRate * diversity)
+        }
+        emergencyAgent.generation = this.generation
+        emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.8
+        emergencyAgent.age = 0
+        
+        agents.push(emergencyAgent)
+        newBirths++
+        this.totalBirths++
       }
     }
 

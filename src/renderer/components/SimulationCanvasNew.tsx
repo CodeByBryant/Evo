@@ -408,7 +408,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
             foodRef.current.splice(index, 1)
           }
         }
-        agent.eatFood()
+        agent.eatFood(eatenFood.radius)
       }
     }
 
@@ -498,6 +498,11 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
 
       // Notify parent of agent changes with cloned array so React detects updates
       onAgentsChange?.([...agentsRef.current])
+
+      // Update food drift
+      foodRef.current.forEach((food) => {
+        food.update()
+      })
 
       // Render food
       foodRef.current.forEach((food) => {
