@@ -84,5 +84,13 @@
     "learningRate": { "min": 0.5, "max": 2.0, "default": 1.0 },
     "memoryNeurons": { "min": 0, "max": 8, "default": 0 },
     "aggression": { "min": 0.0, "max": 2.0, "default": 1.0 }
+  },
+  "EvolutionSettings": {
+    "GenerationTime": 3000,
+    "SelectionRate": 0.3,
+    "MutationRate": 0.05,
+    "PopulationSize": 30,
+    "ReproductionThreshold": 80,
+    "MaxAge": 1500
   }
 }

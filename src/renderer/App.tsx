@@ -10,6 +10,7 @@ import type { SimulationConfig, SimulationStats } from './types/simulation'
 import type { Agent } from './core/Agent'
 import type { GenerationStats, EvolutionConfig } from './core/EvolutionManager'
 import AgentConfigData from './core/utilities/AgentConfig.json'
+import { loadEvolutionConfig } from './core/utilities/loadConfig'
 
 export const App: React.FC = () => {
   const [config, setConfig] = useState<SimulationConfig>(AgentConfigData as any as SimulationConfig)
@@ -32,14 +33,7 @@ export const App: React.FC = () => {
   const [agentHistory, setAgentHistory] = useState<Map<string, Agent>>(new Map())
   const [loadedAgents, setLoadedAgents] = useState<Agent[] | null>(null)
   const [showHelp, setShowHelp] = useState(false)
-  const [evolutionConfig, setEvolutionConfig] = useState<EvolutionConfig>({
-    generationTime: 3000,
-    selectionRate: 0.3,
-    mutationRate: 0.05,
-    populationSize: 30,
-    reproductionThreshold: 80,
-    maxAge: 1500
-  })
+  const [evolutionConfig, setEvolutionConfig] = useState<EvolutionConfig>(loadEvolutionConfig())
 
   // Keyboard shortcuts
   React.useEffect(() => {
