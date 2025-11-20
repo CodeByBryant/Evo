@@ -58,6 +58,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   // Handle loaded agents
   useEffect(() => {
     if (loadedAgents && loadedAgents.length > 0) {
+      console.log(`[SimulationCanvasNew] Loading ${loadedAgents.length} agents into simulation`)
       // Replace agents
       agentsRef.current = loadedAgents
       
@@ -198,6 +199,9 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         }
       }
 
+      if (closestAgent) {
+        console.log(`[SimulationCanvasNew] Agent clicked: ${closestAgent.id.substring(0, 8)}`)
+      }
       setSelectedAgent(closestAgent)
       onAgentSelect?.(closestAgent)
     }
@@ -314,12 +318,14 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   }, [onAgentSelect])
 
   const initializeSimulation = useCallback(() => {
+    console.log('[SimulationCanvasNew] Initializing simulation')
     agentsRef.current = []
     foodRef.current = []
 
     const { AgentCount, FoodSettings, ClusterSettings } = config
     const speciesManager = evolutionRef.current.speciesManager
     const clusters = clusterManager.getClusters()
+    console.log(`[SimulationCanvasNew] Creating ${AgentCount} agents across ${clusters.length} clusters`)
 
     // Create one species per cluster
     const species: SpeciesInfo[] = []
@@ -375,11 +381,14 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     // Initialize gene pool with starting population
     evolutionRef.current.initializeGenePool(agentsRef.current)
 
+    console.log(`[SimulationCanvasNew] Spawned ${agentsRef.current.length} agents and ${foodRef.current.length} food items`)
+
     // Center camera on first cluster for better initial view
     if (clusters.length > 0) {
       const firstCluster = clusters[0]
       cameraRef.current.x = firstCluster.position.x
       cameraRef.current.y = firstCluster.position.y
+      console.log(`[SimulationCanvasNew] Camera centered on cluster at (${firstCluster.position.x.toFixed(0)}, ${firstCluster.position.y.toFixed(0)})`)
     }
 
     // Notify parent of initial agents with cloned array

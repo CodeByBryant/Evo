@@ -73,7 +73,7 @@ export class EvolutionManager {
         clone.NeuralNetwork.transferWeightsFrom(elite.NeuralNetwork)
         return clone
       })
-      console.log(`Gene pool initialized with ${this.lastGenerationElites.length} elite templates`)
+      console.log(`[EvolutionManager] Gene pool initialized with ${this.lastGenerationElites.length} elite templates`)
     }
   }
 
@@ -84,12 +84,14 @@ export class EvolutionManager {
   }
 
   public reset(): void {
+    console.log('[EvolutionManager] Resetting evolution manager')
     this.generation = 0
     this.stepCount = 0
     this.stats = []
     this.totalBirths = 0
     this.totalDeaths = 0
     this.stepsWithZeroPopulation = 0
+    this.lastGenerationElites = []
     this.speciesManager.clear()
   }
 
@@ -218,7 +220,7 @@ export class EvolutionManager {
       
       // If completely extinct, spawn multiple agents from elite templates or create new ones
       if (agents.length === 0) {
-        console.log('Population extinct! Triggering emergency repopulation...')
+        console.warn('[EvolutionManager] Population extinct! Triggering emergency repopulation...')
         const spawnCount = Math.min(this.config.populationSize, 10)
         
         for (let i = 0; i < spawnCount; i++) {
@@ -306,6 +308,12 @@ export class EvolutionManager {
         newBirths++
         this.totalBirths++
       }
+    }
+
+    // Increment generation counter every generationTime steps
+    if (this.stepCount % this.config.generationTime === 0) {
+      this.generation++
+      console.log(`[EvolutionManager] Generation ${this.generation} reached at step ${this.stepCount}`)
     }
 
     // Compute and store stats periodically (every 60 steps to avoid overhead)

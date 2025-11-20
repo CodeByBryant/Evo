@@ -41,10 +41,14 @@ export const App: React.FC = () => {
   })
 
   const handleToggleRunning = useCallback(() => {
-    setIsRunning(prev => !prev)
+    setIsRunning(prev => {
+      console.log(`[App] Simulation ${prev ? 'paused' : 'started'}`)
+      return !prev
+    })
   }, [])
 
   const handleReset = useCallback(() => {
+    console.log('[App] Resetting simulation')
     setResetKey(prev => prev + 1)
     setIsRunning(true)
     setSelectedAgent(null)
@@ -53,6 +57,7 @@ export const App: React.FC = () => {
   }, [])
 
   const handleConfigChange = useCallback((newConfig: SimulationConfig) => {
+    console.log('[App] Configuration changed, resetting simulation')
     setConfig(newConfig)
     setResetKey(prev => prev + 1)
   }, [])
@@ -85,6 +90,9 @@ export const App: React.FC = () => {
   }, [])
 
   const handleAgentSelect = useCallback((agent: Agent | null) => {
+    if (agent) {
+      console.log(`[App] Agent selected: ${agent.id.substring(0, 8)}, Species: ${agent.species.substring(0, 8)}`)
+    }
     setSelectedAgent(agent)
   }, [])
 
@@ -108,11 +116,13 @@ export const App: React.FC = () => {
   }, [])
 
   const handleLoadAgents = useCallback((agents: Agent[]) => {
+    console.log(`[App] Loading ${agents.length} agents from save`)
     setLoadedAgents(agents)
     setResetKey(prev => prev + 1)
   }, [])
 
   const handleEvolutionConfigChange = useCallback((newConfig: EvolutionConfig) => {
+    console.log('[App] Evolution config updated:', newConfig)
     setEvolutionConfig(newConfig)
   }, [])
 

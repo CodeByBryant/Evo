@@ -19,6 +19,7 @@ export class ClusterManager {
     this.clusterRadius = clusterRadius
     this.clusterSpacing = clusterSpacing
     this.generateClusters()
+    console.log(`[ClusterManager] Created ${clusterCount} clusters with radius ${clusterRadius} and spacing ${clusterSpacing}`)
   }
 
   private generateClusters(): void {

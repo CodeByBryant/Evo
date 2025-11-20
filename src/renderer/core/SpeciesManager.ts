@@ -42,6 +42,7 @@ export class SpeciesManager {
     }
     
     this.speciesMap.set(speciesId, speciesInfo)
+    console.log(`[SpeciesManager] Created new species: ${speciesId.substring(0, 8)}${parentSpeciesId ? ` (derived from ${parentSpeciesId.substring(0, 8)})` : ''}`)
     return speciesInfo
   }
 
@@ -61,10 +62,15 @@ export class SpeciesManager {
   }
 
   public removeExtinctSpecies(): void {
+    const extinctSpecies: string[] = []
     for (const [id, species] of this.speciesMap.entries()) {
       if (species.population === 0) {
+        extinctSpecies.push(id.substring(0, 8))
         this.speciesMap.delete(id)
       }
+    }
+    if (extinctSpecies.length > 0) {
+      console.log(`[SpeciesManager] Removed ${extinctSpecies.length} extinct species: ${extinctSpecies.join(', ')}`)
     }
   }
 
@@ -138,7 +144,11 @@ export class SpeciesManager {
   }
 
   public clear(): void {
+    const count = this.speciesMap.size
     this.speciesMap.clear()
+    if (count > 0) {
+      console.log(`[SpeciesManager] Cleared ${count} species`)
+    }
   }
 
   public registerSpecies(speciesInfo: SpeciesInfo): void {

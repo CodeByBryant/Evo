@@ -16,6 +16,8 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
     const name = prompt('Enter save name:')
     if (!name) return
 
+    console.log(`[SaveLoadPanel] Saving ${agents.length} agents as "${name}"`)
+
     const saveData = {
       name,
       date: new Date().toISOString(),
@@ -35,10 +37,12 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
     const newSaves = [...saves, saveData]
     setSaves(newSaves)
     localStorage.setItem('evo_saves', JSON.stringify(newSaves))
+    console.log('[SaveLoadPanel] Save successful')
   }
 
   const handleLoad = (saveData: string) => {
     try {
+      console.log('[SaveLoadPanel] Loading save data')
       const data = JSON.parse(saveData)
       const loadedAgents = data.map((d: any) => {
         const agent = new Agent(d.position.x, d.position.y, d.width, d.height)
@@ -67,19 +71,23 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
         
         return agent
       })
+      console.log(`[SaveLoadPanel] Successfully loaded ${loadedAgents.length} agents`)
       onLoad(loadedAgents)
     } catch (e) {
+      console.error('[SaveLoadPanel] Failed to load save:', e)
       alert('Failed to load save')
     }
   }
 
   const handleDelete = (index: number) => {
+    console.log(`[SaveLoadPanel] Deleting save: ${saves[index].name}`)
     const newSaves = saves.filter((_, i) => i !== index)
     setSaves(newSaves)
     localStorage.setItem('evo_saves', JSON.stringify(newSaves))
   }
 
   const handleExport = () => {
+    console.log(`[SaveLoadPanel] Exporting ${agents.length} agents to JSON file`)
     const dataStr = JSON.stringify(agents.map(a => ({
       position: a.position,
       fitness: a.fitness,
@@ -94,9 +102,11 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
     a.download = `evo_export_${Date.now()}.json`
     a.click()
     URL.revokeObjectURL(url)
+    console.log('[SaveLoadPanel] Export complete')
   }
 
   const handleImport = () => {
+    console.log('[SaveLoadPanel] Opening file import dialog')
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.json'
@@ -104,12 +114,14 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
       const file = e.target.files[0]
       if (!file) return
       
+      console.log(`[SaveLoadPanel] Importing file: ${file.name}`)
       const reader = new FileReader()
       reader.onload = (e: any) => {
         try {
           const data = JSON.parse(e.target.result)
           handleLoad(JSON.stringify(data))
         } catch (err) {
+          console.error('[SaveLoadPanel] Import failed - invalid file format:', err)
           alert('Invalid file format')
         }
       }
