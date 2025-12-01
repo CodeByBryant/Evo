@@ -5,6 +5,7 @@ import { DNAPanel } from './components/DNAPanel'
 import { StatsChart } from './components/StatsChart'
 import { SaveLoadPanel } from './components/SaveLoadPanel'
 import { SpeciesStats } from './components/SpeciesStats'
+import { FamilyTreePanel } from './components/FamilyTreePanel'
 import type { SimulationConfig, SimulationStats } from './types/simulation'
 import type { Agent } from './core/Agent'
 import type { GenerationStats, EvolutionConfig } from './core/EvolutionManager'
@@ -31,6 +32,7 @@ export const App: React.FC = () => {
   const [agentHistory, setAgentHistory] = useState<Map<string, Agent>>(new Map())
   const [loadedAgents, setLoadedAgents] = useState<Agent[] | null>(null)
   const [showHelp, setShowHelp] = useState(false)
+  const [showFamilyTree, setShowFamilyTree] = useState(false)
   const [evolutionConfig, setEvolutionConfig] = useState<EvolutionConfig>(loadEvolutionConfig())
 
   // Keyboard shortcuts
@@ -49,11 +51,11 @@ export const App: React.FC = () => {
       if (e.code === 'Escape' && selectedAgent) {
         setSelectedAgent(null)
       }
-      // H key to toggle help
-      if (e.code === 'KeyH' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // G key to toggle family tree (genealogy)
+      if (e.code === 'KeyG' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const target = e.target as HTMLElement
         if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          setShowHelp((prev) => !prev)
+          setShowFamilyTree((prev) => !prev)
         }
       }
     }
@@ -209,6 +211,32 @@ export const App: React.FC = () => {
         {/* Save/Load Panel */}
         <SaveLoadPanel agents={currentAgents} onLoad={handleLoadAgents} />
 
+        {/* Family Tree Toggle */}
+        <div style={{ padding: '0.5rem', borderTop: '1px solid #333' }}>
+          <button
+            onClick={() => setShowFamilyTree(!showFamilyTree)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              background: showFamilyTree ? '#4ade80' : '#2a2a2a',
+              color: showFamilyTree ? '#000' : '#fff',
+              border: '1px solid #444',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <span>🌳</span>
+            <span>{showFamilyTree ? 'Hide Family Tree' : 'Show Family Tree'}</span>
+            <span style={{ opacity: 0.6, fontSize: '11px' }}>(F)</span>
+          </button>
+        </div>
+
         {/* Controls hint */}
         <div className="sidebar-footer">
           <p style={{ marginBottom: '0.5rem' }}>
@@ -218,6 +246,7 @@ export const App: React.FC = () => {
           <p>• Middle/Right mouse to pan</p>
           <p>• Scroll to zoom</p>
           <p>• Ctrl+Click to pan</p>
+          <p>• R/H/T for visual toggles</p>
           <p style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
             📱 <strong>Mobile Controls:</strong>
           </p>
@@ -247,6 +276,52 @@ export const App: React.FC = () => {
         allAgents={currentAgents}
         agentHistory={agentHistory}
       />
+
+      {showFamilyTree && (
+        <div style={{
+          position: 'fixed',
+          top: '60px',
+          right: '20px',
+          width: '400px',
+          height: '350px',
+          zIndex: 1000,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+          borderRadius: '8px',
+          border: '1px solid #333'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: '-10px',
+            right: '-10px',
+            zIndex: 1001
+          }}>
+            <button
+              onClick={() => setShowFamilyTree(false)}
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: '#ef4444',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <FamilyTreePanel
+            agents={currentAgents}
+            selectedAgent={selectedAgent}
+            onAgentSelect={handleAgentSelect}
+          />
+        </div>
+      )}
     </div>
   )
 }

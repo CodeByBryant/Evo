@@ -3,6 +3,7 @@ import { Agent, Food } from '../core/Agent'
 import { Camera } from '../core/Camera'
 import { EvolutionManager } from '../core/EvolutionManager'
 import { ClusterManager } from '../core/ClusterManager'
+import { HeatmapManager, HeatmapType } from '../core/HeatmapManager'
 import type { SpeciesInfo } from '../core/SpeciesManager'
 import type { SimulationConfig, SimulationStats } from '../types/simulation'
 
@@ -32,10 +33,12 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   const foodRef = useRef<Food[]>([])
   const cameraRef = useRef<Camera>(new Camera())
   const evolutionRef = useRef<EvolutionManager>(new EvolutionManager(evolutionConfig))
+  const heatmapRef = useRef<HeatmapManager>(new HeatmapManager(50))
   const animationFrameRef = useRef<number | undefined>(undefined)
   const lastFrameTimeRef = useRef<number>(0)
   const fpsRef = useRef<number>(60)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const previousAgentCountRef = useRef<number>(0)
 
   // Create cluster manager synchronously using useMemo
   const clusterManager = useMemo(() => {
@@ -299,6 +302,18 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     canvas.addEventListener('click', handleClick)
     canvas.addEventListener('contextmenu', (e) => e.preventDefault())
 
+    // Keyboard events for heatmap and trails
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'h') {
+        heatmapRef.current.toggle()
+      } else if (e.key.toLowerCase() === 't' && heatmapRef.current.enabled) {
+        heatmapRef.current.cycleType()
+      } else if (e.key.toLowerCase() === 'r') {
+        Agent.trailsEnabled = !Agent.trailsEnabled
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+
     // Touch events for mobile
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
@@ -314,6 +329,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       canvas.removeEventListener('touchstart', handleTouchStart)
       canvas.removeEventListener('touchmove', handleTouchMove)
       canvas.removeEventListener('touchend', handleTouchEnd)
+      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [onAgentSelect])
 
@@ -491,14 +507,59 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       // Draw cluster boundaries (after camera transform is applied)
       clusterManager.renderClusters(context)
 
+      // Render heatmap before agents (as background layer)
+      heatmapRef.current.render(
+        context,
+        { x: cameraRef.current.x, y: cameraRef.current.y, zoom: cameraRef.current.zoom },
+        canvas.width,
+        canvas.height
+      )
+      heatmapRef.current.update()
+
+      // Track previous positions for activity heatmap
+      const previousPositions = new Map<string, { x: number; y: number }>()
+      agentsRef.current.forEach((agent) => {
+        previousPositions.set(agent.id, { x: agent.position.x, y: agent.position.y })
+      })
+
       // Update agents (no canvas boundaries for infinite world)
       agentsRef.current.forEach((agent) => {
         agent.update(agentsRef.current, foodRef.current)
+        
+        // Record activity on heatmap
+        const prev = previousPositions.get(agent.id)
+        if (prev) {
+          const dx = agent.position.x - prev.x
+          const dy = agent.position.y - prev.y
+          const movement = Math.sqrt(dx * dx + dy * dy)
+          if (movement > 0.5) {
+            heatmapRef.current.recordActivity(agent.position.x, agent.position.y, movement)
+          }
+        }
       })
+
+      // Track agent count before evolution
+      const agentCountBefore = agentsRef.current.length
 
       // Evolution system
       const evolutionResult = evolutionRef.current.update(agentsRef.current)
       agentsRef.current = evolutionResult.agents
+
+      // Record births and deaths on heatmap
+      if (evolutionResult.newBirths > 0) {
+        agentsRef.current.slice(-evolutionResult.newBirths).forEach((agent) => {
+          heatmapRef.current.recordBirth(agent.position.x, agent.position.y)
+        })
+      }
+      const deaths = agentCountBefore - agentsRef.current.length + evolutionResult.newBirths
+      if (deaths > 0 && previousPositions.size > 0) {
+        const currentIds = new Set(agentsRef.current.map(a => a.id))
+        previousPositions.forEach((pos, id) => {
+          if (!currentIds.has(id)) {
+            heatmapRef.current.recordDeath(pos.x, pos.y)
+          }
+        })
+      }
 
       // No more resets - evolution continues via gene pool resurrection
 
@@ -529,8 +590,26 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       // Draw UI overlay (camera info)
       context.fillStyle = '#00ff88'
       context.font = '12px monospace'
-      context.fillText(`Zoom: ${cameraRef.current.zoom.toFixed(2)}x`, 10, canvas.height - 40)
-      context.fillText(`Camera: (${cameraRef.current.x.toFixed(0)}, ${cameraRef.current.y.toFixed(0)})`, 10, canvas.height - 20)
+      context.fillText(`Zoom: ${cameraRef.current.zoom.toFixed(2)}x`, 10, canvas.height - 80)
+      context.fillText(`Camera: (${cameraRef.current.x.toFixed(0)}, ${cameraRef.current.y.toFixed(0)})`, 10, canvas.height - 60)
+      
+      // Trails status
+      if (Agent.trailsEnabled) {
+        context.fillStyle = '#a78bfa'
+        context.fillText(`Trails: ON (R to toggle)`, 10, canvas.height - 40)
+      } else {
+        context.fillStyle = '#6b7280'
+        context.fillText(`Trails: OFF (R to toggle)`, 10, canvas.height - 40)
+      }
+      
+      // Heatmap status
+      if (heatmapRef.current.enabled) {
+        context.fillStyle = '#fbbf24'
+        context.fillText(`Heatmap: ${heatmapRef.current.currentType.toUpperCase()} (H to toggle, T to cycle)`, 10, canvas.height - 20)
+      } else {
+        context.fillStyle = '#6b7280'
+        context.fillText(`Heatmap: OFF (H to toggle)`, 10, canvas.height - 20)
+      }
 
       if (onStatsUpdate) {
         const latestStats = evolutionRef.current.getLatestStats()

@@ -38,6 +38,9 @@ class Agent {
   public currentSpeed: number
   public memoryState: number[]
   public clusterId: number
+  public positionHistory: { x: number; y: number }[]
+  public static maxTrailLength: number = 30
+  public static trailsEnabled: boolean = true
 
   constructor(
     x: number = 0, 
@@ -73,6 +76,7 @@ class Agent {
     this.currentSpeed = 0
     this.memoryState = new Array(Math.round(this.geneticTraits.memoryNeurons)).fill(0)
     this.clusterId = clusterId
+    this.positionHistory = []
 
     const nnConfig = configData.NeuralNetwork || { HiddenLayers: [20, 16, 12], ActivationFunction: 'tanh', InitializationMethod: 'he', MutationStrategy: 'gaussian' }
     
@@ -240,6 +244,14 @@ class Agent {
     // Track distance traveled for fitness
     const distance = Math.sqrt(dx * dx + dy * dy)
     this.distanceTraveled += distance
+    
+    // Record position for trail (only if moving significantly)
+    if (Agent.trailsEnabled && distance > 0.5) {
+      this.positionHistory.push({ x: this.position.x, y: this.position.y })
+      if (this.positionHistory.length > Agent.maxTrailLength) {
+        this.positionHistory.shift()
+      }
+    }
     
     this.position.x += dx
     this.position.y += dy
@@ -478,8 +490,170 @@ class Agent {
     return null
   }
 
+  public renderTrail(context: CanvasRenderingContext2D, isSelected: boolean = false): void {
+    if (!Agent.trailsEnabled || this.positionHistory.length < 2) return
+    
+    const speciesHue = parseInt(this.species.substring(0, 6), 36) % 360
+    const trailColor = isSelected ? 'rgba(255, 255, 0,' : `hsla(${speciesHue}, 70%, 50%,`
+    
+    context.save()
+    context.lineCap = 'round'
+    context.lineJoin = 'round'
+    
+    for (let i = 1; i < this.positionHistory.length; i++) {
+      const alpha = (i / this.positionHistory.length) * 0.6
+      const lineWidth = (i / this.positionHistory.length) * 2 + 0.5
+      
+      context.beginPath()
+      context.strokeStyle = `${trailColor}${alpha})`
+      context.lineWidth = lineWidth
+      context.moveTo(this.positionHistory[i - 1].x, this.positionHistory[i - 1].y)
+      context.lineTo(this.positionHistory[i].x, this.positionHistory[i].y)
+      context.stroke()
+    }
+    
+    // Connect last history point to current position
+    if (this.positionHistory.length > 0) {
+      const lastPoint = this.positionHistory[this.positionHistory.length - 1]
+      context.beginPath()
+      context.strokeStyle = `${trailColor}0.7)`
+      context.lineWidth = 2.5
+      context.moveTo(lastPoint.x, lastPoint.y)
+      context.lineTo(this.position.x, this.position.y)
+      context.stroke()
+    }
+    
+    context.restore()
+  }
+
+  private getSpeciesVisualTraits(): { 
+    hue: number; 
+    saturation: number; 
+    lightness: number;
+    patternType: number;
+    eyeStyle: number;
+    bodyShape: number;
+  } {
+    const speciesHash = parseInt(this.species.substring(0, 8), 36)
+    return {
+      hue: speciesHash % 360,
+      saturation: 50 + (speciesHash % 30),
+      lightness: 40 + ((speciesHash >> 4) % 20),
+      patternType: speciesHash % 4,
+      eyeStyle: (speciesHash >> 8) % 3,
+      bodyShape: (speciesHash >> 12) % 3
+    }
+  }
+
+  private renderSpeciesPattern(context: CanvasRenderingContext2D, traits: ReturnType<typeof this.getSpeciesVisualTraits>): void {
+    const cx = this.position.x
+    const cy = this.position.y
+    const size = this.width * 0.3
+    
+    context.save()
+    context.translate(cx, cy)
+    context.rotate(this.position.rotation)
+    context.translate(-cx, -cy)
+    
+    const patternColor = `hsla(${(traits.hue + 180) % 360}, ${traits.saturation}%, ${traits.lightness + 20}%, 0.6)`
+    context.fillStyle = patternColor
+    context.strokeStyle = patternColor
+    
+    switch (traits.patternType) {
+      case 0:
+        context.beginPath()
+        context.arc(cx, cy - size * 0.3, size * 0.25, 0, Math.PI * 2)
+        context.fill()
+        break
+      case 1:
+        context.lineWidth = 1.5
+        context.beginPath()
+        context.moveTo(cx - size * 0.4, cy)
+        context.lineTo(cx + size * 0.4, cy)
+        context.stroke()
+        context.beginPath()
+        context.moveTo(cx, cy - size * 0.4)
+        context.lineTo(cx, cy + size * 0.2)
+        context.stroke()
+        break
+      case 2:
+        for (let i = 0; i < 3; i++) {
+          context.beginPath()
+          context.arc(cx, cy - size * 0.3 + i * size * 0.25, size * 0.12, 0, Math.PI * 2)
+          context.fill()
+        }
+        break
+      case 3:
+        context.beginPath()
+        context.moveTo(cx, cy - size * 0.5)
+        context.lineTo(cx - size * 0.3, cy + size * 0.1)
+        context.lineTo(cx + size * 0.3, cy + size * 0.1)
+        context.closePath()
+        context.fill()
+        break
+    }
+    
+    context.restore()
+  }
+
+  private renderEyes(context: CanvasRenderingContext2D, traits: ReturnType<typeof this.getSpeciesVisualTraits>, isSelected: boolean): void {
+    const cx = this.position.x
+    const cy = this.position.y
+    const eyeSize = this.width * 0.15
+    const eyeOffset = this.width * 0.25
+    
+    context.save()
+    context.translate(cx, cy)
+    context.rotate(this.position.rotation)
+    context.translate(-cx, -cy)
+    
+    const eyeY = cy - this.height * 0.2
+    
+    switch (traits.eyeStyle) {
+      case 0:
+        context.fillStyle = isSelected ? '#fff' : '#1a1a2e'
+        context.beginPath()
+        context.arc(cx - eyeOffset, eyeY, eyeSize, 0, Math.PI * 2)
+        context.arc(cx + eyeOffset, eyeY, eyeSize, 0, Math.PI * 2)
+        context.fill()
+        context.fillStyle = isSelected ? '#ff0' : '#4ade80'
+        context.beginPath()
+        context.arc(cx - eyeOffset, eyeY, eyeSize * 0.5, 0, Math.PI * 2)
+        context.arc(cx + eyeOffset, eyeY, eyeSize * 0.5, 0, Math.PI * 2)
+        context.fill()
+        break;
+      case 1:
+        context.fillStyle = isSelected ? '#fff' : '#1a1a2e'
+        context.beginPath()
+        context.arc(cx, eyeY, eyeSize * 1.3, 0, Math.PI * 2)
+        context.fill()
+        context.fillStyle = isSelected ? '#ff0' : '#f87171'
+        context.beginPath()
+        context.arc(cx, eyeY, eyeSize * 0.6, 0, Math.PI * 2)
+        context.fill()
+        break;
+      case 2:
+        context.fillStyle = isSelected ? '#fff' : '#1a1a2e'
+        context.beginPath()
+        context.ellipse(cx - eyeOffset, eyeY, eyeSize * 0.8, eyeSize * 1.2, 0, 0, Math.PI * 2)
+        context.ellipse(cx + eyeOffset, eyeY, eyeSize * 0.8, eyeSize * 1.2, 0, 0, Math.PI * 2)
+        context.fill()
+        context.fillStyle = isSelected ? '#ff0' : '#60a5fa'
+        context.beginPath()
+        context.arc(cx - eyeOffset, eyeY + eyeSize * 0.2, eyeSize * 0.4, 0, Math.PI * 2)
+        context.arc(cx + eyeOffset, eyeY + eyeSize * 0.2, eyeSize * 0.4, 0, Math.PI * 2)
+        context.fill()
+        break;
+    }
+    
+    context.restore()
+  }
+
   public render(context: CanvasRenderingContext2D, isSelected: boolean = false): void {
     const ageScale = this.getAgeScale()
+    
+    // Render trail first (behind the agent)
+    this.renderTrail(context, isSelected)
     
     context.save()
     context.translate(this.position.x, this.position.y)
@@ -490,20 +664,55 @@ class Agent {
       this.Sensor.render(context, isSelected)
     }
 
+    const traits = this.getSpeciesVisualTraits()
+    const renderConfig: any = AgentConfigData.Rendering
+
+    // Draw body based on species shape
     context.beginPath()
-    context.moveTo(this.polygon[0].x, this.polygon[0].y)
-    for (let i = 1; i < this.polygon.length; i++) {
-      context.lineTo(this.polygon[i].x, this.polygon[i].y)
+    
+    switch (traits.bodyShape) {
+      case 0:
+        context.moveTo(this.polygon[0].x, this.polygon[0].y)
+        for (let i = 1; i < this.polygon.length; i++) {
+          context.lineTo(this.polygon[i].x, this.polygon[i].y)
+        }
+        break;
+      case 1:
+        const cx = this.position.x
+        const cy = this.position.y
+        context.save()
+        context.translate(cx, cy)
+        context.rotate(this.position.rotation)
+        context.translate(-cx, -cy)
+        context.ellipse(cx, cy, this.width * 0.5, this.height * 0.6, 0, 0, Math.PI * 2)
+        context.restore()
+        break;
+      case 2:
+        const centerX = this.position.x
+        const centerY = this.position.y
+        const radius = this.width * 0.5
+        context.save()
+        context.translate(centerX, centerY)
+        context.rotate(this.position.rotation)
+        context.translate(-centerX, -centerY)
+        context.moveTo(centerX, centerY - radius * 1.2)
+        context.lineTo(centerX + radius * 0.8, centerY + radius * 0.6)
+        context.lineTo(centerX - radius * 0.8, centerY + radius * 0.6)
+        context.closePath()
+        context.restore()
+        break;
+      default:
+        context.moveTo(this.polygon[0].x, this.polygon[0].y)
+        for (let i = 1; i < this.polygon.length; i++) {
+          context.lineTo(this.polygon[i].x, this.polygon[i].y)
+        }
     }
     context.closePath()
 
-    const renderConfig: any = AgentConfigData.Rendering
-    
-    // Color based on species
-    const speciesHue = parseInt(this.species.substring(0, 6), 36) % 360
-    context.fillStyle = isSelected ? '#ffff00' : `hsl(${speciesHue}, 70%, 50%)`
+    // Color based on species with enhanced visual traits
+    context.fillStyle = isSelected ? '#ffff00' : `hsl(${traits.hue}, ${traits.saturation}%, ${traits.lightness}%)`
     context.fill()
-    context.strokeStyle = isSelected ? '#ffaa00' : (renderConfig.StrokeColor || `hsl(${speciesHue}, 70%, 40%)`)
+    context.strokeStyle = isSelected ? '#ffaa00' : (renderConfig.StrokeColor || `hsl(${traits.hue}, ${traits.saturation}%, ${traits.lightness - 15}%)`)
     context.lineWidth = isSelected ? 3 : renderConfig.StrokeWidth
     context.stroke()
 
@@ -513,6 +722,10 @@ class Agent {
       context.stroke()
       context.shadowBlur = 0
     }
+
+    // Render species-specific pattern and eyes
+    this.renderSpeciesPattern(context, traits)
+    this.renderEyes(context, traits, isSelected)
     
     context.restore()
   }
