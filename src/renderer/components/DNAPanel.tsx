@@ -159,6 +159,51 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const networkCanvasRef = useRef<HTMLCanvasElement>(null)
   const [activeTab, setActiveTab] = useState<'genome' | 'genealogy' | 'network'>('genome')
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('.dna-panel-header')) {
+      setIsDragging(true)
+      const clientX = 'clientX' in e ? e.clientX : e.touches?.[0]?.clientX || 0
+      const clientY = 'clientY' in e ? e.clientY : e.touches?.[0]?.clientY || 0
+      setDragOffset({
+        x: clientX - position.x,
+        y: clientY - position.y
+      })
+    }
+  }
+
+  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+    if (!isDragging) return
+    const clientX = 'clientX' in e ? e.clientX : e.touches?.[0]?.clientX || 0
+    const clientY = 'clientY' in e ? e.clientY : e.touches?.[0]?.clientY || 0
+    setPosition({
+      x: clientX - dragOffset.x,
+      y: clientY - dragOffset.y
+    })
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
+  }
+
+  React.useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleDragMove)
+      window.addEventListener('touchmove', handleDragMove)
+      window.addEventListener('mouseup', handleDragEnd)
+      window.addEventListener('touchend', handleDragEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleDragMove)
+        window.removeEventListener('touchmove', handleDragMove)
+        window.removeEventListener('mouseup', handleDragEnd)
+        window.removeEventListener('touchend', handleDragEnd)
+      }
+    }
+  }, [isDragging, dragOffset])
 
   useEffect(() => {
     if (!selectedAgent || !canvasRef.current) return
@@ -250,8 +295,22 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
   }
 
   return (
-    <div className="dna-panel">
-      <div className="dna-panel-header">
+    <div 
+      ref={panelRef}
+      className="dna-panel"
+      style={{
+        position: 'fixed',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        userSelect: isDragging ? 'none' : 'auto',
+        touchAction: 'none',
+        zIndex: isDragging ? 10001 : 1000
+      }}
+      onMouseDown={handleDragStart}
+      onTouchStart={handleDragStart}
+    >
+      <div className="dna-panel-header" style={{ cursor: 'grab' }}>
         <h3>Agent Inspector</h3>
         <button className="btn-close" onClick={onClose}>
           <i className="bi bi-x-lg"></i>

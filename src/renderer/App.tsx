@@ -5,7 +5,6 @@ import { DNAPanel } from './components/DNAPanel'
 import { StatsChart } from './components/StatsChart'
 import { SaveLoadPanel } from './components/SaveLoadPanel'
 import { SpeciesStats } from './components/SpeciesStats'
-import { FamilyTreePanel } from './components/FamilyTreePanel'
 import type { SimulationConfig, SimulationStats } from './types/simulation'
 import type { Agent } from './core/Agent'
 import type { GenerationStats, EvolutionConfig } from './core/EvolutionManager'
@@ -219,6 +218,8 @@ export const App: React.FC = () => {
           <p>• Tap agent to view DNA</p>
           <p>• Drag to pan camera</p>
           <p>• Pinch to zoom</p>
+          <p>• 3-finger tap twice for heatmap</p>
+          <p>• Drag DNA panel by header</p>
         </div>
       </Sidebar>
 

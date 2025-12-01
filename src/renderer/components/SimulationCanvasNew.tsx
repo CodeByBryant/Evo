@@ -312,6 +312,26 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         Agent.trailsEnabled = !Agent.trailsEnabled
       }
     }
+    
+    // Mobile gesture controls - three-finger tap for heatmap toggle
+    let lastTouchTime = 0
+    let touchCount = 0
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 3) {
+        const now = Date.now()
+        if (now - lastTouchTime < 500) {
+          touchCount++
+          if (touchCount === 2) {
+            heatmapRef.current.toggle()
+            touchCount = 0
+          }
+        } else {
+          touchCount = 1
+        }
+        lastTouchTime = now
+      }
+    }
+    
     window.addEventListener('keydown', handleKeyDown)
 
     // Touch events for mobile
