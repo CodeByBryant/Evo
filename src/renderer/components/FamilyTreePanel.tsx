@@ -48,6 +48,8 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [showDeadAgents, setShowDeadAgents] = useState(true)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+  const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
 
   const getSpeciesColor = useCallback((speciesId: string, alpha = 1): string => {
     const hash = parseInt(speciesId.substring(0, 8), 36)
@@ -515,7 +517,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     context.fillStyle = 'rgba(255, 255, 255, 0.4)'
     context.font = '11px Inter, system-ui, sans-serif'
     const modeLabel = viewMode === 'tree' ? 'Tree View' : viewMode === 'radial' ? 'Radial View' : 'Timeline View'
-    context.fillText(`${modeLabel} | Scroll to zoom | Drag to pan`, 12, canvas.height - 12)
+    context.fillText(`${modeLabel} | Scroll/pinch to zoom | Drag/touch to pan`, 12, canvas.height - 12)
     
     context.fillStyle = 'rgba(255, 255, 255, 0.3)'
     context.textAlign = 'right'
@@ -691,6 +693,97 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     e.preventDefault()
     const delta = e.deltaY > 0 ? 0.9 : 1.1
     setZoom(prev => Math.max(0.1, Math.min(4, prev * delta)))
+  }
+
+  const getTouchDistance = (touches: React.TouchList): number => {
+    if (touches.length < 2) return 0
+    const dx = touches[0].clientX - touches[1].clientX
+    const dy = touches[0].clientY - touches[1].clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
+  const getTouchCenter = (touches: React.TouchList): { x: number; y: number } => {
+    if (touches.length < 2) {
+      return { x: touches[0].clientX, y: touches[0].clientY }
+    }
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2
+    }
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault()
+    
+    if (e.touches.length === 1) {
+      const touch = e.touches[0]
+      setIsDragging(true)
+      setDragStart({ x: touch.clientX - viewOffset.x, y: touch.clientY - viewOffset.y })
+      setTouchStartPos({ x: touch.clientX, y: touch.clientY })
+    } else if (e.touches.length === 2) {
+      const center = getTouchCenter(e.touches)
+      setLastTouchDistance(getTouchDistance(e.touches))
+      setTouchStartPos(center)
+      setIsDragging(false)
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault()
+    
+    if (e.touches.length === 1 && isDragging) {
+      const touch = e.touches[0]
+      setViewOffset({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y
+      })
+    } else if (e.touches.length === 2 && lastTouchDistance !== null) {
+      const newDistance = getTouchDistance(e.touches)
+      const scale = newDistance / lastTouchDistance
+      
+      setZoom(prev => Math.max(0.1, Math.min(4, prev * scale)))
+      setLastTouchDistance(newDistance)
+      
+      const center = getTouchCenter(e.touches)
+      if (touchStartPos) {
+        const dx = center.x - touchStartPos.x
+        const dy = center.y - touchStartPos.y
+        setViewOffset(prev => ({
+          x: prev.x + dx * 0.3,
+          y: prev.y + dy * 0.3
+        }))
+        setTouchStartPos(center)
+      }
+    }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      if (touchStartPos && !lastTouchDistance) {
+        const touch = e.changedTouches[0]
+        const dx = Math.abs(touch.clientX - touchStartPos.x)
+        const dy = Math.abs(touch.clientY - touchStartPos.y)
+        
+        if (dx < 10 && dy < 10) {
+          const node = getNodeAtPosition(touch.clientX, touch.clientY)
+          if (node && node.isAlive && onAgentSelect) {
+            const agent = agents.find(a => a.id === node.id)
+            if (agent) {
+              onAgentSelect(agent)
+            }
+          }
+        }
+      }
+      
+      setIsDragging(false)
+      setLastTouchDistance(null)
+      setTouchStartPos(null)
+    } else if (e.touches.length === 1) {
+      const touch = e.touches[0]
+      setDragStart({ x: touch.clientX - viewOffset.x, y: touch.clientY - viewOffset.y })
+      setLastTouchDistance(null)
+      setIsDragging(true)
+    }
   }
 
   return (
@@ -926,7 +1019,8 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
           style={{ 
             flex: 1, 
             cursor: isDragging ? 'grabbing' : hoveredNode ? 'pointer' : 'grab',
-            width: '100%'
+            width: '100%',
+            touchAction: 'none'
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -936,6 +1030,14 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
             setHoveredNode(null)
           }}
           onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={() => {
+            setIsDragging(false)
+            setLastTouchDistance(null)
+            setTouchStartPos(null)
+          }}
         />
 
         {hoveredNode && !isDragging && (

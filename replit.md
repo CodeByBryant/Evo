@@ -17,7 +17,7 @@ The system is built on React 18 with TypeScript for the frontend, utilizing Boot
 **UI/UX Decisions:**
 - **Infinite Scrollable World:** A camera system allows for panning and zooming across an endless grid, displaying real-time camera position.
 - **DNA Visualization Panel:** Features an animated double helix representing the neural network genome, color-coded by weight values, and displays agent information. The panel supports three size modes (normal, expanded, maximized) with manual resize capability via drag handles.
-- **Genealogy Viewer:** A canvas-based family tree with three view modes (tree, radial, timeline), animated particle backgrounds, gradient nodes with glowing effects, and interactive lineage tracing that highlights ancestry chains on hover.
+- **Genealogy Viewer:** A canvas-based family tree with three view modes (tree, radial, timeline), animated particle backgrounds, gradient nodes with glowing effects, and interactive lineage tracing that highlights ancestry chains on hover. Supports touch gestures for mobile devices (drag to pan, pinch to zoom, tap to select).
 - **Fullscreen Mode:** Cross-platform fullscreen support via a custom hook (`useFullscreen.ts`) that handles both Web Fullscreen API and Electron IPC integration.
 - **Species Visualization:** Agents are color-coded based on their species ID using HSL for clear differentiation.
 - **Interactive Controls:** A left sidebar provides play/pause, reset, speed controls, statistics, and configurable evolution parameters. A right DNA panel appears upon agent selection.
