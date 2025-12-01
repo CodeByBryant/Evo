@@ -514,15 +514,68 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       if (!canvas || !context) return
 
       const deltaTime = currentTime - lastFrameTimeRef.current
-      if (deltaTime < 1000 / (60 * speed)) {
-        animationFrameRef.current = requestAnimationFrame(animate)
-        return
-      }
-
       lastFrameTimeRef.current = currentTime
 
       if (deltaTime > 0) {
         fpsRef.current = Math.round(1000 / deltaTime)
+      }
+
+      // Run simulation steps based on speed multiplier
+      const stepsPerFrame = Math.max(1, Math.round(speed))
+      
+      for (let step = 0; step < stepsPerFrame; step++) {
+        // Track previous positions for activity heatmap
+        const previousPositions = new Map<string, { x: number; y: number }>()
+        agentsRef.current.forEach((agent) => {
+          previousPositions.set(agent.id, { x: agent.position.x, y: agent.position.y })
+        })
+
+        // Update agents (no canvas boundaries for infinite world)
+        agentsRef.current.forEach((agent) => {
+          agent.update(agentsRef.current, foodRef.current)
+          
+          // Record activity on heatmap (only for last step to avoid multiple recordings)
+          if (step === stepsPerFrame - 1) {
+            const prev = previousPositions.get(agent.id)
+            if (prev) {
+              const dx = agent.position.x - prev.x
+              const dy = agent.position.y - prev.y
+              const movement = Math.sqrt(dx * dx + dy * dy)
+              if (movement > 0.5) {
+                heatmapRef.current.recordActivity(agent.position.x, agent.position.y, movement)
+              }
+            }
+          }
+        })
+
+        // Track agent count before evolution
+        const agentCountBefore = agentsRef.current.length
+
+        // Evolution system
+        const evolutionResult = evolutionRef.current.update(agentsRef.current)
+        agentsRef.current = evolutionResult.agents
+
+        // Record births and deaths on heatmap (only on last step)
+        if (step === stepsPerFrame - 1) {
+          if (evolutionResult.newBirths > 0) {
+            agentsRef.current.slice(-evolutionResult.newBirths).forEach((agent) => {
+              heatmapRef.current.recordBirth(agent.position.x, agent.position.y)
+            })
+          }
+          const deaths = agentCountBefore - agentsRef.current.length + evolutionResult.newBirths
+          if (deaths > 0) {
+            const currentIds = new Set(agentsRef.current.map(a => a.id))
+            const previousIds = new Set<string>()
+            agentsRef.current.forEach(a => previousIds.add(a.id))
+            const deadAgents = Array.from(previousIds).filter(id => !currentIds.has(id))
+            deadAgents.forEach((id) => {
+              const prevPos = previousPositions.get(id)
+              if (prevPos) {
+                heatmapRef.current.recordDeath(prevPos.x, prevPos.y)
+              }
+            })
+          }
+        }
       }
 
       // Clear and set up camera transform
@@ -546,51 +599,6 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         canvas.height
       )
       heatmapRef.current.update()
-
-      // Track previous positions for activity heatmap
-      const previousPositions = new Map<string, { x: number; y: number }>()
-      agentsRef.current.forEach((agent) => {
-        previousPositions.set(agent.id, { x: agent.position.x, y: agent.position.y })
-      })
-
-      // Update agents (no canvas boundaries for infinite world)
-      agentsRef.current.forEach((agent) => {
-        agent.update(agentsRef.current, foodRef.current)
-        
-        // Record activity on heatmap
-        const prev = previousPositions.get(agent.id)
-        if (prev) {
-          const dx = agent.position.x - prev.x
-          const dy = agent.position.y - prev.y
-          const movement = Math.sqrt(dx * dx + dy * dy)
-          if (movement > 0.5) {
-            heatmapRef.current.recordActivity(agent.position.x, agent.position.y, movement)
-          }
-        }
-      })
-
-      // Track agent count before evolution
-      const agentCountBefore = agentsRef.current.length
-
-      // Evolution system
-      const evolutionResult = evolutionRef.current.update(agentsRef.current)
-      agentsRef.current = evolutionResult.agents
-
-      // Record births and deaths on heatmap
-      if (evolutionResult.newBirths > 0) {
-        agentsRef.current.slice(-evolutionResult.newBirths).forEach((agent) => {
-          heatmapRef.current.recordBirth(agent.position.x, agent.position.y)
-        })
-      }
-      const deaths = agentCountBefore - agentsRef.current.length + evolutionResult.newBirths
-      if (deaths > 0 && previousPositions.size > 0) {
-        const currentIds = new Set(agentsRef.current.map(a => a.id))
-        previousPositions.forEach((pos, id) => {
-          if (!currentIds.has(id)) {
-            heatmapRef.current.recordDeath(pos.x, pos.y)
-          }
-        })
-      }
 
       // No more resets - evolution continues via gene pool resurrection
 
