@@ -34,7 +34,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [zoom, setZoom] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [viewMode, setViewMode] = useState<'species' | 'agents'>('species')
 
   const getSpeciesColor = useCallback((speciesId: string): string => {
     const hash = parseInt(speciesId.substring(0, 8), 36)
@@ -88,18 +87,14 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     context.translate(canvas.width / 2 + viewOffset.x, viewOffset.y + 50)
     context.scale(zoom, zoom)
 
-    if (viewMode === 'species') {
-      renderSpeciesView(context)
-    } else {
-      renderAgentView(context)
-    }
+    renderAgentView(context)
 
     context.restore()
 
     context.fillStyle = '#888'
     context.font = '11px monospace'
-    context.fillText(`Mode: ${viewMode.toUpperCase()} | Scroll to zoom | Drag to pan`, 10, canvas.height - 10)
-  }, [nodes, viewOffset, zoom, viewMode, selectedAgent])
+    context.fillText(`Family Tree | Scroll to zoom | Drag to pan`, 10, canvas.height - 10)
+  }, [nodes, viewOffset, zoom, selectedAgent])
 
   const renderSpeciesView = (context: CanvasRenderingContext2D) => {
     const species = speciesManager?.getAllSpecies() || []
@@ -286,34 +281,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         background: '#1a1a1a',
         borderBottom: '1px solid #333'
       }}>
-        <button
-          onClick={() => setViewMode('species')}
-          style={{
-            padding: '6px 12px',
-            background: viewMode === 'species' ? '#4ade80' : '#333',
-            color: viewMode === 'species' ? '#000' : '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-        >
-          Species View
-        </button>
-        <button
-          onClick={() => setViewMode('agents')}
-          style={{
-            padding: '6px 12px',
-            background: viewMode === 'agents' ? '#60a5fa' : '#333',
-            color: viewMode === 'agents' ? '#000' : '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-        >
-          Agent Lineage
-        </button>
         <button
           onClick={() => { setViewOffset({ x: 0, y: 0 }); setZoom(1) }}
           style={{
