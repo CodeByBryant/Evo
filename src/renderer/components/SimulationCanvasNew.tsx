@@ -527,8 +527,9 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         fpsRef.current = Math.round(1000 / deltaTime)
       }
 
-      // Run simulation steps based on speed multiplier
-      const stepsPerFrame = Math.max(1, Math.round(speed))
+      // Run simulation steps based on speed multiplier (capped to prevent performance collapse)
+      // Max 3 steps per frame maintains smooth 60 FPS at all speeds
+      const stepsPerFrame = Math.min(3, Math.max(1, Math.round(speed)))
       
       for (let step = 0; step < stepsPerFrame; step++) {
         // Track previous positions for activity heatmap
