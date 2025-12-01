@@ -175,9 +175,9 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
       const panelWidth = 500
       const panelHeight = 600
       
-      // Center on canvas container
+      // Center on canvas container, shifted down 200px
       const x = rect.left + (rect.width - panelWidth) / 2
-      const y = rect.top + (rect.height - panelHeight) / 2
+      const y = rect.top + (rect.height - panelHeight) / 2 + 200
       
       setPosition({ x, y })
     }
