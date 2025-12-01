@@ -165,25 +165,29 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // Position panel relative to agent when selected
+  // Position panel on the right side of screen
   useEffect(() => {
-    if (selectedAgent && screenPosition) {
+    if (selectedAgent) {
       const panelWidth = 500
       const panelHeight = 600
-      let x = screenPosition.x + 50
-      let y = screenPosition.y + 50
+      const padding = 20
       
-      // Keep panel within viewport
-      if (x + panelWidth > window.innerWidth) {
-        x = Math.max(10, window.innerWidth - panelWidth - 10)
-      }
+      // Position on right side of screen with padding from edges
+      let x = window.innerWidth - panelWidth - padding
+      let y = padding
+      
+      // Ensure it stays within viewport
+      x = Math.max(padding, x)
+      y = Math.max(padding, y)
+      
+      // If panel would go below viewport, position from bottom up
       if (y + panelHeight > window.innerHeight) {
-        y = Math.max(10, window.innerHeight - panelHeight - 10)
+        y = Math.max(padding, window.innerHeight - panelHeight - padding)
       }
       
       setPosition({ x, y })
     }
-  }, [selectedAgent, screenPosition])
+  }, [selectedAgent])
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     if ((e.target as HTMLElement).closest('.dna-panel-header')) {
