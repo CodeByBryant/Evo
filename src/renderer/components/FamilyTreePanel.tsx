@@ -274,7 +274,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         const horizontalSpacing = Math.max(baseHorizontalSpacing, 400 / Math.max(totalInGen, 1))
         
         sortedGroup.forEach((node, index) => {
-          const y = gen * generationSpacing
+          const y = gen * generationSpacing  // Descendants have higher generation = lower on screen
           const x = (index - (totalInGen - 1) / 2) * horizontalSpacing
           positioned.set(node.id, { x, y })
         })
@@ -680,10 +680,13 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const handleMouseUp = (e: React.MouseEvent) => {
     if (!isDragging || (Math.abs(e.clientX - dragStart.x - viewOffset.x) < 5 && Math.abs(e.clientY - dragStart.y - viewOffset.y) < 5)) {
       const node = getNodeAtPosition(e.clientX, e.clientY)
-      if (node && node.isAlive && onAgentSelect) {
+      if (node && onAgentSelect) {
         const agent = agents.find(a => a.id === node.id)
         if (agent) {
           onAgentSelect(agent)
+        } else if (nodes.has(node.id)) {
+          // For dead agents, still trigger selection even if not in current agents list
+          onAgentSelect(null)
         }
       }
     }
@@ -767,10 +770,13 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         
         if (dx < 10 && dy < 10) {
           const node = getNodeAtPosition(touch.clientX, touch.clientY)
-          if (node && node.isAlive && onAgentSelect) {
+          if (node && onAgentSelect) {
             const agent = agents.find(a => a.id === node.id)
             if (agent) {
               onAgentSelect(agent)
+            } else if (nodes.has(node.id)) {
+              // For dead agents, still trigger selection
+              onAgentSelect(null)
             }
           }
         }
