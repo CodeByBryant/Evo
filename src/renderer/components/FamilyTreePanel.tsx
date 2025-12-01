@@ -136,6 +136,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
 
   const renderAgentView = (context: CanvasRenderingContext2D) => {
     const generationGroups = new Map<number, FamilyTreeNode[]>()
+    let maxGeneration = 0
     
     nodes.forEach(node => {
       const gen = node.generation
@@ -143,24 +144,58 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         generationGroups.set(gen, [])
       }
       generationGroups.get(gen)!.push(node)
+      maxGeneration = Math.max(maxGeneration, gen)
     })
 
-    nodes.forEach(node => {
+    // Recalculate positions for proper tree layout
+    const generationSpacing = 120
+    const newNodes = new Map(nodes)
+    
+    generationGroups.forEach((group, gen) => {
+      group.forEach((node, index) => {
+        const y = -maxGeneration * generationSpacing / 2 + gen * generationSpacing
+        const totalInGen = group.length
+        const horizontalSpacing = 80
+        const x = (index - totalInGen / 2) * horizontalSpacing
+        
+        const updatedNode = { ...node, x, y }
+        newNodes.set(node.id, updatedNode)
+      })
+    })
+
+    // Draw generation labels on left
+    context.fillStyle = '#666'
+    context.font = '12px monospace'
+    context.textAlign = 'right'
+    for (let gen = 0; gen <= maxGeneration; gen++) {
+      const y = -maxGeneration * generationSpacing / 2 + gen * generationSpacing
+      context.fillText(`Gen ${gen}`, -100, y + 4)
+    }
+
+    // Draw parent-child connections
+    newNodes.forEach(node => {
       node.parentIds.forEach(parentId => {
-        const parentNode = nodes.get(parentId)
+        const parentNode = newNodes.get(parentId)
         if (parentNode) {
+          // Draw curved connection line
           context.beginPath()
-          context.moveTo(parentNode.x, parentNode.y)
-          context.lineTo(node.x, node.y)
-          context.strokeStyle = node.isAlive ? 'rgba(100, 200, 100, 0.3)' : 'rgba(100, 100, 100, 0.2)'
-          context.lineWidth = 1
+          context.moveTo(parentNode.x, parentNode.y + 10)
+          const midY = (parentNode.y + node.y) / 2
+          context.bezierCurveTo(
+            parentNode.x, midY,
+            node.x, midY,
+            node.x, node.y - 10
+          )
+          context.strokeStyle = node.isAlive ? 'rgba(100, 200, 100, 0.4)' : 'rgba(100, 100, 100, 0.2)'
+          context.lineWidth = 2
           context.stroke()
         }
       })
     })
 
-    nodes.forEach(node => {
-      const radius = node.isAlive ? 8 + (node.fitness / 20) : 5
+    // Draw agent nodes
+    newNodes.forEach(node => {
+      const radius = node.isAlive ? 10 + Math.min(node.fitness / 30, 5) : 6
       
       context.beginPath()
       context.arc(node.x, node.y, radius, 0, Math.PI * 2)
@@ -174,19 +209,20 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       }
       context.fill()
 
-      context.strokeStyle = selectedAgent?.id === node.id ? '#fff' : '#333'
-      context.lineWidth = selectedAgent?.id === node.id ? 2 : 1
+      context.strokeStyle = selectedAgent?.id === node.id ? '#fff' : '#555'
+      context.lineWidth = selectedAgent?.id === node.id ? 3 : 1.5
       context.stroke()
     })
 
+    // Draw selected agent info
     if (selectedAgent) {
-      const selectedNode = nodes.get(selectedAgent.id)
+      const selectedNode = newNodes.get(selectedAgent.id)
       if (selectedNode) {
-        context.fillStyle = '#fff'
-        context.font = '10px monospace'
+        context.fillStyle = '#64c8ff'
+        context.font = 'bold 11px monospace'
         context.textAlign = 'center'
-        context.fillText(`Gen ${selectedNode.generation}`, selectedNode.x, selectedNode.y - 15)
-        context.fillText(`Food: ${selectedNode.foodEaten}`, selectedNode.x, selectedNode.y + 20)
+        context.fillText(`Fitness: ${selectedNode.fitness.toFixed(1)}`, selectedNode.x, selectedNode.y - 25)
+        context.fillText(`Food: ${selectedNode.foodEaten}`, selectedNode.x, selectedNode.y + 25)
       }
     }
   }
