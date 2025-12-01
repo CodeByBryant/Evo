@@ -715,6 +715,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
           <div style={{ height: '100%', overflow: 'hidden' }}>
             <FamilyTreePanel
               agents={allAgents}
+              agentHistory={agentHistory}
               selectedAgent={selectedAgent}
               onAgentSelect={onAgentSelect}
             />

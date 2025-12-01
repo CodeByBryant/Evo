@@ -20,6 +20,7 @@ interface FamilyTreeNode {
 
 interface FamilyTreePanelProps {
   agents: Agent[]
+  agentHistory?: Map<string, Agent>
   selectedAgent: Agent | null
   onAgentSelect?: (agent: Agent | null) => void
   speciesManager?: { getAllSpecies: () => SpeciesInfo[] }
@@ -29,6 +30,7 @@ type ViewMode = 'tree' | 'radial' | 'timeline'
 
 export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   agents,
+  agentHistory,
   selectedAgent,
   onAgentSelect,
   speciesManager
@@ -47,6 +49,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [filterSpecies, setFilterSpecies] = useState<string | null>(null)
   const [showDeadAgents, setShowDeadAgents] = useState(true)
   const [showStats, setShowStats] = useState(false)
+  const [filterToLineage, setFilterToLineage] = useState(true)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
@@ -128,10 +131,16 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
 
   useEffect(() => {
     const newNodes = new Map<string, FamilyTreeNode>()
-    const agentIds = new Set(agents.map(a => a.id))
     const childrenMap = new Map<string, string[]>()
+    
+    // Combine current agents with agent history
+    const allAgentsMap = new Map<string, Agent>()
+    agentHistory?.forEach((agent, id) => allAgentsMap.set(id, agent))
+    agents.forEach(agent => allAgentsMap.set(agent.id, agent))
+    
+    const agentIds = new Set(agents.map(a => a.id))
 
-    agents.forEach(agent => {
+    allAgentsMap.forEach(agent => {
       agent.parentIds?.forEach(parentId => {
         if (!childrenMap.has(parentId)) {
           childrenMap.set(parentId, [])
@@ -140,7 +149,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       })
     })
 
-    agents.forEach((agent, index) => {
+    allAgentsMap.forEach((agent) => {
       const existingNode = nodes.get(agent.id)
       
       newNodes.set(agent.id, {
@@ -151,7 +160,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         generation: agent.generation,
         x: existingNode?.x ?? 0,
         y: existingNode?.y ?? 0,
-        isAlive: true,
+        isAlive: agentIds.has(agent.id),
         fitness: agent.fitness,
         foodEaten: agent.foodEaten,
         age: agent.age,
@@ -160,24 +169,13 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       })
     })
 
-    nodes.forEach((node, id) => {
-      if (!agentIds.has(id)) {
-        const existingChildren = childrenMap.get(id) || node.childIds
-        newNodes.set(id, { 
-          ...node, 
-          isAlive: false,
-          childIds: existingChildren
-        })
-      }
-    })
-
     newNodes.forEach((node, id) => {
       node.descendants = countDescendants(id, newNodes)
       node.ancestors = countAncestors(id, newNodes)
     })
 
     setNodes(newNodes)
-  }, [agents, countDescendants, countAncestors])
+  }, [agents, agentHistory, countDescendants, countAncestors])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -241,6 +239,9 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const calculatePositions = useCallback((nodesMap: Map<string, FamilyTreeNode>, mode: ViewMode) => {
     const positioned = new Map<string, { x: number; y: number }>()
     
+    // Get lineage set for filtering
+    const lineageSet = selectedAgent && filterToLineage ? getLineage(selectedAgent.id, nodesMap) : null
+    
     if (mode === 'tree') {
       const generationGroups = new Map<number, FamilyTreeNode[]>()
       let maxGeneration = 0
@@ -248,6 +249,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       nodesMap.forEach(node => {
         if (filterSpecies && node.speciesId !== filterSpecies) return
         if (!showDeadAgents && !node.isAlive) return
+        if (filterToLineage && selectedAgent && lineageSet && !lineageSet.has(node.id)) return
         
         const gen = node.generation
         if (!generationGroups.has(gen)) {
