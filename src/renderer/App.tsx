@@ -26,6 +26,7 @@ export const App: React.FC = () => {
   })
   const [resetKey, setResetKey] = useState(0)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const [agentScreenPos, setAgentScreenPos] = useState<{ x: number; y: number } | null>(null)
   const [generationHistory, setGenerationHistory] = useState<GenerationStats[]>([])
   const [currentAgents, setCurrentAgents] = useState<Agent[]>([])
   const [agentHistory, setAgentHistory] = useState<Map<string, Agent>>(new Map())
@@ -109,11 +110,12 @@ export const App: React.FC = () => {
     }
   }, [])
 
-  const handleAgentSelect = useCallback((agent: Agent | null) => {
+  const handleAgentSelect = useCallback((agent: Agent | null, screenPos?: { x: number; y: number }) => {
     if (agent) {
       console.log(
         `[App] Agent selected: ${agent.id.substring(0, 8)}, Species: ${agent.species.substring(0, 8)}`
       )
+      setAgentScreenPos(screenPos || null)
     }
     setSelectedAgent(agent)
   }, [])
@@ -243,6 +245,7 @@ export const App: React.FC = () => {
         allAgents={currentAgents}
         agentHistory={agentHistory}
         onAgentSelect={handleAgentSelect}
+        screenPosition={agentScreenPos}
       />
     </div>
   )

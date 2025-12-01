@@ -204,9 +204,18 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
 
       if (closestAgent) {
         console.log(`[SimulationCanvasNew] Agent clicked: ${closestAgent.id.substring(0, 8)}`)
+        const screenPos = cameraRef.current.worldToScreen(
+          closestAgent.position.x,
+          closestAgent.position.y,
+          canvas.width,
+          canvas.height
+        )
+        const rect = canvas.getBoundingClientRect()
+        onAgentSelect?.(closestAgent, { x: screenPos.x + rect.left, y: screenPos.y + rect.top })
+      } else {
+        onAgentSelect?.(null)
       }
       setSelectedAgent(closestAgent)
-      onAgentSelect?.(closestAgent)
     }
 
     // Touch event handlers for mobile camera control

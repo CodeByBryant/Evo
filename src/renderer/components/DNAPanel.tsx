@@ -153,9 +153,10 @@ interface DNAPanelProps {
   allAgents?: Agent[]
   agentHistory?: Map<string, Agent>
   onAgentSelect?: (agent: Agent | null) => void
+  screenPosition?: { x: number; y: number } | null
 }
 
-export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map(), onAgentSelect }) => {
+export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map(), onAgentSelect, screenPosition }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const networkCanvasRef = useRef<HTMLCanvasElement>(null)
   const [activeTab, setActiveTab] = useState<'genome' | 'genealogy' | 'network'>('genome')
@@ -163,6 +164,26 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const panelRef = useRef<HTMLDivElement>(null)
+
+  // Position panel relative to agent when selected
+  useEffect(() => {
+    if (selectedAgent && screenPosition) {
+      const panelWidth = 500
+      const panelHeight = 600
+      let x = screenPosition.x + 50
+      let y = screenPosition.y + 50
+      
+      // Keep panel within viewport
+      if (x + panelWidth > window.innerWidth) {
+        x = Math.max(10, window.innerWidth - panelWidth - 10)
+      }
+      if (y + panelHeight > window.innerHeight) {
+        y = Math.max(10, window.innerHeight - panelHeight - 10)
+      }
+      
+      setPosition({ x, y })
+    }
+  }, [selectedAgent, screenPosition])
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     if ((e.target as HTMLElement).closest('.dna-panel-header')) {
