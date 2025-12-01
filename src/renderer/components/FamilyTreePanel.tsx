@@ -46,6 +46,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [animationFrame, setAnimationFrame] = useState(0)
   const [filterSpecies, setFilterSpecies] = useState<string | null>(null)
   const [showDeadAgents, setShowDeadAgents] = useState(true)
+  const [showStats, setShowStats] = useState(false)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
@@ -343,13 +344,13 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     context.fillStyle = gradient
     context.fillRect(0, 0, canvas.width, canvas.height)
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 10; i++) {
       const x = (Math.sin(i * 234.5 + animationFrame * 0.01) * 0.5 + 0.5) * canvas.width
       const y = (Math.cos(i * 345.6 + animationFrame * 0.008) * 0.5 + 0.5) * canvas.height
-      const alpha = 0.1 + Math.sin(i + animationFrame * 0.05) * 0.05
+      const alpha = 0.05 + Math.sin(i + animationFrame * 0.05) * 0.03
       context.fillStyle = `rgba(100, 150, 255, ${alpha})`
       context.beginPath()
-      context.arc(x, y, 1, 0, Math.PI * 2)
+      context.arc(x, y, 0.8, 0, Math.PI * 2)
       context.fill()
     }
 
@@ -892,6 +893,23 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         </select>
 
         <button
+          onClick={() => setShowStats(!showStats)}
+          style={{
+            padding: '5px 10px',
+            background: showStats ? 'rgba(100, 150, 255, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+            color: showStats ? '#8af' : 'rgba(255, 255, 255, 0.7)',
+            border: showStats ? '1px solid rgba(100, 150, 255, 0.3)' : 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '11px',
+            transition: 'all 0.2s'
+          }}
+        >
+          <i className="bi bi-info-circle" style={{ marginRight: '4px' }}></i>
+          Stats
+        </button>
+
+        <button
           onClick={() => { setViewOffset({ x: 0, y: 0 }); setZoom(1) }}
           style={{
             padding: '5px 10px',
@@ -911,6 +929,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       </div>
 
       <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+        {showStats && (
         <div style={{
           position: 'absolute',
           top: '10px',
@@ -995,6 +1014,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
             </>
           )}
         </div>
+        )}
 
         <div style={{
           position: 'absolute',

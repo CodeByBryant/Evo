@@ -73,6 +73,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 value={speed}
                 onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
               />
+              <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                <button 
+                  className="btn-control" 
+                  onClick={() => onSpeedChange(50)}
+                  style={{ flex: 1, fontSize: '0.7rem' }}
+                  title="50x Speed"
+                >
+                  50x
+                </button>
+                <button 
+                  className="btn-control" 
+                  onClick={() => onSpeedChange(100)}
+                  style={{ flex: 1, fontSize: '0.7rem' }}
+                  title="100x Speed"
+                >
+                  100x
+                </button>
+                <button 
+                  className="btn-control" 
+                  onClick={() => onSpeedChange(500)}
+                  style={{ flex: 1, fontSize: '0.7rem' }}
+                  title="500x Speed"
+                >
+                  500x
+                </button>
+              </div>
             </div>
           </div>
 
