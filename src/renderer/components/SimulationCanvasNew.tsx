@@ -514,6 +514,13 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       if (!canvas || !context) return
 
       const deltaTime = currentTime - lastFrameTimeRef.current
+      // Maintain 60 FPS target while allowing speed multiplier
+      const targetFrameTime = 1000 / 60
+      if (deltaTime < targetFrameTime * 0.5) {
+        animationFrameRef.current = requestAnimationFrame(animate)
+        return
+      }
+
       lastFrameTimeRef.current = currentTime
 
       if (deltaTime > 0) {
@@ -563,15 +570,11 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
             })
           }
           const deaths = agentCountBefore - agentsRef.current.length + evolutionResult.newBirths
-          if (deaths > 0) {
+          if (deaths > 0 && previousPositions.size > 0) {
             const currentIds = new Set(agentsRef.current.map(a => a.id))
-            const previousIds = new Set<string>()
-            agentsRef.current.forEach(a => previousIds.add(a.id))
-            const deadAgents = Array.from(previousIds).filter(id => !currentIds.has(id))
-            deadAgents.forEach((id) => {
-              const prevPos = previousPositions.get(id)
-              if (prevPos) {
-                heatmapRef.current.recordDeath(prevPos.x, prevPos.y)
+            previousPositions.forEach((pos, id) => {
+              if (!currentIds.has(id)) {
+                heatmapRef.current.recordDeath(pos.x, pos.y)
               }
             })
           }
