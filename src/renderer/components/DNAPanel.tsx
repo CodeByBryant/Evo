@@ -165,17 +165,17 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // Position panel in center of canvas
+  // Position panel in center of canvas container
   useEffect(() => {
     if (selectedAgent) {
-      const canvas = document.querySelector('canvas')
-      if (!canvas) return
+      const container = document.querySelector('.canvas-container')
+      if (!container) return
       
-      const rect = canvas.getBoundingClientRect()
+      const rect = container.getBoundingClientRect()
       const panelWidth = 500
       const panelHeight = 600
       
-      // Center on canvas
+      // Center on canvas container
       const x = rect.left + (rect.width - panelWidth) / 2
       const y = rect.top + (rect.height - panelHeight) / 2
       
