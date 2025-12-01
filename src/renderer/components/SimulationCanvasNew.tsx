@@ -316,7 +316,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     // Mobile gesture controls - three-finger tap for heatmap toggle
     let lastTouchTime = 0
     let touchCount = 0
-    const handleTouchStart = (e: TouchEvent) => {
+    const handleHeatmapGesture = (e: TouchEvent) => {
       if (e.touches.length === 3) {
         const now = Date.now()
         if (now - lastTouchTime < 500) {
@@ -333,6 +333,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     }
     
     window.addEventListener('keydown', handleKeyDown)
+    canvas.addEventListener('touchstart', handleHeatmapGesture, { passive: true })
 
     // Touch events for mobile
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
@@ -346,6 +347,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       canvas.removeEventListener('mouseup', handleMouseUp)
       canvas.removeEventListener('wheel', handleWheel)
       canvas.removeEventListener('click', handleClick)
+      canvas.removeEventListener('touchstart', handleHeatmapGesture)
       canvas.removeEventListener('touchstart', handleTouchStart)
       canvas.removeEventListener('touchmove', handleTouchMove)
       canvas.removeEventListener('touchend', handleTouchEnd)
