@@ -4,7 +4,6 @@ import { Sidebar } from './components/Sidebar'
 import { DNAPanel } from './components/DNAPanel'
 import { StatsChart } from './components/StatsChart'
 import { SaveLoadPanel } from './components/SaveLoadPanel'
-import { EvolutionControls } from './components/EvolutionControls'
 import { SpeciesStats } from './components/SpeciesStats'
 import type { SimulationConfig, SimulationStats } from './types/simulation'
 import type { Agent } from './core/Agent'
@@ -21,7 +20,6 @@ export const App: React.FC = () => {
     foodCount: config.FoodSettings.SpawnCount,
     fps: 60,
     running: true,
-    generation: 0,
     avgFitness: 0,
     maxFitness: 0,
     speciesCount: 0
@@ -44,7 +42,7 @@ export const App: React.FC = () => {
         // Don't trigger if typing in an input
         if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
           e.preventDefault()
-          setIsRunning(prev => !prev)
+          setIsRunning((prev) => !prev)
         }
       }
       // Escape to close DNA panel
@@ -55,7 +53,7 @@ export const App: React.FC = () => {
       if (e.code === 'KeyH' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const target = e.target as HTMLElement
         if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          setShowHelp(prev => !prev)
+          setShowHelp((prev) => !prev)
         }
       }
     }
@@ -65,7 +63,7 @@ export const App: React.FC = () => {
   }, [selectedAgent])
 
   const handleToggleRunning = useCallback(() => {
-    setIsRunning(prev => {
+    setIsRunning((prev) => {
       console.log(`[App] Simulation ${prev ? 'paused' : 'started'}`)
       return !prev
     })
@@ -73,7 +71,7 @@ export const App: React.FC = () => {
 
   const handleReset = useCallback(() => {
     console.log('[App] Resetting simulation')
-    setResetKey(prev => prev + 1)
+    setResetKey((prev) => prev + 1)
     setIsRunning(true)
     setSelectedAgent(null)
     setGenerationHistory([])
@@ -83,30 +81,35 @@ export const App: React.FC = () => {
   const handleConfigChange = useCallback((newConfig: SimulationConfig) => {
     console.log('[App] Configuration changed, resetting simulation')
     setConfig(newConfig)
-    setResetKey(prev => prev + 1)
+    setResetKey((prev) => prev + 1)
   }, [])
 
   const handleStatsUpdate = useCallback((newStats: SimulationStats) => {
     setStats(newStats)
-    
+
     // Update generation history for charts
-    if (newStats.generation !== undefined && 
-        newStats.avgFitness !== undefined && 
-        newStats.maxFitness !== undefined &&
-        newStats.speciesCount !== undefined) {
-      setGenerationHistory(prev => {
+    if (
+      newStats.generation !== undefined &&
+      newStats.avgFitness !== undefined &&
+      newStats.maxFitness !== undefined &&
+      newStats.speciesCount !== undefined
+    ) {
+      setGenerationHistory((prev) => {
         const lastGen = prev[prev.length - 1]
         if (!lastGen || lastGen.generation !== newStats.generation) {
-          return [...prev.slice(-50), {
-            generation: newStats.generation!,
-            population: newStats.agentCount,
-            avgFitness: newStats.avgFitness!,
-            maxFitness: newStats.maxFitness!,
-            avgEnergy: 0,
-            speciesCount: newStats.speciesCount!,
-            births: 0,
-            deaths: 0
-          }]
+          return [
+            ...prev.slice(-50),
+            {
+              generation: newStats.generation!,
+              population: newStats.agentCount,
+              avgFitness: newStats.avgFitness!,
+              maxFitness: newStats.maxFitness!,
+              avgEnergy: 0,
+              speciesCount: newStats.speciesCount!,
+              births: 0,
+              deaths: 0
+            }
+          ]
         }
         return prev
       })
@@ -115,7 +118,9 @@ export const App: React.FC = () => {
 
   const handleAgentSelect = useCallback((agent: Agent | null) => {
     if (agent) {
-      console.log(`[App] Agent selected: ${agent.id.substring(0, 8)}, Species: ${agent.species.substring(0, 8)}`)
+      console.log(
+        `[App] Agent selected: ${agent.id.substring(0, 8)}, Species: ${agent.species.substring(0, 8)}`
+      )
     }
     setSelectedAgent(agent)
   }, [])
@@ -126,11 +131,11 @@ export const App: React.FC = () => {
 
   const handleAgentsChange = useCallback((agents: Agent[]) => {
     setCurrentAgents(agents)
-    
+
     // Update agent history - add new agents to the historical record
-    setAgentHistory(prev => {
+    setAgentHistory((prev) => {
       const newHistory = new Map(prev)
-      agents.forEach(agent => {
+      agents.forEach((agent) => {
         if (!newHistory.has(agent.id)) {
           newHistory.set(agent.id, agent)
         }
@@ -142,7 +147,7 @@ export const App: React.FC = () => {
   const handleLoadAgents = useCallback((agents: Agent[]) => {
     console.log(`[App] Loading ${agents.length} agents from save`)
     setLoadedAgents(agents)
-    setResetKey(prev => prev + 1)
+    setResetKey((prev) => prev + 1)
   }, [])
 
   const handleEvolutionConfigChange = useCallback((newConfig: EvolutionConfig) => {
@@ -168,19 +173,27 @@ export const App: React.FC = () => {
           <div className="stats-grid">
             <div className="stat">
               <span className="stat-label">Generation</span>
-              <span className="stat-value" style={{ color: '#00ff88' }}>{stats.generation || 0}</span>
+              <span className="stat-value" style={{ color: '#00ff88' }}>
+                {stats.generation || 0}
+              </span>
             </div>
             <div className="stat">
               <span className="stat-label">Species</span>
-              <span className="stat-value" style={{ color: '#ff8800' }}>{stats.speciesCount || 0}</span>
+              <span className="stat-value" style={{ color: '#ff8800' }}>
+                {stats.speciesCount || 0}
+              </span>
             </div>
             <div className="stat">
               <span className="stat-label">Avg Fitness</span>
-              <span className="stat-value" style={{ color: '#00ddff' }}>{(stats.avgFitness || 0).toFixed(1)}</span>
+              <span className="stat-value" style={{ color: '#00ddff' }}>
+                {(stats.avgFitness || 0).toFixed(1)}
+              </span>
             </div>
             <div className="stat">
               <span className="stat-label">Max Fitness</span>
-              <span className="stat-value" style={{ color: '#ff00ff' }}>{(stats.maxFitness || 0).toFixed(1)}</span>
+              <span className="stat-value" style={{ color: '#ff00ff' }}>
+                {(stats.maxFitness || 0).toFixed(1)}
+              </span>
             </div>
           </div>
           {generationHistory.length > 1 && (
@@ -193,32 +206,27 @@ export const App: React.FC = () => {
         {/* Species Statistics */}
         <SpeciesStats agents={currentAgents} />
 
-        {/* Evolution Controls */}
-        <EvolutionControls 
-          config={evolutionConfig}
-          onChange={handleEvolutionConfigChange}
-        />
-
         {/* Save/Load Panel */}
-        <SaveLoadPanel
-          agents={currentAgents}
-          onLoad={handleLoadAgents}
-        />
+        <SaveLoadPanel agents={currentAgents} onLoad={handleLoadAgents} />
 
         {/* Controls hint */}
         <div className="sidebar-footer">
-          <p style={{ marginBottom: '0.5rem' }}>🖱️ <strong>Desktop Controls:</strong></p>
+          <p style={{ marginBottom: '0.5rem' }}>
+            🖱️ <strong>Desktop Controls:</strong>
+          </p>
           <p>• Click agent to view DNA</p>
           <p>• Middle/Right mouse to pan</p>
           <p>• Scroll to zoom</p>
           <p>• Ctrl+Click to pan</p>
-          <p style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>📱 <strong>Mobile Controls:</strong></p>
+          <p style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
+            📱 <strong>Mobile Controls:</strong>
+          </p>
           <p>• Tap agent to view DNA</p>
           <p>• Drag to pan camera</p>
           <p>• Pinch to zoom</p>
         </div>
       </Sidebar>
-      
+
       <div className="canvas-container">
         <SimulationCanvasNew
           key={resetKey}
@@ -233,65 +241,12 @@ export const App: React.FC = () => {
         />
       </div>
 
-      <DNAPanel selectedAgent={selectedAgent} onClose={handleCloseDNA} allAgents={currentAgents} agentHistory={agentHistory} />
-
-      {/* Help Overlay */}
-      {showHelp && (
-        <div className="help-overlay" onClick={() => setShowHelp(false)}>
-          <div className="help-content" onClick={(e) => e.stopPropagation()}>
-            <button className="help-close" onClick={() => setShowHelp(false)}>
-              <i className="bi bi-x-lg"></i>
-            </button>
-            <h2>⌨️ Keyboard Shortcuts</h2>
-            <div className="help-shortcuts">
-              <div className="help-item">
-                <kbd>Space</kbd>
-                <span>Pause / Resume simulation</span>
-              </div>
-              <div className="help-item">
-                <kbd>Esc</kbd>
-                <span>Close DNA panel</span>
-              </div>
-              <div className="help-item">
-                <kbd>H</kbd>
-                <span>Show this help menu</span>
-              </div>
-            </div>
-            <h2>🖱️ Mouse Controls</h2>
-            <div className="help-shortcuts">
-              <div className="help-item">
-                <span className="help-key">Click Agent</span>
-                <span>View DNA and genetic information</span>
-              </div>
-              <div className="help-item">
-                <span className="help-key">Middle/Right Mouse</span>
-                <span>Pan camera around world</span>
-              </div>
-              <div className="help-item">
-                <span className="help-key">Scroll Wheel</span>
-                <span>Zoom in / out</span>
-              </div>
-              <div className="help-item">
-                <span className="help-key">Ctrl + Click</span>
-                <span>Alternative pan control</span>
-              </div>
-            </div>
-            <h2>💡 Tips</h2>
-            <div className="help-tips">
-              <p>• Agents evolve through natural selection - only the fittest survive and reproduce</p>
-              <p>• Each species has a unique color based on their genetic ID</p>
-              <p>• Watch the fitness graphs to see evolution in real-time</p>
-              <p>• Save interesting populations and load them later to continue evolution</p>
-              <p>• Adjust evolution parameters to speed up or slow down the process</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Help Button */}
-      <button className="help-button" onClick={() => setShowHelp(true)} title="Show Help (H)">
-        <i className="bi bi-question-circle"></i>
-      </button>
+      <DNAPanel
+        selectedAgent={selectedAgent}
+        onClose={handleCloseDNA}
+        allAgents={currentAgents}
+        agentHistory={agentHistory}
+      />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "AgentCount": 30,
+  "AgentCount": 100,
   "DefaultAgentSize": { "width": 40, "height": 40 },
   "EnableRotation": true,
   "MovementSpeed": 1.2,
@@ -38,7 +38,7 @@
     "MaxSize": 10
   },
   "ClusterSettings": {
-    "ClusterCount": 6,
+    "ClusterCount": 5,
     "ClusterRadius": 700,
     "ClusterSpacing": 5000
   },
@@ -62,7 +62,7 @@
   },
   "ReproductionSettings": {
     "EnergyMinToReproduce": 35,
-    "EnergyMaxCap": 150
+    "EnergyMaxCap": 100
   },
   "GeneticTraits": {
     "size": { "min": 20, "max": 60, "default": 40 },
@@ -88,9 +88,9 @@
   "EvolutionSettings": {
     "GenerationTime": 3000,
     "SelectionRate": 0.3,
-    "MutationRate": 0.05,
-    "PopulationSize": 30,
+    "MutationRate": 1,
+    "PopulationSize": 100,
     "ReproductionThreshold": 80,
-    "MaxAge": 1500
+    "MaxAge": 5000
   }
 }

@@ -5,9 +5,9 @@ export const DEFAULT_EVOLUTION_CONFIG: EvolutionConfig = {
   generationTime: 3000,
   selectionRate: 0.3,
   mutationRate: 0.05,
-  populationSize: 30,
+  populationSize: 100,
   reproductionThreshold: 80,
-  maxAge: 1500
+  maxAge: 5000
 }
 
 export function loadEvolutionConfig(): EvolutionConfig {
