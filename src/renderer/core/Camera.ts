@@ -63,4 +63,11 @@ export class Camera {
       y: (screenY - canvasHeight / 2) / this.zoom + this.y
     }
   }
+
+  public worldToScreen(worldX: number, worldY: number, canvasWidth: number, canvasHeight: number): { x: number; y: number } {
+    return {
+      x: (worldX - this.x) * this.zoom + canvasWidth / 2,
+      y: (worldY - this.y) * this.zoom + canvasHeight / 2
+    }
+  }
 }

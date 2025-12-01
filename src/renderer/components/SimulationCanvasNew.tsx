@@ -12,7 +12,7 @@ interface SimulationCanvasProps {
   onStatsUpdate?: (stats: SimulationStats) => void
   isRunning: boolean
   speed: number
-  onAgentSelect?: (agent: Agent | null) => void
+  onAgentSelect?: (agent: Agent | null, screenPos?: { x: number; y: number }) => void
   onAgentsChange?: (agents: Agent[]) => void
   evolutionConfig?: import('../core/EvolutionManager').EvolutionConfig
   loadedAgents?: Agent[] | null
