@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import type { SimulationConfig, SimulationStats } from '../types/simulation'
 import { BRANDING } from '../constants/branding'
+import { useFullscreen } from '../hooks/useFullscreen'
 
 interface SidebarProps {
   config: SimulationConfig
@@ -27,6 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [configExpanded, setConfigExpanded] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const { isFullscreen, toggleFullscreen, isElectron } = useFullscreen()
 
   const updateConfig = useCallback(
     (updates: Partial<SimulationConfig>) => {
@@ -105,6 +107,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
+          <div className="sidebar-section">
+            <h3 className="section-title">Display</h3>
+            <div className="controls">
+              <button 
+                className={`btn-control fullscreen-btn ${isFullscreen ? 'active' : ''}`}
+                onClick={toggleFullscreen}
+                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              >
+                <i className={`bi ${isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'}`}></i>
+                <span style={{ marginLeft: '6px' }}>
+                  {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                </span>
+              </button>
+            </div>
+            {isElectron && (
+              <div style={{ 
+                fontSize: '0.7rem', 
+                color: 'rgba(255,255,255,0.4)', 
+                marginTop: '4px',
+                textAlign: 'center'
+              }}>
+                Press F11 for quick toggle
+              </div>
+            )}
+          </div>
+
           {children}
 
           <div className="sidebar-footer">v{BRANDING.VERSION}</div>
@@ -118,6 +146,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
           <button onClick={onReset} title="Reset">
             <i className="bi bi-arrow-clockwise"></i>
+          </button>
+          <button 
+            onClick={toggleFullscreen} 
+            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            className={isFullscreen ? 'active' : ''}
+          >
+            <i className={`bi ${isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'}`}></i>
           </button>
           <div className="icon-stat" title="Agents">
             <i className="bi bi-cpu"></i>

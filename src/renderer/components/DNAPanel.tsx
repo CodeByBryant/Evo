@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Agent } from '../core/Agent'
 import { FamilyTreePanel } from './FamilyTreePanel'
 
-// Info Icon Component with Tooltip
 interface InfoIconProps {
   content: string
 }
@@ -48,7 +47,6 @@ const InfoIcon: React.FC<InfoIconProps> = ({ content }) => {
   )
 }
 
-// Life Stage Segmented Bar Component
 interface LifeStageBarProps {
   agent: Agent
 }
@@ -56,7 +54,6 @@ interface LifeStageBarProps {
 const LifeStageBar: React.FC<LifeStageBarProps> = ({ agent }) => {
   const ageProgress = agent.age / Agent.maxAge
   
-  // Life stage segments from config
   const segments = [
     { name: 'Embryo', start: 0.0, end: 0.02, color: '#9b87f5' },
     { name: 'Child', start: 0.02, end: 0.08, color: '#4488ff' },
@@ -70,7 +67,6 @@ const LifeStageBar: React.FC<LifeStageBarProps> = ({ agent }) => {
       width: '100%', 
       marginTop: '0.5rem'
     }}>
-      {/* Segmented bar */}
       <div style={{ 
         display: 'flex', 
         width: '100%', 
@@ -99,7 +95,6 @@ const LifeStageBar: React.FC<LifeStageBarProps> = ({ agent }) => {
               }}
               title={`${segment.name}: ${(segment.start * 100).toFixed(0)}%-${(segment.end * 100).toFixed(0)}%`}
             >
-              {/* Fill indicator for active segment */}
               {isActive && (
                 <div style={{
                   position: 'absolute',
@@ -117,7 +112,6 @@ const LifeStageBar: React.FC<LifeStageBarProps> = ({ agent }) => {
         })}
       </div>
       
-      {/* Labels */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -147,6 +141,19 @@ const LifeStageBar: React.FC<LifeStageBarProps> = ({ agent }) => {
   )
 }
 
+type PanelSizeMode = 'normal' | 'expanded' | 'maximized'
+
+interface PanelSize {
+  width: number
+  height: number
+}
+
+const PANEL_SIZES: Record<PanelSizeMode, PanelSize> = {
+  normal: { width: 400, height: 550 },
+  expanded: { width: 600, height: 700 },
+  maximized: { width: 0, height: 0 }
+}
+
 interface DNAPanelProps {
   selectedAgent: Agent | null
   onClose: () => void
@@ -159,32 +166,66 @@ interface DNAPanelProps {
 export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map(), onAgentSelect, screenPosition }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const networkCanvasRef = useRef<HTMLCanvasElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  
   const [activeTab, setActiveTab] = useState<'genome' | 'genealogy' | 'network'>('genome')
   const [position, setPosition] = useState({ x: window.innerWidth - 520, y: 80 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const panelRef = useRef<HTMLDivElement>(null)
+  const [sizeMode, setSizeMode] = useState<PanelSizeMode>('normal')
+  const [customSize, setCustomSize] = useState<PanelSize | null>(null)
+  const [isResizing, setIsResizing] = useState(false)
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
-  // Position panel in center of canvas container
+  const getCurrentSize = useCallback((): PanelSize => {
+    if (sizeMode === 'maximized') {
+      return {
+        width: window.innerWidth * 0.9,
+        height: window.innerHeight * 0.9
+      }
+    }
+    if (customSize && sizeMode === 'normal') {
+      return customSize
+    }
+    return PANEL_SIZES[sizeMode]
+  }, [sizeMode, customSize])
+
+  const cycleSizeMode = useCallback(() => {
+    setSizeMode(prev => {
+      if (prev === 'normal') return 'expanded'
+      if (prev === 'expanded') return 'maximized'
+      return 'normal'
+    })
+    setCustomSize(null)
+  }, [])
+
+  const toggleMaximize = useCallback(() => {
+    setSizeMode(prev => prev === 'maximized' ? 'normal' : 'maximized')
+  }, [])
+
   useEffect(() => {
     if (selectedAgent) {
       const container = document.querySelector('.canvas-container')
       if (!container) return
       
       const rect = container.getBoundingClientRect()
-      const panelWidth = 500
-      const panelHeight = 600
+      const size = getCurrentSize()
       
-      // Center on canvas container, shifted down 275px
-      const x = rect.left + (rect.width - panelWidth) / 2
-      const y = rect.top + (rect.height - panelHeight) / 2 + 275
-      
-      setPosition({ x, y })
+      if (sizeMode === 'maximized') {
+        const x = rect.left + (rect.width - size.width) / 2
+        const y = rect.top + (rect.height - size.height) / 2
+        setPosition({ x, y })
+      } else {
+        const x = rect.left + (rect.width - size.width) / 2
+        const y = rect.top + (rect.height - size.height) / 2 + 100
+        setPosition({ x, y })
+      }
     }
-  }, [selectedAgent])
+  }, [selectedAgent, sizeMode])
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    if ((e.target as HTMLElement).closest('.dna-panel-header')) {
+    if ((e.target as HTMLElement).closest('.dna-panel-header') && 
+        !(e.target as HTMLElement).closest('button')) {
       setIsDragging(true)
       const clientX = 'clientX' in e ? e.clientX : e.touches?.[0]?.clientX || 0
       const clientY = 'clientY' in e ? e.clientY : e.touches?.[0]?.clientY || 0
@@ -195,7 +236,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
     }
   }
 
-  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+  const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
     if (!isDragging) return
     const clientX = 'clientX' in e ? e.clientX : e.touches?.[0]?.clientX || 0
     const clientY = 'clientY' in e ? e.clientY : e.touches?.[0]?.clientY || 0
@@ -203,13 +244,42 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
       x: clientX - dragOffset.x,
       y: clientY - dragOffset.y
     })
-  }
+  }, [isDragging, dragOffset])
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setIsDragging(false)
+  }, [])
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsResizing(true)
+    const size = getCurrentSize()
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: size.width,
+      height: size.height
+    })
   }
 
-  React.useEffect(() => {
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return
+    const deltaX = e.clientX - resizeStart.x
+    const deltaY = e.clientY - resizeStart.y
+    
+    const newWidth = Math.max(350, Math.min(window.innerWidth * 0.95, resizeStart.width + deltaX))
+    const newHeight = Math.max(400, Math.min(window.innerHeight * 0.95, resizeStart.height + deltaY))
+    
+    setCustomSize({ width: newWidth, height: newHeight })
+    setSizeMode('normal')
+  }, [isResizing, resizeStart])
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false)
+  }, [])
+
+  useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', handleDragMove)
       window.addEventListener('touchmove', handleDragMove)
@@ -222,10 +292,21 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
         window.removeEventListener('touchend', handleDragEnd)
       }
     }
-  }, [isDragging, dragOffset])
+  }, [isDragging, handleDragMove, handleDragEnd])
 
   useEffect(() => {
-    if (!selectedAgent || !canvasRef.current) return
+    if (isResizing) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [isResizing, handleResizeMove, handleResizeEnd])
+
+  useEffect(() => {
+    if (!selectedAgent || !canvasRef.current || activeTab !== 'genome') return
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -244,39 +325,32 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
       const wavelength = 40
       const offset = (Date.now() / 80) % wavelength
       
-      // Get genome data from neural network weights
       const genome = selectedAgent.NeuralNetwork.getGenomeData()
       const genomeLength = genome.length
       
-      // Draw background with gradient
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
       gradient.addColorStop(0, '#0a0a0a')
       gradient.addColorStop(1, '#050510')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       
-      // Draw helix strands with smoother animation
       for (let y = 0; y < canvas.height; y += 1.5) {
         const t = (y + offset) / wavelength
         const x1 = centerX + amplitude * Math.sin(t * Math.PI * 2)
         const x2 = centerX - amplitude * Math.sin(t * Math.PI * 2)
         
-        // Color based on genome data with smoother transition
         const genomeIndex = Math.floor((y / canvas.height) * genomeLength) % genomeLength
         const value = genome[genomeIndex]
         const hue = ((value + 1) / 2) * 360
         
-        // Add glow effect to strands
         ctx.shadowBlur = 8
         ctx.shadowColor = `hsla(${hue}, 80%, 60%, 0.5)`
         
-        // Strand 1 - larger, smoother circles
         ctx.fillStyle = `hsla(${hue}, 80%, 65%, 0.9)`
         ctx.beginPath()
         ctx.arc(x1, y, 3.5, 0, Math.PI * 2)
         ctx.fill()
         
-        // Strand 2 - complementary color
         ctx.fillStyle = `hsla(${(hue + 180) % 360}, 80%, 65%, 0.9)`
         ctx.beginPath()
         ctx.arc(x2, y, 3.5, 0, Math.PI * 2)
@@ -284,7 +358,6 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
         
         ctx.shadowBlur = 0
         
-        // Draw connecting lines with gradient
         if (Math.abs(Math.sin(t * Math.PI * 2)) < 0.15 && y % 20 === 0) {
           const lineGradient = ctx.createLinearGradient(x1, y, x2, y)
           lineGradient.addColorStop(0, `hsla(${hue}, 70%, 50%, 0.4)`)
@@ -307,36 +380,83 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
     return () => {
       cancelAnimationFrame(animationFrameId)
     }
-  }, [selectedAgent])
+  }, [selectedAgent, activeTab])
 
   if (!selectedAgent) {
     return null
   }
 
+  const currentSize = getCurrentSize()
+  const isMaximized = sizeMode === 'maximized'
+
   return (
     <div 
       ref={panelRef}
-      className="dna-panel"
+      className={`dna-panel ${isMaximized ? 'maximized' : ''}`}
       style={{
         position: 'fixed',
         left: `${position.x}px`,
         top: `${position.y}px`,
-        cursor: isDragging ? 'grabbing' : 'grab',
-        userSelect: isDragging ? 'none' : 'auto',
+        width: `${currentSize.width}px`,
+        height: `${currentSize.height}px`,
+        cursor: isDragging ? 'grabbing' : 'default',
+        userSelect: isDragging || isResizing ? 'none' : 'auto',
         touchAction: 'none',
-        zIndex: isDragging ? 10001 : 1000
+        zIndex: isDragging ? 10001 : 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        transition: isResizing || isDragging ? 'none' : 'width 0.2s ease, height 0.2s ease'
       }}
       onMouseDown={handleDragStart}
       onTouchStart={handleDragStart}
     >
-      <div className="dna-panel-header" style={{ cursor: 'grab' }}>
+      <div className="dna-panel-header" style={{ cursor: 'grab', flexShrink: 0 }}>
         <h3>Agent Inspector</h3>
-        <button className="btn-close" onClick={onClose}>
-          <i className="bi bi-x-lg"></i>
-        </button>
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <button 
+            className="btn-header-action"
+            onClick={cycleSizeMode}
+            title={`Current: ${sizeMode} - Click to cycle sizes`}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#888',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '0.75rem',
+              transition: 'all 0.2s'
+            }}
+          >
+            <i className={`bi ${sizeMode === 'normal' ? 'bi-arrows-angle-expand' : sizeMode === 'expanded' ? 'bi-arrows-fullscreen' : 'bi-arrows-angle-contract'}`}></i>
+            <span style={{ marginLeft: '4px', fontSize: '0.7rem' }}>
+              {sizeMode === 'normal' ? 'S' : sizeMode === 'expanded' ? 'M' : 'L'}
+            </span>
+          </button>
+          <button 
+            className="btn-header-action"
+            onClick={toggleMaximize}
+            title={isMaximized ? 'Restore' : 'Maximize'}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: isMaximized ? '#00ff88' : '#888',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '0.9rem',
+              transition: 'all 0.2s'
+            }}
+          >
+            <i className={`bi ${isMaximized ? 'bi-fullscreen-exit' : 'bi-fullscreen'}`}></i>
+          </button>
+          <button className="btn-close" onClick={onClose}>
+            <i className="bi bi-x-lg"></i>
+          </button>
+        </div>
       </div>
       
-      <div className="dna-tabs">
+      <div className="dna-tabs" style={{ flexShrink: 0 }}>
         <button 
           className={`tab-button ${activeTab === 'genome' ? 'active' : ''}`}
           onClick={() => setActiveTab('genome')}
@@ -357,244 +477,283 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
         </button>
       </div>
 
-      {activeTab === 'genome' && (
-        <>
-          <canvas ref={canvasRef} className="dna-canvas" />
-          <div className="dna-info">
-        <h4>🧬 Genetic Information</h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Species ID:</span>
-            <span className="value">{selectedAgent.species.substring(0, 8)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Genome Length:</span>
-            <span className="value">{selectedAgent.NeuralNetwork.getGenomeData().length}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Parents:</span>
-            <span className="value">{selectedAgent.parentIds?.length || 0}</span>
-          </div>
-        </div>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {activeTab === 'genome' && (
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            <canvas 
+              ref={canvasRef} 
+              className="dna-canvas" 
+              style={{ 
+                height: isMaximized ? '200px' : '120px', 
+                flexShrink: 0,
+                width: '100%'
+              }} 
+            />
+            <div className="dna-info" style={{ flex: 1, overflow: 'auto' }}>
+              <h4>Genetic Information</h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Species ID:</span>
+                  <span className="value">{selectedAgent.species.substring(0, 8)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Genome Length:</span>
+                  <span className="value">{selectedAgent.NeuralNetwork.getGenomeData().length}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Parents:</span>
+                  <span className="value">{selectedAgent.parentIds?.length || 0}</span>
+                </div>
+              </div>
 
-        <h4 style={{ marginTop: '1rem' }}>📊 Performance Stats</h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Fitness:</span>
-            <span className="value" style={{ color: '#00ff88' }}>{selectedAgent.fitness.toFixed(1)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Energy:</span>
-            <span className="value" style={{ color: selectedAgent.energy > 60 ? '#00ff88' : selectedAgent.energy > 30 ? '#ff8800' : '#ff4444' }}>{selectedAgent.energy.toFixed(1)}%</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Age:</span>
-            <span className="value">{selectedAgent.age}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">ID:</span>
-            <span className="value">{selectedAgent.id.substring(0, 8)}</span>
-          </div>
-        </div>
+              <h4 style={{ marginTop: '1rem' }}>Performance Stats</h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Fitness:</span>
+                  <span className="value" style={{ color: '#00ff88' }}>{selectedAgent.fitness.toFixed(1)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Energy:</span>
+                  <span className="value" style={{ color: selectedAgent.energy > 60 ? '#00ff88' : selectedAgent.energy > 30 ? '#ff8800' : '#ff4444' }}>{selectedAgent.energy.toFixed(1)}%</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Age:</span>
+                  <span className="value">{selectedAgent.age}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">ID:</span>
+                  <span className="value">{selectedAgent.id.substring(0, 8)}</span>
+                </div>
+              </div>
 
-        <h4 style={{ marginTop: '1rem' }}>
-          🌱 Life Stage & Maturity
-          <InfoIcon content="Agents progress through 5 life stages: Embryo (0-2%), Child (2-8%), Adolescent (8-15%), Adult (15-85%), Old (85-100%). Can reproduce during Adult stage." />
-        </h4>
-        <div style={{ marginBottom: '1rem' }}>
-          <div className="info-grid" style={{ marginBottom: '0.75rem' }}>
-            <div className="info-item">
-              <span className="label">Current Stage:</span>
-              <span className="value" style={{ 
-                color: selectedAgent.getLifeStage() === 'adult' ? '#00ff88' : 
-                       selectedAgent.getLifeStage() === 'old' ? '#ff8800' : 
-                       selectedAgent.getLifeStage() === 'adolescent' ? '#00bfff' :
-                       selectedAgent.getLifeStage() === 'child' ? '#4488ff' :
-                       '#9b87f5',
-                textTransform: 'capitalize'
-              }}>
-                {selectedAgent.getLifeStage()}
-              </span>
+              <h4 style={{ marginTop: '1rem' }}>
+                Life Stage & Maturity
+                <InfoIcon content="Agents progress through 5 life stages: Embryo (0-2%), Child (2-8%), Adolescent (8-15%), Adult (15-85%), Old (85-100%). Can reproduce during Adult stage." />
+              </h4>
+              <div style={{ marginBottom: '1rem' }}>
+                <div className="info-grid" style={{ marginBottom: '0.75rem' }}>
+                  <div className="info-item">
+                    <span className="label">Current Stage:</span>
+                    <span className="value" style={{ 
+                      color: selectedAgent.getLifeStage() === 'adult' ? '#00ff88' : 
+                             selectedAgent.getLifeStage() === 'old' ? '#ff8800' : 
+                             selectedAgent.getLifeStage() === 'adolescent' ? '#00bfff' :
+                             selectedAgent.getLifeStage() === 'child' ? '#4488ff' :
+                             '#9b87f5',
+                      textTransform: 'capitalize'
+                    }}>
+                      {selectedAgent.getLifeStage()}
+                    </span>
+                  </div>
+                  <div className="info-item">
+                    <span className="label">Can Reproduce:</span>
+                    <span className="value" style={{ 
+                      color: selectedAgent.canReproduce() ? '#00ff88' : '#ff4444'
+                    }}>
+                      {selectedAgent.canReproduce() ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                </div>
+                <LifeStageBar agent={selectedAgent} />
+                <div style={{ 
+                  marginTop: '0.5rem', 
+                  fontSize: '0.85rem', 
+                  color: '#8888ff' 
+                }}>
+                  Age: {selectedAgent.age}/{Agent.maxAge} ({((selectedAgent.age / Agent.maxAge) * 100).toFixed(1)}%)
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '1rem' }}>Physical Traits</h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Position:</span>
+                  <span className="value">({selectedAgent.position.x.toFixed(0)}, {selectedAgent.position.y.toFixed(0)})</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Rotation:</span>
+                  <span className="value">{(selectedAgent.position.rotation * 180 / Math.PI).toFixed(0)}deg</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Size:</span>
+                  <span className="value">{selectedAgent.width}x{selectedAgent.height}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Color Hue:</span>
+                  <span className="value">{(parseInt(selectedAgent.species.substring(0, 6), 36) % 360).toFixed(0)}deg</span>
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '1rem' }}>
+                Genetic Traits
+                <InfoIcon content="Inheritable traits that affect agent behavior and survival. Traits mutate slightly when agents reproduce, driving evolution." />
+              </h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Size:</span>
+                  <span className="value">{selectedAgent.geneticTraits.size.toFixed(1)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Movement Speed:</span>
+                  <span className="value">{selectedAgent.geneticTraits.movementSpeed.toFixed(2)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Acceleration:</span>
+                  <span className="value">{selectedAgent.geneticTraits.acceleration.toFixed(2)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Turn Rate:</span>
+                  <span className="value">{selectedAgent.geneticTraits.turnRate.toFixed(3)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Drag:</span>
+                  <span className="value">{selectedAgent.geneticTraits.drag.toFixed(2)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Sensor Rays:</span>
+                  <span className="value">{Math.round(selectedAgent.geneticTraits.sensorRayCount)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Sensor Range:</span>
+                  <span className="value">{selectedAgent.geneticTraits.sensorRayLength.toFixed(0)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Sensor Precision:</span>
+                  <span className="value">{selectedAgent.geneticTraits.sensorPrecision.toFixed(2)}x</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Field of View:</span>
+                  <span className="value">{selectedAgent.geneticTraits.fieldOfView.toFixed(0)}deg</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Color Vision:</span>
+                  <span className="value">{selectedAgent.geneticTraits.colorVision ? 'Yes' : 'No'}</span>
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '1rem' }}>
+                Metabolic Traits
+                <InfoIcon content="Energy efficiency affects how quickly energy depletes. Digestion rate controls how much energy is gained from food. Higher values are better." />
+              </h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Energy Efficiency:</span>
+                  <span className="value">{selectedAgent.geneticTraits.energyEfficiency.toFixed(2)}x</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Digestion Rate:</span>
+                  <span className="value">{selectedAgent.geneticTraits.digestionRate.toFixed(2)}x</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Max Energy:</span>
+                  <span className="value">{selectedAgent.geneticTraits.maxEnergyCapacity.toFixed(0)}</span>
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '1rem' }}>
+                Reproductive Traits
+                <InfoIcon content="Mutation rate: chance of trait changes in offspring. Reproduction threshold: minimum energy to reproduce. Offspring count: babies per reproduction event." />
+              </h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Mutation Rate:</span>
+                  <span className="value">{(selectedAgent.geneticTraits.mutationRate * 100).toFixed(1)}%</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Reproduction Threshold:</span>
+                  <span className="value">{selectedAgent.geneticTraits.reproductionThreshold.toFixed(0)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Offspring Count:</span>
+                  <span className="value">{Math.round(selectedAgent.geneticTraits.offspringCount)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Learning Rate:</span>
+                  <span className="value">{selectedAgent.geneticTraits.learningRate.toFixed(2)}x</span>
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '1rem' }}>Behavioral Traits</h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Aggression:</span>
+                  <span className="value">{selectedAgent.geneticTraits.aggression.toFixed(2)}x</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Memory Neurons:</span>
+                  <span className="value">{Math.round(selectedAgent.geneticTraits.memoryNeurons)}</span>
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '1rem' }}>
+                Neural Network
+                <InfoIcon content="The brain of the agent. Input neurons receive sensor data, hidden layers process it, output neurons control movement. Weights and biases are learned through evolution." />
+              </h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Inputs:</span>
+                  <span className="value">{selectedAgent.Sensor.rayCount * 2 + 3 + (selectedAgent.geneticTraits.colorVision ? selectedAgent.Sensor.rayCount * 2 : 0) + Math.round(selectedAgent.geneticTraits.memoryNeurons)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Outputs:</span>
+                  <span className="value">6 (Movement)</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Sensors:</span>
+                  <span className="value">{selectedAgent.Sensor.rayCount} rays</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Total Weights:</span>
+                  <span className="value">{selectedAgent.NeuralNetwork.getGenomeData().length}</span>
+                </div>
+              </div>
             </div>
-            <div className="info-item">
-              <span className="label">Can Reproduce:</span>
-              <span className="value" style={{ 
-                color: selectedAgent.canReproduce() ? '#00ff88' : '#ff4444'
-              }}>
-                {selectedAgent.canReproduce() ? '✓ Yes' : '✗ No'}
-              </span>
-            </div>
           </div>
-          <LifeStageBar agent={selectedAgent} />
-          <div style={{ 
-            marginTop: '0.5rem', 
-            fontSize: '0.85rem', 
-            color: '#8888ff' 
-          }}>
-            Age: {selectedAgent.age}/{Agent.maxAge} ({((selectedAgent.age / Agent.maxAge) * 100).toFixed(1)}%)
-          </div>
-        </div>
+        )}
 
-        <h4 style={{ marginTop: '1rem' }}>🎯 Physical Traits</h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Position:</span>
-            <span className="value">({selectedAgent.position.x.toFixed(0)}, {selectedAgent.position.y.toFixed(0)})</span>
+        {activeTab === 'genealogy' && (
+          <div style={{ height: '100%', overflow: 'hidden' }}>
+            <FamilyTreePanel
+              agents={allAgents}
+              selectedAgent={selectedAgent}
+              onAgentSelect={onAgentSelect}
+            />
           </div>
-          <div className="info-item">
-            <span className="label">Rotation:</span>
-            <span className="value">{(selectedAgent.position.rotation * 180 / Math.PI).toFixed(0)}°</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Size:</span>
-            <span className="value">{selectedAgent.width}×{selectedAgent.height}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Color Hue:</span>
-            <span className="value">{(parseInt(selectedAgent.species.substring(0, 6), 36) % 360).toFixed(0)}°</span>
-          </div>
-        </div>
+        )}
 
-        <h4 style={{ marginTop: '1rem' }}>
-          🧬 Genetic Traits
-          <InfoIcon content="Inheritable traits that affect agent behavior and survival. Traits mutate slightly when agents reproduce, driving evolution." />
-        </h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Size:</span>
-            <span className="value">{selectedAgent.geneticTraits.size.toFixed(1)}</span>
+        {activeTab === 'network' && (
+          <div className="network-view" style={{ height: '100%', overflow: 'hidden' }}>
+            <NetworkVisualizer agent={selectedAgent} canvasRef={networkCanvasRef} />
           </div>
-          <div className="info-item">
-            <span className="label">Movement Speed:</span>
-            <span className="value">{selectedAgent.geneticTraits.movementSpeed.toFixed(2)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Acceleration:</span>
-            <span className="value">{selectedAgent.geneticTraits.acceleration.toFixed(2)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Turn Rate:</span>
-            <span className="value">{selectedAgent.geneticTraits.turnRate.toFixed(3)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Drag:</span>
-            <span className="value">{selectedAgent.geneticTraits.drag.toFixed(2)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Sensor Rays:</span>
-            <span className="value">{Math.round(selectedAgent.geneticTraits.sensorRayCount)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Sensor Range:</span>
-            <span className="value">{selectedAgent.geneticTraits.sensorRayLength.toFixed(0)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Sensor Precision:</span>
-            <span className="value">{selectedAgent.geneticTraits.sensorPrecision.toFixed(2)}x</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Field of View:</span>
-            <span className="value">{selectedAgent.geneticTraits.fieldOfView.toFixed(0)}°</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Color Vision:</span>
-            <span className="value">{selectedAgent.geneticTraits.colorVision ? 'Yes' : 'No'}</span>
-          </div>
-        </div>
+        )}
+      </div>
 
-        <h4 style={{ marginTop: '1rem' }}>
-          ⚡ Metabolic Traits
-          <InfoIcon content="Energy efficiency affects how quickly energy depletes. Digestion rate controls how much energy is gained from food. Higher values are better." />
-        </h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Energy Efficiency:</span>
-            <span className="value">{selectedAgent.geneticTraits.energyEfficiency.toFixed(2)}x</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Digestion Rate:</span>
-            <span className="value">{selectedAgent.geneticTraits.digestionRate.toFixed(2)}x</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Max Energy:</span>
-            <span className="value">{selectedAgent.geneticTraits.maxEnergyCapacity.toFixed(0)}</span>
-          </div>
-        </div>
-
-        <h4 style={{ marginTop: '1rem' }}>
-          🔄 Reproductive Traits
-          <InfoIcon content="Mutation rate: chance of trait changes in offspring. Reproduction threshold: minimum energy to reproduce. Offspring count: babies per reproduction event." />
-        </h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Mutation Rate:</span>
-            <span className="value">{(selectedAgent.geneticTraits.mutationRate * 100).toFixed(1)}%</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Reproduction Threshold:</span>
-            <span className="value">{selectedAgent.geneticTraits.reproductionThreshold.toFixed(0)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Offspring Count:</span>
-            <span className="value">{Math.round(selectedAgent.geneticTraits.offspringCount)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Learning Rate:</span>
-            <span className="value">{selectedAgent.geneticTraits.learningRate.toFixed(2)}x</span>
-          </div>
-        </div>
-
-        <h4 style={{ marginTop: '1rem' }}>🧠 Behavioral Traits</h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Aggression:</span>
-            <span className="value">{selectedAgent.geneticTraits.aggression.toFixed(2)}x</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Memory Neurons:</span>
-            <span className="value">{Math.round(selectedAgent.geneticTraits.memoryNeurons)}</span>
-          </div>
-        </div>
-
-        <h4 style={{ marginTop: '1rem' }}>
-          🧠 Neural Network
-          <InfoIcon content="The brain of the agent. Input neurons receive sensor data, hidden layers process it, output neurons control movement. Weights and biases are learned through evolution." />
-        </h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Inputs:</span>
-            <span className="value">{selectedAgent.Sensor.rayCount * 2 + 3 + (selectedAgent.geneticTraits.colorVision ? selectedAgent.Sensor.rayCount * 2 : 0) + Math.round(selectedAgent.geneticTraits.memoryNeurons)}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Outputs:</span>
-            <span className="value">6 (Movement)</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Sensors:</span>
-            <span className="value">{selectedAgent.Sensor.rayCount} rays</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Total Weights:</span>
-            <span className="value">{selectedAgent.NeuralNetwork.getGenomeData().length}</span>
-          </div>
-        </div>
-          </div>
-        </>
-      )}
-
-      {activeTab === 'genealogy' && (
-        <div style={{ height: '100%' }}>
-          <FamilyTreePanel
-            agents={allAgents}
-            selectedAgent={selectedAgent}
-            onAgentSelect={onAgentSelect}
-          />
-        </div>
-      )}
-
-      {activeTab === 'network' && (
-        <div className="network-view">
-          <NetworkVisualizer agent={selectedAgent} canvasRef={networkCanvasRef} />
+      {!isMaximized && (
+        <div
+          className="resize-handle"
+          onMouseDown={handleResizeStart}
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: '20px',
+            height: '20px',
+            cursor: 'nwse-resize',
+            background: 'linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.1) 50%)',
+            borderBottomRightRadius: '8px'
+          }}
+        >
+          <i 
+            className="bi bi-grip-horizontal" 
+            style={{ 
+              position: 'absolute', 
+              right: '2px', 
+              bottom: '2px', 
+              fontSize: '10px', 
+              color: 'rgba(255,255,255,0.3)',
+              transform: 'rotate(-45deg)'
+            }}
+          ></i>
         </div>
       )}
     </div>
@@ -607,237 +766,93 @@ interface NetworkVisualizerProps {
 }
 
 const NetworkVisualizer: React.FC<NetworkVisualizerProps> = ({ agent, canvasRef }) => {
-  const [lastOutputs, setLastOutputs] = useState<number[]>([0, 0, 0, 0, 0, 0])
-
   useEffect(() => {
-    if (!agent || !canvasRef.current) return
-
     const canvas = canvasRef.current
+    if (!canvas) return
+
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     canvas.width = canvas.offsetWidth
     canvas.height = canvas.offsetHeight
 
-    let animationFrameId: number
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+    gradient.addColorStop(0, '#0a0a12')
+    gradient.addColorStop(1, '#05050a')
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    const drawNetwork = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const layers = [
+      agent.Sensor.rayCount * 2 + 3,
+      16,
+      8,
+      6
+    ]
 
-      // Background
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-      gradient.addColorStop(0, '#0a0a0a')
-      gradient.addColorStop(1, '#050510')
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const layerSpacing = canvas.width / (layers.length + 1)
+    const nodeRadius = Math.min(8, canvas.height / 40)
 
-      // Get neural network structure
-      const levels = agent.NeuralNetwork.levels
-      const layerCount = levels.length + 1
-      const maxNeurons = Math.max(...levels.map(l => l.outputs.length))
+    layers.forEach((nodeCount, layerIndex) => {
+      const x = layerSpacing * (layerIndex + 1)
+      const nodeSpacing = canvas.height / (nodeCount + 1)
 
-      // Layout parameters
-      const padding = 40
-      const layerSpacing = (canvas.width - 2 * padding) / (layerCount - 1)
-      const neuronRadius = 8
+      for (let i = 0; i < nodeCount; i++) {
+        const y = nodeSpacing * (i + 1)
 
-      // Calculate current outputs for real-time display
-      const agentOffsets = agent.Sensor.agentOutput.map((e) => (e == null ? 0 : 1 - e.offset))
-      const foodOffsets = agent.Sensor.foodOutput.map((e) => (e == null ? 0 : 1 - e.offset))
-      const inputs = [
-        agent.position.x / 1000,
-        agent.position.y / 1000,
-        agent.position.rotation / (Math.PI * 2)
-      ].concat(agentOffsets).concat(foodOffsets)
+        if (layerIndex < layers.length - 1) {
+          const nextLayerX = layerSpacing * (layerIndex + 2)
+          const nextNodeCount = layers[layerIndex + 1]
+          const nextNodeSpacing = canvas.height / (nextNodeCount + 1)
 
-      const rawOutputs = agent.NeuralNetwork.feedForward(inputs)
-      // Guard against NaN values
-      const outputs = rawOutputs.map(v => isNaN(v) || !isFinite(v) ? 0 : v)
-      setLastOutputs(outputs)
-
-      // Get activations for all layers
-      const allActivations: number[][] = []
-      allActivations.push(inputs)
-      
-      let currentActivations = inputs
-      for (let i = 0; i < levels.length; i++) {
-        const level = levels[i]
-        const nextActivations: number[] = []
-        
-        for (let j = 0; j < level.outputs.length; j++) {
-          let sum = level.biases[j] || 0
-          for (let k = 0; k < level.inputs.length; k++) {
-            const weight = level.weights[k]?.[j]
-            const activation = currentActivations[k]
-            if (weight !== undefined && activation !== undefined) {
-              sum += activation * weight
-            }
-          }
-          const activation = Math.tanh(sum)
-          nextActivations.push(isNaN(activation) ? 0 : activation)
-        }
-        
-        allActivations.push(nextActivations)
-        currentActivations = nextActivations
-      }
-
-      // Draw connections first (behind neurons)
-      ctx.lineWidth = 1
-      for (let l = 0; l < layerCount - 1; l++) {
-        const x1 = padding + l * layerSpacing
-        const x2 = padding + (l + 1) * layerSpacing
-        const neurons1 = allActivations[l].length
-        const neurons2 = allActivations[l + 1].length
-        const spacing1 = (canvas.height - 2 * padding) / (neurons1 + 1)
-        const spacing2 = (canvas.height - 2 * padding) / (neurons2 + 1)
-
-        for (let i = 0; i < neurons1; i++) {
-          for (let j = 0; j < neurons2; j++) {
-            const y1 = padding + (i + 1) * spacing1
-            const y2 = padding + (j + 1) * spacing2
-            
-            const weight = levels[l].weights[i]?.[j] || 0
-            const intensity = Math.abs(weight)
-            const alpha = Math.min(intensity * 0.3, 0.5)
-            
-            // Blend from white (near 0) to cyan (positive) or red (negative)
-            const targetColor = weight > 0 ? [100, 200, 255] : [255, 80, 80]
-            const r = Math.round(255 + (targetColor[0] - 255) * intensity)
-            const g = Math.round(255 + (targetColor[1] - 255) * intensity)
-            const b = Math.round(255 + (targetColor[2] - 255) * intensity)
-            
-            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`
-            
+          for (let j = 0; j < nextNodeCount; j++) {
+            const nextY = nextNodeSpacing * (j + 1)
             ctx.beginPath()
-            ctx.moveTo(x1, y1)
-            ctx.lineTo(x2, y2)
+            ctx.moveTo(x + nodeRadius, y)
+            ctx.lineTo(nextLayerX - nodeRadius, nextY)
+            ctx.strokeStyle = 'rgba(100, 150, 255, 0.1)'
+            ctx.lineWidth = 0.5
             ctx.stroke()
           }
         }
-      }
 
-      // Draw neurons
-      for (let l = 0; l < allActivations.length; l++) {
-        const x = padding + l * layerSpacing
-        const neurons = allActivations[l].length
-        const spacing = (canvas.height - 2 * padding) / (neurons + 1)
-
-        for (let i = 0; i < neurons; i++) {
-          const y = padding + (i + 1) * spacing
-          const activation = allActivations[l][i] || 0
-          
-          // Blend from white (near 0) to cyan (positive) or red (negative)
-          const intensity = Math.abs(activation)
-          const targetColor = activation > 0 ? [100, 200, 255] : [255, 80, 80]
-          const r = Math.round(255 + (targetColor[0] - 255) * intensity)
-          const g = Math.round(255 + (targetColor[1] - 255) * intensity)
-          const b = Math.round(255 + (targetColor[2] - 255) * intensity)
-          
-          ctx.shadowBlur = 10 * intensity
-          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${intensity * 0.8})`
-          
-          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.4 + intensity * 0.6})`
-          ctx.beginPath()
-          ctx.arc(x, y, neuronRadius, 0, Math.PI * 2)
-          ctx.fill()
-          
-          const strokeR = Math.round(255 + (targetColor[0] - 255) * intensity * 1.1)
-          const strokeG = Math.round(255 + (targetColor[1] - 255) * intensity * 1.1)
-          const strokeB = Math.round(255 + (targetColor[2] - 255) * intensity * 1.1)
-          ctx.strokeStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, 0.9)`
-          ctx.lineWidth = 2
-          ctx.stroke()
-          
-          ctx.shadowBlur = 0
+        const nodeGradient = ctx.createRadialGradient(x, y, 0, x, y, nodeRadius)
+        if (layerIndex === 0) {
+          nodeGradient.addColorStop(0, '#00ff88')
+          nodeGradient.addColorStop(1, '#00aa55')
+        } else if (layerIndex === layers.length - 1) {
+          nodeGradient.addColorStop(0, '#ff8800')
+          nodeGradient.addColorStop(1, '#aa5500')
+        } else {
+          nodeGradient.addColorStop(0, '#4488ff')
+          nodeGradient.addColorStop(1, '#2255aa')
         }
+
+        ctx.beginPath()
+        ctx.arc(x, y, nodeRadius, 0, Math.PI * 2)
+        ctx.fillStyle = nodeGradient
+        ctx.fill()
       }
+    })
 
-      // Draw layer labels
-      ctx.fillStyle = '#ffffff'
-      ctx.font = '12px monospace'
-      ctx.textAlign = 'center'
-      
-      const labels = ['Input', ...Array(layerCount - 2).fill(0).map((_, i) => `Hidden ${i + 1}`), 'Output']
-      for (let l = 0; l < allActivations.length; l++) {
-        const x = padding + l * layerSpacing
-        ctx.fillText(labels[l], x, 20)
-        ctx.fillText(`(${allActivations[l].length})`, x, 32)
-      }
-
-      animationFrameId = requestAnimationFrame(drawNetwork)
-    }
-
-    drawNetwork()
-
-    return () => {
-      cancelAnimationFrame(animationFrameId)
-    }
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
+    ctx.font = '11px Inter, system-ui, sans-serif'
+    ctx.textAlign = 'center'
+    
+    const labels = ['Input', 'Hidden 1', 'Hidden 2', 'Output']
+    labels.forEach((label, i) => {
+      const x = layerSpacing * (i + 1)
+      ctx.fillText(label, x, canvas.height - 10)
+    })
   }, [agent, canvasRef])
 
-  const outputLabels = ['Forward', 'Backward', 'Strafe L', 'Strafe R', 'Rotate CW', 'Rotate CCW']
-
   return (
-    <div className="network-visualizer">
-      <canvas ref={canvasRef} className="network-canvas" />
-      <div className="network-info">
-        <h4><i className="bi bi-cpu"></i> Neural Network Architecture</h4>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="label">Input Neurons:</span>
-            <span className="value">{agent.Sensor.rayCount * 2 + 3}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Hidden Layers:</span>
-            <span className="value">{agent.NeuralNetwork.levels.length - 1}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Output Neurons:</span>
-            <span className="value">6</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Total Parameters:</span>
-            <span className="value">{agent.NeuralNetwork.getGenomeData().length}</span>
-          </div>
-        </div>
-
-        <h4 style={{ marginTop: '1rem' }}><i className="bi bi-activity"></i> Real-Time Outputs</h4>
-        <div className="output-bars">
-          {lastOutputs.map((output, i) => (
-            <div key={i} className="output-bar-container">
-              <span className="output-label">{outputLabels[i]}</span>
-              <div className="output-bar-bg">
-                <div 
-                  className="output-bar-fill" 
-                  style={{ 
-                    width: `${Math.abs(output) * 100}%`,
-                    backgroundColor: output > 0 ? '#64c8ff' : '#ff5050'
-                  }}
-                />
-              </div>
-              <span className="output-value">{(isNaN(output) ? 0 : output).toFixed(3)}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="network-legend">
-          <div className="legend-item">
-            <span className="legend-dot" style={{ backgroundColor: '#64c8ff' }}></span>
-            <span>Positive (Cyan)</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ backgroundColor: '#ff5050' }}></span>
-            <span>Negative (Red)</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ backgroundColor: '#ffffff', border: '1px solid #666' }}></span>
-            <span>Near Zero (White)</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ backgroundColor: '#00ff88' }}></span>
-            <span>Active Neurons</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <canvas 
+      ref={canvasRef} 
+      style={{ 
+        width: '100%', 
+        height: '100%',
+        borderRadius: '4px'
+      }} 
+    />
   )
 }

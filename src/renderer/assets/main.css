@@ -375,35 +375,52 @@ input[type="range"]:hover::-moz-range-thumb {
 
 .dna-panel {
   position: fixed;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
-  width: 320px;
-  max-height: 90vh;
-  background: rgba(10, 10, 10, 0.95);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem;
+  background: rgba(10, 10, 15, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0;
   z-index: 1000;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.dna-panel.maximized {
+  border-radius: 8px;
 }
 
 .dna-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  background: rgba(20, 20, 30, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .dna-panel-header h3 {
   color: #00ff88;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
+  margin: 0;
+}
+
+.btn-header-action {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.btn-header-action:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .btn-close {
@@ -411,29 +428,29 @@ input[type="range"]:hover::-moz-range-thumb {
   border: none;
   color: var(--text-dim);
   cursor: pointer;
-  padding: 0.25rem;
-  font-size: 0.9rem;
-  transition: color 0.2s;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  border-radius: 4px;
 }
 
 .btn-close:hover {
-  color: var(--text);
+  color: #ff6666;
+  background: rgba(255, 100, 100, 0.15);
 }
 
 .dna-canvas {
   width: 100%;
-  height: 200px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: #000;
+  height: 120px;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #050508;
 }
 
 .dna-info {
-  margin-top: 1rem;
+  padding: 12px 16px;
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: calc(90vh - 320px);
-  padding-right: 0.5rem;
 }
 
 .dna-info h4 {
@@ -869,14 +886,14 @@ input[type="range"]:hover::-moz-range-thumb {
 /* DNA Panel Tabs */
 .dna-tabs {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
+  gap: 0;
+  background: rgba(15, 15, 25, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .tab-button {
   flex: 1;
-  padding: 0.6rem 1rem;
+  padding: 10px 12px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -1375,4 +1392,50 @@ input[type="range"]:hover::-moz-range-thumb {
   font-size: 1rem;
   margin-bottom: 0.75rem;
   font-weight: 600;
+}
+
+/* Fullscreen button styling */
+.fullscreen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px !important;
+  font-size: 0.8rem !important;
+}
+
+.fullscreen-btn.active {
+  border-color: #00ff88 !important;
+  color: #00ff88 !important;
+  background: rgba(0, 255, 136, 0.1) !important;
+}
+
+.fullscreen-btn i {
+  display: inline-block !important;
+  font-size: 1rem;
+}
+
+/* Sidebar icons in collapsed mode */
+.sidebar-icons button.active {
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.15);
+}
+
+/* Resize handle styling */
+.resize-handle {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.resize-handle:hover {
+  opacity: 1;
+}
+
+/* Network view styling */
+.network-view {
+  width: 100%;
+  height: 100%;
+  background: #050508;
+  border-radius: 4px;
 }
