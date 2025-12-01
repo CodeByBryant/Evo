@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Agent } from '../core/Agent'
+import { FamilyTreePanel } from './FamilyTreePanel'
 
 // Info Icon Component with Tooltip
 interface InfoIconProps {
@@ -151,9 +152,10 @@ interface DNAPanelProps {
   onClose: () => void
   allAgents?: Agent[]
   agentHistory?: Map<string, Agent>
+  onAgentSelect?: (agent: Agent | null) => void
 }
 
-export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map() }) => {
+export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map(), onAgentSelect }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const networkCanvasRef = useRef<HTMLCanvasElement>(null)
   const [activeTab, setActiveTab] = useState<'genome' | 'genealogy' | 'network'>('genome')
@@ -503,8 +505,17 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
       )}
 
       {activeTab === 'genealogy' && (
-        <div className="genealogy-view">
-          <GenealogyViewer agent={selectedAgent} allAgents={allAgents} agentHistory={agentHistory} />
+        <div className="genealogy-view" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, minHeight: 0, marginBottom: '1rem' }}>
+            <FamilyTreePanel
+              agents={allAgents}
+              selectedAgent={selectedAgent}
+              onAgentSelect={onAgentSelect}
+            />
+          </div>
+          <div style={{ maxHeight: '40%', overflowY: 'auto', borderTop: '1px solid #333', paddingTop: '1rem' }}>
+            <GenealogyViewer agent={selectedAgent} allAgents={allAgents} agentHistory={agentHistory} />
+          </div>
         </div>
       )}
 
