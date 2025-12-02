@@ -18,6 +18,7 @@ export interface GeneticTraits {
   learningRate: number
   memoryNeurons: number
   aggression: number
+  hue: number
 }
 
 export interface TraitRanges {
@@ -40,6 +41,7 @@ export interface TraitRanges {
   learningRate: { min: number; max: number; default: number }
   memoryNeurons: { min: number; max: number; default: number }
   aggression: { min: number; max: number; default: number }
+  hue: { min: number; max: number; default: number }
 }
 
 export interface SimulationConfig {
