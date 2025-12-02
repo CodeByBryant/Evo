@@ -156,18 +156,9 @@ class Agent {
 
   private inheritTraits(parentTraits: GeneticTraits, mateTraits?: GeneticTraits): GeneticTraits {
     const config: any = (AgentConfigData as any).GeneticTraits
-    const mutationRate = parentTraits.mutationRate
     
     const blend = (parent1Val: number, parent2Val: number): number => {
       return parent1Val * 0.5 + parent2Val * 0.5
-    }
-    
-    const mutate = (value: number, range: any): number => {
-      if (Math.random() < mutationRate) {
-        const mutation = (Math.random() - 0.5) * (range.max - range.min) * 0.2
-        return Math.max(range.min, Math.min(range.max, value + mutation))
-      }
-      return value
     }
 
     const baseTraits = mateTraits ? {
@@ -190,29 +181,68 @@ class Agent {
       learningRate: blend(parentTraits.learningRate, mateTraits.learningRate),
       memoryNeurons: blend(parentTraits.memoryNeurons, mateTraits.memoryNeurons),
       aggression: blend(parentTraits.aggression, mateTraits.aggression)
-    } : parentTraits
+    } : { ...parentTraits }
 
-    return {
-      size: mutate(baseTraits.size, config.size),
-      movementSpeed: mutate(baseTraits.movementSpeed, config.movementSpeed),
-      acceleration: mutate(baseTraits.acceleration, config.acceleration),
-      turnRate: mutate(baseTraits.turnRate, config.turnRate),
-      drag: mutate(baseTraits.drag, config.drag),
-      sensorRayCount: Math.round(mutate(baseTraits.sensorRayCount, config.sensorRayCount)),
-      sensorRayLength: mutate(baseTraits.sensorRayLength, config.sensorRayLength),
-      sensorPrecision: mutate(baseTraits.sensorPrecision, config.sensorPrecision),
-      fieldOfView: mutate(baseTraits.fieldOfView, config.fieldOfView),
-      colorVision: Math.random() < mutationRate ? Math.random() < config.colorVision.probability : baseTraits.colorVision,
-      energyEfficiency: mutate(baseTraits.energyEfficiency, config.energyEfficiency),
-      digestionRate: mutate(baseTraits.digestionRate, config.digestionRate),
-      maxEnergyCapacity: mutate(baseTraits.maxEnergyCapacity, config.maxEnergyCapacity),
-      mutationRate: mutate(baseTraits.mutationRate, config.mutationRate),
-      reproductionThreshold: mutate(baseTraits.reproductionThreshold, config.reproductionThreshold),
-      offspringCount: Math.round(mutate(baseTraits.offspringCount, config.offspringCount)),
-      learningRate: mutate(baseTraits.learningRate, config.learningRate),
-      memoryNeurons: Math.round(mutate(baseTraits.memoryNeurons, config.memoryNeurons)),
-      aggression: mutate(baseTraits.aggression, config.aggression)
+    const result: GeneticTraits = {
+      size: baseTraits.size,
+      movementSpeed: baseTraits.movementSpeed,
+      acceleration: baseTraits.acceleration,
+      turnRate: baseTraits.turnRate,
+      drag: baseTraits.drag,
+      sensorRayCount: Math.round(baseTraits.sensorRayCount),
+      sensorRayLength: baseTraits.sensorRayLength,
+      sensorPrecision: baseTraits.sensorPrecision,
+      fieldOfView: baseTraits.fieldOfView,
+      colorVision: baseTraits.colorVision,
+      energyEfficiency: baseTraits.energyEfficiency,
+      digestionRate: baseTraits.digestionRate,
+      maxEnergyCapacity: baseTraits.maxEnergyCapacity,
+      mutationRate: baseTraits.mutationRate,
+      reproductionThreshold: baseTraits.reproductionThreshold,
+      offspringCount: Math.round(baseTraits.offspringCount),
+      learningRate: baseTraits.learningRate,
+      memoryNeurons: Math.round(baseTraits.memoryNeurons),
+      aggression: baseTraits.aggression
     }
+
+    const numericTraitKeys: (keyof GeneticTraits)[] = [
+      'size', 'movementSpeed', 'acceleration', 'turnRate', 'drag',
+      'sensorRayCount', 'sensorRayLength', 'sensorPrecision', 'fieldOfView',
+      'energyEfficiency', 'digestionRate', 'maxEnergyCapacity', 'mutationRate',
+      'reproductionThreshold', 'offspringCount', 'learningRate', 'memoryNeurons', 'aggression'
+    ]
+
+    const mutateGene = (traitKey: keyof GeneticTraits): void => {
+      if (traitKey === 'colorVision') {
+        result.colorVision = Math.random() < config.colorVision.probability
+        return
+      }
+      
+      const range = config[traitKey]
+      if (!range || range.min === undefined || range.max === undefined) return
+      
+      const currentValue = result[traitKey] as number
+      const mutation = (Math.random() - 0.5) * (range.max - range.min) * 0.2
+      let newValue = Math.max(range.min, Math.min(range.max, currentValue + mutation))
+      
+      if (traitKey === 'sensorRayCount' || traitKey === 'offspringCount' || traitKey === 'memoryNeurons') {
+        newValue = Math.round(newValue)
+      }
+      
+      (result as any)[traitKey] = newValue
+    }
+
+    const allTraitKeys: (keyof GeneticTraits)[] = [...numericTraitKeys, 'colorVision']
+    
+    let mutationChance = 1.0
+    while (Math.random() < mutationChance) {
+      const randomIndex = Math.floor(Math.random() * allTraitKeys.length)
+      const selectedTrait = allTraitKeys[randomIndex]
+      mutateGene(selectedTrait)
+      mutationChance *= 0.5
+    }
+
+    return result
   }
 
   public getgeometry(): Vertex[] {
