@@ -148,7 +148,7 @@ export class EvolutionManager {
             : null
           
           const tempChild = new Agent(0, 0, 0, 0, agent.geneticTraits, mate?.geneticTraits, agent.species)
-          const childEnergy = tempChild.geneticTraits.maxEnergyCapacity * 0.5
+          const childEnergy = tempChild.geneticTraits.maxEnergyCapacity * 0.2
           
           reproductionPlans.push({ mate, childTraits: tempChild.geneticTraits, childEnergy })
         }
