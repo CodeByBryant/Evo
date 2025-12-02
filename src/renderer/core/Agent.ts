@@ -131,6 +131,8 @@ class Agent {
 
   private generateDefaultTraits(): GeneticTraits {
     const config: any = (AgentConfigData as any).GeneticTraits
+    const speciesHash = parseInt(this.species.substring(0, 8), 36)
+    const defaultHue = config.hue.default === -1 ? (speciesHash % 360) : config.hue.default
     return {
       size: config.size.default,
       movementSpeed: config.movementSpeed.default,
@@ -150,7 +152,8 @@ class Agent {
       offspringCount: config.offspringCount.default,
       learningRate: config.learningRate.default,
       memoryNeurons: config.memoryNeurons.default,
-      aggression: config.aggression.default
+      aggression: config.aggression.default,
+      hue: defaultHue
     }
   }
 
@@ -159,6 +162,15 @@ class Agent {
     
     const blend = (parent1Val: number, parent2Val: number): number => {
       return parent1Val * 0.5 + parent2Val * 0.5
+    }
+
+    const blendHue = (hue1: number, hue2: number): number => {
+      const diff = hue2 - hue1
+      const shortestPath = ((diff + 540) % 360) - 180
+      let blended = hue1 + shortestPath * 0.5
+      if (blended < 0) blended += 360
+      if (blended >= 360) blended -= 360
+      return blended
     }
 
     const baseTraits = mateTraits ? {
@@ -180,7 +192,8 @@ class Agent {
       offspringCount: blend(parentTraits.offspringCount, mateTraits.offspringCount),
       learningRate: blend(parentTraits.learningRate, mateTraits.learningRate),
       memoryNeurons: blend(parentTraits.memoryNeurons, mateTraits.memoryNeurons),
-      aggression: blend(parentTraits.aggression, mateTraits.aggression)
+      aggression: blend(parentTraits.aggression, mateTraits.aggression),
+      hue: blendHue(parentTraits.hue, mateTraits.hue)
     } : { ...parentTraits }
 
     const result: GeneticTraits = {
@@ -202,14 +215,15 @@ class Agent {
       offspringCount: Math.round(baseTraits.offspringCount),
       learningRate: baseTraits.learningRate,
       memoryNeurons: Math.round(baseTraits.memoryNeurons),
-      aggression: baseTraits.aggression
+      aggression: baseTraits.aggression,
+      hue: baseTraits.hue
     }
 
     const numericTraitKeys: (keyof GeneticTraits)[] = [
       'size', 'movementSpeed', 'acceleration', 'turnRate', 'drag',
       'sensorRayCount', 'sensorRayLength', 'sensorPrecision', 'fieldOfView',
       'energyEfficiency', 'digestionRate', 'maxEnergyCapacity', 'mutationRate',
-      'reproductionThreshold', 'offspringCount', 'learningRate', 'memoryNeurons', 'aggression'
+      'reproductionThreshold', 'offspringCount', 'learningRate', 'memoryNeurons', 'aggression', 'hue'
     ]
 
     const mutateGene = (traitKey: keyof GeneticTraits): void => {
@@ -223,7 +237,13 @@ class Agent {
       
       const currentValue = result[traitKey] as number
       const mutation = (Math.random() - 0.5) * (range.max - range.min) * 0.2
-      let newValue = Math.max(range.min, Math.min(range.max, currentValue + mutation))
+      let newValue: number
+      
+      if (traitKey === 'hue') {
+        newValue = (currentValue + mutation + 360) % 360
+      } else {
+        newValue = Math.max(range.min, Math.min(range.max, currentValue + mutation))
+      }
       
       if (traitKey === 'sensorRayCount' || traitKey === 'offspringCount' || traitKey === 'memoryNeurons') {
         newValue = Math.round(newValue)
@@ -523,8 +543,8 @@ class Agent {
   public renderTrail(context: CanvasRenderingContext2D, isSelected: boolean = false): void {
     if (!Agent.trailsEnabled || this.positionHistory.length < 2) return
     
-    const speciesHue = parseInt(this.species.substring(0, 6), 36) % 360
-    const trailColor = isSelected ? 'rgba(255, 255, 0,' : `hsla(${speciesHue}, 70%, 50%,`
+    const agentHue = this.geneticTraits.hue
+    const trailColor = isSelected ? 'rgba(255, 255, 0,' : `hsla(${agentHue}, 70%, 50%,`
     
     context.save()
     context.lineCap = 'round'
@@ -566,7 +586,7 @@ class Agent {
   } {
     const speciesHash = parseInt(this.species.substring(0, 8), 36)
     return {
-      hue: speciesHash % 360,
+      hue: this.geneticTraits.hue,
       saturation: 50 + (speciesHash % 30),
       lightness: 40 + ((speciesHash >> 4) % 20),
       patternType: speciesHash % 4,

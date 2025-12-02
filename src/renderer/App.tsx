@@ -246,6 +246,7 @@ export const App: React.FC = () => {
         agentHistory={agentHistory}
         onAgentSelect={handleAgentSelect}
         screenPosition={agentScreenPos}
+        resetKey={resetKey}
       />
     </div>
   )

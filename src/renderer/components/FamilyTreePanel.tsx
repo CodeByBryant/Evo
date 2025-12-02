@@ -26,6 +26,7 @@ interface FamilyTreePanelProps {
   selectedAgent: Agent | null
   onAgentSelect?: (agent: Agent | null) => void
   speciesManager?: { getAllSpecies: () => SpeciesInfo[] }
+  resetKey?: number
 }
 
 type ViewMode = 'tree' | 'radial' | 'timeline'
@@ -35,7 +36,8 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   agentHistory,
   selectedAgent,
   onAgentSelect,
-  speciesManager
+  speciesManager,
+  resetKey
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const minimapRef = useRef<HTMLCanvasElement>(null)
@@ -57,12 +59,33 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
 
+  useEffect(() => {
+    setNodes(new Map())
+    setViewOffset({ x: 0, y: 0 })
+    setZoom(1)
+    setFilterSpecies(null)
+    setHoveredNode(null)
+  }, [resetKey])
+
   const getSpeciesColor = useCallback((speciesId: string, alpha = 1): string => {
     const hash = parseInt(speciesId.substring(0, 8), 36)
     const hue = hash % 360
     const saturation = 60 + (hash % 25)
     const lightness = 45 + ((hash >> 4) % 15)
     return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`
+  }, [])
+
+  const getNodeColor = useCallback((node: FamilyTreeNode, alpha = 1): string => {
+    const hue = node.geneticTraits?.hue ?? (parseInt(node.speciesId.substring(0, 8), 36) % 360)
+    const hash = parseInt(node.speciesId.substring(0, 8), 36)
+    const saturation = 60 + (hash % 25)
+    const lightness = 45 + ((hash >> 4) % 15)
+    return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`
+  }, [])
+
+  const getNodeGlow = useCallback((node: FamilyTreeNode): string => {
+    const hue = node.geneticTraits?.hue ?? (parseInt(node.speciesId.substring(0, 8), 36) % 360)
+    return `hsla(${hue}, 80%, 60%, 0.6)`
   }, [])
 
   const getSpeciesGlow = useCallback((speciesId: string): string => {
@@ -94,6 +117,12 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     
     if (parentTraits.colorVision !== childTraits.colorVision) {
       differences.push(`colorVision: ${childTraits.colorVision ? 'gained' : 'lost'}`)
+    }
+    
+    const hueDiff = Math.abs(parentTraits.hue - childTraits.hue)
+    const hueChange = hueDiff > 180 ? 360 - hueDiff : hueDiff
+    if (hueChange > 5) {
+      differences.push(`hue: ${parentTraits.hue.toFixed(0)}° → ${childTraits.hue.toFixed(0)}°`)
     }
     
     return { count: differences.length, differences }
@@ -445,13 +474,13 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
           const pulseAlpha = 0.4 + Math.sin(animationFrame * 0.1) * 0.2
           // Use mutation-based coloring for lineage edges
           const mutationColor = getMutationEdgeColor(mutationCount, pulseAlpha + 0.4)
-          gradient.addColorStop(0, getSpeciesColor(parentNode.speciesId, pulseAlpha + 0.3))
+          gradient.addColorStop(0, getNodeColor(parentNode, pulseAlpha + 0.3))
           gradient.addColorStop(0.5, mutationColor)
-          gradient.addColorStop(1, getSpeciesColor(node.speciesId, pulseAlpha + 0.3))
+          gradient.addColorStop(1, getNodeColor(node, pulseAlpha + 0.3))
           context.lineWidth = 2 + Math.min(mutationCount, 4)
           
           context.shadowBlur = 8
-          context.shadowColor = getSpeciesGlow(node.speciesId)
+          context.shadowColor = getNodeGlow(node)
         } else if (!node.isAlive) {
           gradient.addColorStop(0, 'rgba(80, 80, 80, 0.15)')
           gradient.addColorStop(1, 'rgba(60, 60, 60, 0.1)')
@@ -460,9 +489,9 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         } else {
           // Use mutation-based coloring for regular edges
           const mutationColor = getMutationEdgeColor(mutationCount, 0.35)
-          gradient.addColorStop(0, getSpeciesColor(parentNode.speciesId, 0.25))
+          gradient.addColorStop(0, getNodeColor(parentNode, 0.25))
           gradient.addColorStop(0.5, mutationColor)
-          gradient.addColorStop(1, getSpeciesColor(node.speciesId, 0.25))
+          gradient.addColorStop(1, getNodeColor(node, 0.25))
           context.lineWidth = 1 + Math.min(mutationCount * 0.3, 2)
           context.shadowBlur = 0
         }
@@ -505,8 +534,8 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
           pos.x, pos.y, 0,
           pos.x, pos.y, pulseRadius + 15
         )
-        glowGradient.addColorStop(0, getSpeciesColor(node.speciesId, 0.4))
-        glowGradient.addColorStop(0.5, getSpeciesColor(node.speciesId, 0.15))
+        glowGradient.addColorStop(0, getNodeColor(node, 0.4))
+        glowGradient.addColorStop(0.5, getNodeColor(node, 0.15))
         glowGradient.addColorStop(1, 'transparent')
         
         context.fillStyle = glowGradient
@@ -540,8 +569,8 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
           pos.x - 3, pos.y - 3, 0,
           pos.x, pos.y, baseRadius
         )
-        nodeGradient.addColorStop(0, getSpeciesColor(node.speciesId, 1))
-        nodeGradient.addColorStop(1, getSpeciesColor(node.speciesId, 0.7))
+        nodeGradient.addColorStop(0, getNodeColor(node, 1))
+        nodeGradient.addColorStop(1, getNodeColor(node, 0.7))
         context.fillStyle = nodeGradient
       }
       context.fill()
@@ -576,7 +605,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     context.textAlign = 'right'
     context.fillText(`Zoom: ${(zoom * 100).toFixed(0)}%`, canvas.width - 12, canvas.height - 12)
 
-  }, [nodes, viewOffset, zoom, viewMode, selectedAgent, hoveredNode, lineageSet, showLineage, animationFrame, calculatePositions, getSpeciesColor, getSpeciesGlow, statistics, filterSpecies, showDeadAgents])
+  }, [nodes, viewOffset, zoom, viewMode, selectedAgent, hoveredNode, lineageSet, showLineage, animationFrame, calculatePositions, getNodeColor, getNodeGlow, statistics, filterSpecies, showDeadAgents])
 
   const renderMinimap = useCallback(() => {
     const minimap = minimapRef.current
@@ -623,9 +652,9 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       if (selectedAgent?.id === node.id) {
         ctx.fillStyle = '#ffff00'
       } else if (lineageSet.has(node.id)) {
-        ctx.fillStyle = getSpeciesColor(node.speciesId, 0.8)
+        ctx.fillStyle = getNodeColor(node, 0.8)
       } else if (node.isAlive) {
-        ctx.fillStyle = getSpeciesColor(node.speciesId, 0.5)
+        ctx.fillStyle = getNodeColor(node, 0.5)
       } else {
         ctx.fillStyle = 'rgba(100, 100, 100, 0.3)'
       }
@@ -645,7 +674,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       ctx.lineWidth = 1
       ctx.strokeRect(viewX, viewY, viewWidth * scale, viewHeight * scale)
     }
-  }, [nodes, viewOffset, zoom, viewMode, selectedAgent, lineageSet, calculatePositions, getSpeciesColor])
+  }, [nodes, viewOffset, zoom, viewMode, selectedAgent, lineageSet, calculatePositions, getNodeColor])
 
   useEffect(() => {
     renderTree()
@@ -1145,7 +1174,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
               <div style={{ 
                 fontWeight: '600', 
                 marginBottom: '4px',
-                color: hoveredNode.isAlive ? getSpeciesColor(hoveredNode.speciesId) : '#888',
+                color: hoveredNode.isAlive ? getNodeColor(hoveredNode) : '#888',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px'
@@ -1154,7 +1183,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: hoveredNode.isAlive ? getSpeciesColor(hoveredNode.speciesId) : '#555',
+                  background: hoveredNode.isAlive ? getNodeColor(hoveredNode) : '#555',
                   display: 'inline-block'
                 }}></span>
                 {hoveredNode.id.substring(0, 10)}...

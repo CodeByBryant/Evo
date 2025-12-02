@@ -161,9 +161,10 @@ interface DNAPanelProps {
   agentHistory?: Map<string, Agent>
   onAgentSelect?: (agent: Agent | null) => void
   screenPosition?: { x: number; y: number } | null
+  resetKey?: number
 }
 
-export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map(), onAgentSelect, screenPosition }) => {
+export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allAgents = [], agentHistory = new Map(), onAgentSelect, screenPosition, resetKey }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const networkCanvasRef = useRef<HTMLCanvasElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -718,6 +719,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
               agentHistory={agentHistory}
               selectedAgent={selectedAgent}
               onAgentSelect={onAgentSelect}
+              resetKey={resetKey}
             />
           </div>
         )}
