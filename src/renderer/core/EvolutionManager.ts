@@ -202,11 +202,17 @@ export class EvolutionManager {
             
             child.rebuildNeuralArchitecture()
             
-            const mutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
-            if (Math.random() < child.geneticTraits.mutationRate) {
-              child.NeuralNetwork.mutate(mutationIntensity)
+            // Cascading neural network mutation - guaranteed first, then 50%, 25%, etc.
+            const baseMutationIntensity = child.geneticTraits.mutationRate * child.geneticTraits.learningRate
+            let nnMutationChance = 1.0
+            while (Math.random() < nnMutationChance) {
+              child.NeuralNetwork.mutate(baseMutationIntensity)
+              nnMutationChance *= 0.5
             }
-            child.generation = this.generation
+            
+            // Generation is based on parent depth, not time
+            const parentGeneration = agent.generation || 0
+            child.generation = parentGeneration + 1
             child.fitness = 0
             child.energy = plan.childEnergy
             child.age = 0
@@ -321,7 +327,7 @@ export class EvolutionManager {
               }
             }
             
-            emergencyAgent.generation = this.generation
+            emergencyAgent.generation = 0
             emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
             
             // Start agents at reproductive age so they can breed immediately
@@ -371,7 +377,7 @@ export class EvolutionManager {
         if (diversity > 1.0) {
           emergencyAgent.NeuralNetwork.mutate(template.geneticTraits.mutationRate * diversity)
         }
-        emergencyAgent.generation = this.generation
+        emergencyAgent.generation = (template.generation || 0) + 1
         emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
         
         // Start at reproductive age
@@ -385,20 +391,15 @@ export class EvolutionManager {
       }
     }
 
-    // Increment generation counter every generationTime steps
-    if (this.stepCount % this.config.generationTime === 0) {
-      this.generation++
-      console.log(`[EvolutionManager] Generation ${this.generation} reached at step ${this.stepCount}`)
-    }
-
     // Compute and store stats periodically (every 60 steps to avoid overhead)
     if (this.stepCount % 60 === 0 && agents.length > 0) {
       const totalFitness = agents.reduce((sum, a) => sum + a.fitness, 0)
       const totalEnergy = agents.reduce((sum, a) => sum + a.energy, 0)
       const speciesCount = this.speciesManager.getAllSpecies().length
+      const maxGeneration = agents.length > 0 ? Math.max(...agents.map(a => a.generation || 0)) : 0
       
       const stats: GenerationStats = {
-        generation: this.generation,
+        generation: maxGeneration,
         population: agents.length,
         avgFitness: totalFitness / agents.length,
         maxFitness: Math.max(...agents.map(a => a.fitness)),

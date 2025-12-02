@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import type { Agent } from '../core/Agent'
 import type { SpeciesInfo } from '../core/SpeciesManager'
+import type { GeneticTraits } from '../types/simulation'
 
 interface FamilyTreeNode {
   id: string
@@ -16,6 +17,7 @@ interface FamilyTreeNode {
   age: number
   descendants: number
   ancestors: number
+  geneticTraits?: GeneticTraits
 }
 
 interface FamilyTreePanelProps {
@@ -67,6 +69,41 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     const hash = parseInt(speciesId.substring(0, 8), 36)
     const hue = hash % 360
     return `hsla(${hue}, 80%, 60%, 0.6)`
+  }, [])
+
+  const calculateTraitDifferences = useCallback((parentTraits: GeneticTraits | undefined, childTraits: GeneticTraits | undefined): { count: number; differences: string[] } => {
+    if (!parentTraits || !childTraits) return { count: 0, differences: [] }
+    
+    const differences: string[] = []
+    const numericKeys: (keyof GeneticTraits)[] = [
+      'size', 'movementSpeed', 'acceleration', 'turnRate', 'drag',
+      'sensorRayCount', 'sensorRayLength', 'sensorPrecision', 'fieldOfView',
+      'energyEfficiency', 'digestionRate', 'maxEnergyCapacity', 'mutationRate',
+      'reproductionThreshold', 'offspringCount', 'learningRate', 'memoryNeurons', 'aggression'
+    ]
+    
+    for (const key of numericKeys) {
+      const parentVal = parentTraits[key] as number
+      const childVal = childTraits[key] as number
+      if (Math.abs(parentVal - childVal) > 0.01) {
+        const percentChange = ((childVal - parentVal) / parentVal) * 100
+        const sign = percentChange > 0 ? '+' : ''
+        differences.push(`${key}: ${sign}${percentChange.toFixed(0)}%`)
+      }
+    }
+    
+    if (parentTraits.colorVision !== childTraits.colorVision) {
+      differences.push(`colorVision: ${childTraits.colorVision ? 'gained' : 'lost'}`)
+    }
+    
+    return { count: differences.length, differences }
+  }, [])
+
+  const getMutationEdgeColor = useCallback((mutationCount: number, alpha: number = 0.5): string => {
+    if (mutationCount === 0) return `rgba(100, 200, 100, ${alpha})`
+    if (mutationCount <= 2) return `rgba(150, 200, 100, ${alpha})`
+    if (mutationCount <= 4) return `rgba(220, 180, 80, ${alpha})`
+    return `rgba(255, 120, 80, ${alpha})`
   }, [])
 
   const countDescendants = useCallback((nodeId: string, nodesMap: Map<string, FamilyTreeNode>, visited = new Set<string>()): number => {
@@ -165,7 +202,8 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         foodEaten: agent.foodEaten,
         age: agent.age,
         descendants: 0,
-        ancestors: 0
+        ancestors: 0,
+        geneticTraits: agent.geneticTraits
       })
     })
 
@@ -378,7 +416,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         context.fillStyle = 'rgba(255, 255, 255, 0.15)'
         context.font = '10px Inter, system-ui, sans-serif'
         context.textAlign = 'left'
-        context.fillText(`Gen ${gen}`, -180, y + 4)
+        context.fillText(`Depth ${gen}`, -180, y + 4)
       }
     }
 
@@ -393,6 +431,10 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
 
         const isInLineage = lineageSet.has(node.id) && lineageSet.has(parentId)
         const isSelected = selectedAgent?.id === node.id || selectedAgent?.id === parentId
+        
+        // Calculate mutation count for edge coloring
+        const traitDiff = calculateTraitDifferences(parentNode.geneticTraits, node.geneticTraits)
+        const mutationCount = traitDiff.count
 
         const gradient = context.createLinearGradient(
           parentPos.x, parentPos.y,
@@ -401,10 +443,12 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
 
         if (isInLineage && showLineage) {
           const pulseAlpha = 0.4 + Math.sin(animationFrame * 0.1) * 0.2
+          // Use mutation-based coloring for lineage edges
+          const mutationColor = getMutationEdgeColor(mutationCount, pulseAlpha + 0.4)
           gradient.addColorStop(0, getSpeciesColor(parentNode.speciesId, pulseAlpha + 0.3))
-          gradient.addColorStop(0.5, getSpeciesColor(node.speciesId, pulseAlpha + 0.4))
+          gradient.addColorStop(0.5, mutationColor)
           gradient.addColorStop(1, getSpeciesColor(node.speciesId, pulseAlpha + 0.3))
-          context.lineWidth = 3
+          context.lineWidth = 2 + Math.min(mutationCount, 4)
           
           context.shadowBlur = 8
           context.shadowColor = getSpeciesGlow(node.speciesId)
@@ -414,9 +458,12 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
           context.lineWidth = 1
           context.shadowBlur = 0
         } else {
+          // Use mutation-based coloring for regular edges
+          const mutationColor = getMutationEdgeColor(mutationCount, 0.35)
           gradient.addColorStop(0, getSpeciesColor(parentNode.speciesId, 0.25))
+          gradient.addColorStop(0.5, mutationColor)
           gradient.addColorStop(1, getSpeciesColor(node.speciesId, 0.25))
-          context.lineWidth = 1.5
+          context.lineWidth = 1 + Math.min(mutationCount * 0.3, 2)
           context.shadowBlur = 0
         }
 
@@ -445,7 +492,10 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       const isHovered = hoveredNode?.id === node.id
       const isInLineage = lineageSet.has(node.id)
       
-      let baseRadius = node.isAlive ? 8 + Math.min(node.fitness / 40, 6) : 5
+      // Use genetic traits size for node radius (normalized from 20-60 range to 6-14 radius)
+      const sizeFromTraits = node.geneticTraits?.size ?? 40
+      const normalizedSize = ((sizeFromTraits - 20) / 40) * 8 + 6
+      let baseRadius = node.isAlive ? normalizedSize + Math.min(node.fitness / 60, 4) : normalizedSize * 0.6
       if (isSelected) baseRadius += 4
       if (isHovered) baseRadius += 2
       
@@ -1068,66 +1118,94 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
           }}
         />
 
-        {hoveredNode && !isDragging && (
-          <div
-            ref={tooltipRef}
-            style={{
-              position: 'absolute',
-              left: tooltipPosition.x,
-              top: tooltipPosition.y,
-              background: 'rgba(20, 20, 35, 0.95)',
-              borderRadius: '6px',
-              padding: '8px 10px',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              fontSize: '11px',
-              color: '#fff',
-              zIndex: 100,
-              pointerEvents: 'none',
-              backdropFilter: 'blur(8px)',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
-              maxWidth: '180px'
-            }}
-          >
-            <div style={{ 
-              fontWeight: '600', 
-              marginBottom: '4px',
-              color: hoveredNode.isAlive ? getSpeciesColor(hoveredNode.speciesId) : '#888',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: hoveredNode.isAlive ? getSpeciesColor(hoveredNode.speciesId) : '#555',
-                display: 'inline-block'
-              }}></span>
-              {hoveredNode.id.substring(0, 10)}...
-              {!hoveredNode.isAlive && <span style={{ color: '#888', fontSize: '10px' }}>(dead)</span>}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', opacity: 0.9 }}>
-              <div>Generation: <span style={{ color: '#fa8' }}>{hoveredNode.generation}</span></div>
-              <div>Fitness: <span style={{ color: '#8f8' }}>{hoveredNode.fitness.toFixed(1)}</span></div>
-              <div>Food: <span style={{ color: '#8af' }}>{hoveredNode.foodEaten}</span></div>
-              <div>Age: <span style={{ color: '#f8a' }}>{hoveredNode.age}</span></div>
-              <div>Children: <span style={{ color: '#ff8' }}>{hoveredNode.childIds.length}</span></div>
-              <div>Descendants: <span style={{ color: '#8fa' }}>{hoveredNode.descendants}</span></div>
-            </div>
-            {hoveredNode.isAlive && (
+        {hoveredNode && !isDragging && (() => {
+          const parentNode = hoveredNode.parentIds.length > 0 ? nodes.get(hoveredNode.parentIds[0]) : null
+          const traitDiff = parentNode ? calculateTraitDifferences(parentNode.geneticTraits, hoveredNode.geneticTraits) : null
+          
+          return (
+            <div
+              ref={tooltipRef}
+              style={{
+                position: 'absolute',
+                left: tooltipPosition.x,
+                top: tooltipPosition.y,
+                background: 'rgba(20, 20, 35, 0.95)',
+                borderRadius: '6px',
+                padding: '8px 10px',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                fontSize: '11px',
+                color: '#fff',
+                zIndex: 100,
+                pointerEvents: 'none',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+                maxWidth: '220px'
+              }}
+            >
               <div style={{ 
-                marginTop: '6px', 
-                paddingTop: '6px', 
-                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                color: 'rgba(255, 255, 255, 0.5)',
-                fontSize: '10px',
-                textAlign: 'center'
+                fontWeight: '600', 
+                marginBottom: '4px',
+                color: hoveredNode.isAlive ? getSpeciesColor(hoveredNode.speciesId) : '#888',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
               }}>
-                Click to select
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: hoveredNode.isAlive ? getSpeciesColor(hoveredNode.speciesId) : '#555',
+                  display: 'inline-block'
+                }}></span>
+                {hoveredNode.id.substring(0, 10)}...
+                {!hoveredNode.isAlive && <span style={{ color: '#888', fontSize: '10px' }}>(dead)</span>}
               </div>
-            )}
-          </div>
-        )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', opacity: 0.9 }}>
+                <div>Depth: <span style={{ color: '#fa8' }}>{hoveredNode.generation}</span></div>
+                <div>Fitness: <span style={{ color: '#8f8' }}>{hoveredNode.fitness.toFixed(1)}</span></div>
+                <div>Food: <span style={{ color: '#8af' }}>{hoveredNode.foodEaten}</span></div>
+                <div>Age: <span style={{ color: '#f8a' }}>{hoveredNode.age}</span></div>
+                <div>Children: <span style={{ color: '#ff8' }}>{hoveredNode.childIds.length}</span></div>
+                <div>Descendants: <span style={{ color: '#8fa' }}>{hoveredNode.descendants}</span></div>
+                {hoveredNode.geneticTraits && (
+                  <div>Size: <span style={{ color: '#aaf' }}>{hoveredNode.geneticTraits.size.toFixed(1)}</span></div>
+                )}
+              </div>
+              {traitDiff && traitDiff.differences.length > 0 && (
+                <div style={{ 
+                  marginTop: '6px', 
+                  paddingTop: '6px', 
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  fontSize: '10px'
+                }}>
+                  <div style={{ color: getMutationEdgeColor(traitDiff.count, 1), fontWeight: '600', marginBottom: '3px' }}>
+                    Mutations ({traitDiff.count}):
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', maxHeight: '80px', overflow: 'hidden' }}>
+                    {traitDiff.differences.slice(0, 5).map((diff, i) => (
+                      <div key={i} style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{diff}</div>
+                    ))}
+                    {traitDiff.differences.length > 5 && (
+                      <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>+{traitDiff.differences.length - 5} more</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {hoveredNode.isAlive && (
+                <div style={{ 
+                  marginTop: '6px', 
+                  paddingTop: '6px', 
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  fontSize: '10px',
+                  textAlign: 'center'
+                }}>
+                  Click to select
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
     </div>
   )
