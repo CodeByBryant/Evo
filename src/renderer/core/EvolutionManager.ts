@@ -4,6 +4,7 @@
 
 import { Agent } from './Agent'
 import { SpeciesManager } from './SpeciesManager'
+import { ClusterManager } from './ClusterManager'
 import type { GeneticTraits } from '../types/simulation'
 import AgentConfigData from './utilities/AgentConfig.json'
 
@@ -37,6 +38,7 @@ export class EvolutionManager {
   public speciesManager: SpeciesManager
   private lastGenerationElites: Agent[] = []
   private stepsWithZeroPopulation: number = 0
+  private clusterManager: ClusterManager | null = null
 
   constructor(config: Partial<EvolutionConfig> = {}) {
     this.config = {
@@ -93,6 +95,10 @@ export class EvolutionManager {
     this.stepsWithZeroPopulation = 0
     this.lastGenerationElites = []
     this.speciesManager.clear()
+  }
+
+  public setClusterManager(clusterManager: ClusterManager): void {
+    this.clusterManager = clusterManager
   }
 
   public update(agents: Agent[]): { agents: Agent[]; newBirths: number; newDeaths: number } {
@@ -220,69 +226,138 @@ export class EvolutionManager {
       
       // If completely extinct, spawn multiple agents from elite templates or create new ones
       if (agents.length === 0) {
+        // Guard: Don't spawn with random positions if ClusterManager isn't set yet
+        if (!this.clusterManager) {
+          console.warn('[EvolutionManager] Population extinct but ClusterManager not set - deferring repopulation')
+          return { agents, newBirths, newDeaths }
+        }
+        
         console.warn('[EvolutionManager] Population extinct! Triggering emergency repopulation...')
         const spawnCount = Math.min(this.config.populationSize, 10)
         
-        for (let i = 0; i < spawnCount; i++) {
-          let template: Agent | null = null
+        // Get clusters from ClusterManager
+        const clusters = this.clusterManager.getClusters()
+        const numClusters = clusters.length || 1
+        
+        // Build species map for each cluster - either from elites or create new species
+        const clusterSpecies: Map<number, { id: string; traits: any; template: Agent | null; useTemplateNetwork: boolean }> = new Map()
+        
+        for (const cluster of clusters) {
+          // Check if we have elites from this cluster
+          const clusterElites = this.lastGenerationElites.filter(e => e.clusterId === cluster.id)
           
-          // Try to use elite templates first
-          if (this.lastGenerationElites.length > 0) {
-            template = this.lastGenerationElites[Math.floor(Math.random() * this.lastGenerationElites.length)]
+          if (clusterElites.length > 0) {
+            // Use elite from this cluster - species and traits stay aligned
+            const elite = clusterElites[Math.floor(Math.random() * clusterElites.length)]
+            clusterSpecies.set(cluster.id, { 
+              id: elite.species, 
+              traits: elite.geneticTraits,
+              template: elite,
+              useTemplateNetwork: true
+            })
+          } else if (this.lastGenerationElites.length > 0) {
+            // Create new species for this cluster - clone elite traits WITHOUT mutation
+            // to ensure neural network architecture matches exactly
+            // Diversity is added via network weight mutation after transfer
+            const randomElite = this.lastGenerationElites[Math.floor(Math.random() * this.lastGenerationElites.length)]
+            const newSpecies = this.speciesManager.createSpeciesWithTraits(randomElite.geneticTraits, false)
+            clusterSpecies.set(cluster.id, { 
+              id: newSpecies.id, 
+              traits: newSpecies.baselineTraits,
+              template: randomElite,
+              useTemplateNetwork: true
+            })
+          } else {
+            // No elites at all - create completely new species
+            const newSpecies = this.speciesManager.createNewSpecies()
+            clusterSpecies.set(cluster.id, { 
+              id: newSpecies.id, 
+              traits: newSpecies.baselineTraits,
+              template: null,
+              useTemplateNetwork: false
+            })
           }
-          
-          // If no elites, create a new random agent
-          const emergencyAgent = template 
-            ? new Agent(
-                Math.random() * 2000,
-                Math.random() * 2000,
-                0, 
-                0,
-                template.geneticTraits,
-                undefined,
-                template.species,
-                undefined,
-                Math.floor(Math.random() * 5)
-              )
-            : new Agent(
-                Math.random() * 2000,
-                Math.random() * 2000,
-                40, 
-                40,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                Math.floor(Math.random() * 5)
-              )
-          
-          emergencyAgent.rebuildNeuralArchitecture()
-          
-          if (template && extinctionConfig.DiversityBoostOnReseed) {
-            emergencyAgent.NeuralNetwork.mutate(template.geneticTraits.mutationRate * 1.5)
-          }
-          
-          emergencyAgent.generation = this.generation
-          emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
-          
-          // Start agents at reproductive age so they can breed immediately
-          const lifeConfig = (AgentConfigData as any).LifeStageSettings
-          const minReproAge = lifeConfig?.LifeProgressSegments?.Adult?.start || 0.15
-          emergencyAgent.age = Math.floor(this.config.maxAge * (minReproAge + 0.05))
-          
-          agents.push(emergencyAgent)
-          newBirths++
-          this.totalBirths++
         }
+        
+        console.log(`[EvolutionManager] Prepared ${clusterSpecies.size} species for emergency repopulation across ${numClusters} clusters`)
+        
+        // Distribute agents across clusters
+        const agentsPerCluster = Math.floor(spawnCount / numClusters)
+        const remainder = spawnCount % numClusters
+        let agentsSpawned = 0
+        
+        for (let clusterIdx = 0; clusterIdx < numClusters && agentsSpawned < spawnCount; clusterIdx++) {
+          const cluster = clusters[clusterIdx]
+          const agentsForThisCluster = agentsPerCluster + (clusterIdx < remainder ? 1 : 0)
+          const speciesData = clusterSpecies.get(cluster.id)!
+          
+          for (let i = 0; i < agentsForThisCluster && agentsSpawned < spawnCount; i++) {
+            // Get position within cluster
+            const pos = this.clusterManager.getRandomPositionInCluster(cluster.id)
+            const spawnX = pos ? pos.x : cluster.position.x + (Math.random() - 0.5) * 200
+            const spawnY = pos ? pos.y : cluster.position.y + (Math.random() - 0.5) * 200
+            
+            // Always use species baseline traits for consistency
+            // Agent traits should match the species they belong to
+            const emergencyAgent = new Agent(
+              spawnX,
+              spawnY,
+              0, 
+              0,
+              undefined,
+              undefined,
+              speciesData.id,
+              speciesData.traits,
+              cluster.id
+            )
+            
+            emergencyAgent.rebuildNeuralArchitecture()
+            
+            // Transfer neural network from template if available (for learned behaviors)
+            if (speciesData.useTemplateNetwork && speciesData.template) {
+              emergencyAgent.NeuralNetwork.transferWeightsFrom(speciesData.template.NeuralNetwork)
+              if (extinctionConfig.DiversityBoostOnReseed) {
+                emergencyAgent.NeuralNetwork.mutate(speciesData.traits.mutationRate * 1.5)
+              }
+            }
+            
+            emergencyAgent.generation = this.generation
+            emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
+            
+            // Start agents at reproductive age so they can breed immediately
+            const lifeConfig = (AgentConfigData as any).LifeStageSettings
+            const minReproAge = lifeConfig?.LifeProgressSegments?.Adult?.start || 0.15
+            emergencyAgent.age = Math.floor(this.config.maxAge * (minReproAge + 0.05))
+            
+            agents.push(emergencyAgent)
+            newBirths++
+            this.totalBirths++
+            agentsSpawned++
+          }
+        }
+        
+        console.log(`[EvolutionManager] Emergency repopulated ${agentsSpawned} agents across ${numClusters} clusters`)
       }
       // If low population, spawn occasionally
       else if (Math.random() < emergencySpawnChance) {
         const template = agents[Math.floor(Math.random() * agents.length)]
         const diversity = extinctionConfig.DiversityBoostOnReseed ? 1.5 : 1.0
         
+        // Get position within template's cluster
+        let spawnX = template.position.x + (Math.random() - 0.5) * 200
+        let spawnY = template.position.y + (Math.random() - 0.5) * 200
+        
+        if (this.clusterManager) {
+          const pos = this.clusterManager.getRandomPositionInCluster(template.clusterId)
+          if (pos) {
+            spawnX = pos.x
+            spawnY = pos.y
+          }
+        }
+        
         const emergencyAgent = new Agent(
-          template.position.x + (Math.random() - 0.5) * 200,
-          template.position.y + (Math.random() - 0.5) * 200,
+          spawnX,
+          spawnY,
           0, 
           0,
           template.geneticTraits,

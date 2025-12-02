@@ -58,6 +58,11 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     }
   }, [evolutionConfig])
 
+  // Connect cluster manager to evolution manager for emergency repopulation
+  useEffect(() => {
+    evolutionRef.current.setClusterManager(clusterManager)
+  }, [clusterManager])
+
   // Handle loaded agents
   useEffect(() => {
     if (loadedAgents && loadedAgents.length > 0) {

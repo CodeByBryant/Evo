@@ -154,4 +154,27 @@ export class SpeciesManager {
   public registerSpecies(speciesInfo: SpeciesInfo): void {
     this.speciesMap.set(speciesInfo.id, speciesInfo)
   }
+
+  public createSpeciesWithTraits(sourceTraits: GeneticTraits, mutateTraits: boolean = true): SpeciesInfo {
+    const config: any = (AgentConfigData as any).GeneticTraits
+    const speciesId = this.generateSpeciesId()
+    
+    let baselineTraits: GeneticTraits
+    if (mutateTraits) {
+      baselineTraits = this.mutateSpeciesTraits(sourceTraits, config, 0.3)
+    } else {
+      baselineTraits = { ...sourceTraits }
+    }
+    
+    const speciesInfo: SpeciesInfo = {
+      id: speciesId,
+      baselineTraits,
+      createdAt: Date.now(),
+      population: 0
+    }
+    
+    this.speciesMap.set(speciesId, speciesInfo)
+    console.log(`[SpeciesManager] Created new species from traits: ${speciesId.substring(0, 8)}`)
+    return speciesInfo
+  }
 }
