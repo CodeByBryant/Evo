@@ -38,7 +38,7 @@
     "MaxSize": 10
   },
   "ClusterSettings": {
-    "ClusterCount": 5,
+    "ClusterCount": 6,
     "ClusterRadius": 700,
     "ClusterSpacing": 5000
   },
@@ -62,7 +62,7 @@
   },
   "ReproductionSettings": {
     "EnergyMinToReproduce": 35,
-    "EnergyMaxCap": 100
+    "EnergyMaxCap": 150
   },
   "GeneticTraits": {
     "size": { "min": 20, "max": 60, "default": 40 },
