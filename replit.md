@@ -32,6 +32,8 @@ The system is built on React 18 with TypeScript for the frontend, utilizing Boot
 - **Agent History System:** Persistently tracks all created agents for genealogy, including extinct ancestors.
 - **Energy & Lifespan System:** Agents have energy that depletes, can be replenished by food, and have a maximum age, leading to death by starvation or old age.
 - **Save/Load System:** Allows saving populations to browser localStorage, and exporting/importing to/from JSON files.
+- **Cascading Mutation System:** Uses guaranteed first mutation (100% probability), then 50% for second, 25% for third, etc. Applied to both genetic traits and neural network weights for consistent evolution.
+- **Depth-Based Lineage:** Generation numbers replaced with parent-child depth tracking (child depth = parent depth + 1), providing accurate lineage representation in the family tree.
 
 **System Design Choices:**
 - **Modular Components:** The application is structured with distinct components for rendering (`SimulationCanvasNew.tsx`), DNA visualization (`DNAPanel.tsx`), statistics (`StatsChart.tsx`), and controls (`EvolutionControls.tsx`, `Sidebar.tsx`).
