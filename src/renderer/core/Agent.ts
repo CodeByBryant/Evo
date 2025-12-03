@@ -584,14 +584,16 @@ class Agent {
     eyeStyle: number;
     bodyShape: number;
   } {
-    const speciesHash = parseInt(this.species.substring(0, 8), 36)
+    const speciesHash = parseInt(this.species.substring(0, 8), 36) || 0
+    const safeHash = Number.isFinite(speciesHash) ? Math.abs(speciesHash) : 0
+    const hue = Number.isFinite(this.geneticTraits.hue) ? Math.floor(this.geneticTraits.hue) % 360 : (safeHash % 360)
     return {
-      hue: this.geneticTraits.hue,
-      saturation: 50 + (speciesHash % 30),
-      lightness: 40 + ((speciesHash >> 4) % 20),
-      patternType: speciesHash % 4,
-      eyeStyle: (speciesHash >> 8) % 3,
-      bodyShape: (speciesHash >> 12) % 3
+      hue,
+      saturation: 50 + (safeHash % 30),
+      lightness: 40 + ((safeHash >> 4) % 20),
+      patternType: safeHash % 4,
+      eyeStyle: (safeHash >> 8) % 3,
+      bodyShape: (safeHash >> 12) % 3
     }
   }
 

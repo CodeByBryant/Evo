@@ -67,32 +67,47 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     setHoveredNode(null)
   }, [resetKey])
 
+  const getSafeHash = useCallback((speciesId: string | undefined): number => {
+    const safeId = speciesId || '0'
+    const hash = parseInt(safeId.substring(0, 8), 36)
+    return Number.isFinite(hash) ? Math.abs(hash) : 0
+  }, [])
+
+  const getSafeHue = useCallback((rawHue: number | undefined, fallbackHash: number): number => {
+    if (typeof rawHue === 'number' && Number.isFinite(rawHue)) {
+      return Math.floor(rawHue) % 360
+    }
+    return fallbackHash % 360
+  }, [])
+
   const getSpeciesColor = useCallback((speciesId: string, alpha = 1): string => {
-    const hash = parseInt(speciesId.substring(0, 8), 36)
+    const hash = getSafeHash(speciesId)
     const hue = hash % 360
     const saturation = 60 + (hash % 25)
     const lightness = 45 + ((hash >> 4) % 15)
     return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`
-  }, [])
+  }, [getSafeHash])
 
   const getNodeColor = useCallback((node: FamilyTreeNode, alpha = 1): string => {
-    const hue = node.geneticTraits?.hue ?? (parseInt(node.speciesId.substring(0, 8), 36) % 360)
-    const hash = parseInt(node.speciesId.substring(0, 8), 36)
+    const hash = getSafeHash(node?.speciesId)
+    const hue = getSafeHue(node?.geneticTraits?.hue, hash)
     const saturation = 60 + (hash % 25)
     const lightness = 45 + ((hash >> 4) % 15)
-    return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`
-  }, [])
+    const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 1
+    return `hsla(${hue}, ${saturation}%, ${lightness}%, ${safeAlpha})`
+  }, [getSafeHash, getSafeHue])
 
   const getNodeGlow = useCallback((node: FamilyTreeNode): string => {
-    const hue = node.geneticTraits?.hue ?? (parseInt(node.speciesId.substring(0, 8), 36) % 360)
+    const hash = getSafeHash(node?.speciesId)
+    const hue = getSafeHue(node?.geneticTraits?.hue, hash)
     return `hsla(${hue}, 80%, 60%, 0.6)`
-  }, [])
+  }, [getSafeHash, getSafeHue])
 
   const getSpeciesGlow = useCallback((speciesId: string): string => {
-    const hash = parseInt(speciesId.substring(0, 8), 36)
+    const hash = getSafeHash(speciesId)
     const hue = hash % 360
     return `hsla(${hue}, 80%, 60%, 0.6)`
-  }, [])
+  }, [getSafeHash])
 
   const calculateTraitDifferences = useCallback((parentTraits: GeneticTraits | undefined, childTraits: GeneticTraits | undefined): { count: number; differences: string[] } => {
     if (!parentTraits || !childTraits) return { count: 0, differences: [] }
@@ -119,20 +134,24 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       differences.push(`colorVision: ${childTraits.colorVision ? 'gained' : 'lost'}`)
     }
     
-    const hueDiff = Math.abs(parentTraits.hue - childTraits.hue)
+    const parentHue = Number.isFinite(parentTraits.hue) ? parentTraits.hue : 0
+    const childHue = Number.isFinite(childTraits.hue) ? childTraits.hue : 0
+    const hueDiff = Math.abs(parentHue - childHue)
     const hueChange = hueDiff > 180 ? 360 - hueDiff : hueDiff
     if (hueChange > 5) {
-      differences.push(`hue: ${parentTraits.hue.toFixed(0)}° → ${childTraits.hue.toFixed(0)}°`)
+      differences.push(`hue: ${parentHue.toFixed(0)}° → ${childHue.toFixed(0)}°`)
     }
     
     return { count: differences.length, differences }
   }, [])
 
   const getMutationEdgeColor = useCallback((mutationCount: number, alpha: number = 0.5): string => {
-    if (mutationCount === 0) return `rgba(100, 200, 100, ${alpha})`
-    if (mutationCount <= 2) return `rgba(150, 200, 100, ${alpha})`
-    if (mutationCount <= 4) return `rgba(220, 180, 80, ${alpha})`
-    return `rgba(255, 120, 80, ${alpha})`
+    const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 0.5
+    const safeMutation = Number.isFinite(mutationCount) ? mutationCount : 0
+    if (safeMutation === 0) return `rgba(100, 200, 100, ${safeAlpha})`
+    if (safeMutation <= 2) return `rgba(150, 200, 100, ${safeAlpha})`
+    if (safeMutation <= 4) return `rgba(220, 180, 80, ${safeAlpha})`
+    return `rgba(255, 120, 80, ${safeAlpha})`
   }, [])
 
   const countDescendants = useCallback((nodeId: string, nodesMap: Map<string, FamilyTreeNode>, visited = new Set<string>()): number => {

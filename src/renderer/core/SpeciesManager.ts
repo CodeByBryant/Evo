@@ -106,7 +106,8 @@ export class SpeciesManager {
       offspringCount: Math.round(randomInRange(config.offspringCount)),
       learningRate: randomInRange(config.learningRate),
       memoryNeurons: Math.round(randomInRange(config.memoryNeurons)),
-      aggression: randomInRange(config.aggression)
+      aggression: randomInRange(config.aggression),
+      hue: Math.floor(Math.random() * 360)
     }
   }
 
@@ -115,6 +116,10 @@ export class SpeciesManager {
       const mutation = (Math.random() - 0.5) * (range.max - range.min) * intensity
       return Math.max(range.min, Math.min(range.max, value + mutation))
     }
+
+    const parentHue = Number.isFinite(parentTraits.hue) ? parentTraits.hue : Math.floor(Math.random() * 360)
+    const hueMutation = (Math.random() - 0.5) * 60 * intensity
+    const newHue = (parentHue + hueMutation + 360) % 360
 
     return {
       size: mutate(parentTraits.size, config.size),
@@ -135,7 +140,8 @@ export class SpeciesManager {
       offspringCount: Math.round(mutate(parentTraits.offspringCount, config.offspringCount)),
       learningRate: mutate(parentTraits.learningRate, config.learningRate),
       memoryNeurons: Math.round(mutate(parentTraits.memoryNeurons, config.memoryNeurons)),
-      aggression: mutate(parentTraits.aggression, config.aggression)
+      aggression: mutate(parentTraits.aggression, config.aggression),
+      hue: newHue
     }
   }
 
