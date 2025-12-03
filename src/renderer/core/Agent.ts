@@ -133,6 +133,7 @@ class Agent {
     const config: any = (AgentConfigData as any).GeneticTraits
     const speciesHash = parseInt(this.species.substring(0, 8), 36)
     const defaultHue = config.hue.default === -1 ? (speciesHash % 360) : config.hue.default
+    const defaultBodyShape = config.bodyShape?.default ?? 3
     return {
       size: config.size.default,
       movementSpeed: config.movementSpeed.default,
@@ -153,7 +154,8 @@ class Agent {
       learningRate: config.learningRate.default,
       memoryNeurons: config.memoryNeurons.default,
       aggression: config.aggression.default,
-      hue: defaultHue
+      hue: defaultHue,
+      bodyShape: defaultBodyShape
     }
   }
 
@@ -193,7 +195,8 @@ class Agent {
       learningRate: blend(parentTraits.learningRate, mateTraits.learningRate),
       memoryNeurons: blend(parentTraits.memoryNeurons, mateTraits.memoryNeurons),
       aggression: blend(parentTraits.aggression, mateTraits.aggression),
-      hue: blendHue(parentTraits.hue, mateTraits.hue)
+      hue: blendHue(parentTraits.hue, mateTraits.hue),
+      bodyShape: Math.random() < 0.5 ? parentTraits.bodyShape : mateTraits.bodyShape
     } : { ...parentTraits }
 
     const result: GeneticTraits = {
@@ -216,14 +219,15 @@ class Agent {
       learningRate: baseTraits.learningRate,
       memoryNeurons: Math.round(baseTraits.memoryNeurons),
       aggression: baseTraits.aggression,
-      hue: baseTraits.hue
+      hue: baseTraits.hue,
+      bodyShape: Math.round(baseTraits.bodyShape)
     }
 
     const numericTraitKeys: (keyof GeneticTraits)[] = [
       'size', 'movementSpeed', 'acceleration', 'turnRate', 'drag',
       'sensorRayCount', 'sensorRayLength', 'sensorPrecision', 'fieldOfView',
       'energyEfficiency', 'digestionRate', 'maxEnergyCapacity', 'mutationRate',
-      'reproductionThreshold', 'offspringCount', 'learningRate', 'memoryNeurons', 'aggression', 'hue'
+      'reproductionThreshold', 'offspringCount', 'learningRate', 'memoryNeurons', 'aggression', 'hue', 'bodyShape'
     ]
 
     const mutateGene = (traitKey: keyof GeneticTraits): void => {
@@ -245,7 +249,7 @@ class Agent {
         newValue = Math.max(range.min, Math.min(range.max, currentValue + mutation))
       }
       
-      if (traitKey === 'sensorRayCount' || traitKey === 'offspringCount' || traitKey === 'memoryNeurons') {
+      if (traitKey === 'sensorRayCount' || traitKey === 'offspringCount' || traitKey === 'memoryNeurons' || traitKey === 'bodyShape') {
         newValue = Math.round(newValue)
       }
       
@@ -267,25 +271,17 @@ class Agent {
 
   public getgeometry(): Vertex[] {
     const vertices: Vertex[] = []
-    const rad = Math.hypot(this.width, this.height) / 2
-    const alpha = Math.atan2(this.width, this.height)
-
-    vertices.push({
-      x: this.position.x - Math.sin(this.position.rotation - alpha) * rad,
-      y: this.position.y - Math.cos(this.position.rotation - alpha) * rad
-    })
-    vertices.push({
-      x: this.position.x - Math.sin(this.position.rotation + alpha) * rad,
-      y: this.position.y - Math.cos(this.position.rotation + alpha) * rad
-    })
-    vertices.push({
-      x: this.position.x - Math.sin(Math.PI + this.position.rotation - alpha) * rad,
-      y: this.position.y - Math.cos(Math.PI + this.position.rotation - alpha) * rad
-    })
-    vertices.push({
-      x: this.position.x - Math.sin(Math.PI + this.position.rotation + alpha) * rad,
-      y: this.position.y - Math.cos(Math.PI + this.position.rotation + alpha) * rad
-    })
+    const sides = Math.round(this.geneticTraits.bodyShape) || 3
+    const clampedSides = Math.max(3, Math.min(8, sides))
+    const radius = this.width * 0.5
+    
+    for (let i = 0; i < clampedSides; i++) {
+      const angle = this.position.rotation + (i * 2 * Math.PI / clampedSides) - Math.PI / 2
+      vertices.push({
+        x: this.position.x + Math.cos(angle) * radius,
+        y: this.position.y + Math.sin(angle) * radius
+      })
+    }
 
     return vertices
   }
@@ -587,13 +583,14 @@ class Agent {
     const speciesHash = parseInt(this.species.substring(0, 8), 36) || 0
     const safeHash = Number.isFinite(speciesHash) ? Math.abs(speciesHash) : 0
     const hue = Number.isFinite(this.geneticTraits.hue) ? Math.floor(this.geneticTraits.hue) % 360 : (safeHash % 360)
+    const bodyShape = Math.round(this.geneticTraits.bodyShape) || 3
     return {
       hue,
       saturation: 50 + (safeHash % 30),
       lightness: 40 + ((safeHash >> 4) % 20),
       patternType: safeHash % 4,
       eyeStyle: (safeHash >> 8) % 3,
-      bodyShape: (safeHash >> 12) % 3
+      bodyShape: Math.max(3, Math.min(8, bodyShape))
     }
   }
 
@@ -719,45 +716,12 @@ class Agent {
     const traits = this.getSpeciesVisualTraits()
     const renderConfig: any = AgentConfigData.Rendering
 
-    // Draw body based on species shape
     context.beginPath()
-    
-    switch (traits.bodyShape) {
-      case 0:
-        context.moveTo(this.polygon[0].x, this.polygon[0].y)
-        for (let i = 1; i < this.polygon.length; i++) {
-          context.lineTo(this.polygon[i].x, this.polygon[i].y)
-        }
-        break;
-      case 1:
-        const cx = this.position.x
-        const cy = this.position.y
-        context.save()
-        context.translate(cx, cy)
-        context.rotate(this.position.rotation)
-        context.translate(-cx, -cy)
-        context.ellipse(cx, cy, this.width * 0.5, this.height * 0.6, 0, 0, Math.PI * 2)
-        context.restore()
-        break;
-      case 2:
-        const centerX = this.position.x
-        const centerY = this.position.y
-        const radius = this.width * 0.5
-        context.save()
-        context.translate(centerX, centerY)
-        context.rotate(this.position.rotation)
-        context.translate(-centerX, -centerY)
-        context.moveTo(centerX, centerY - radius * 1.2)
-        context.lineTo(centerX + radius * 0.8, centerY + radius * 0.6)
-        context.lineTo(centerX - radius * 0.8, centerY + radius * 0.6)
-        context.closePath()
-        context.restore()
-        break;
-      default:
-        context.moveTo(this.polygon[0].x, this.polygon[0].y)
-        for (let i = 1; i < this.polygon.length; i++) {
-          context.lineTo(this.polygon[i].x, this.polygon[i].y)
-        }
+    if (this.polygon.length > 0) {
+      context.moveTo(this.polygon[0].x, this.polygon[0].y)
+      for (let i = 1; i < this.polygon.length; i++) {
+        context.lineTo(this.polygon[i].x, this.polygon[i].y)
+      }
     }
     context.closePath()
 

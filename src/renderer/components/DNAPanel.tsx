@@ -580,8 +580,22 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({ selectedAgent, onClose, allA
                   <span className="value">{selectedAgent.width}x{selectedAgent.height}</span>
                 </div>
                 <div className="info-item">
+                  <span className="label">Body Shape:</span>
+                  <span className="value">
+                    {(() => {
+                      const sides = Math.round(selectedAgent.geneticTraits.bodyShape ?? 3)
+                      const names: {[k: number]: string} = {3:'Triangle',4:'Square',5:'Pentagon',6:'Hexagon',7:'Heptagon',8:'Octagon'}
+                      return names[sides] || `${sides}-gon`
+                    })()}
+                  </span>
+                </div>
+                <div className="info-item">
                   <span className="label">Color Hue:</span>
-                  <span className="value">{(parseInt(selectedAgent.species.substring(0, 6), 36) % 360).toFixed(0)}deg</span>
+                  <span className="value" style={{ 
+                    backgroundColor: `hsl(${selectedAgent.geneticTraits.hue ?? 0}, 60%, 50%)`,
+                    padding: '2px 6px',
+                    borderRadius: '4px'
+                  }}>{Math.round(selectedAgent.geneticTraits.hue ?? 0)}°</span>
                 </div>
               </div>
 

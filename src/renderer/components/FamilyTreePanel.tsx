@@ -29,7 +29,6 @@ interface FamilyTreePanelProps {
   resetKey?: number
 }
 
-type ViewMode = 'tree' | 'radial' | 'timeline'
 
 export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   agents,
@@ -46,11 +45,9 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [zoom, setZoom] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [viewMode, setViewMode] = useState<ViewMode>('tree')
   const [showLineage, setShowLineage] = useState(true)
   const [hoveredNode, setHoveredNode] = useState<FamilyTreeNode | null>(null)
   const [animationFrame, setAnimationFrame] = useState(0)
-  const [filterSpecies, setFilterSpecies] = useState<string | null>(null)
   const [showDeadAgents, setShowDeadAgents] = useState(true)
   const [showStats, setShowStats] = useState(false)
   const [filterToLineage, setFilterToLineage] = useState(true)
@@ -63,7 +60,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     setNodes(new Map())
     setViewOffset({ x: 0, y: 0 })
     setZoom(1)
-    setFilterSpecies(null)
     setHoveredNode(null)
   }, [resetKey])
 
@@ -278,12 +274,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     return getLineage(selectedAgent.id, nodes)
   }, [selectedAgent, nodes, showLineage, getLineage])
 
-  const speciesList = useMemo(() => {
-    const species = new Set<string>()
-    nodes.forEach(node => species.add(node.speciesId))
-    return Array.from(species)
-  }, [nodes])
-
   const statistics = useMemo(() => {
     const stats = {
       totalNodes: nodes.size,
@@ -325,101 +315,51 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     return stats
   }, [nodes, lineageSet, selectedAgent])
 
-  const calculatePositions = useCallback((nodesMap: Map<string, FamilyTreeNode>, mode: ViewMode) => {
+  const calculatePositions = useCallback((nodesMap: Map<string, FamilyTreeNode>) => {
     const positioned = new Map<string, { x: number; y: number }>()
     
-    // Get lineage set for filtering
     const lineageSet = selectedAgent && filterToLineage ? getLineage(selectedAgent.id, nodesMap) : null
     
-    if (mode === 'tree') {
-      const generationGroups = new Map<number, FamilyTreeNode[]>()
-      let maxGeneration = 0
+    const generationGroups = new Map<number, FamilyTreeNode[]>()
+    let maxGeneration = 0
+    
+    nodesMap.forEach(node => {
+      if (!showDeadAgents && !node.isAlive) return
+      if (filterToLineage && selectedAgent && lineageSet && !lineageSet.has(node.id)) return
       
-      nodesMap.forEach(node => {
-        if (filterSpecies && node.speciesId !== filterSpecies) return
-        if (!showDeadAgents && !node.isAlive) return
-        if (filterToLineage && selectedAgent && lineageSet && !lineageSet.has(node.id)) return
-        
-        const gen = node.generation
-        if (!generationGroups.has(gen)) {
-          generationGroups.set(gen, [])
+      const gen = node.generation
+      if (!generationGroups.has(gen)) {
+        generationGroups.set(gen, [])
+      }
+      generationGroups.get(gen)!.push(node)
+      maxGeneration = Math.max(maxGeneration, gen)
+    })
+
+    const generationSpacing = 100
+    const baseHorizontalSpacing = 60
+    
+    generationGroups.forEach((group, gen) => {
+      const sortedGroup = [...group].sort((a, b) => {
+        if (a.parentIds.length && b.parentIds.length) {
+          const aParent = positioned.get(a.parentIds[0])
+          const bParent = positioned.get(b.parentIds[0])
+          if (aParent && bParent) return aParent.x - bParent.x
         }
-        generationGroups.get(gen)!.push(node)
-        maxGeneration = Math.max(maxGeneration, gen)
+        return a.speciesId.localeCompare(b.speciesId)
       })
 
-      const generationSpacing = 100
-      const baseHorizontalSpacing = 60
+      const totalInGen = sortedGroup.length
+      const horizontalSpacing = Math.max(baseHorizontalSpacing, 400 / Math.max(totalInGen, 1))
       
-      generationGroups.forEach((group, gen) => {
-        const sortedGroup = [...group].sort((a, b) => {
-          if (a.parentIds.length && b.parentIds.length) {
-            const aParent = positioned.get(a.parentIds[0])
-            const bParent = positioned.get(b.parentIds[0])
-            if (aParent && bParent) return aParent.x - bParent.x
-          }
-          return a.speciesId.localeCompare(b.speciesId)
-        })
-
-        const totalInGen = sortedGroup.length
-        const horizontalSpacing = Math.max(baseHorizontalSpacing, 400 / Math.max(totalInGen, 1))
-        
-        sortedGroup.forEach((node, index) => {
-          const y = gen * generationSpacing  // Descendants have higher generation = lower on screen
-          const x = (index - (totalInGen - 1) / 2) * horizontalSpacing
-          positioned.set(node.id, { x, y })
-        })
-      })
-    } else if (mode === 'radial') {
-      const centerX = 0
-      const centerY = 0
-      const baseRadius = 80
-      const generationGroups = new Map<number, FamilyTreeNode[]>()
-      
-      nodesMap.forEach(node => {
-        if (filterSpecies && node.speciesId !== filterSpecies) return
-        if (!showDeadAgents && !node.isAlive) return
-        
-        const gen = node.generation
-        if (!generationGroups.has(gen)) {
-          generationGroups.set(gen, [])
-        }
-        generationGroups.get(gen)!.push(node)
-      })
-
-      generationGroups.forEach((group, gen) => {
-        const radius = baseRadius + gen * 70
-        const angleStep = (2 * Math.PI) / Math.max(group.length, 1)
-        
-        group.forEach((node, index) => {
-          const angle = index * angleStep - Math.PI / 2
-          const x = centerX + radius * Math.cos(angle)
-          const y = centerY + radius * Math.sin(angle)
-          positioned.set(node.id, { x, y })
-        })
-      })
-    } else if (mode === 'timeline') {
-      const timelineSpacing = 50
-      let currentX = 0
-      
-      const sortedNodes = Array.from(nodesMap.values())
-        .filter(node => {
-          if (filterSpecies && node.speciesId !== filterSpecies) return false
-          if (!showDeadAgents && !node.isAlive) return false
-          return true
-        })
-        .sort((a, b) => a.generation - b.generation || a.id.localeCompare(b.id))
-      
-      sortedNodes.forEach((node, index) => {
-        const x = currentX
-        const y = (node.generation % 5) * 40 - 80
+      sortedGroup.forEach((node, index) => {
+        const y = gen * generationSpacing
+        const x = (index - (totalInGen - 1) / 2) * horizontalSpacing
         positioned.set(node.id, { x, y })
-        currentX += timelineSpacing
       })
-    }
+    })
 
     return positioned
-  }, [filterSpecies, showDeadAgents])
+  }, [showDeadAgents, selectedAgent, filterToLineage, getLineage])
 
   const renderTree = useCallback(() => {
     const canvas = canvasRef.current
@@ -449,10 +389,9 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     context.translate(canvas.width / 2 + viewOffset.x, canvas.height / 3 + viewOffset.y)
     context.scale(zoom, zoom)
 
-    const positions = calculatePositions(nodes, viewMode)
+    const positions = calculatePositions(nodes)
 
-    if (viewMode === 'tree') {
-      const maxGen = statistics.maxGeneration
+    const maxGen = statistics.maxGeneration
       for (let gen = 0; gen <= maxGen; gen++) {
         const y = gen * 100
         context.strokeStyle = 'rgba(255, 255, 255, 0.03)'
@@ -468,7 +407,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         context.font = '10px Inter, system-ui, sans-serif'
         context.textAlign = 'left'
         context.fillText(`Depth ${gen}`, -180, y + 4)
-      }
     }
 
     nodes.forEach(node => {
@@ -620,14 +558,13 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
 
     context.fillStyle = 'rgba(255, 255, 255, 0.4)'
     context.font = '11px Inter, system-ui, sans-serif'
-    const modeLabel = viewMode === 'tree' ? 'Tree View' : viewMode === 'radial' ? 'Radial View' : 'Timeline View'
-    context.fillText(`${modeLabel} | Scroll/pinch to zoom | Drag/touch to pan`, 12, canvas.height - 12)
+    context.fillText(`Scroll/pinch to zoom | Drag/touch to pan`, 12, canvas.height - 12)
     
     context.fillStyle = 'rgba(255, 255, 255, 0.3)'
     context.textAlign = 'right'
     context.fillText(`Zoom: ${(zoom * 100).toFixed(0)}%`, canvas.width - 12, canvas.height - 12)
 
-  }, [nodes, viewOffset, zoom, viewMode, selectedAgent, hoveredNode, lineageSet, showLineage, animationFrame, calculatePositions, getNodeColor, getNodeGlow, statistics, filterSpecies, showDeadAgents])
+  }, [nodes, viewOffset, zoom, selectedAgent, hoveredNode, lineageSet, showLineage, animationFrame, calculatePositions, getNodeColor, getNodeGlow, statistics, showDeadAgents])
 
   const renderMinimap = useCallback(() => {
     const minimap = minimapRef.current
@@ -643,7 +580,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     ctx.lineWidth = 1
     ctx.strokeRect(0, 0, minimap.width, minimap.height)
 
-    const positions = calculatePositions(nodes, viewMode)
+    const positions = calculatePositions(nodes)
     if (positions.size === 0) return
 
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
@@ -696,7 +633,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       ctx.lineWidth = 1
       ctx.strokeRect(viewX, viewY, viewWidth * scale, viewHeight * scale)
     }
-  }, [nodes, viewOffset, zoom, viewMode, selectedAgent, lineageSet, calculatePositions, getNodeColor])
+  }, [nodes, viewOffset, zoom, selectedAgent, lineageSet, calculatePositions, getNodeColor])
 
   useEffect(() => {
     renderTree()
@@ -735,7 +672,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     const worldX = (x - canvas.width / 2 - viewOffset.x) / zoom
     const worldY = (y - canvas.height / 3 - viewOffset.y) / zoom
 
-    const positions = calculatePositions(nodes, viewMode)
+    const positions = calculatePositions(nodes)
     
     let closestNode: FamilyTreeNode | null = null
     let closestDistance = 20
@@ -752,7 +689,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     })
 
     return closestNode
-  }, [nodes, viewOffset, zoom, viewMode, calculatePositions])
+  }, [nodes, viewOffset, zoom, calculatePositions])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
@@ -914,33 +851,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         alignItems: 'center'
       }}>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {(['tree', 'radial', 'timeline'] as ViewMode[]).map(mode => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              style={{
-                padding: '5px 10px',
-                background: viewMode === mode 
-                  ? 'linear-gradient(135deg, #4a90d9 0%, #357abd 100%)'
-                  : 'rgba(255, 255, 255, 0.06)',
-                color: viewMode === mode ? '#fff' : 'rgba(255, 255, 255, 0.7)',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontWeight: viewMode === mode ? '600' : '400',
-                transition: 'all 0.2s',
-                textTransform: 'capitalize'
-              }}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ width: '1px', height: '20px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px' }} />
-
         <button
           onClick={() => setShowLineage(!showLineage)}
           style={{
@@ -978,28 +888,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
           <i className="bi bi-eye" style={{ marginRight: '4px' }}></i>
           Deceased
         </button>
-
-        <select
-          value={filterSpecies || ''}
-          onChange={(e) => setFilterSpecies(e.target.value || null)}
-          style={{
-            padding: '5px 8px',
-            background: 'rgba(255, 255, 255, 0.06)',
-            color: 'rgba(255, 255, 255, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '4px',
-            fontSize: '11px',
-            cursor: 'pointer',
-            maxWidth: '120px'
-          }}
-        >
-          <option value="">All Species</option>
-          {speciesList.map(species => (
-            <option key={species} value={species}>
-              {species.substring(0, 8)}
-            </option>
-          ))}
-        </select>
 
         <button
           onClick={() => setShowStats(!showStats)}

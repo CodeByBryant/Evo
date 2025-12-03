@@ -19,6 +19,7 @@ export interface GeneticTraits {
   memoryNeurons: number
   aggression: number
   hue: number
+  bodyShape: number
 }
 
 export interface TraitRanges {
@@ -42,6 +43,7 @@ export interface TraitRanges {
   memoryNeurons: { min: number; max: number; default: number }
   aggression: { min: number; max: number; default: number }
   hue: { min: number; max: number; default: number }
+  bodyShape: { min: number; max: number; default: number }
 }
 
 export interface SimulationConfig {

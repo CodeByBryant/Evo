@@ -107,7 +107,8 @@ export class SpeciesManager {
       learningRate: randomInRange(config.learningRate),
       memoryNeurons: Math.round(randomInRange(config.memoryNeurons)),
       aggression: randomInRange(config.aggression),
-      hue: Math.floor(Math.random() * 360)
+      hue: Math.floor(Math.random() * 360),
+      bodyShape: config.bodyShape ? Math.round(randomInRange(config.bodyShape)) : 3
     }
   }
 
@@ -141,7 +142,8 @@ export class SpeciesManager {
       learningRate: mutate(parentTraits.learningRate, config.learningRate),
       memoryNeurons: Math.round(mutate(parentTraits.memoryNeurons, config.memoryNeurons)),
       aggression: mutate(parentTraits.aggression, config.aggression),
-      hue: newHue
+      hue: newHue,
+      bodyShape: config.bodyShape ? Math.round(mutate(parentTraits.bodyShape ?? 3, config.bodyShape)) : (parentTraits.bodyShape ?? 3)
     }
   }
 
