@@ -5,7 +5,8 @@ import { DNAPanel } from './components/DNAPanel'
 import { StatsChart } from './components/StatsChart'
 import { SaveLoadPanel } from './components/SaveLoadPanel'
 import { SpeciesStats } from './components/SpeciesStats'
-import type { SimulationConfig, SimulationStats } from './types/simulation'
+import { AgentBuilderPanel } from './components/AgentBuilderPanel'
+import type { SimulationConfig, SimulationStats, GeneticTraits } from './types/simulation'
 import type { Agent } from './core/Agent'
 import type { GenerationStats, EvolutionConfig } from './core/EvolutionManager'
 import AgentConfigData from './core/utilities/AgentConfig.json'
@@ -33,6 +34,9 @@ export const App: React.FC = () => {
   const [loadedAgents, setLoadedAgents] = useState<Agent[] | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const [evolutionConfig, setEvolutionConfig] = useState<EvolutionConfig>(loadEvolutionConfig())
+  const [placementMode, setPlacementMode] = useState(false)
+  const [pendingAgentTraits, setPendingAgentTraits] = useState<GeneticTraits | null>(null)
+  const [showAgentBuilder, setShowAgentBuilder] = useState(false)
 
   // Keyboard shortcuts
   React.useEffect(() => {
@@ -153,6 +157,23 @@ export const App: React.FC = () => {
     setEvolutionConfig(newConfig)
   }, [])
 
+  const handleSpawnAgent = useCallback((traits: GeneticTraits) => {
+    console.log('[App] Spawning custom agent with placement mode')
+    setPendingAgentTraits(traits)
+    setPlacementMode(true)
+    setShowAgentBuilder(false)
+  }, [])
+
+  const handlePlacementComplete = useCallback(() => {
+    console.log('[App] Agent placed successfully')
+    setPlacementMode(false)
+    setPendingAgentTraits(null)
+  }, [])
+
+  const handleCloseAgentBuilder = useCallback(() => {
+    setShowAgentBuilder(false)
+  }, [])
+
   return (
     <div className="app-container">
       <Sidebar
@@ -166,36 +187,36 @@ export const App: React.FC = () => {
         onConfigChange={handleConfigChange}
       >
         {/* Evolution Statistics */}
-        <div className="evolution-stats">
-          <h4>📈 Evolution Progress</h4>
-          <div className="stats-grid">
-            <div className="stat">
-              <span className="stat-label">Generation</span>
-              <span className="stat-value" style={{ color: '#00ff88' }}>
+        <div className="sidebar-section evolution-stats">
+          <h3 className="section-title">Evolution</h3>
+          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+            <div className="stat" style={{ textAlign: 'center' }}>
+              <span className="stat-label" style={{ fontSize: '0.6rem' }}>Gen</span>
+              <span className="stat-value" style={{ color: '#00ff88', fontSize: '1rem' }}>
                 {stats.generation || 0}
               </span>
             </div>
-            <div className="stat">
-              <span className="stat-label">Species</span>
-              <span className="stat-value" style={{ color: '#ff8800' }}>
+            <div className="stat" style={{ textAlign: 'center' }}>
+              <span className="stat-label" style={{ fontSize: '0.6rem' }}>Species</span>
+              <span className="stat-value" style={{ color: '#ff8800', fontSize: '1rem' }}>
                 {stats.speciesCount || 0}
               </span>
             </div>
-            <div className="stat">
-              <span className="stat-label">Avg Fitness</span>
-              <span className="stat-value" style={{ color: '#00ddff' }}>
-                {(stats.avgFitness || 0).toFixed(1)}
+            <div className="stat" style={{ textAlign: 'center' }}>
+              <span className="stat-label" style={{ fontSize: '0.6rem' }}>Avg Fit</span>
+              <span className="stat-value" style={{ color: '#00ddff', fontSize: '1rem' }}>
+                {(stats.avgFitness || 0).toFixed(0)}
               </span>
             </div>
-            <div className="stat">
-              <span className="stat-label">Max Fitness</span>
-              <span className="stat-value" style={{ color: '#ff00ff' }}>
-                {(stats.maxFitness || 0).toFixed(1)}
+            <div className="stat" style={{ textAlign: 'center' }}>
+              <span className="stat-label" style={{ fontSize: '0.6rem' }}>Max Fit</span>
+              <span className="stat-value" style={{ color: '#ff00ff', fontSize: '1rem' }}>
+                {(stats.maxFitness || 0).toFixed(0)}
               </span>
             </div>
           </div>
           {generationHistory.length > 1 && (
-            <div className="stats-chart">
+            <div className="stats-chart" style={{ marginTop: '0.5rem' }}>
               <StatsChart stats={generationHistory} />
             </div>
           )}
@@ -207,24 +228,30 @@ export const App: React.FC = () => {
         {/* Save/Load Panel */}
         <SaveLoadPanel agents={currentAgents} onLoad={handleLoadAgents} />
 
-        {/* Controls hint */}
-        <div className="sidebar-footer">
-          <p style={{ marginBottom: '0.5rem' }}>
-            🖱️ <strong>Desktop Controls:</strong>
-          </p>
-          <p>• Click agent to view DNA</p>
-          <p>• Middle/Right mouse to pan</p>
-          <p>• Scroll to zoom</p>
-          <p>• Ctrl+Click to pan</p>
-          <p>• R/H/T for visual toggles</p>
-          <p style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
-            📱 <strong>Mobile Controls:</strong>
-          </p>
-          <p>• Tap agent to view DNA</p>
-          <p>• Drag to pan camera</p>
-          <p>• Pinch to zoom</p>
-          <p>• 3-finger tap twice for heatmap</p>
-          <p>• Drag DNA panel by header</p>
+        {/* Agent Builder Button */}
+        <div className="sidebar-section">
+          <button 
+            className="btn-control"
+            onClick={() => setShowAgentBuilder(true)}
+            style={{ 
+              width: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '8px'
+            }}
+          >
+            <i className="bi bi-plus-circle" style={{ display: 'inline-block' }}></i>
+            Create Agent
+          </button>
+        </div>
+
+        {/* Controls hint - compact */}
+        <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+          <span style={{ color: '#666', fontSize: '0.6rem' }}>
+            Click agent for DNA | Scroll to zoom | R = trails | Space = pause
+          </span>
         </div>
       </Sidebar>
 
@@ -239,6 +266,9 @@ export const App: React.FC = () => {
           onAgentsChange={handleAgentsChange}
           evolutionConfig={evolutionConfig}
           loadedAgents={loadedAgents}
+          placementMode={placementMode}
+          pendingAgentTraits={pendingAgentTraits}
+          onPlacementComplete={handlePlacementComplete}
         />
       </div>
 
@@ -250,6 +280,12 @@ export const App: React.FC = () => {
         onAgentSelect={handleAgentSelect}
         screenPosition={agentScreenPos}
         resetKey={resetKey}
+      />
+
+      <AgentBuilderPanel
+        isOpen={showAgentBuilder}
+        onClose={handleCloseAgentBuilder}
+        onSpawnAgent={handleSpawnAgent}
       />
     </div>
   )

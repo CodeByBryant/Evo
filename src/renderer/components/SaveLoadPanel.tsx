@@ -7,6 +7,7 @@ interface SaveLoadPanelProps {
 }
 
 export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) => {
+  const [expanded, setExpanded] = useState(false)
   const [saves, setSaves] = useState<{ name: string; date: string; data: string }[]>(() => {
     const saved = localStorage.getItem('evo_saves')
     return saved ? JSON.parse(saved) : []
@@ -129,41 +130,63 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
     }
     input.click()
   }
-
+  
   return (
-    <div className="save-load-panel">
-      <h4>Save / Load</h4>
-      <div className="save-controls">
-        <button className="btn-small" onClick={handleSave}>
-          <i className="bi bi-save"></i> Save Current
-        </button>
-        <button className="btn-small" onClick={handleExport}>
-          <i className="bi bi-download"></i> Export
-        </button>
-        <button className="btn-small" onClick={handleImport}>
-          <i className="bi bi-upload"></i> Import
-        </button>
+    <div className="sidebar-section save-load-panel">
+      <div 
+        className="section-header" 
+        onClick={() => setExpanded(!expanded)}
+        style={{ cursor: 'pointer', marginBottom: expanded ? '0.75rem' : '0' }}
+      >
+        <h3 className="section-title">Save / Load</h3>
+        <i className={`bi bi-chevron-${expanded ? 'up' : 'down'}`} style={{ color: '#555', fontSize: '0.7rem' }}></i>
       </div>
       
-      {saves.length > 0 && (
-        <div className="saves-list">
-          {saves.map((save, idx) => (
-            <div key={idx} className="save-item">
-              <div className="save-info">
-                <div className="save-name">{save.name}</div>
-                <div className="save-date">{new Date(save.date).toLocaleString()}</div>
-              </div>
-              <div className="save-actions">
-                <button onClick={() => handleLoad(save.data)}>
-                  <i className="bi bi-arrow-clockwise"></i>
-                </button>
-                <button onClick={() => handleDelete(idx)}>
-                  <i className="bi bi-trash"></i>
-                </button>
-              </div>
+      {expanded && (
+        <>
+          <div className="save-controls" style={{ display: 'flex', gap: '4px', marginBottom: '0.5rem' }}>
+            <button className="btn-control" onClick={handleSave} style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}>
+              Save
+            </button>
+            <button className="btn-control" onClick={handleExport} style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}>
+              Export
+            </button>
+            <button className="btn-control" onClick={handleImport} style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}>
+              Import
+            </button>
+          </div>
+          
+          {saves.length > 0 && (
+            <div className="saves-list" style={{ maxHeight: '100px', overflowY: 'auto' }}>
+              {saves.map((save, idx) => (
+                <div key={idx} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  padding: '0.35rem 0',
+                  borderBottom: '1px solid #1a1a1a',
+                  fontSize: '0.7rem'
+                }}>
+                  <span style={{ color: '#888' }}>{save.name}</span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button 
+                      onClick={() => handleLoad(save.data)}
+                      style={{ background: 'none', border: 'none', color: '#00ff88', cursor: 'pointer', padding: '2px' }}
+                    >
+                      <i className="bi bi-play-fill"></i>
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(idx)}
+                      style={{ background: 'none', border: 'none', color: '#ff4444', cursor: 'pointer', padding: '2px' }}
+                    >
+                      <i className="bi bi-x"></i>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   )

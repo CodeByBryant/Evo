@@ -3,8 +3,9 @@ import type { GeneticTraits } from '../types/simulation'
 import AgentConfigData from '../core/utilities/AgentConfig.json'
 
 interface AgentBuilderPanelProps {
-  onSpawnAgent: (traits: GeneticTraits, position: { x: number; y: number }) => void
-  cameraCenter: { x: number; y: number }
+  isOpen: boolean
+  onClose: () => void
+  onSpawnAgent: (traits: GeneticTraits) => void
 }
 
 const SHAPE_NAMES: { [key: number]: string } = {
@@ -17,10 +18,10 @@ const SHAPE_NAMES: { [key: number]: string } = {
 }
 
 export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
-  onSpawnAgent,
-  cameraCenter
+  isOpen,
+  onClose,
+  onSpawnAgent
 }) => {
-  const [expanded, setExpanded] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const config = (AgentConfigData as any).GeneticTraits
   
@@ -53,8 +54,8 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
   }, [])
 
   const handleSpawn = useCallback(() => {
-    onSpawnAgent(traits, cameraCenter)
-  }, [onSpawnAgent, traits, cameraCenter])
+    onSpawnAgent(traits)
+  }, [onSpawnAgent, traits])
 
   const applyPreset = useCallback((preset: 'fast' | 'tank' | 'scout' | 'hunter') => {
     const presets: { [key: string]: Partial<GeneticTraits> } = {
@@ -101,7 +102,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !expanded) return
+    if (!canvas || !isOpen) return
     
     const ctx = canvas.getContext('2d')
     if (!ctx) return
@@ -111,11 +112,11 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
     const centerX = width / 2
     const centerY = height / 2
     
-    ctx.fillStyle = '#1a1a2e'
+    ctx.fillStyle = '#0a0a0f'
     ctx.fillRect(0, 0, width, height)
     
     const sides = Math.round(traits.bodyShape)
-    const radius = traits.size * 0.8
+    const radius = traits.size * 0.9
     const hue = traits.hue
     
     ctx.save()
@@ -123,7 +124,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
     
     const rayCount = Math.round(traits.sensorRayCount)
     const fov = (traits.fieldOfView * Math.PI) / 180
-    const rayLength = traits.sensorRayLength * 0.4
+    const rayLength = traits.sensorRayLength * 0.5
     
     ctx.strokeStyle = `hsla(${hue}, 70%, 60%, 0.3)`
     ctx.lineWidth = 1
@@ -159,7 +160,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
     const eyeOffset = radius * 0.25
     const eyeY = -radius * 0.2
     
-    ctx.fillStyle = '#1a1a2e'
+    ctx.fillStyle = '#0a0a0f'
     ctx.beginPath()
     ctx.arc(-eyeOffset, eyeY, eyeSize, 0, Math.PI * 2)
     ctx.arc(eyeOffset, eyeY, eyeSize, 0, Math.PI * 2)
@@ -174,72 +175,43 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
     ctx.restore()
     
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
-    ctx.font = '10px Inter, system-ui, sans-serif'
+    ctx.font = '11px Inter, system-ui, sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText(SHAPE_NAMES[sides] || `${sides}-gon`, centerX, height - 8)
+    ctx.fillText(SHAPE_NAMES[sides] || `${sides}-gon`, centerX, height - 10)
     
-  }, [traits, expanded])
+  }, [traits, isOpen])
+
+  if (!isOpen) return null
 
   return (
-    <div className="sidebar-section agent-builder">
-      <div 
-        className="section-header" 
-        onClick={() => setExpanded(!expanded)}
-        style={{ cursor: 'pointer' }}
-      >
-        <h3 className="section-title">Agent Builder</h3>
-        <i className={`bi bi-chevron-${expanded ? 'up' : 'down'}`}></i>
+    <div className="agent-builder-popup">
+      <div className="agent-builder-header">
+        <h3>Agent Builder</h3>
+        <button className="close-btn" onClick={onClose}>
+          <i className="bi bi-x-lg"></i>
+        </button>
       </div>
       
-      {expanded && (
-        <div className="builder-content">
-          <canvas 
-            ref={canvasRef} 
-            width={120} 
-            height={120} 
-            style={{ 
-              display: 'block', 
-              margin: '0 auto 12px', 
-              borderRadius: '8px',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }} 
-          />
-          
-          <div className="preset-buttons" style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
-            <button 
-              className="btn-control" 
-              onClick={() => applyPreset('fast')}
-              style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
-            >
-              Fast
-            </button>
-            <button 
-              className="btn-control" 
-              onClick={() => applyPreset('tank')}
-              style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
-            >
-              Tank
-            </button>
-            <button 
-              className="btn-control" 
-              onClick={() => applyPreset('scout')}
-              style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
-            >
-              Scout
-            </button>
-            <button 
-              className="btn-control" 
-              onClick={() => applyPreset('hunter')}
-              style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
-            >
-              Hunter
-            </button>
-          </div>
-          
+      <div className="agent-builder-content">
+        <canvas 
+          ref={canvasRef} 
+          width={160} 
+          height={160} 
+          className="agent-preview-canvas"
+        />
+        
+        <div className="preset-buttons">
+          <button className="preset-btn" onClick={() => applyPreset('fast')}>Fast</button>
+          <button className="preset-btn" onClick={() => applyPreset('tank')}>Tank</button>
+          <button className="preset-btn" onClick={() => applyPreset('scout')}>Scout</button>
+          <button className="preset-btn" onClick={() => applyPreset('hunter')}>Hunter</button>
+        </div>
+        
+        <div className="traits-grid">
           <div className="trait-slider">
             <label>
               <span>Shape</span>
-              <span className="value">{SHAPE_NAMES[Math.round(traits.bodyShape)] || `${Math.round(traits.bodyShape)}-gon`}</span>
+              <span className="value">{SHAPE_NAMES[Math.round(traits.bodyShape)]}</span>
             </label>
             <input
               type="range"
@@ -347,7 +319,8 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
               <span className="value" style={{ 
                 backgroundColor: `hsl(${traits.hue}, 60%, 50%)`,
                 padding: '2px 8px',
-                borderRadius: '4px'
+                borderRadius: '4px',
+                color: traits.hue > 50 && traits.hue < 200 ? '#000' : '#fff'
               }}>{traits.hue}°</span>
             </label>
             <input
@@ -359,22 +332,15 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
               onChange={(e) => updateTrait('hue', parseFloat(e.target.value))}
             />
           </div>
-          
-          <button 
-            className="btn-control spawn-btn" 
-            onClick={handleSpawn}
-            style={{ 
-              width: '100%', 
-              marginTop: '12px',
-              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-              border: 'none',
-              fontWeight: 'bold'
-            }}
-          >
-            Spawn Agent
-          </button>
         </div>
-      )}
+        
+        <button className="spawn-btn" onClick={handleSpawn}>
+          <i className="bi bi-plus-circle" style={{ marginRight: '6px' }}></i>
+          Spawn Agent
+        </button>
+        
+        <p className="spawn-hint">Click anywhere on the canvas to place your agent</p>
+      </div>
     </div>
   )
 }

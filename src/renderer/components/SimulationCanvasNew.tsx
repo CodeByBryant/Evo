@@ -3,9 +3,9 @@ import { Agent, Food } from '../core/Agent'
 import { Camera } from '../core/Camera'
 import { EvolutionManager } from '../core/EvolutionManager'
 import { ClusterManager } from '../core/ClusterManager'
-import { HeatmapManager, HeatmapType } from '../core/HeatmapManager'
 import type { SpeciesInfo } from '../core/SpeciesManager'
 import type { SimulationConfig, SimulationStats } from '../types/simulation'
+import type { GeneticTraits } from '../types/simulation'
 
 interface SimulationCanvasProps {
   config: SimulationConfig
@@ -16,6 +16,10 @@ interface SimulationCanvasProps {
   onAgentsChange?: (agents: Agent[]) => void
   evolutionConfig?: import('../core/EvolutionManager').EvolutionConfig
   loadedAgents?: Agent[] | null
+  onSpawnAgent?: (traits: GeneticTraits, position: { x: number; y: number }) => void
+  placementMode?: boolean
+  pendingAgentTraits?: GeneticTraits | null
+  onPlacementComplete?: () => void
 }
 
 export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
@@ -26,19 +30,40 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   onAgentSelect,
   onAgentsChange,
   evolutionConfig,
-  loadedAgents
+  loadedAgents,
+  placementMode,
+  pendingAgentTraits,
+  onPlacementComplete
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const agentsRef = useRef<Agent[]>([])
   const foodRef = useRef<Food[]>([])
   const cameraRef = useRef<Camera>(new Camera())
   const evolutionRef = useRef<EvolutionManager>(new EvolutionManager(evolutionConfig))
-  const heatmapRef = useRef<HeatmapManager>(new HeatmapManager(50))
   const animationFrameRef = useRef<number | undefined>(undefined)
   const lastFrameTimeRef = useRef<number>(0)
   const fpsRef = useRef<number>(60)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
   const previousAgentCountRef = useRef<number>(0)
+
+  const spawnCustomAgent = useCallback((traits: GeneticTraits, worldPos: { x: number; y: number }) => {
+    const newAgent = new Agent(
+      worldPos.x,
+      worldPos.y,
+      0, 0,
+      undefined,
+      undefined,
+      undefined,
+      traits,
+      0
+    )
+    newAgent.geneticTraits = { ...traits }
+    newAgent.rebuildNeuralArchitecture()
+    newAgent.generation = 0
+    newAgent.energy = newAgent.geneticTraits.maxEnergyCapacity * 0.9
+    agentsRef.current.push(newAgent)
+    onAgentsChange?.([...agentsRef.current])
+  }, [onAgentsChange])
 
   // Create cluster manager synchronously using useMemo
   const clusterManager = useMemo(() => {
@@ -152,12 +177,23 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     if (!context) return
 
     const resizeCanvas = () => {
-      canvas.width = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
+      const container = canvas.parentElement
+      if (container) {
+        canvas.width = container.clientWidth
+        canvas.height = container.clientHeight
+      } else {
+        canvas.width = canvas.offsetWidth
+        canvas.height = canvas.offsetHeight
+      }
     }
 
     resizeCanvas()
     window.addEventListener('resize', resizeCanvas)
+    
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas()
+    })
+    resizeObserver.observe(canvas.parentElement || canvas)
     context.imageSmoothingEnabled = true
 
     // Mouse event handlers for camera control
@@ -191,6 +227,13 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       const mouseX = e.clientX - rect.left
       const mouseY = e.clientY - rect.top
       const worldPos = cameraRef.current.screenToWorld(mouseX, mouseY, canvas.width, canvas.height)
+
+      // Handle placement mode - spawn agent at click location
+      if (placementMode && pendingAgentTraits) {
+        spawnCustomAgent(pendingAgentTraits, worldPos)
+        onPlacementComplete?.()
+        return
+      }
 
       // Find closest agent to click
       let closestAgent: Agent | null = null
@@ -316,38 +359,14 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     canvas.addEventListener('click', handleClick)
     canvas.addEventListener('contextmenu', (e) => e.preventDefault())
 
-    // Keyboard events for heatmap and trails
+    // Keyboard events for trails toggle
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'h') {
-        heatmapRef.current.toggle()
-      } else if (e.key.toLowerCase() === 't' && heatmapRef.current.enabled) {
-        heatmapRef.current.cycleType()
-      } else if (e.key.toLowerCase() === 'r') {
+      if (e.key.toLowerCase() === 'r') {
         Agent.trailsEnabled = !Agent.trailsEnabled
       }
     }
     
-    // Mobile gesture controls - three-finger tap for heatmap toggle
-    let lastTouchTime = 0
-    let touchCount = 0
-    const handleHeatmapGesture = (e: TouchEvent) => {
-      if (e.touches.length === 3) {
-        const now = Date.now()
-        if (now - lastTouchTime < 500) {
-          touchCount++
-          if (touchCount === 2) {
-            heatmapRef.current.toggle()
-            touchCount = 0
-          }
-        } else {
-          touchCount = 1
-        }
-        lastTouchTime = now
-      }
-    }
-    
     window.addEventListener('keydown', handleKeyDown)
-    canvas.addEventListener('touchstart', handleHeatmapGesture, { passive: true })
 
     // Touch events for mobile
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
@@ -356,18 +375,18 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
 
     return () => {
       window.removeEventListener('resize', resizeCanvas)
+      resizeObserver.disconnect()
       canvas.removeEventListener('mousedown', handleMouseDown)
       canvas.removeEventListener('mousemove', handleMouseMove)
       canvas.removeEventListener('mouseup', handleMouseUp)
       canvas.removeEventListener('wheel', handleWheel)
       canvas.removeEventListener('click', handleClick)
-      canvas.removeEventListener('touchstart', handleHeatmapGesture)
       canvas.removeEventListener('touchstart', handleTouchStart)
       canvas.removeEventListener('touchmove', handleTouchMove)
       canvas.removeEventListener('touchend', handleTouchEnd)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [onAgentSelect])
+  }, [onAgentSelect, placementMode, pendingAgentTraits, spawnCustomAgent, onPlacementComplete])
 
   const initializeSimulation = useCallback(() => {
     console.log('[SimulationCanvasNew] Initializing simulation')
@@ -537,54 +556,20 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       const stepsPerFrame = Math.min(3, Math.max(1, Math.round(speed)))
       
       for (let step = 0; step < stepsPerFrame; step++) {
-        // Track previous positions for activity heatmap
-        const previousPositions = new Map<string, { x: number; y: number }>()
-        agentsRef.current.forEach((agent) => {
-          previousPositions.set(agent.id, { x: agent.position.x, y: agent.position.y })
-        })
+        // Capture all agents BEFORE evolution/death for genealogy tracking
+        // This ensures dying agents get added to agentHistory
+        if (step === 0) {
+          onAgentsChange?.([...agentsRef.current])
+        }
 
         // Update agents (no canvas boundaries for infinite world)
         agentsRef.current.forEach((agent) => {
           agent.update(agentsRef.current, foodRef.current)
-          
-          // Record activity on heatmap (only for last step to avoid multiple recordings)
-          if (step === stepsPerFrame - 1) {
-            const prev = previousPositions.get(agent.id)
-            if (prev) {
-              const dx = agent.position.x - prev.x
-              const dy = agent.position.y - prev.y
-              const movement = Math.sqrt(dx * dx + dy * dy)
-              if (movement > 0.5) {
-                heatmapRef.current.recordActivity(agent.position.x, agent.position.y, movement)
-              }
-            }
-          }
         })
-
-        // Track agent count before evolution
-        const agentCountBefore = agentsRef.current.length
 
         // Evolution system
         const evolutionResult = evolutionRef.current.update(agentsRef.current)
         agentsRef.current = evolutionResult.agents
-
-        // Record births and deaths on heatmap (only on last step)
-        if (step === stepsPerFrame - 1) {
-          if (evolutionResult.newBirths > 0) {
-            agentsRef.current.slice(-evolutionResult.newBirths).forEach((agent) => {
-              heatmapRef.current.recordBirth(agent.position.x, agent.position.y)
-            })
-          }
-          const deaths = agentCountBefore - agentsRef.current.length + evolutionResult.newBirths
-          if (deaths > 0 && previousPositions.size > 0) {
-            const currentIds = new Set(agentsRef.current.map(a => a.id))
-            previousPositions.forEach((pos, id) => {
-              if (!currentIds.has(id)) {
-                heatmapRef.current.recordDeath(pos.x, pos.y)
-              }
-            })
-          }
-        }
       }
 
       // Clear and set up camera transform
@@ -599,15 +584,6 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
 
       // Draw cluster boundaries (after camera transform is applied)
       clusterManager.renderClusters(context)
-
-      // Render heatmap before agents (as background layer)
-      heatmapRef.current.render(
-        context,
-        { x: cameraRef.current.x, y: cameraRef.current.y, zoom: cameraRef.current.zoom },
-        canvas.width,
-        canvas.height
-      )
-      heatmapRef.current.update()
 
       // No more resets - evolution continues via gene pool resurrection
 
@@ -650,13 +626,10 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         context.fillText(`Trails: OFF (R to toggle)`, 10, canvas.height - 40)
       }
       
-      // Heatmap status
-      if (heatmapRef.current.enabled) {
-        context.fillStyle = '#fbbf24'
-        context.fillText(`Heatmap: ${heatmapRef.current.currentType.toUpperCase()} (H to toggle, T to cycle)`, 10, canvas.height - 20)
-      } else {
-        context.fillStyle = '#6b7280'
-        context.fillText(`Heatmap: OFF (H to toggle)`, 10, canvas.height - 20)
+      // Placement mode indicator
+      if (placementMode) {
+        context.fillStyle = '#22c55e'
+        context.fillText(`PLACEMENT MODE: Click anywhere to spawn agent`, 10, canvas.height - 20)
       }
 
       if (onStatsUpdate) {
@@ -708,7 +681,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   return (
     <canvas 
       ref={canvasRef} 
-      style={{ cursor: 'grab', width: '100%', height: '100%' }}
+      style={{ cursor: placementMode ? 'crosshair' : 'grab', width: '100%', height: '100%' }}
     />
   )
 }

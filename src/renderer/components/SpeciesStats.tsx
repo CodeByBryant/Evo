@@ -18,7 +18,11 @@ interface SpeciesInfo {
 }
 
 export const SpeciesStats: React.FC<SpeciesStatsProps> = ({ agents }) => {
+  const [expanded, setExpanded] = React.useState(false)
+  
   const speciesData = useMemo(() => {
+    if (agents.length === 0) return []
+    
     const speciesMap = new Map<string, Agent[]>()
     
     for (const agent of agents) {
@@ -50,57 +54,53 @@ export const SpeciesStats: React.FC<SpeciesStatsProps> = ({ agents }) => {
   }, [agents])
 
   if (agents.length === 0) {
-    return <div style={{ color: '#555', fontSize: '0.75rem', padding: '1rem' }}>No agents alive</div>
+    return null
   }
-
+  
   return (
-    <div className="species-stats-panel">
-      <div className="species-chart-container">
-        <SpeciesChart agents={agents} />
+    <div className="sidebar-section species-stats-panel">
+      <div 
+        className="section-header" 
+        onClick={() => setExpanded(!expanded)}
+        style={{ cursor: 'pointer', marginBottom: expanded ? '0.75rem' : '0' }}
+      >
+        <h3 className="section-title">Species ({speciesData.length})</h3>
+        <i className={`bi bi-chevron-${expanded ? 'up' : 'down'}`} style={{ color: '#555', fontSize: '0.7rem' }}></i>
       </div>
       
-      <div className="species-leaderboard">
-        <h5 style={{ color: '#999', fontSize: '0.75rem', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
-          🏆 Species Leaderboard
-        </h5>
-        <div className="species-list">
-          {speciesData.map((species, index) => (
-            <div key={species.id} className="species-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div className="rank-badge">{index + 1}</div>
-                <div 
-                  className="species-color" 
-                  style={{ backgroundColor: species.color }}
-                ></div>
-                <div className="species-info">
-                  <div className="species-name">{species.id.substring(0, 8)}</div>
-                  <div className="species-count">{species.count} agents</div>
+      {expanded && (
+        <>
+          <div className="species-chart-container" style={{ marginBottom: '0.5rem' }}>
+            <SpeciesChart agents={agents} />
+          </div>
+          
+          <div className="species-list" style={{ maxHeight: '150px', overflowY: 'auto' }}>
+            {speciesData.slice(0, 5).map((species, index) => (
+              <div key={species.id} className="species-card" style={{ padding: '0.35rem 0', borderBottom: '1px solid #1a1a1a' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ color: '#555', fontSize: '0.65rem', width: '12px' }}>{index + 1}</span>
+                    <div 
+                      style={{ 
+                        width: '8px', 
+                        height: '8px', 
+                        borderRadius: '50%',
+                        backgroundColor: species.color 
+                      }}
+                    ></div>
+                    <span style={{ fontSize: '0.7rem', color: '#888' }}>{species.id.substring(0, 6)}</span>
+                    <span style={{ fontSize: '0.6rem', color: '#555' }}>({species.count})</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.65rem' }}>
+                    <span style={{ color: '#00ff88' }}>{species.avgFitness.toFixed(0)}</span>
+                    <span style={{ color: species.avgEnergy > 50 ? '#00ff88' : '#ff8800' }}>{species.avgEnergy.toFixed(0)}%</span>
+                  </div>
                 </div>
               </div>
-              <div className="species-metrics">
-                <div className="metric">
-                  <span className="metric-label">Fitness</span>
-                  <span className="metric-value" style={{ color: '#00ff88' }}>
-                    {species.avgFitness.toFixed(1)}
-                  </span>
-                </div>
-                <div className="metric">
-                  <span className="metric-label">Energy</span>
-                  <span className="metric-value" style={{ 
-                    color: species.avgEnergy > 60 ? '#00ff88' : species.avgEnergy > 30 ? '#ff8800' : '#ff4444' 
-                  }}>
-                    {species.avgEnergy.toFixed(0)}%
-                  </span>
-                </div>
-                <div className="metric">
-                  <span className="metric-label">Age</span>
-                  <span className="metric-value">{species.avgAge.toFixed(0)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

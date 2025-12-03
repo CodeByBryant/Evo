@@ -17,10 +17,11 @@ The system is built on React 18 with TypeScript for the frontend, utilizing Boot
 **UI/UX Decisions:**
 - **Infinite Scrollable World:** A camera system allows for panning and zooming across an endless grid, displaying real-time camera position.
 - **DNA Visualization Panel:** Features an animated double helix representing the neural network genome, color-coded by weight values, and displays agent information. The panel supports three size modes (normal, expanded, maximized) with manual resize capability via drag handles.
-- **Genealogy Viewer:** A canvas-based family tree with three view modes (tree, radial, timeline), animated particle backgrounds, gradient nodes with glowing effects, and interactive lineage tracing that highlights ancestry chains on hover. Supports touch gestures for mobile devices (drag to pan, pinch to zoom, tap to select).
+- **Genealogy Viewer:** A canvas-based family tree with animated particle backgrounds, gradient nodes with glowing effects, and interactive lineage tracing that highlights full ancestry chains on hover. Supports touch gestures for mobile devices (drag to pan, pinch to zoom, tap to select).
+- **Agent Builder:** A floating popup panel (similar to DNA panel) that allows customizing agent traits (size, speed, sensors, color, shape) with presets (Fast, Tank, Scout, Hunter). Open via "Create Agent" button in sidebar, customize traits, click "Spawn Agent" to enter placement mode, then click anywhere on the canvas to place the custom agent.
 - **Fullscreen Mode:** Cross-platform fullscreen support via a custom hook (`useFullscreen.ts`) that handles both Web Fullscreen API and Electron IPC integration.
 - **Species Visualization:** Agents are color-coded based on their species ID using HSL for clear differentiation.
-- **Interactive Controls:** A left sidebar provides play/pause, reset, speed controls, statistics, and configurable evolution parameters. A right DNA panel appears upon agent selection.
+- **Interactive Controls:** A left sidebar provides play/pause, reset, speed controls, statistics, agent builder, and configurable evolution parameters. A right DNA panel appears upon agent selection.
 
 **Technical Implementations & Feature Specifications:**
 - **Continuous Evolution System:** Agents reproduce individually based on age and energy thresholds, eliminating generation cycles and fostering continuous evolution.
@@ -36,7 +37,7 @@ The system is built on React 18 with TypeScript for the frontend, utilizing Boot
 - **Depth-Based Lineage:** Generation numbers replaced with parent-child depth tracking (child depth = parent depth + 1), providing accurate lineage representation in the family tree.
 
 **System Design Choices:**
-- **Modular Components:** The application is structured with distinct components for rendering (`SimulationCanvasNew.tsx`), DNA visualization (`DNAPanel.tsx`), statistics (`StatsChart.tsx`), and controls (`EvolutionControls.tsx`, `Sidebar.tsx`).
+- **Modular Components:** The application is structured with distinct components for rendering (`SimulationCanvasNew.tsx`), DNA visualization (`DNAPanel.tsx`), statistics (`StatsChart.tsx`), agent customization (`AgentBuilderPanel.tsx`), and controls (`EvolutionControls.tsx`, `Sidebar.tsx`).
 - **Core Logic Separation:** Key systems like `Camera.ts`, `EvolutionManager.ts`, `Agent.ts`, and `NeuralNetwork.ts` are designed as independent modules for clarity and maintainability.
 - **Performance Optimizations:** Focus on efficient canvas rendering, smart React updates (memoization, callbacks), and optimized array operations for evolution calculations.
 
