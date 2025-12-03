@@ -219,8 +219,11 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     const childrenMap = new Map<string, string[]>()
     
     // Combine current agents with agent history
+    // Note: agentHistory should be cleared on reset, but we also check for empty history
     const allAgentsMap = new Map<string, Agent>()
-    agentHistory?.forEach((agent, id) => allAgentsMap.set(id, agent))
+    if (agentHistory && agentHistory.size > 0) {
+      agentHistory.forEach((agent, id) => allAgentsMap.set(id, agent))
+    }
     agents.forEach(agent => allAgentsMap.set(agent.id, agent))
     
     const agentIds = new Set(agents.map(a => a.id))

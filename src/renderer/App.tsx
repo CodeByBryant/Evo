@@ -76,6 +76,9 @@ export const App: React.FC = () => {
     console.log('[App] Configuration changed, resetting simulation')
     setConfig(newConfig)
     setResetKey((prev) => prev + 1)
+    setAgentHistory(new Map())
+    setGenerationHistory([])
+    setSelectedAgent(null)
   }, [])
 
   const handleStatsUpdate = useCallback((newStats: SimulationStats) => {
