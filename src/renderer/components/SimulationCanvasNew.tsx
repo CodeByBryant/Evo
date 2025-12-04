@@ -19,7 +19,10 @@ interface SimulationCanvasProps {
   onSpawnAgent?: (traits: GeneticTraits, position: { x: number; y: number }) => void
   placementMode?: boolean
   pendingAgentTraits?: GeneticTraits | null
-  onPlacementComplete?: () => void
+  onPlacementComplete?: (speciesId?: string) => void
+  multiPlaceMode?: boolean
+  multiPlaceSpeciesId?: string | null
+  onCancelPlacement?: () => void
 }
 
 export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
@@ -33,7 +36,10 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   loadedAgents,
   placementMode,
   pendingAgentTraits,
-  onPlacementComplete
+  onPlacementComplete,
+  multiPlaceMode,
+  multiPlaceSpeciesId,
+  onCancelPlacement
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const agentsRef = useRef<Agent[]>([])
@@ -46,14 +52,14 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
   const previousAgentCountRef = useRef<number>(0)
 
-  const spawnCustomAgent = useCallback((traits: GeneticTraits, worldPos: { x: number; y: number }) => {
+  const spawnCustomAgent = useCallback((traits: GeneticTraits, worldPos: { x: number; y: number }, speciesId?: string | null): string => {
     const newAgent = new Agent(
       worldPos.x,
       worldPos.y,
       0, 0,
       undefined,
       undefined,
-      undefined,
+      speciesId || undefined,
       traits,
       0
     )
@@ -61,8 +67,12 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     newAgent.rebuildNeuralArchitecture()
     newAgent.generation = 0
     newAgent.energy = newAgent.geneticTraits.maxEnergyCapacity * 0.9
+    if (speciesId) {
+      newAgent.species = speciesId
+    }
     agentsRef.current.push(newAgent)
     onAgentsChange?.([...agentsRef.current])
+    return newAgent.species
   }, [onAgentsChange])
 
   // Create cluster manager synchronously using useMemo
@@ -230,8 +240,8 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
 
       // Handle placement mode - spawn agent at click location
       if (placementMode && pendingAgentTraits) {
-        spawnCustomAgent(pendingAgentTraits, worldPos)
-        onPlacementComplete?.()
+        const newSpeciesId = spawnCustomAgent(pendingAgentTraits, worldPos, multiPlaceSpeciesId)
+        onPlacementComplete?.(newSpeciesId)
         return
       }
 
@@ -359,10 +369,13 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     canvas.addEventListener('click', handleClick)
     canvas.addEventListener('contextmenu', (e) => e.preventDefault())
 
-    // Keyboard events for trails toggle
+    // Keyboard events for trails toggle and placement cancel
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === 'r') {
         Agent.trailsEnabled = !Agent.trailsEnabled
+      }
+      if (e.key === 'Escape' && placementMode) {
+        onCancelPlacement?.()
       }
     }
     
@@ -386,7 +399,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       canvas.removeEventListener('touchend', handleTouchEnd)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [onAgentSelect, placementMode, pendingAgentTraits, spawnCustomAgent, onPlacementComplete])
+  }, [onAgentSelect, placementMode, pendingAgentTraits, spawnCustomAgent, onPlacementComplete, multiPlaceSpeciesId, multiPlaceMode, onCancelPlacement])
 
   const initializeSimulation = useCallback(() => {
     console.log('[SimulationCanvasNew] Initializing simulation')
@@ -629,7 +642,12 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       // Placement mode indicator
       if (placementMode) {
         context.fillStyle = '#22c55e'
-        context.fillText(`PLACEMENT MODE: Click anywhere to spawn agent`, 10, canvas.height - 20)
+        if (multiPlaceMode) {
+          const speciesText = multiPlaceSpeciesId ? ` (Species: ${multiPlaceSpeciesId.substring(0, 8)})` : ''
+          context.fillText(`MULTI-PLACE MODE: Click to spawn agents${speciesText} | ESC to cancel`, 10, canvas.height - 20)
+        } else {
+          context.fillText(`PLACEMENT MODE: Click anywhere to spawn agent`, 10, canvas.height - 20)
+        }
       }
 
       if (onStatsUpdate) {

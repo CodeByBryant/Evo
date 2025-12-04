@@ -5,7 +5,7 @@ import AgentConfigData from '../core/utilities/AgentConfig.json'
 interface AgentBuilderPanelProps {
   isOpen: boolean
   onClose: () => void
-  onSpawnAgent: (traits: GeneticTraits) => void
+  onSpawnAgent: (traits: GeneticTraits, multiPlace?: boolean, speciesId?: string) => void
 }
 
 const SHAPE_NAMES: { [key: number]: string } = {
@@ -15,6 +15,29 @@ const SHAPE_NAMES: { [key: number]: string } = {
   6: 'Hexagon',
   7: 'Heptagon',
   8: 'Octagon'
+}
+
+interface CollapsibleSectionProps {
+  title: string
+  icon: string
+  isOpen: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}
+
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, icon, isOpen, onToggle, children }) => {
+  return (
+    <div className="trait-section">
+      <button className="section-header" onClick={onToggle}>
+        <span className="section-title">
+          <i className={`bi ${icon}`}></i>
+          {title}
+        </span>
+        <i className={`bi ${isOpen ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+      </button>
+      {isOpen && <div className="section-content">{children}</div>}
+    </div>
+  )
 }
 
 export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
@@ -49,13 +72,29 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
     bodyShape: config.bodyShape?.default ?? 3
   })
 
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    physical: true,
+    movement: false,
+    sensors: false,
+    energy: false,
+    reproduction: false,
+    neural: false
+  })
+
+  const [multiPlace, setMultiPlace] = useState(false)
+  const [spawnedSpeciesId, setSpawnedSpeciesId] = useState<string | null>(null)
+
+  const toggleSection = useCallback((section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }, [])
+
   const updateTrait = useCallback((key: keyof GeneticTraits, value: number | boolean) => {
     setTraits(prev => ({ ...prev, [key]: value }))
   }, [])
 
   const handleSpawn = useCallback(() => {
-    onSpawnAgent(traits)
-  }, [onSpawnAgent, traits])
+    onSpawnAgent(traits, multiPlace, spawnedSpeciesId || undefined)
+  }, [onSpawnAgent, traits, multiPlace, spawnedSpeciesId])
 
   const applyPreset = useCallback((preset: 'fast' | 'tank' | 'scout' | 'hunter') => {
     const presets: { [key: string]: Partial<GeneticTraits> } = {
@@ -98,6 +137,10 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
       }
     }
     setTraits(prev => ({ ...prev, ...presets[preset] }))
+  }, [])
+
+  const resetSpeciesId = useCallback(() => {
+    setSpawnedSpeciesId(null)
   }, [])
 
   useEffect(() => {
@@ -166,7 +209,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
     ctx.arc(eyeOffset, eyeY, eyeSize, 0, Math.PI * 2)
     ctx.fill()
     
-    ctx.fillStyle = '#4ade80'
+    ctx.fillStyle = traits.colorVision ? '#ff44ff' : '#4ade80'
     ctx.beginPath()
     ctx.arc(-eyeOffset, eyeY, eyeSize * 0.5, 0, Math.PI * 2)
     ctx.arc(eyeOffset, eyeY, eyeSize * 0.5, 0, Math.PI * 2)
@@ -180,6 +223,12 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
     ctx.fillText(SHAPE_NAMES[sides] || `${sides}-gon`, centerX, height - 10)
     
   }, [traits, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSpawnedSpeciesId(null)
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -206,140 +255,407 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
           <button className="preset-btn" onClick={() => applyPreset('scout')}>Scout</button>
           <button className="preset-btn" onClick={() => applyPreset('hunter')}>Hunter</button>
         </div>
-        
-        <div className="traits-grid">
-          <div className="trait-slider">
+
+        <div className="traits-container">
+          <CollapsibleSection
+            title="Physical"
+            icon="bi-box"
+            isOpen={openSections.physical}
+            onToggle={() => toggleSection('physical')}
+          >
+            <div className="trait-slider">
+              <label>
+                <span>Shape</span>
+                <span className="value">{SHAPE_NAMES[Math.round(traits.bodyShape)]}</span>
+              </label>
+              <input
+                type="range"
+                min={config.bodyShape?.min ?? 3}
+                max={config.bodyShape?.max ?? 8}
+                step="1"
+                value={traits.bodyShape}
+                onChange={(e) => updateTrait('bodyShape', parseInt(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Size</span>
+                <span className="value">{traits.size.toFixed(0)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.size.min}
+                max={config.size.max}
+                step="1"
+                value={traits.size}
+                onChange={(e) => updateTrait('size', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Color</span>
+                <span className="value" style={{ 
+                  backgroundColor: `hsl(${traits.hue}, 60%, 50%)`,
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  color: traits.hue > 50 && traits.hue < 200 ? '#000' : '#fff'
+                }}>{traits.hue}°</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value={traits.hue}
+                onChange={(e) => updateTrait('hue', parseFloat(e.target.value))}
+              />
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Movement"
+            icon="bi-arrows-move"
+            isOpen={openSections.movement}
+            onToggle={() => toggleSection('movement')}
+          >
+            <div className="trait-slider">
+              <label>
+                <span>Speed</span>
+                <span className="value">{traits.movementSpeed.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.movementSpeed.min}
+                max={config.movementSpeed.max}
+                step="0.05"
+                value={traits.movementSpeed}
+                onChange={(e) => updateTrait('movementSpeed', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Acceleration</span>
+                <span className="value">{traits.acceleration.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.acceleration.min}
+                max={config.acceleration.max}
+                step="0.05"
+                value={traits.acceleration}
+                onChange={(e) => updateTrait('acceleration', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Turn Rate</span>
+                <span className="value">{traits.turnRate.toFixed(3)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.turnRate.min}
+                max={config.turnRate.max}
+                step="0.005"
+                value={traits.turnRate}
+                onChange={(e) => updateTrait('turnRate', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Drag</span>
+                <span className="value">{traits.drag.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.drag.min}
+                max={config.drag.max}
+                step="0.01"
+                value={traits.drag}
+                onChange={(e) => updateTrait('drag', parseFloat(e.target.value))}
+              />
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Sensors"
+            icon="bi-eye"
+            isOpen={openSections.sensors}
+            onToggle={() => toggleSection('sensors')}
+          >
+            <div className="trait-slider">
+              <label>
+                <span>Ray Count</span>
+                <span className="value">{Math.round(traits.sensorRayCount)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.sensorRayCount.min}
+                max={config.sensorRayCount.max}
+                step="1"
+                value={traits.sensorRayCount}
+                onChange={(e) => updateTrait('sensorRayCount', parseInt(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Ray Length</span>
+                <span className="value">{traits.sensorRayLength.toFixed(0)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.sensorRayLength.min}
+                max={config.sensorRayLength.max}
+                step="10"
+                value={traits.sensorRayLength}
+                onChange={(e) => updateTrait('sensorRayLength', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Precision</span>
+                <span className="value">{traits.sensorPrecision.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.sensorPrecision.min}
+                max={config.sensorPrecision.max}
+                step="0.05"
+                value={traits.sensorPrecision}
+                onChange={(e) => updateTrait('sensorPrecision', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Field of View</span>
+                <span className="value">{traits.fieldOfView.toFixed(0)}°</span>
+              </label>
+              <input
+                type="range"
+                min={config.fieldOfView.min}
+                max={config.fieldOfView.max}
+                step="10"
+                value={traits.fieldOfView}
+                onChange={(e) => updateTrait('fieldOfView', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-toggle">
+              <label>
+                <span>Color Vision</span>
+                <span className="value">{traits.colorVision ? 'On' : 'Off'}</span>
+              </label>
+              <button
+                className={`toggle-btn ${traits.colorVision ? 'active' : ''}`}
+                onClick={() => updateTrait('colorVision', !traits.colorVision)}
+              >
+                <i className={`bi ${traits.colorVision ? 'bi-eye-fill' : 'bi-eye'}`}></i>
+              </button>
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Energy"
+            icon="bi-lightning-charge"
+            isOpen={openSections.energy}
+            onToggle={() => toggleSection('energy')}
+          >
+            <div className="trait-slider">
+              <label>
+                <span>Efficiency</span>
+                <span className="value">{traits.energyEfficiency.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.energyEfficiency.min}
+                max={config.energyEfficiency.max}
+                step="0.05"
+                value={traits.energyEfficiency}
+                onChange={(e) => updateTrait('energyEfficiency', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Digestion Rate</span>
+                <span className="value">{traits.digestionRate.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.digestionRate.min}
+                max={config.digestionRate.max}
+                step="0.05"
+                value={traits.digestionRate}
+                onChange={(e) => updateTrait('digestionRate', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Max Capacity</span>
+                <span className="value">{traits.maxEnergyCapacity.toFixed(0)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.maxEnergyCapacity.min}
+                max={config.maxEnergyCapacity.max}
+                step="5"
+                value={traits.maxEnergyCapacity}
+                onChange={(e) => updateTrait('maxEnergyCapacity', parseFloat(e.target.value))}
+              />
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Reproduction"
+            icon="bi-heart"
+            isOpen={openSections.reproduction}
+            onToggle={() => toggleSection('reproduction')}
+          >
+            <div className="trait-slider">
+              <label>
+                <span>Mutation Rate</span>
+                <span className="value">{(traits.mutationRate * 100).toFixed(0)}%</span>
+              </label>
+              <input
+                type="range"
+                min={config.mutationRate.min}
+                max={config.mutationRate.max}
+                step="0.01"
+                value={traits.mutationRate}
+                onChange={(e) => updateTrait('mutationRate', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Repro Threshold</span>
+                <span className="value">{traits.reproductionThreshold.toFixed(0)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.reproductionThreshold.min}
+                max={config.reproductionThreshold.max}
+                step="5"
+                value={traits.reproductionThreshold}
+                onChange={(e) => updateTrait('reproductionThreshold', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Offspring Count</span>
+                <span className="value">{Math.round(traits.offspringCount)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.offspringCount.min}
+                max={config.offspringCount.max}
+                step="1"
+                value={traits.offspringCount}
+                onChange={(e) => updateTrait('offspringCount', parseInt(e.target.value))}
+              />
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Neural"
+            icon="bi-cpu"
+            isOpen={openSections.neural}
+            onToggle={() => toggleSection('neural')}
+          >
+            <div className="trait-slider">
+              <label>
+                <span>Learning Rate</span>
+                <span className="value">{traits.learningRate.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.learningRate.min}
+                max={config.learningRate.max}
+                step="0.1"
+                value={traits.learningRate}
+                onChange={(e) => updateTrait('learningRate', parseFloat(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Memory Neurons</span>
+                <span className="value">{Math.round(traits.memoryNeurons)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.memoryNeurons.min}
+                max={config.memoryNeurons.max}
+                step="1"
+                value={traits.memoryNeurons}
+                onChange={(e) => updateTrait('memoryNeurons', parseInt(e.target.value))}
+              />
+            </div>
+            
+            <div className="trait-slider">
+              <label>
+                <span>Aggression</span>
+                <span className="value">{traits.aggression.toFixed(2)}</span>
+              </label>
+              <input
+                type="range"
+                min={config.aggression.min}
+                max={config.aggression.max}
+                step="0.1"
+                value={traits.aggression}
+                onChange={(e) => updateTrait('aggression', parseFloat(e.target.value))}
+              />
+            </div>
+          </CollapsibleSection>
+        </div>
+
+        <div className="spawn-options">
+          <div className="multi-place-toggle">
             <label>
-              <span>Shape</span>
-              <span className="value">{SHAPE_NAMES[Math.round(traits.bodyShape)]}</span>
+              <span>Multi-place Mode</span>
+              <span className="hint">{multiPlace ? 'Click multiple times to spawn' : 'Single spawn'}</span>
             </label>
-            <input
-              type="range"
-              min={config.bodyShape?.min ?? 3}
-              max={config.bodyShape?.max ?? 8}
-              step="1"
-              value={traits.bodyShape}
-              onChange={(e) => updateTrait('bodyShape', parseInt(e.target.value))}
-            />
+            <button
+              className={`toggle-btn ${multiPlace ? 'active' : ''}`}
+              onClick={() => {
+                setMultiPlace(!multiPlace)
+                if (!multiPlace) {
+                  setSpawnedSpeciesId(null)
+                }
+              }}
+            >
+              <i className={`bi ${multiPlace ? 'bi-collection-fill' : 'bi-collection'}`}></i>
+            </button>
           </div>
-          
-          <div className="trait-slider">
-            <label>
-              <span>Size</span>
-              <span className="value">{traits.size.toFixed(0)}</span>
-            </label>
-            <input
-              type="range"
-              min={config.size.min}
-              max={config.size.max}
-              step="1"
-              value={traits.size}
-              onChange={(e) => updateTrait('size', parseFloat(e.target.value))}
-            />
-          </div>
-          
-          <div className="trait-slider">
-            <label>
-              <span>Speed</span>
-              <span className="value">{traits.movementSpeed.toFixed(1)}</span>
-            </label>
-            <input
-              type="range"
-              min={config.movementSpeed.min}
-              max={config.movementSpeed.max}
-              step="0.1"
-              value={traits.movementSpeed}
-              onChange={(e) => updateTrait('movementSpeed', parseFloat(e.target.value))}
-            />
-          </div>
-          
-          <div className="trait-slider">
-            <label>
-              <span>Sensors</span>
-              <span className="value">{Math.round(traits.sensorRayCount)}</span>
-            </label>
-            <input
-              type="range"
-              min={config.sensorRayCount.min}
-              max={config.sensorRayCount.max}
-              step="1"
-              value={traits.sensorRayCount}
-              onChange={(e) => updateTrait('sensorRayCount', parseInt(e.target.value))}
-            />
-          </div>
-          
-          <div className="trait-slider">
-            <label>
-              <span>Sensor Range</span>
-              <span className="value">{traits.sensorRayLength.toFixed(0)}</span>
-            </label>
-            <input
-              type="range"
-              min={config.sensorRayLength.min}
-              max={config.sensorRayLength.max}
-              step="10"
-              value={traits.sensorRayLength}
-              onChange={(e) => updateTrait('sensorRayLength', parseFloat(e.target.value))}
-            />
-          </div>
-          
-          <div className="trait-slider">
-            <label>
-              <span>Field of View</span>
-              <span className="value">{traits.fieldOfView.toFixed(0)}°</span>
-            </label>
-            <input
-              type="range"
-              min={config.fieldOfView.min}
-              max={config.fieldOfView.max}
-              step="10"
-              value={traits.fieldOfView}
-              onChange={(e) => updateTrait('fieldOfView', parseFloat(e.target.value))}
-            />
-          </div>
-          
-          <div className="trait-slider">
-            <label>
-              <span>Aggression</span>
-              <span className="value">{traits.aggression.toFixed(1)}</span>
-            </label>
-            <input
-              type="range"
-              min={config.aggression.min}
-              max={config.aggression.max}
-              step="0.1"
-              value={traits.aggression}
-              onChange={(e) => updateTrait('aggression', parseFloat(e.target.value))}
-            />
-          </div>
-          
-          <div className="trait-slider">
-            <label>
-              <span>Color</span>
-              <span className="value" style={{ 
-                backgroundColor: `hsl(${traits.hue}, 60%, 50%)`,
-                padding: '2px 8px',
-                borderRadius: '4px',
-                color: traits.hue > 50 && traits.hue < 200 ? '#000' : '#fff'
-              }}>{traits.hue}°</span>
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="360"
-              step="1"
-              value={traits.hue}
-              onChange={(e) => updateTrait('hue', parseFloat(e.target.value))}
-            />
-          </div>
+          {multiPlace && spawnedSpeciesId && (
+            <div className="species-info">
+              <span>Species: {spawnedSpeciesId.substring(0, 8)}</span>
+              <button className="reset-species-btn" onClick={resetSpeciesId} title="Reset species ID for next batch">
+                <i className="bi bi-arrow-counterclockwise"></i>
+              </button>
+            </div>
+          )}
         </div>
         
         <button className="spawn-btn" onClick={handleSpawn}>
           <i className="bi bi-plus-circle" style={{ marginRight: '6px' }}></i>
-          Spawn Agent
+          {multiPlace ? 'Start Placing' : 'Spawn Agent'}
         </button>
         
-        <p className="spawn-hint">Click anywhere on the canvas to place your agent</p>
+        <p className="spawn-hint">
+          {multiPlace 
+            ? 'Click anywhere on the canvas to place agents. All will share the same species.' 
+            : 'Click anywhere on the canvas to place your agent'}
+        </p>
       </div>
     </div>
   )

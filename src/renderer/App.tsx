@@ -37,6 +37,8 @@ export const App: React.FC = () => {
   const [placementMode, setPlacementMode] = useState(false)
   const [pendingAgentTraits, setPendingAgentTraits] = useState<GeneticTraits | null>(null)
   const [showAgentBuilder, setShowAgentBuilder] = useState(false)
+  const [multiPlaceMode, setMultiPlaceMode] = useState(false)
+  const [multiPlaceSpeciesId, setMultiPlaceSpeciesId] = useState<string | null>(null)
 
   // Keyboard shortcuts
   React.useEffect(() => {
@@ -157,17 +159,34 @@ export const App: React.FC = () => {
     setEvolutionConfig(newConfig)
   }, [])
 
-  const handleSpawnAgent = useCallback((traits: GeneticTraits) => {
-    console.log('[App] Spawning custom agent with placement mode')
+  const handleSpawnAgent = useCallback((traits: GeneticTraits, multiPlace?: boolean, speciesId?: string) => {
+    console.log('[App] Spawning custom agent with placement mode, multiPlace:', multiPlace)
     setPendingAgentTraits(traits)
     setPlacementMode(true)
+    setMultiPlaceMode(multiPlace || false)
+    setMultiPlaceSpeciesId(speciesId || null)
     setShowAgentBuilder(false)
   }, [])
 
-  const handlePlacementComplete = useCallback(() => {
-    console.log('[App] Agent placed successfully')
+  const handlePlacementComplete = useCallback((newSpeciesId?: string) => {
+    console.log('[App] Agent placed successfully, multiPlaceMode:', multiPlaceMode)
+    if (multiPlaceMode) {
+      if (newSpeciesId && !multiPlaceSpeciesId) {
+        setMultiPlaceSpeciesId(newSpeciesId)
+      }
+    } else {
+      setPlacementMode(false)
+      setPendingAgentTraits(null)
+      setMultiPlaceSpeciesId(null)
+    }
+  }, [multiPlaceMode, multiPlaceSpeciesId])
+
+  const handleCancelPlacement = useCallback(() => {
+    console.log('[App] Placement cancelled')
     setPlacementMode(false)
     setPendingAgentTraits(null)
+    setMultiPlaceMode(false)
+    setMultiPlaceSpeciesId(null)
   }, [])
 
   const handleCloseAgentBuilder = useCallback(() => {
@@ -269,6 +288,9 @@ export const App: React.FC = () => {
           placementMode={placementMode}
           pendingAgentTraits={pendingAgentTraits}
           onPlacementComplete={handlePlacementComplete}
+          multiPlaceMode={multiPlaceMode}
+          multiPlaceSpeciesId={multiPlaceSpeciesId}
+          onCancelPlacement={handleCancelPlacement}
         />
       </div>
 

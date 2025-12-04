@@ -176,6 +176,24 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     return count
   }, [])
 
+  const countSiblings = useCallback((nodeId: string, nodesMap: Map<string, FamilyTreeNode>): number => {
+    const node = nodesMap.get(nodeId)
+    if (!node || node.parentIds.length === 0) return 0
+    
+    const siblingSet = new Set<string>()
+    node.parentIds.forEach(parentId => {
+      const parent = nodesMap.get(parentId)
+      if (parent) {
+        parent.childIds.forEach(childId => {
+          if (childId !== nodeId) {
+            siblingSet.add(childId)
+          }
+        })
+      }
+    })
+    return siblingSet.size
+  }, [])
+
   const getLineage = useCallback((nodeId: string, nodesMap: Map<string, FamilyTreeNode>): Set<string> => {
     const lineage = new Set<string>()
     
@@ -552,6 +570,15 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         context.textBaseline = 'middle'
         context.fillText(`${node.childIds.length}`, pos.x, pos.y)
       }
+
+      const siblingCount = countSiblings(node.id, nodes)
+      if (siblingCount >= 25) {
+        context.fillStyle = 'rgba(255, 200, 100, 0.9)'
+        context.font = '9px Inter, system-ui, sans-serif'
+        context.textAlign = 'left'
+        context.textBaseline = 'top'
+        context.fillText(`+${siblingCount} siblings`, pos.x + baseRadius + 4, pos.y - 4)
+      }
     })
 
     context.restore()
@@ -564,7 +591,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     context.textAlign = 'right'
     context.fillText(`Zoom: ${(zoom * 100).toFixed(0)}%`, canvas.width - 12, canvas.height - 12)
 
-  }, [nodes, viewOffset, zoom, selectedAgent, hoveredNode, lineageSet, showLineage, animationFrame, calculatePositions, getNodeColor, getNodeGlow, statistics, showDeadAgents])
+  }, [nodes, viewOffset, zoom, selectedAgent, hoveredNode, lineageSet, showLineage, animationFrame, calculatePositions, getNodeColor, getNodeGlow, statistics, showDeadAgents, countSiblings])
 
   const renderMinimap = useCallback(() => {
     const minimap = minimapRef.current
