@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "AgentCount": 100,
+  "AgentCount": 60,
   "DefaultAgentSize": { "width": 40, "height": 40 },
   "EnableRotation": true,
   "MovementSpeed": 1.2,
@@ -32,15 +32,15 @@
     "SpawnPoint": [0, 0],
     "DriftMinDistance": 2.0,
     "DriftMaxDistance": 3.0,
-    "DriftSpeed": 0.01,
+    "DriftSpeed": 0.04,
     "VariableSizes": true,
     "MinSize": 4,
     "MaxSize": 10
   },
   "ClusterSettings": {
-    "ClusterCount": 6,
-    "ClusterRadius": 700,
-    "ClusterSpacing": 5000
+    "ClusterCount": 30,
+    "ClusterRadius": 350,
+    "ClusterSpacing": 800
   },
   "LifeStageSettings": {
     "MaturityYears": 40,
@@ -78,7 +78,7 @@
     "energyEfficiency": { "min": 0.5, "max": 1.5, "default": 1.0 },
     "digestionRate": { "min": 0.7, "max": 1.3, "default": 1.0 },
     "maxEnergyCapacity": { "min": 80, "max": 150, "default": 100 },
-    "mutationRate": { "min": 0.02, "max": 0.20, "default": 0.10 },
+    "mutationRate": { "min": 0.02, "max": 0.2, "default": 0.1 },
     "reproductionThreshold": { "min": 40, "max": 80, "default": 60 },
     "offspringCount": { "min": 1, "max": 3, "default": 2 },
     "learningRate": { "min": 0.5, "max": 2.0, "default": 1.0 },
