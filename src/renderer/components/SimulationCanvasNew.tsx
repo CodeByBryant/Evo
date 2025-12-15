@@ -1,0 +1,705 @@
+import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import { Agent, Food } from '../core/Agent'
+import { Camera } from '../core/Camera'
+import { EvolutionManager } from '../core/EvolutionManager'
+import { ClusterManager } from '../core/ClusterManager'
+import type { SpeciesInfo } from '../core/SpeciesManager'
+import type { SimulationConfig, SimulationStats } from '../types/simulation'
+import type { GeneticTraits } from '../types/simulation'
+
+interface SimulationCanvasProps {
+  config: SimulationConfig
+  onStatsUpdate?: (stats: SimulationStats) => void
+  isRunning: boolean
+  speed: number
+  onAgentSelect?: (agent: Agent | null, screenPos?: { x: number; y: number }) => void
+  onAgentsChange?: (agents: Agent[]) => void
+  evolutionConfig?: import('../core/EvolutionManager').EvolutionConfig
+  loadedAgents?: Agent[] | null
+  onSpawnAgent?: (traits: GeneticTraits, position: { x: number; y: number }) => void
+  placementMode?: boolean
+  pendingAgentTraits?: GeneticTraits | null
+  onPlacementComplete?: (speciesId?: string) => void
+  multiPlaceMode?: boolean
+  multiPlaceSpeciesId?: string | null
+  onCancelPlacement?: () => void
+}
+
+export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
+  config,
+  onStatsUpdate,
+  isRunning,
+  speed,
+  onAgentSelect,
+  onAgentsChange,
+  evolutionConfig,
+  loadedAgents,
+  placementMode,
+  pendingAgentTraits,
+  onPlacementComplete,
+  multiPlaceMode,
+  multiPlaceSpeciesId,
+  onCancelPlacement
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const agentsRef = useRef<Agent[]>([])
+  const foodRef = useRef<Food[]>([])
+  const cameraRef = useRef<Camera>(new Camera())
+  const evolutionRef = useRef<EvolutionManager>(new EvolutionManager(evolutionConfig))
+  const animationFrameRef = useRef<number | undefined>(undefined)
+  const lastFrameTimeRef = useRef<number>(0)
+  const fpsRef = useRef<number>(60)
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const previousAgentCountRef = useRef<number>(0)
+
+  const spawnCustomAgent = useCallback((traits: GeneticTraits, worldPos: { x: number; y: number }, speciesId?: string | null): string => {
+    const newAgent = new Agent(
+      worldPos.x,
+      worldPos.y,
+      0, 0,
+      undefined,
+      undefined,
+      speciesId || undefined,
+      traits,
+      0
+    )
+    newAgent.geneticTraits = { ...traits }
+    newAgent.rebuildNeuralArchitecture()
+    newAgent.generation = 0
+    newAgent.energy = newAgent.geneticTraits.maxEnergyCapacity * 0.9
+    if (speciesId) {
+      newAgent.species = speciesId
+    }
+    agentsRef.current.push(newAgent)
+    onAgentsChange?.([...agentsRef.current])
+    return newAgent.species
+  }, [onAgentsChange])
+
+  // Create cluster manager synchronously using useMemo
+  const clusterManager = useMemo(() => {
+    // Validate cluster count to prevent division by zero
+    const clusterCount = Math.max(1, config.ClusterSettings.ClusterCount)
+    return new ClusterManager(
+      clusterCount,
+      config.ClusterSettings.ClusterRadius,
+      config.ClusterSettings.ClusterSpacing
+    )
+  }, [config.ClusterSettings.ClusterCount, config.ClusterSettings.ClusterRadius, config.ClusterSettings.ClusterSpacing])
+
+  // Update evolution config when it changes
+  useEffect(() => {
+    if (evolutionConfig) {
+      evolutionRef.current.setConfig(evolutionConfig)
+    }
+  }, [evolutionConfig])
+
+  // Connect cluster manager to evolution manager for emergency repopulation
+  useEffect(() => {
+    evolutionRef.current.setClusterManager(clusterManager)
+  }, [clusterManager])
+
+  // Handle loaded agents
+  useEffect(() => {
+    if (loadedAgents && loadedAgents.length > 0) {
+      console.log(`[SimulationCanvasNew] Loading ${loadedAgents.length} agents into simulation`)
+      // Replace agents
+      agentsRef.current = loadedAgents
+      
+      // Reinitialize evolution manager
+      evolutionRef.current.reset()
+      
+      // Repopulate species from loaded agents
+      evolutionRef.current.repopulateSpeciesFromAgents(loadedAgents)
+      
+      // Initialize gene pool from loaded agents to prevent rapid cycling
+      evolutionRef.current.initializeGenePool(loadedAgents)
+      
+      // Regenerate food in clusters (including remainders)
+      const clusters = clusterManager.getClusters()
+      foodRef.current = []
+      
+      const baseFoodPerCluster = Math.floor(config.FoodSettings.SpawnCount / clusters.length)
+      const remainderFood = config.FoodSettings.SpawnCount % clusters.length
+      
+      for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
+        const cluster = clusters[clusterIdx]
+        const foodForThisCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
+        
+        for (let i = 0; i < foodForThisCluster; i++) {
+          const pos = clusterManager.getRandomPositionInCluster(cluster.id)
+          if (pos) {
+            foodRef.current.push(new Food(pos.x, pos.y, undefined, cluster.id))
+          }
+        }
+      }
+      
+      // Clone array to ensure React detects state change
+      onAgentsChange?.([...loadedAgents])
+    }
+  }, [loadedAgents, onAgentsChange, config.FoodSettings.SpawnCount])
+
+  const drawInfiniteGrid = useCallback((
+    context: CanvasRenderingContext2D,
+    camera: Camera,
+    canvasWidth: number,
+    canvasHeight: number
+  ) => {
+    const gridSize = 100
+    const lineColor = '#111111'
+
+    context.strokeStyle = lineColor
+    context.lineWidth = 1
+    context.globalAlpha = 0.2
+
+    // Calculate visible grid range in world coordinates
+    const startWorld = camera.screenToWorld(0, 0, canvasWidth, canvasHeight)
+    const endWorld = camera.screenToWorld(canvasWidth, canvasHeight, canvasWidth, canvasHeight)
+
+    const startX = Math.floor(startWorld.x / gridSize) * gridSize
+    const endX = Math.ceil(endWorld.x / gridSize) * gridSize
+    const startY = Math.floor(startWorld.y / gridSize) * gridSize
+    const endY = Math.ceil(endWorld.y / gridSize) * gridSize
+
+    // Draw vertical lines
+    for (let x = startX; x <= endX; x += gridSize) {
+      context.beginPath()
+      context.moveTo(x, startY - gridSize)
+      context.lineTo(x, endY + gridSize)
+      context.stroke()
+    }
+
+    // Draw horizontal lines
+    for (let y = startY; y <= endY; y += gridSize) {
+      context.beginPath()
+      context.moveTo(startX - gridSize, y)
+      context.lineTo(endX + gridSize, y)
+      context.stroke()
+    }
+
+    context.globalAlpha = 1.0
+  }, [])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const context = canvas.getContext('2d')
+    if (!context) return
+
+    const resizeCanvas = () => {
+      const container = canvas.parentElement
+      if (container) {
+        canvas.width = container.clientWidth
+        canvas.height = container.clientHeight
+      } else {
+        canvas.width = canvas.offsetWidth
+        canvas.height = canvas.offsetHeight
+      }
+    }
+
+    resizeCanvas()
+    window.addEventListener('resize', resizeCanvas)
+    
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas()
+    })
+    resizeObserver.observe(canvas.parentElement || canvas)
+    context.imageSmoothingEnabled = true
+
+    // Mouse event handlers for camera control
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button === 1 || e.button === 2 || (e.button === 0 && e.ctrlKey)) {
+        e.preventDefault()
+        cameraRef.current.startDrag(e.clientX, e.clientY)
+      }
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      cameraRef.current.drag(e.clientX, e.clientY)
+    }
+
+    const handleMouseUp = () => {
+      cameraRef.current.stopDrag()
+    }
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = canvas.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+      cameraRef.current.zoomAt(mouseX, mouseY, -e.deltaY, canvas.width, canvas.height)
+    }
+
+    const handleClick = (e: MouseEvent) => {
+      if (e.ctrlKey) return // Skip if panning
+      
+      const rect = canvas.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+      const worldPos = cameraRef.current.screenToWorld(mouseX, mouseY, canvas.width, canvas.height)
+
+      // Handle placement mode - spawn agent at click location
+      if (placementMode && pendingAgentTraits) {
+        const newSpeciesId = spawnCustomAgent(pendingAgentTraits, worldPos, multiPlaceSpeciesId)
+        onPlacementComplete?.(newSpeciesId)
+        return
+      }
+
+      // Find closest agent to click
+      let closestAgent: Agent | null = null
+      let closestDist = Infinity
+
+      for (const agent of agentsRef.current) {
+        const dx = agent.position.x - worldPos.x
+        const dy = agent.position.y - worldPos.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+
+        if (dist < 30 && dist < closestDist) {
+          closestAgent = agent
+          closestDist = dist
+        }
+      }
+
+      if (closestAgent) {
+        console.log(`[SimulationCanvasNew] Agent clicked: ${closestAgent.id.substring(0, 8)}`)
+        const screenPos = cameraRef.current.worldToScreen(
+          closestAgent.position.x,
+          closestAgent.position.y,
+          canvas.width,
+          canvas.height
+        )
+        const rect = canvas.getBoundingClientRect()
+        onAgentSelect?.(closestAgent, { x: screenPos.x + rect.left, y: screenPos.y + rect.top })
+      } else {
+        onAgentSelect?.(null)
+      }
+      setSelectedAgent(closestAgent)
+    }
+
+    // Touch event handlers for mobile camera control
+    let touchStartDistance = 0
+    let lastTouchX = 0
+    let lastTouchY = 0
+    let isPanning = false
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        // Pinch to zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        touchStartDistance = Math.sqrt(dx * dx + dy * dy)
+        isPanning = false
+      } else if (e.touches.length === 1) {
+        // Single touch for panning
+        lastTouchX = e.touches[0].clientX
+        lastTouchY = e.touches[0].clientY
+        cameraRef.current.startDrag(lastTouchX, lastTouchY)
+        isPanning = true
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault()
+
+      if (e.touches.length === 2) {
+        // Pinch to zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        
+        if (touchStartDistance > 0) {
+          const delta = distance - touchStartDistance
+          const rect = canvas.getBoundingClientRect()
+          const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left
+          const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top
+          cameraRef.current.zoomAt(centerX, centerY, -delta * 3, canvas.width, canvas.height)
+          touchStartDistance = distance
+        }
+        isPanning = false
+      } else if (e.touches.length === 1 && isPanning) {
+        // Single touch panning
+        const touchX = e.touches[0].clientX
+        const touchY = e.touches[0].clientY
+        cameraRef.current.drag(touchX, touchY)
+        lastTouchX = touchX
+        lastTouchY = touchY
+      }
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        cameraRef.current.stopDrag()
+        isPanning = false
+        touchStartDistance = 0
+
+        // If it was a quick tap, select agent
+        if (e.changedTouches.length === 1) {
+          const rect = canvas.getBoundingClientRect()
+          const touchX = e.changedTouches[0].clientX - rect.left
+          const touchY = e.changedTouches[0].clientY - rect.top
+          const worldPos = cameraRef.current.screenToWorld(touchX, touchY, canvas.width, canvas.height)
+
+          let closestAgent: Agent | null = null
+          let closestDist = Infinity
+
+          for (const agent of agentsRef.current) {
+            const dx = agent.position.x - worldPos.x
+            const dy = agent.position.y - worldPos.y
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < 50 && dist < closestDist) {
+              closestAgent = agent
+              closestDist = dist
+            }
+          }
+
+          if (closestAgent) {
+            setSelectedAgent(closestAgent)
+            onAgentSelect?.(closestAgent)
+          }
+        }
+      }
+    }
+
+    // Mouse events
+    canvas.addEventListener('mousedown', handleMouseDown)
+    canvas.addEventListener('mousemove', handleMouseMove)
+    canvas.addEventListener('mouseup', handleMouseUp)
+    canvas.addEventListener('wheel', handleWheel, { passive: false })
+    canvas.addEventListener('click', handleClick)
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault())
+
+    // Keyboard events for trails toggle and placement cancel
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'r') {
+        Agent.trailsEnabled = !Agent.trailsEnabled
+      }
+      if (e.key === 'Escape' && placementMode) {
+        onCancelPlacement?.()
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas)
+      resizeObserver.disconnect()
+      canvas.removeEventListener('mousedown', handleMouseDown)
+      canvas.removeEventListener('mousemove', handleMouseMove)
+      canvas.removeEventListener('mouseup', handleMouseUp)
+      canvas.removeEventListener('wheel', handleWheel)
+      canvas.removeEventListener('click', handleClick)
+      canvas.removeEventListener('touchstart', handleTouchStart)
+      canvas.removeEventListener('touchmove', handleTouchMove)
+      canvas.removeEventListener('touchend', handleTouchEnd)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onAgentSelect, placementMode, pendingAgentTraits, spawnCustomAgent, onPlacementComplete, multiPlaceSpeciesId, multiPlaceMode, onCancelPlacement])
+
+  const initializeSimulation = useCallback(() => {
+    console.log('[SimulationCanvasNew] Initializing simulation')
+    agentsRef.current = []
+    foodRef.current = []
+
+    const { AgentCount, FoodSettings, ClusterSettings } = config
+    const speciesManager = evolutionRef.current.speciesManager
+    const clusters = clusterManager.getClusters()
+    console.log(`[SimulationCanvasNew] Creating ${AgentCount} agents across ${clusters.length} clusters`)
+
+    // Create one species per cluster
+    const species: SpeciesInfo[] = []
+    for (let i = 0; i < clusters.length; i++) {
+      species.push(speciesManager.createNewSpecies())
+    }
+
+    // Distribute agents across clusters respecting AgentCount cap
+    const baseAgentsPerCluster = Math.floor(AgentCount / clusters.length)
+    const remainderAgents = AgentCount % clusters.length
+    let totalAgentsSpawned = 0
+    
+    for (let clusterIdx = 0; clusterIdx < clusters.length && totalAgentsSpawned < AgentCount; clusterIdx++) {
+      const cluster = clusters[clusterIdx]
+      const clusterSpecies = species[clusterIdx]
+      const agentsForThisCluster = baseAgentsPerCluster + (clusterIdx < remainderAgents ? 1 : 0)
+      
+      for (let i = 0; i < agentsForThisCluster && totalAgentsSpawned < AgentCount; i++) {
+        const pos = clusterManager.getRandomPositionInCluster(cluster.id)
+        if (pos) {
+          const agent = new Agent(
+            pos.x, 
+            pos.y, 
+            0, 0, 
+            undefined, 
+            undefined, 
+            clusterSpecies.id, 
+            clusterSpecies.baselineTraits,
+            cluster.id
+          )
+          agentsRef.current.push(agent)
+          totalAgentsSpawned++
+        }
+      }
+    }
+
+    // Distribute food across clusters (including remainders)
+    const baseFoodPerCluster = Math.floor(FoodSettings.SpawnCount / clusters.length)
+    const remainderFood = FoodSettings.SpawnCount % clusters.length
+    
+    for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
+      const cluster = clusters[clusterIdx]
+      const foodForThisCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
+      
+      for (let i = 0; i < foodForThisCluster; i++) {
+        const pos = clusterManager.getRandomPositionInCluster(cluster.id)
+        if (pos) {
+          foodRef.current.push(new Food(pos.x, pos.y, undefined, cluster.id))
+        }
+      }
+    }
+
+    // Initialize gene pool with starting population
+    evolutionRef.current.initializeGenePool(agentsRef.current)
+
+    console.log(`[SimulationCanvasNew] Spawned ${agentsRef.current.length} agents and ${foodRef.current.length} food items`)
+
+    // Center camera on first cluster for better initial view
+    if (clusters.length > 0) {
+      const firstCluster = clusters[0]
+      cameraRef.current.x = firstCluster.position.x
+      cameraRef.current.y = firstCluster.position.y
+      console.log(`[SimulationCanvasNew] Camera centered on cluster at (${firstCluster.position.x.toFixed(0)}, ${firstCluster.position.y.toFixed(0)})`)
+    }
+
+    // Notify parent of initial agents with cloned array
+    onAgentsChange?.([...agentsRef.current])
+  }, [config, onAgentsChange, clusterManager])
+
+  useEffect(() => {
+    initializeSimulation()
+  }, [initializeSimulation])
+
+  const handleFoodCollisions = useCallback(() => {
+    for (const agent of agentsRef.current) {
+      const eatenFood = agent.checkFoodCollision(foodRef.current)
+      if (eatenFood) {
+        const index = foodRef.current.indexOf(eatenFood)
+        if (index !== -1) {
+          if (config.FoodSettings.RespawnOnEat) {
+            // Respawn food in same cluster
+            const clusterId = eatenFood.clusterId
+            const pos = clusterManager.getRandomPositionInCluster(clusterId)
+            if (pos) {
+              foodRef.current[index] = new Food(pos.x, pos.y, undefined, clusterId)
+            }
+          } else {
+            // Remove eaten food if respawn is disabled
+            foodRef.current.splice(index, 1)
+          }
+        }
+        agent.eatFood(eatenFood.radius)
+      }
+    }
+
+    // Maintain target food per cluster if respawning is enabled
+    if (config.FoodSettings.RespawnOnEat) {
+      const clusters = clusterManager.getClusters()
+      const baseFoodPerCluster = Math.floor(config.FoodSettings.SpawnCount / clusters.length)
+      const remainderFood = config.FoodSettings.SpawnCount % clusters.length
+      
+      // Build food count map for efficiency
+      const foodCountByCluster = new Map<number, number>()
+      for (const food of foodRef.current) {
+        foodCountByCluster.set(food.clusterId, (foodCountByCluster.get(food.clusterId) || 0) + 1)
+      }
+      
+      for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
+        const cluster = clusters[clusterIdx]
+        const targetFoodForCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
+        const foodInCluster = foodCountByCluster.get(cluster.id) || 0
+        
+        if (foodInCluster < targetFoodForCluster) {
+          const foodToAdd = targetFoodForCluster - foodInCluster
+          for (let i = 0; i < foodToAdd; i++) {
+            const pos = clusterManager.getRandomPositionInCluster(cluster.id)
+            if (pos) {
+              foodRef.current.push(new Food(pos.x, pos.y, undefined, cluster.id))
+            }
+          }
+        }
+      }
+    }
+  }, [config.FoodSettings.RespawnOnEat, config.FoodSettings.SpawnCount, clusterManager])
+
+  const startAnimation = useCallback(() => {
+    if (onStatsUpdate) {
+      onStatsUpdate({
+        agentCount: agentsRef.current.length,
+        foodCount: foodRef.current.length,
+        fps: fpsRef.current,
+        running: true
+      })
+    }
+
+    const animate = (currentTime: number) => {
+      const canvas = canvasRef.current
+      const context = canvas?.getContext('2d')
+      if (!canvas || !context) return
+
+      const deltaTime = currentTime - lastFrameTimeRef.current
+      // Maintain 60 FPS target while allowing speed multiplier
+      const targetFrameTime = 1000 / 60
+      if (deltaTime < targetFrameTime * 0.5) {
+        animationFrameRef.current = requestAnimationFrame(animate)
+        return
+      }
+
+      lastFrameTimeRef.current = currentTime
+
+      if (deltaTime > 0) {
+        fpsRef.current = Math.round(1000 / deltaTime)
+      }
+
+      // Run simulation steps based on speed multiplier (capped to prevent performance collapse)
+      // Max 3 steps per frame maintains smooth 60 FPS at all speeds
+      const stepsPerFrame = Math.min(3, Math.max(1, Math.round(speed)))
+      
+      for (let step = 0; step < stepsPerFrame; step++) {
+        // Capture all agents BEFORE evolution/death for genealogy tracking
+        // This ensures dying agents get added to agentHistory
+        if (step === 0) {
+          onAgentsChange?.([...agentsRef.current])
+        }
+
+        // Update agents (no canvas boundaries for infinite world)
+        agentsRef.current.forEach((agent) => {
+          agent.update(agentsRef.current, foodRef.current)
+        })
+
+        // Evolution system
+        const evolutionResult = evolutionRef.current.update(agentsRef.current)
+        agentsRef.current = evolutionResult.agents
+      }
+
+      // Clear and set up camera transform
+      context.save()
+      context.fillStyle = '#0a0a0a'
+      context.fillRect(0, 0, canvas.width, canvas.height)
+
+      cameraRef.current.applyTransform(context, canvas.width, canvas.height)
+
+      // Draw infinite grid
+      drawInfiniteGrid(context, cameraRef.current, canvas.width, canvas.height)
+
+      // Draw cluster boundaries (after camera transform is applied)
+      clusterManager.renderClusters(context)
+
+      // No more resets - evolution continues via gene pool resurrection
+
+      // Handle food collisions (updates fitness/energy)
+      handleFoodCollisions()
+
+      // Notify parent of agent changes with cloned array so React detects updates
+      onAgentsChange?.([...agentsRef.current])
+
+      // Update food drift
+      foodRef.current.forEach((food) => {
+        food.update()
+      })
+
+      // Render food
+      foodRef.current.forEach((food) => {
+        food.render(context)
+      })
+
+      // Render agents
+      agentsRef.current.forEach((agent) => {
+        const isSelected = selectedAgent ? agent.id === selectedAgent.id : false
+        agent.render(context, isSelected)
+      })
+
+      context.restore()
+
+      // Draw UI overlay (camera info)
+      context.fillStyle = '#00ff88'
+      context.font = '12px monospace'
+      context.fillText(`Zoom: ${cameraRef.current.zoom.toFixed(2)}x`, 10, canvas.height - 80)
+      context.fillText(`Camera: (${cameraRef.current.x.toFixed(0)}, ${cameraRef.current.y.toFixed(0)})`, 10, canvas.height - 60)
+      
+      // Trails status
+      if (Agent.trailsEnabled) {
+        context.fillStyle = '#a78bfa'
+        context.fillText(`Trails: ON (R to toggle)`, 10, canvas.height - 40)
+      } else {
+        context.fillStyle = '#6b7280'
+        context.fillText(`Trails: OFF (R to toggle)`, 10, canvas.height - 40)
+      }
+      
+      // Placement mode indicator
+      if (placementMode) {
+        context.fillStyle = '#22c55e'
+        if (multiPlaceMode) {
+          const speciesText = multiPlaceSpeciesId ? ` (Species: ${multiPlaceSpeciesId.substring(0, 8)})` : ''
+          context.fillText(`MULTI-PLACE MODE: Click to spawn agents${speciesText} | ESC to cancel`, 10, canvas.height - 20)
+        } else {
+          context.fillText(`PLACEMENT MODE: Click anywhere to spawn agent`, 10, canvas.height - 20)
+        }
+      }
+
+      if (onStatsUpdate) {
+        const latestStats = evolutionRef.current.getLatestStats()
+        onStatsUpdate({
+          agentCount: agentsRef.current.length,
+          foodCount: foodRef.current.length,
+          fps: fpsRef.current,
+          running: true,
+          generation: evolutionRef.current.generation,
+          avgFitness: latestStats?.avgFitness || 0,
+          maxFitness: latestStats?.maxFitness || 0,
+          speciesCount: latestStats?.speciesCount || 0
+        })
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate)
+    }
+
+    animationFrameRef.current = requestAnimationFrame(animate)
+  }, [speed, onStatsUpdate, onAgentsChange, drawInfiniteGrid, handleFoodCollisions, initializeSimulation, selectedAgent])
+
+  const stopAnimation = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+    }
+
+    if (onStatsUpdate) {
+      onStatsUpdate({
+        agentCount: agentsRef.current.length,
+        foodCount: foodRef.current.length,
+        fps: fpsRef.current,
+        running: false,
+        generation: evolutionRef.current.generation
+      })
+    }
+  }, [onStatsUpdate])
+
+  useEffect(() => {
+    if (isRunning) {
+      startAnimation()
+    } else {
+      stopAnimation()
+    }
+
+    return () => stopAnimation()
+  }, [isRunning, startAnimation, stopAnimation])
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      style={{ cursor: placementMode ? 'crosshair' : 'grab', width: '100%', height: '100%' }}
+    />
+  )
+}

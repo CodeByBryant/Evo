@@ -1,7 +1,7 @@
 {
-  "name": "evosquares",
-  "version": "1.0.0",
-  "description": "A simulation project that models the evolution of square-shaped agents in a 2D environment.",
+  "name": "evo",
+  "version": "2.0.0",
+  "description": "Evo - An interactive neural evolution sandbox where AI agents learn and adapt in real-time.",
   "main": "./out/main/index.js",
   "author": "CodeByBryant",
   "homepage": "https://electron-vite.org",
@@ -11,6 +11,9 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "preview:web": "vite preview",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
@@ -23,7 +26,13 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
-    "electron-updater": "^6.1.7"
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
+    "electron-updater": "^6.1.7",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^2.0.0",
