@@ -50,30 +50,37 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   const lastFrameTimeRef = useRef<number>(0)
   const fpsRef = useRef<number>(60)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
-  const previousAgentCountRef = useRef<number>(0)
 
-  const spawnCustomAgent = useCallback((traits: GeneticTraits, worldPos: { x: number; y: number }, speciesId?: string | null): string => {
-    const newAgent = new Agent(
-      worldPos.x,
-      worldPos.y,
-      0, 0,
-      undefined,
-      undefined,
-      speciesId || undefined,
-      traits,
-      0
-    )
-    newAgent.geneticTraits = { ...traits }
-    newAgent.rebuildNeuralArchitecture()
-    newAgent.generation = 0
-    newAgent.energy = newAgent.geneticTraits.maxEnergyCapacity * 0.9
-    if (speciesId) {
-      newAgent.species = speciesId
-    }
-    agentsRef.current.push(newAgent)
-    onAgentsChange?.([...agentsRef.current])
-    return newAgent.species
-  }, [onAgentsChange])
+  const spawnCustomAgent = useCallback(
+    (
+      traits: GeneticTraits,
+      worldPos: { x: number; y: number },
+      speciesId?: string | null
+    ): string => {
+      const newAgent = new Agent(
+        worldPos.x,
+        worldPos.y,
+        0,
+        0,
+        undefined,
+        undefined,
+        speciesId || undefined,
+        traits,
+        0
+      )
+      newAgent.geneticTraits = { ...traits }
+      newAgent.rebuildNeuralArchitecture()
+      newAgent.generation = 0
+      newAgent.energy = newAgent.geneticTraits.maxEnergyCapacity * 0.9
+      if (speciesId) {
+        newAgent.species = speciesId
+      }
+      agentsRef.current.push(newAgent)
+      onAgentsChange?.([...agentsRef.current])
+      return newAgent.species
+    },
+    [onAgentsChange]
+  )
 
   // Create cluster manager synchronously using useMemo
   const clusterManager = useMemo(() => {
@@ -84,7 +91,11 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       config.ClusterSettings.ClusterRadius,
       config.ClusterSettings.ClusterSpacing
     )
-  }, [config.ClusterSettings.ClusterCount, config.ClusterSettings.ClusterRadius, config.ClusterSettings.ClusterSpacing])
+  }, [
+    config.ClusterSettings.ClusterCount,
+    config.ClusterSettings.ClusterRadius,
+    config.ClusterSettings.ClusterSpacing
+  ])
 
   // Update evolution config when it changes
   useEffect(() => {
@@ -104,27 +115,27 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       console.log(`[SimulationCanvasNew] Loading ${loadedAgents.length} agents into simulation`)
       // Replace agents
       agentsRef.current = loadedAgents
-      
+
       // Reinitialize evolution manager
       evolutionRef.current.reset()
-      
+
       // Repopulate species from loaded agents
       evolutionRef.current.repopulateSpeciesFromAgents(loadedAgents)
-      
+
       // Initialize gene pool from loaded agents to prevent rapid cycling
       evolutionRef.current.initializeGenePool(loadedAgents)
-      
+
       // Regenerate food in clusters (including remainders)
       const clusters = clusterManager.getClusters()
       foodRef.current = []
-      
+
       const baseFoodPerCluster = Math.floor(config.FoodSettings.SpawnCount / clusters.length)
       const remainderFood = config.FoodSettings.SpawnCount % clusters.length
-      
+
       for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
         const cluster = clusters[clusterIdx]
         const foodForThisCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
-        
+
         for (let i = 0; i < foodForThisCluster; i++) {
           const pos = clusterManager.getRandomPositionInCluster(cluster.id)
           if (pos) {
@@ -132,52 +143,55 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
           }
         }
       }
-      
+
       // Clone array to ensure React detects state change
       onAgentsChange?.([...loadedAgents])
     }
   }, [loadedAgents, onAgentsChange, config.FoodSettings.SpawnCount])
 
-  const drawInfiniteGrid = useCallback((
-    context: CanvasRenderingContext2D,
-    camera: Camera,
-    canvasWidth: number,
-    canvasHeight: number
-  ) => {
-    const gridSize = 100
-    const lineColor = '#111111'
+  const drawInfiniteGrid = useCallback(
+    (
+      context: CanvasRenderingContext2D,
+      camera: Camera,
+      canvasWidth: number,
+      canvasHeight: number
+    ) => {
+      const gridSize = 100
+      const lineColor = '#111111'
 
-    context.strokeStyle = lineColor
-    context.lineWidth = 1
-    context.globalAlpha = 0.2
+      context.strokeStyle = lineColor
+      context.lineWidth = 1
+      context.globalAlpha = 0.2
 
-    // Calculate visible grid range in world coordinates
-    const startWorld = camera.screenToWorld(0, 0, canvasWidth, canvasHeight)
-    const endWorld = camera.screenToWorld(canvasWidth, canvasHeight, canvasWidth, canvasHeight)
+      // Calculate visible grid range in world coordinates
+      const startWorld = camera.screenToWorld(0, 0, canvasWidth, canvasHeight)
+      const endWorld = camera.screenToWorld(canvasWidth, canvasHeight, canvasWidth, canvasHeight)
 
-    const startX = Math.floor(startWorld.x / gridSize) * gridSize
-    const endX = Math.ceil(endWorld.x / gridSize) * gridSize
-    const startY = Math.floor(startWorld.y / gridSize) * gridSize
-    const endY = Math.ceil(endWorld.y / gridSize) * gridSize
+      const startX = Math.floor(startWorld.x / gridSize) * gridSize
+      const endX = Math.ceil(endWorld.x / gridSize) * gridSize
+      const startY = Math.floor(startWorld.y / gridSize) * gridSize
+      const endY = Math.ceil(endWorld.y / gridSize) * gridSize
 
-    // Draw vertical lines
-    for (let x = startX; x <= endX; x += gridSize) {
-      context.beginPath()
-      context.moveTo(x, startY - gridSize)
-      context.lineTo(x, endY + gridSize)
-      context.stroke()
-    }
+      // Draw vertical lines
+      for (let x = startX; x <= endX; x += gridSize) {
+        context.beginPath()
+        context.moveTo(x, startY - gridSize)
+        context.lineTo(x, endY + gridSize)
+        context.stroke()
+      }
 
-    // Draw horizontal lines
-    for (let y = startY; y <= endY; y += gridSize) {
-      context.beginPath()
-      context.moveTo(startX - gridSize, y)
-      context.lineTo(endX + gridSize, y)
-      context.stroke()
-    }
+      // Draw horizontal lines
+      for (let y = startY; y <= endY; y += gridSize) {
+        context.beginPath()
+        context.moveTo(startX - gridSize, y)
+        context.lineTo(endX + gridSize, y)
+        context.stroke()
+      }
 
-    context.globalAlpha = 1.0
-  }, [])
+      context.globalAlpha = 1.0
+    },
+    []
+  )
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -186,7 +200,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     const context = canvas.getContext('2d')
     if (!context) return
 
-    const resizeCanvas = () => {
+    const resizeCanvas = (): void => {
       const container = canvas.parentElement
       if (container) {
         canvas.width = container.clientWidth
@@ -199,30 +213,30 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
 
     resizeCanvas()
     window.addEventListener('resize', resizeCanvas)
-    
-    const resizeObserver = new ResizeObserver(() => {
+
+    const resizeObserver = new ResizeObserver((): void => {
       resizeCanvas()
     })
     resizeObserver.observe(canvas.parentElement || canvas)
     context.imageSmoothingEnabled = true
 
     // Mouse event handlers for camera control
-    const handleMouseDown = (e: MouseEvent) => {
+    const handleMouseDown = (e: MouseEvent): void => {
       if (e.button === 1 || e.button === 2 || (e.button === 0 && e.ctrlKey)) {
         e.preventDefault()
         cameraRef.current.startDrag(e.clientX, e.clientY)
       }
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: MouseEvent): void => {
       cameraRef.current.drag(e.clientX, e.clientY)
     }
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (): void => {
       cameraRef.current.stopDrag()
     }
 
-    const handleWheel = (e: WheelEvent) => {
+    const handleWheel = (e: WheelEvent): void => {
       e.preventDefault()
       const rect = canvas.getBoundingClientRect()
       const mouseX = e.clientX - rect.left
@@ -230,9 +244,9 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       cameraRef.current.zoomAt(mouseX, mouseY, -e.deltaY, canvas.width, canvas.height)
     }
 
-    const handleClick = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent): void => {
       if (e.ctrlKey) return // Skip if panning
-      
+
       const rect = canvas.getBoundingClientRect()
       const mouseX = e.clientX - rect.left
       const mouseY = e.clientY - rect.top
@@ -282,7 +296,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     let lastTouchY = 0
     let isPanning = false
 
-    const handleTouchStart = (e: TouchEvent) => {
+    const handleTouchStart = (e: TouchEvent): void => {
       if (e.touches.length === 2) {
         // Pinch to zoom
         const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -298,7 +312,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       }
     }
 
-    const handleTouchMove = (e: TouchEvent) => {
+    const handleTouchMove = (e: TouchEvent): void => {
       e.preventDefault()
 
       if (e.touches.length === 2) {
@@ -306,7 +320,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         const dx = e.touches[0].clientX - e.touches[1].clientX
         const dy = e.touches[0].clientY - e.touches[1].clientY
         const distance = Math.sqrt(dx * dx + dy * dy)
-        
+
         if (touchStartDistance > 0) {
           const delta = distance - touchStartDistance
           const rect = canvas.getBoundingClientRect()
@@ -326,7 +340,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       }
     }
 
-    const handleTouchEnd = (e: TouchEvent) => {
+    const handleTouchEnd = (e: TouchEvent): void => {
       if (e.touches.length === 0) {
         cameraRef.current.stopDrag()
         isPanning = false
@@ -337,7 +351,12 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
           const rect = canvas.getBoundingClientRect()
           const touchX = e.changedTouches[0].clientX - rect.left
           const touchY = e.changedTouches[0].clientY - rect.top
-          const worldPos = cameraRef.current.screenToWorld(touchX, touchY, canvas.width, canvas.height)
+          const worldPos = cameraRef.current.screenToWorld(
+            touchX,
+            touchY,
+            canvas.width,
+            canvas.height
+          )
 
           let closestAgent: Agent | null = null
           let closestDist = Infinity
@@ -370,7 +389,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     canvas.addEventListener('contextmenu', (e) => e.preventDefault())
 
     // Keyboard events for trails toggle and placement cancel
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key.toLowerCase() === 'r') {
         Agent.trailsEnabled = !Agent.trailsEnabled
       }
@@ -378,7 +397,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         onCancelPlacement?.()
       }
     }
-    
+
     window.addEventListener('keydown', handleKeyDown)
 
     // Touch events for mobile
@@ -386,7 +405,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
 
-    return () => {
+    return (): void => {
       window.removeEventListener('resize', resizeCanvas)
       resizeObserver.disconnect()
       canvas.removeEventListener('mousedown', handleMouseDown)
@@ -399,17 +418,28 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       canvas.removeEventListener('touchend', handleTouchEnd)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [onAgentSelect, placementMode, pendingAgentTraits, spawnCustomAgent, onPlacementComplete, multiPlaceSpeciesId, multiPlaceMode, onCancelPlacement])
+  }, [
+    onAgentSelect,
+    placementMode,
+    pendingAgentTraits,
+    spawnCustomAgent,
+    onPlacementComplete,
+    multiPlaceSpeciesId,
+    multiPlaceMode,
+    onCancelPlacement
+  ])
 
   const initializeSimulation = useCallback(() => {
     console.log('[SimulationCanvasNew] Initializing simulation')
     agentsRef.current = []
     foodRef.current = []
 
-    const { AgentCount, FoodSettings, ClusterSettings } = config
+    const { AgentCount, FoodSettings } = config
     const speciesManager = evolutionRef.current.speciesManager
     const clusters = clusterManager.getClusters()
-    console.log(`[SimulationCanvasNew] Creating ${AgentCount} agents across ${clusters.length} clusters`)
+    console.log(
+      `[SimulationCanvasNew] Creating ${AgentCount} agents across ${clusters.length} clusters`
+    )
 
     // Create one species per cluster
     const species: SpeciesInfo[] = []
@@ -421,22 +451,27 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     const baseAgentsPerCluster = Math.floor(AgentCount / clusters.length)
     const remainderAgents = AgentCount % clusters.length
     let totalAgentsSpawned = 0
-    
-    for (let clusterIdx = 0; clusterIdx < clusters.length && totalAgentsSpawned < AgentCount; clusterIdx++) {
+
+    for (
+      let clusterIdx = 0;
+      clusterIdx < clusters.length && totalAgentsSpawned < AgentCount;
+      clusterIdx++
+    ) {
       const cluster = clusters[clusterIdx]
       const clusterSpecies = species[clusterIdx]
       const agentsForThisCluster = baseAgentsPerCluster + (clusterIdx < remainderAgents ? 1 : 0)
-      
+
       for (let i = 0; i < agentsForThisCluster && totalAgentsSpawned < AgentCount; i++) {
         const pos = clusterManager.getRandomPositionInCluster(cluster.id)
         if (pos) {
           const agent = new Agent(
-            pos.x, 
-            pos.y, 
-            0, 0, 
-            undefined, 
-            undefined, 
-            clusterSpecies.id, 
+            pos.x,
+            pos.y,
+            0,
+            0,
+            undefined,
+            undefined,
+            clusterSpecies.id,
             clusterSpecies.baselineTraits,
             cluster.id
           )
@@ -449,11 +484,11 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     // Distribute food across clusters (including remainders)
     const baseFoodPerCluster = Math.floor(FoodSettings.SpawnCount / clusters.length)
     const remainderFood = FoodSettings.SpawnCount % clusters.length
-    
+
     for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
       const cluster = clusters[clusterIdx]
       const foodForThisCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
-      
+
       for (let i = 0; i < foodForThisCluster; i++) {
         const pos = clusterManager.getRandomPositionInCluster(cluster.id)
         if (pos) {
@@ -465,14 +500,18 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     // Initialize gene pool with starting population
     evolutionRef.current.initializeGenePool(agentsRef.current)
 
-    console.log(`[SimulationCanvasNew] Spawned ${agentsRef.current.length} agents and ${foodRef.current.length} food items`)
+    console.log(
+      `[SimulationCanvasNew] Spawned ${agentsRef.current.length} agents and ${foodRef.current.length} food items`
+    )
 
     // Center camera on first cluster for better initial view
     if (clusters.length > 0) {
       const firstCluster = clusters[0]
       cameraRef.current.x = firstCluster.position.x
       cameraRef.current.y = firstCluster.position.y
-      console.log(`[SimulationCanvasNew] Camera centered on cluster at (${firstCluster.position.x.toFixed(0)}, ${firstCluster.position.y.toFixed(0)})`)
+      console.log(
+        `[SimulationCanvasNew] Camera centered on cluster at (${firstCluster.position.x.toFixed(0)}, ${firstCluster.position.y.toFixed(0)})`
+      )
     }
 
     // Notify parent of initial agents with cloned array
@@ -510,18 +549,18 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       const clusters = clusterManager.getClusters()
       const baseFoodPerCluster = Math.floor(config.FoodSettings.SpawnCount / clusters.length)
       const remainderFood = config.FoodSettings.SpawnCount % clusters.length
-      
+
       // Build food count map for efficiency
       const foodCountByCluster = new Map<number, number>()
       for (const food of foodRef.current) {
         foodCountByCluster.set(food.clusterId, (foodCountByCluster.get(food.clusterId) || 0) + 1)
       }
-      
+
       for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
         const cluster = clusters[clusterIdx]
         const targetFoodForCluster = baseFoodPerCluster + (clusterIdx < remainderFood ? 1 : 0)
         const foodInCluster = foodCountByCluster.get(cluster.id) || 0
-        
+
         if (foodInCluster < targetFoodForCluster) {
           const foodToAdd = targetFoodForCluster - foodInCluster
           for (let i = 0; i < foodToAdd; i++) {
@@ -545,7 +584,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       })
     }
 
-    const animate = (currentTime: number) => {
+    const animate = (currentTime: number): void => {
       const canvas = canvasRef.current
       const context = canvas?.getContext('2d')
       if (!canvas || !context) return
@@ -567,7 +606,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       // Run simulation steps based on speed multiplier (capped to prevent performance collapse)
       // Max 3 steps per frame maintains smooth 60 FPS at all speeds
       const stepsPerFrame = Math.min(3, Math.max(1, Math.round(speed)))
-      
+
       for (let step = 0; step < stepsPerFrame; step++) {
         // Capture all agents BEFORE evolution/death for genealogy tracking
         // This ensures dying agents get added to agentHistory
@@ -628,8 +667,12 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       context.fillStyle = '#00ff88'
       context.font = '12px monospace'
       context.fillText(`Zoom: ${cameraRef.current.zoom.toFixed(2)}x`, 10, canvas.height - 80)
-      context.fillText(`Camera: (${cameraRef.current.x.toFixed(0)}, ${cameraRef.current.y.toFixed(0)})`, 10, canvas.height - 60)
-      
+      context.fillText(
+        `Camera: (${cameraRef.current.x.toFixed(0)}, ${cameraRef.current.y.toFixed(0)})`,
+        10,
+        canvas.height - 60
+      )
+
       // Trails status
       if (Agent.trailsEnabled) {
         context.fillStyle = '#a78bfa'
@@ -638,13 +681,19 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
         context.fillStyle = '#6b7280'
         context.fillText(`Trails: OFF (R to toggle)`, 10, canvas.height - 40)
       }
-      
+
       // Placement mode indicator
       if (placementMode) {
         context.fillStyle = '#22c55e'
         if (multiPlaceMode) {
-          const speciesText = multiPlaceSpeciesId ? ` (Species: ${multiPlaceSpeciesId.substring(0, 8)})` : ''
-          context.fillText(`MULTI-PLACE MODE: Click to spawn agents${speciesText} | ESC to cancel`, 10, canvas.height - 20)
+          const speciesText = multiPlaceSpeciesId
+            ? ` (Species: ${multiPlaceSpeciesId.substring(0, 8)})`
+            : ''
+          context.fillText(
+            `MULTI-PLACE MODE: Click to spawn agents${speciesText} | ESC to cancel`,
+            10,
+            canvas.height - 20
+          )
         } else {
           context.fillText(`PLACEMENT MODE: Click anywhere to spawn agent`, 10, canvas.height - 20)
         }
@@ -668,7 +717,15 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     }
 
     animationFrameRef.current = requestAnimationFrame(animate)
-  }, [speed, onStatsUpdate, onAgentsChange, drawInfiniteGrid, handleFoodCollisions, initializeSimulation, selectedAgent])
+  }, [
+    speed,
+    onStatsUpdate,
+    onAgentsChange,
+    drawInfiniteGrid,
+    handleFoodCollisions,
+    initializeSimulation,
+    selectedAgent
+  ])
 
   const stopAnimation = useCallback(() => {
     if (animationFrameRef.current) {
@@ -693,12 +750,12 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       stopAnimation()
     }
 
-    return () => stopAnimation()
+    return (): void => stopAnimation()
   }, [isRunning, startAnimation, stopAnimation])
 
   return (
-    <canvas 
-      ref={canvasRef} 
+    <canvas
+      ref={canvasRef}
       style={{ cursor: placementMode ? 'crosshair' : 'grab', width: '100%', height: '100%' }}
     />
   )

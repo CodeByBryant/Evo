@@ -20,11 +20,12 @@ export class SpeciesManager {
   }
 
   public createNewSpecies(parentSpeciesId?: string): SpeciesInfo {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = (AgentConfigData as any).GeneticTraits
     const speciesId = this.generateSpeciesId()
-    
+
     let baselineTraits: GeneticTraits
-    
+
     if (parentSpeciesId && this.speciesMap.has(parentSpeciesId)) {
       // Inherit from parent species with significant variation (speciation event)
       const parentSpecies = this.speciesMap.get(parentSpeciesId)!
@@ -33,16 +34,18 @@ export class SpeciesManager {
       // Create entirely new species with unique traits
       baselineTraits = this.generateUniqueSpeciesTraits(config)
     }
-    
+
     const speciesInfo: SpeciesInfo = {
       id: speciesId,
       baselineTraits,
       createdAt: Date.now(),
       population: 0
     }
-    
+
     this.speciesMap.set(speciesId, speciesInfo)
-    console.log(`[SpeciesManager] Created new species: ${speciesId.substring(0, 8)}${parentSpeciesId ? ` (derived from ${parentSpeciesId.substring(0, 8)})` : ''}`)
+    console.log(
+      `[SpeciesManager] Created new species: ${speciesId.substring(0, 8)}${parentSpeciesId ? ` (derived from ${parentSpeciesId.substring(0, 8)})` : ''}`
+    )
     return speciesInfo
   }
 
@@ -70,17 +73,21 @@ export class SpeciesManager {
       }
     }
     if (extinctSpecies.length > 0) {
-      console.log(`[SpeciesManager] Removed ${extinctSpecies.length} extinct species: ${extinctSpecies.join(', ')}`)
+      console.log(
+        `[SpeciesManager] Removed ${extinctSpecies.length} extinct species: ${extinctSpecies.join(', ')}`
+      )
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private generateUniqueSpeciesTraits(config: any): GeneticTraits {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const randomInRange = (rangeConfig: any): number => {
-      const min = rangeConfig.min
-      const max = rangeConfig.max
+      const min = rangeConfig.min as number
+      const max = rangeConfig.max as number
       const range = max - min
       const center = (min + max) / 2
-      
+
       // Use a normal distribution around center with some variance
       const variance = 0.4 // 40% variance from center
       const offset = (Math.random() - 0.5) * 2 * range * variance
@@ -112,13 +119,22 @@ export class SpeciesManager {
     }
   }
 
-  private mutateSpeciesTraits(parentTraits: GeneticTraits, config: any, intensity: number): GeneticTraits {
+  private mutateSpeciesTraits(
+    parentTraits: GeneticTraits,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config: any,
+    intensity: number
+  ): GeneticTraits {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mutate = (value: number, range: any): number => {
-      const mutation = (Math.random() - 0.5) * (range.max - range.min) * intensity
-      return Math.max(range.min, Math.min(range.max, value + mutation))
+      const mutation =
+        (Math.random() - 0.5) * ((range.max as number) - (range.min as number)) * intensity
+      return Math.max(range.min as number, Math.min(range.max as number, value + mutation))
     }
 
-    const parentHue = Number.isFinite(parentTraits.hue) ? parentTraits.hue : Math.floor(Math.random() * 360)
+    const parentHue = Number.isFinite(parentTraits.hue)
+      ? parentTraits.hue
+      : Math.floor(Math.random() * 360)
     const hueMutation = (Math.random() - 0.5) * 60 * intensity
     const newHue = (parentHue + hueMutation + 360) % 360
 
@@ -132,18 +148,26 @@ export class SpeciesManager {
       sensorRayLength: mutate(parentTraits.sensorRayLength, config.sensorRayLength),
       sensorPrecision: mutate(parentTraits.sensorPrecision, config.sensorPrecision),
       fieldOfView: mutate(parentTraits.fieldOfView, config.fieldOfView),
-      colorVision: Math.random() < 0.5 ? parentTraits.colorVision : Math.random() < config.colorVision.probability,
+      colorVision:
+        Math.random() < 0.5
+          ? parentTraits.colorVision
+          : Math.random() < config.colorVision.probability,
       energyEfficiency: mutate(parentTraits.energyEfficiency, config.energyEfficiency),
       digestionRate: mutate(parentTraits.digestionRate, config.digestionRate),
       maxEnergyCapacity: mutate(parentTraits.maxEnergyCapacity, config.maxEnergyCapacity),
       mutationRate: mutate(parentTraits.mutationRate, config.mutationRate),
-      reproductionThreshold: mutate(parentTraits.reproductionThreshold, config.reproductionThreshold),
+      reproductionThreshold: mutate(
+        parentTraits.reproductionThreshold,
+        config.reproductionThreshold
+      ),
       offspringCount: Math.round(mutate(parentTraits.offspringCount, config.offspringCount)),
       learningRate: mutate(parentTraits.learningRate, config.learningRate),
       memoryNeurons: Math.round(mutate(parentTraits.memoryNeurons, config.memoryNeurons)),
       aggression: mutate(parentTraits.aggression, config.aggression),
       hue: newHue,
-      bodyShape: config.bodyShape ? Math.round(mutate(parentTraits.bodyShape ?? 3, config.bodyShape)) : (parentTraits.bodyShape ?? 3)
+      bodyShape: config.bodyShape
+        ? Math.round(mutate(parentTraits.bodyShape ?? 3, config.bodyShape))
+        : (parentTraits.bodyShape ?? 3)
     }
   }
 
@@ -163,24 +187,28 @@ export class SpeciesManager {
     this.speciesMap.set(speciesInfo.id, speciesInfo)
   }
 
-  public createSpeciesWithTraits(sourceTraits: GeneticTraits, mutateTraits: boolean = true): SpeciesInfo {
+  public createSpeciesWithTraits(
+    sourceTraits: GeneticTraits,
+    mutateTraits: boolean = true
+  ): SpeciesInfo {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = (AgentConfigData as any).GeneticTraits
     const speciesId = this.generateSpeciesId()
-    
+
     let baselineTraits: GeneticTraits
     if (mutateTraits) {
       baselineTraits = this.mutateSpeciesTraits(sourceTraits, config, 0.3)
     } else {
       baselineTraits = { ...sourceTraits }
     }
-    
+
     const speciesInfo: SpeciesInfo = {
       id: speciesId,
       baselineTraits,
       createdAt: Date.now(),
       population: 0
     }
-    
+
     this.speciesMap.set(speciesId, speciesInfo)
     console.log(`[SpeciesManager] Created new species from traits: ${speciesId.substring(0, 8)}`)
     return speciesInfo

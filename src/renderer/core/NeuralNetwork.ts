@@ -57,7 +57,7 @@ class NeuralNetwork {
           level.biases[i] = lerp(level.biases[i], Math.random() * 2 - 1, mutationRate)
         }
       }
-      
+
       for (let i = 0; i < level.weights.length; i++) {
         for (let j = 0; j < level.weights[i].length; j++) {
           if (this.mutationStrategy === 'gaussian') {
@@ -79,24 +79,24 @@ class NeuralNetwork {
 
   public clone(): NeuralNetwork {
     const cloned = new NeuralNetwork(
-      [this.levels[0].inputs.length, ...this.levels.map(l => l.outputs.length)],
+      [this.levels[0].inputs.length, ...this.levels.map((l) => l.outputs.length)],
       {
         ActivationFunction: this.activationFunction,
         MutationStrategy: this.mutationStrategy
       }
     )
-    
+
     for (let i = 0; i < this.levels.length; i++) {
       cloned.levels[i].biases = [...this.levels[i].biases]
-      cloned.levels[i].weights = this.levels[i].weights.map(w => [...w])
+      cloned.levels[i].weights = this.levels[i].weights.map((w) => [...w])
     }
-    
+
     return cloned
   }
 
   public crossover(other: NeuralNetwork): NeuralNetwork {
     const child = this.clone()
-    
+
     // Crossover: randomly take genes from each parent
     for (let i = 0; i < this.levels.length && i < other.levels.length; i++) {
       for (let j = 0; j < child.levels[i].biases.length; j++) {
@@ -104,7 +104,7 @@ class NeuralNetwork {
           child.levels[i].biases[j] = other.levels[i].biases[j]
         }
       }
-      
+
       for (let j = 0; j < child.levels[i].weights.length; j++) {
         for (let k = 0; k < child.levels[i].weights[j].length; k++) {
           if (Math.random() < 0.5) {
@@ -113,7 +113,7 @@ class NeuralNetwork {
         }
       }
     }
-    
+
     return child
   }
 
@@ -122,9 +122,9 @@ class NeuralNetwork {
       const targetLevel = this.levels[i]
       const parent1Level = parent1.levels[i]
       const parent2Level = parent2?.levels[i]
-      
+
       if (!parent1Level) break
-      
+
       const minBiases = Math.min(targetLevel.biases.length, parent1Level.biases.length)
       for (let j = 0; j < minBiases; j++) {
         if (parent2Level && parent2Level.biases.length > j && Math.random() < 0.5) {
@@ -133,15 +133,17 @@ class NeuralNetwork {
           targetLevel.biases[j] = parent1Level.biases[j]
         }
       }
-      
+
       const minInputs = Math.min(targetLevel.weights.length, parent1Level.weights.length)
       for (let j = 0; j < minInputs; j++) {
         const minOutputs = Math.min(targetLevel.weights[j].length, parent1Level.weights[j].length)
         for (let k = 0; k < minOutputs; k++) {
-          if (parent2Level && 
-              parent2Level.weights.length > j && 
-              parent2Level.weights[j].length > k && 
-              Math.random() < 0.5) {
+          if (
+            parent2Level &&
+            parent2Level.weights.length > j &&
+            parent2Level.weights[j].length > k &&
+            Math.random() < 0.5
+          ) {
             targetLevel.weights[j][k] = parent2Level.weights[j][k]
           } else {
             targetLevel.weights[j][k] = parent1Level.weights[j][k]
@@ -153,14 +155,14 @@ class NeuralNetwork {
 
   public getGenomeData(): number[] {
     const genome: number[] = []
-    
+
     for (const level of this.levels) {
       genome.push(...level.biases)
       for (const weights of level.weights) {
         genome.push(...weights)
       }
     }
-    
+
     return genome
   }
 }
@@ -241,15 +243,15 @@ class Sensor {
     }
 
     if (intersections.length === 0) return null
-    
+
     const offsets = intersections.map((e) => e.offset)
     const minOffset = Math.min(...offsets)
     const result = intersections.find((e) => e.offset === minOffset) || null
-    
+
     if (result) {
       result.offset = this.applySensorPrecision(result.offset)
     }
-    
+
     return result
   }
 
@@ -345,10 +347,10 @@ class Sensor {
     for (let i = 0; i < this.rayCount; i++) {
       const agentEnd = this.agentOutput[i]
       const foodEnd = this.foodOutput[i]
-      
+
       let end = this.rays[i][1]
       let hitColor = '#94a3b8'
-      
+
       if (agentEnd && foodEnd) {
         end = agentEnd.offset < foodEnd.offset ? agentEnd : foodEnd
         hitColor = agentEnd.offset < foodEnd.offset ? '#60a5fa' : '#fbbf24'
@@ -393,11 +395,11 @@ class Level {
     this.outputs = new Array(outputCount)
     this.biases = new Array(outputCount)
     this.weights = []
-    
+
     for (let i = 0; i < inputCount; i++) {
       this.weights[i] = new Array(outputCount)
     }
-    
+
     Level.initialize(this, inputCount, outputCount, initMethod)
   }
 
@@ -427,7 +429,7 @@ class Level {
         level.weights[i][j] = (Math.random() * 2 - 1) * scale
       }
     }
-    
+
     for (let i = 0; i < level.biases.length; i++) {
       level.biases[i] = (Math.random() * 2 - 1) * scale * 0.5
     }

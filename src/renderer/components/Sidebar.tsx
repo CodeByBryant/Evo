@@ -1,41 +1,29 @@
-import React, { useState, useCallback } from 'react'
-import type { SimulationConfig, SimulationStats } from '../types/simulation'
+import React, { useState } from 'react'
+import type { SimulationStats } from '../types/simulation'
 import { BRANDING } from '../constants/branding'
 import { useFullscreen } from '../hooks/useFullscreen'
 
 interface SidebarProps {
-  config: SimulationConfig
   stats: SimulationStats
   isRunning: boolean
   speed: number
   onToggleRunning: () => void
   onSpeedChange: (speed: number) => void
   onReset: () => void
-  onConfigChange: (config: SimulationConfig) => void
   children?: React.ReactNode
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  config,
   stats,
   isRunning,
   speed,
   onToggleRunning,
   onSpeedChange,
   onReset,
-  onConfigChange,
   children
 }) => {
-  const [configExpanded, setConfigExpanded] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
-  const { isFullscreen, toggleFullscreen, isElectron } = useFullscreen()
-
-  const updateConfig = useCallback(
-    (updates: Partial<SimulationConfig>) => {
-      onConfigChange({ ...config, ...updates })
-    },
-    [config, onConfigChange]
-  )
+  const { isFullscreen, toggleFullscreen } = useFullscreen()
 
   return (
     <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -75,24 +63,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
                 />
                 <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
-                  <button 
-                    className="btn-control" 
+                  <button
+                    className="btn-control"
                     onClick={() => onSpeedChange(50)}
                     style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
                     title="50x Speed"
                   >
                     50x
                   </button>
-                  <button 
-                    className="btn-control" 
+                  <button
+                    className="btn-control"
                     onClick={() => onSpeedChange(100)}
                     style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
                     title="100x Speed"
                   >
                     100x
                   </button>
-                  <button 
-                    className="btn-control" 
+                  <button
+                    className="btn-control"
                     onClick={() => onSpeedChange(500)}
                     style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
                     title="500x Speed"
@@ -129,13 +117,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <div className="sidebar-section">
               <div className="controls">
-                <button 
+                <button
                   className={`btn-control fullscreen-btn ${isFullscreen ? 'active' : ''}`}
                   onClick={toggleFullscreen}
                   title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                   style={{ fontSize: '0.7rem' }}
                 >
-                  <i className={`bi ${isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'}`} style={{ marginRight: '4px' }}></i>
+                  <i
+                    className={`bi ${isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'}`}
+                    style={{ marginRight: '4px' }}
+                  ></i>
                   {isFullscreen ? 'Exit' : 'Fullscreen'}
                 </button>
               </div>
@@ -143,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {children}
           </div>
-          
+
           <div className="sidebar-version">v{BRANDING.VERSION}</div>
         </>
       )}
@@ -156,8 +147,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button onClick={onReset} title="Reset">
             <i className="bi bi-arrow-clockwise"></i>
           </button>
-          <button 
-            onClick={toggleFullscreen} 
+          <button
+            onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             className={isFullscreen ? 'active' : ''}
           >

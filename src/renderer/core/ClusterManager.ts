@@ -19,7 +19,9 @@ export class ClusterManager {
     this.clusterRadius = clusterRadius
     this.clusterSpacing = clusterSpacing
     this.generateClusters()
-    console.log(`[ClusterManager] Created ${clusterCount} clusters with radius ${clusterRadius} and spacing ${clusterSpacing}`)
+    console.log(
+      `[ClusterManager] Created ${clusterCount} clusters with radius ${clusterRadius} and spacing ${clusterSpacing}`
+    )
   }
 
   private generateClusters(): void {
@@ -48,7 +50,7 @@ export class ClusterManager {
       // N clusters in regular polygon pattern
       // Use clusterSpacing as the distance between cluster centers
       const polygonRadius = this.clusterSpacing / (2 * Math.sin(Math.PI / this.clusterCount))
-      
+
       for (let i = 0; i < this.clusterCount; i++) {
         const angle = (i * 2 * Math.PI) / this.clusterCount
         const x = Math.cos(angle) * polygonRadius
@@ -68,7 +70,7 @@ export class ClusterManager {
   }
 
   public getCluster(id: number): Cluster | undefined {
-    return this.clusters.find(c => c.id === id)
+    return this.clusters.find((c) => c.id === id)
   }
 
   public getRandomPositionInCluster(clusterId: number): { x: number; y: number } | null {
@@ -78,7 +80,7 @@ export class ClusterManager {
     // Random position within cluster radius
     const angle = Math.random() * Math.PI * 2
     const distance = Math.random() * cluster.radius
-    
+
     return {
       x: cluster.position.x + Math.cos(angle) * distance,
       y: cluster.position.y + Math.sin(angle) * distance

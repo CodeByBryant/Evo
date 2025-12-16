@@ -38,9 +38,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({ stats }) => {
             <div className="stat-box">
               <div className="stat-label">Status</div>
               <div className="h5 mb-0 mt-2">
-                <span
-                  className={`badge ${stats.running ? 'bg-success' : 'bg-secondary'}`}
-                >
+                <span className={`badge ${stats.running ? 'bg-success' : 'bg-secondary'}`}>
                   {stats.running ? 'Active' : 'Paused'}
                 </span>
               </div>
