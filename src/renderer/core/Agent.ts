@@ -59,7 +59,6 @@ class Agent {
   public static maxTrailLength: number = 30
   public static trailsEnabled: boolean = true
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(
     x: number = 0,
     y: number = 0,

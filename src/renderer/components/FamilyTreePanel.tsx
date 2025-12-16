@@ -1170,7 +1170,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
 
         {hoveredNode &&
           !isDragging &&
-          ((): number | JSX.Element => {
+          ((): JSX.Element => {
             const parentNode =
               hoveredNode.parentIds.length > 0 ? nodes.get(hoveredNode.parentIds[0]) : null
             const traitDiff = parentNode
