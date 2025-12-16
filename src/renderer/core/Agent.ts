@@ -8,11 +8,28 @@
  */
 
 import { NeuralNetwork, Sensor } from './NeuralNetwork'
+import type { ActivationFunction, InitializationMethod, MutationStrategy } from './NeuralNetwork'
 import AgentConfigData from './utilities/AgentConfig.json'
 import type { GeneticTraits } from '../types/simulation'
 import type { SpeciesManager } from './SpeciesManager'
 
 type Vertex = { x: number; y: number }
+
+interface AgentConfig {
+  ReproductionSettings?: {
+    EnergyMaxCap?: number
+  }
+  NeuralNetwork?: {
+    HiddenLayers?: number[]
+    ActivationFunction?: string
+    InitializationMethod?: string
+    MutationStrategy?: string
+  }
+  LifeStageSettings?: Record<string, unknown>
+  RenderSensor?: boolean
+  Rendering?: Record<string, unknown>
+  FoodSettings?: Record<string, unknown>
+}
 
 class Agent {
   public static speciesManager: SpeciesManager | null = null
@@ -42,10 +59,13 @@ class Agent {
   public static maxTrailLength: number = 30
   public static trailsEnabled: boolean = true
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(
     x: number = 0,
     y: number = 0,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _width: number = 10,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _height: number = 10,
     parentTraits?: GeneticTraits,
     mateTraits?: GeneticTraits,
@@ -63,7 +83,7 @@ class Agent {
     this.height = this.geneticTraits.size
     this.polygon = this.getgeometry()
     this.fitness = 100
-    const configData: any = AgentConfigData
+    const configData: AgentConfig = AgentConfigData as AgentConfig
     const energyCap = configData.ReproductionSettings?.EnergyMaxCap || 100
     this.energy = Math.min(energyCap, this.geneticTraits.maxEnergyCapacity)
     this.age = 0
@@ -92,9 +112,9 @@ class Agent {
     const layerSizes = [inputSize, ...nnConfig.HiddenLayers, 6]
 
     this.NeuralNetwork = new NeuralNetwork(layerSizes, {
-      ActivationFunction: nnConfig.ActivationFunction as any,
-      InitializationMethod: nnConfig.InitializationMethod as any,
-      MutationStrategy: nnConfig.MutationStrategy as any
+      ActivationFunction: nnConfig.ActivationFunction as ActivationFunction,
+      InitializationMethod: nnConfig.InitializationMethod as InitializationMethod,
+      MutationStrategy: nnConfig.MutationStrategy as MutationStrategy
     })
 
     this.Sensor = new Sensor(this, {
@@ -106,7 +126,7 @@ class Agent {
   }
 
   public rebuildNeuralArchitecture(): void {
-    const configData: any = AgentConfigData
+    const configData: AgentConfig = AgentConfigData as AgentConfig
     const nnConfig = configData.NeuralNetwork || {
       HiddenLayers: [20, 16, 12],
       ActivationFunction: 'tanh',
@@ -121,9 +141,9 @@ class Agent {
     const layerSizes = [inputSize, ...nnConfig.HiddenLayers, 6]
 
     this.NeuralNetwork = new NeuralNetwork(layerSizes, {
-      ActivationFunction: nnConfig.ActivationFunction as any,
-      InitializationMethod: nnConfig.InitializationMethod as any,
-      MutationStrategy: nnConfig.MutationStrategy as any
+      ActivationFunction: nnConfig.ActivationFunction as ActivationFunction,
+      InitializationMethod: nnConfig.InitializationMethod as InitializationMethod,
+      MutationStrategy: nnConfig.MutationStrategy as MutationStrategy
     })
 
     this.Sensor = new Sensor(this, {
@@ -140,7 +160,10 @@ class Agent {
   }
 
   private generateDefaultTraits(): GeneticTraits {
-    const config: any = (AgentConfigData as any).GeneticTraits
+    const config = (AgentConfigData as Record<string, unknown>).GeneticTraits as Record<
+      string,
+      unknown
+    >
     const speciesHash = parseInt(this.species.substring(0, 8), 36)
     const defaultHue = config.hue.default === -1 ? speciesHash % 360 : config.hue.default
     const defaultBodyShape = config.bodyShape?.default ?? 3
@@ -170,7 +193,10 @@ class Agent {
   }
 
   private inheritTraits(parentTraits: GeneticTraits, mateTraits?: GeneticTraits): GeneticTraits {
-    const config: any = (AgentConfigData as any).GeneticTraits
+    const config = (AgentConfigData as Record<string, unknown>).GeneticTraits as Record<
+      string,
+      unknown
+    >
 
     const blend = (parent1Val: number, parent2Val: number): number => {
       return parent1Val * 0.5 + parent2Val * 0.5
@@ -289,7 +315,7 @@ class Agent {
         newValue = Math.round(newValue)
       }
 
-      ;(result as any)[traitKey] = newValue
+      ;(result as Record<string, number | boolean>)[traitKey] = newValue
     }
 
     const allTraitKeys: (keyof GeneticTraits)[] = [...numericTraitKeys, 'colorVision']
@@ -456,7 +482,7 @@ class Agent {
   }
 
   public eatFood(foodSize?: number): void {
-    const configData: any = AgentConfigData
+    const configData: AgentConfig = AgentConfigData as AgentConfig
     const energyCap = configData.ReproductionSettings?.EnergyMaxCap || 100
 
     const baseEnergyGain = foodSize ? (foodSize / 6) * 20 : 20
@@ -511,7 +537,7 @@ class Agent {
   }
 
   public getLifeStage(): string {
-    const configData: any = AgentConfigData
+    const configData: AgentConfig = AgentConfigData as AgentConfig
     const lifeConfig = configData.LifeStageSettings
 
     if (!lifeConfig) {
@@ -529,7 +555,7 @@ class Agent {
   }
 
   public canReproduce(): boolean {
-    const configData: any = AgentConfigData
+    const configData: AgentConfig = AgentConfigData as AgentConfig
     const lifeConfig = configData.LifeStageSettings
     const reproConfig = configData.ReproductionSettings
 
@@ -551,7 +577,7 @@ class Agent {
   }
 
   public getMaturityProgress(): number {
-    const configData: any = AgentConfigData
+    const configData: AgentConfig = AgentConfigData as AgentConfig
     const lifeConfig = configData.LifeStageSettings
 
     if (!lifeConfig) {
@@ -772,7 +798,9 @@ class Agent {
     }
 
     const traits = this.getSpeciesVisualTraits()
-    const renderConfig: any = AgentConfigData.Rendering
+    const renderConfig = (AgentConfigData as AgentConfig).Rendering as
+      | Record<string, unknown>
+      | undefined
 
     context.beginPath()
     if (this.polygon.length > 0) {
@@ -828,7 +856,9 @@ class Food {
   constructor(x: number = 0, y: number = 0, size?: number, clusterId: number = 0) {
     this.spawnPoint = { x, y }
 
-    const foodSettings: any = AgentConfigData.FoodSettings
+    const foodSettings = (AgentConfigData as AgentConfig).FoodSettings as
+      | Record<string, unknown>
+      | undefined
 
     if (size !== undefined) {
       this.radius = size
@@ -863,9 +893,11 @@ class Food {
   }
 
   public update(): void {
-    const foodSettings: any = AgentConfigData.FoodSettings
-    const driftMin = foodSettings.DriftMinDistance || 2.0
-    const driftMax = foodSettings.DriftMaxDistance || 3.0
+    const foodSettings = (AgentConfigData as AgentConfig).FoodSettings as
+      | Record<string, unknown>
+      | undefined
+    const driftMin = (foodSettings?.DriftMinDistance as number) || 2.0
+    const driftMax = (foodSettings?.DriftMaxDistance as number) || 3.0
 
     this.position.x += this.driftVelocity.x
     this.position.y += this.driftVelocity.y

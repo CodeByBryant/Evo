@@ -57,7 +57,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     const context = canvas.getContext('2d')
     if (!context) return
 
-    const resizeCanvas = () => {
+    const resizeCanvas = (): void => {
       canvas.width = canvas.offsetWidth
       canvas.height = canvas.offsetHeight
     }
@@ -66,7 +66,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     window.addEventListener('resize', resizeCanvas)
     context.imageSmoothingEnabled = true
 
-    return () => {
+    return (): void => {
       window.removeEventListener('resize', resizeCanvas)
     }
   }, [])
@@ -128,7 +128,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
       })
     }
 
-    const animate = (currentTime: number) => {
+    const animate = (currentTime: number): void => {
       const canvas = canvasRef.current
       const context = canvas?.getContext('2d')
       if (!canvas || !context) return
@@ -201,7 +201,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
       stopAnimation()
     }
 
-    return () => stopAnimation()
+    return (): void => stopAnimation()
   }, [isRunning, startAnimation, stopAnimation])
 
   return <canvas ref={canvasRef} />

@@ -51,7 +51,7 @@ export const useFullscreen = (): UseFullscreenResult => {
     const electron = getElectronAPI()
 
     if (isElectron && electron?.ipcRenderer) {
-      const handleFullscreenChange = (_event: unknown, fullscreen: unknown) => {
+      const handleFullscreenChange = (_event: unknown, fullscreen: unknown): void => {
         setIsFullscreen(fullscreen as boolean)
       }
 
@@ -64,7 +64,7 @@ export const useFullscreen = (): UseFullscreenResult => {
         })
         .catch(() => {})
 
-      return () => {
+      return (): void => {
         electron.ipcRenderer?.removeListener('fullscreen-changed', handleFullscreenChange)
       }
     } else {
@@ -75,7 +75,7 @@ export const useFullscreen = (): UseFullscreenResult => {
 
       checkFullscreen()
 
-      return () => {
+      return (): void => {
         document.removeEventListener('fullscreenchange', checkFullscreen)
         document.removeEventListener('webkitfullscreenchange', checkFullscreen)
         document.removeEventListener('mozfullscreenchange', checkFullscreen)

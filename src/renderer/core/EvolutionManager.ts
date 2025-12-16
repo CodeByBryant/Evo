@@ -241,8 +241,10 @@ export class EvolutionManager {
     }
 
     // Extinction mitigation: emergency spawning for low population
-    const extinctionConfig: any = (AgentConfigData as any).ExtinctionMitigation
-    if (extinctionConfig && agents.length < extinctionConfig.MinPopulationForBoost) {
+    const extinctionConfig = (AgentConfigData as Record<string, unknown>).ExtinctionMitigation as
+      | Record<string, unknown>
+      | undefined
+    if (extinctionConfig && agents.length < (extinctionConfig.MinPopulationForBoost as number)) {
       const emergencySpawnChance = extinctionConfig.EmergencySpawnRate || 0.01
 
       // If completely extinct, spawn multiple agents from elite templates or create new ones
@@ -265,7 +267,12 @@ export class EvolutionManager {
         // Build species map for each cluster - either from elites or create new species
         const clusterSpecies: Map<
           number,
-          { id: string; traits: any; template: Agent | null; useTemplateNetwork: boolean }
+          {
+            id: string
+            traits: GeneticTraits
+            template: Agent | null
+            useTemplateNetwork: boolean
+          }
         > = new Map()
 
         for (const cluster of clusters) {
@@ -363,9 +370,17 @@ export class EvolutionManager {
             emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
 
             // Start agents at reproductive age so they can breed immediately
-            const lifeConfig = (AgentConfigData as any).LifeStageSettings
-            const minReproAge = lifeConfig?.LifeProgressSegments?.Adult?.start || 0.15
-            emergencyAgent.age = Math.floor(this.config.maxAge * (minReproAge + 0.05))
+            const lifeConfig = (AgentConfigData as Record<string, unknown>).LifeStageSettings as
+              | Record<string, unknown>
+              | undefined
+            const minReproAge =
+              (
+                (lifeConfig?.LifeProgressSegments as Record<string, unknown>)?.Adult as Record<
+                  string,
+                  unknown
+                >
+              )?.start || 0.15
+            emergencyAgent.age = Math.floor(this.config.maxAge * ((minReproAge as number) + 0.05))
 
             agents.push(emergencyAgent)
             newBirths++
@@ -415,8 +430,16 @@ export class EvolutionManager {
         emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
 
         // Start at reproductive age
-        const lifeConfig = (AgentConfigData as any).LifeStageSettings
-        const minReproAge = lifeConfig?.LifeProgressSegments?.Adult?.start || 0.15
+        const lifeConfig = (AgentConfigData as Record<string, unknown>).LifeStageSettings as
+          | Record<string, unknown>
+          | undefined
+        const minReproAge =
+          (
+            (lifeConfig?.LifeProgressSegments as Record<string, unknown>)?.Adult as Record<
+              string,
+              unknown
+            >
+          )?.start || 0.15
         emergencyAgent.age = Math.floor(this.config.maxAge * (minReproAge + 0.05))
 
         agents.push(emergencyAgent)
@@ -511,7 +534,7 @@ export class EvolutionManager {
 
   private calculateAverageTraits(agents: Agent[]): GeneticTraits {
     const count = agents.length
-    const sum: any = {}
+    const sum: Record<string, number> = {}
 
     const firstAgent = agents[0]
     for (const key in firstAgent.geneticTraits) {
@@ -526,7 +549,7 @@ export class EvolutionManager {
       }
     }
 
-    const avgTraits: any = {}
+    const avgTraits: Record<string, number | boolean> = {}
     for (const key in sum) {
       if (key === 'colorVision') {
         avgTraits[key] = agents.filter((a) => a.geneticTraits.colorVision).length > count / 2

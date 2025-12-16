@@ -34,7 +34,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   agentHistory,
   selectedAgent,
   onAgentSelect,
-  speciesManager,
   resetKey
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -46,10 +45,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [showLineage, setShowLineage] = useState(true)
   const [hoveredNode, setHoveredNode] = useState<FamilyTreeNode | null>(null)
-  const [animationFrame, setAnimationFrame] = useState(0)
-  const [showDeadAgents, setShowDeadAgents] = useState(true)
-  const [showStats, setShowStats] = useState(false)
-  const [filterToLineage, setFilterToLineage] = useState(true)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
@@ -75,17 +70,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     return fallbackHash % 360
   }, [])
 
-  const getSpeciesColor = useCallback(
-    (speciesId: string, alpha = 1): string => {
-      const hash = getSafeHash(speciesId)
-      const hue = hash % 360
-      const saturation = 60 + (hash % 25)
-      const lightness = 45 + ((hash >> 4) % 15)
-      return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`
-    },
-    [getSafeHash]
-  )
-
   const getNodeColor = useCallback(
     (node: FamilyTreeNode, alpha = 1): string => {
       const hash = getSafeHash(node?.speciesId)
@@ -105,15 +89,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
       return `hsla(${hue}, 80%, 60%, 0.6)`
     },
     [getSafeHash, getSafeHue]
-  )
-
-  const getSpeciesGlow = useCallback(
-    (speciesId: string): string => {
-      const hash = getSafeHash(speciesId)
-      const hue = hash % 360
-      return `hsla(${hue}, 80%, 60%, 0.6)`
-    },
-    [getSafeHash]
   )
 
   const calculateTraitDifferences = useCallback(

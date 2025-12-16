@@ -1,41 +1,29 @@
-import React, { useState, useCallback } from 'react'
-import type { SimulationConfig, SimulationStats } from '../types/simulation'
+import React, { useState } from 'react'
+import type { SimulationStats } from '../types/simulation'
 import { BRANDING } from '../constants/branding'
 import { useFullscreen } from '../hooks/useFullscreen'
 
 interface SidebarProps {
-  config: SimulationConfig
   stats: SimulationStats
   isRunning: boolean
   speed: number
   onToggleRunning: () => void
   onSpeedChange: (speed: number) => void
   onReset: () => void
-  onConfigChange: (config: SimulationConfig) => void
   children?: React.ReactNode
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  config,
   stats,
   isRunning,
   speed,
   onToggleRunning,
   onSpeedChange,
   onReset,
-  onConfigChange,
   children
 }) => {
-  const [configExpanded, setConfigExpanded] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
-  const { isFullscreen, toggleFullscreen, isElectron } = useFullscreen()
-
-  const updateConfig = useCallback(
-    (updates: Partial<SimulationConfig>) => {
-      onConfigChange({ ...config, ...updates })
-    },
-    [config, onConfigChange]
-  )
+  const { isFullscreen, toggleFullscreen } = useFullscreen()
 
   return (
     <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>

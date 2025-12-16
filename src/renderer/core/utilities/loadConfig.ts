@@ -11,7 +11,7 @@ export const DEFAULT_EVOLUTION_CONFIG: EvolutionConfig = {
 }
 
 export function loadEvolutionConfig(): EvolutionConfig {
-  const configData = AgentConfigData as any
+  const configData = AgentConfigData as Record<string, unknown>
 
   if (configData.EvolutionSettings) {
     return {

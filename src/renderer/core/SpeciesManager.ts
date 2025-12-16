@@ -20,7 +20,10 @@ export class SpeciesManager {
   }
 
   public createNewSpecies(parentSpeciesId?: string): SpeciesInfo {
-    const config: any = (AgentConfigData as any).GeneticTraits
+    const config = (AgentConfigData as Record<string, unknown>).GeneticTraits as Record<
+      string,
+      unknown
+    >
     const speciesId = this.generateSpeciesId()
 
     let baselineTraits: GeneticTraits
@@ -78,10 +81,10 @@ export class SpeciesManager {
     }
   }
 
-  private generateUniqueSpeciesTraits(config: any): GeneticTraits {
-    const randomInRange = (rangeConfig: any): number => {
-      const min = rangeConfig.min
-      const max = rangeConfig.max
+  private generateUniqueSpeciesTraits(config: Record<string, unknown>): GeneticTraits {
+    const randomInRange = (rangeConfig: Record<string, unknown>): number => {
+      const min = rangeConfig.min as number
+      const max = rangeConfig.max as number
       const range = max - min
       const center = (min + max) / 2
 
@@ -118,12 +121,13 @@ export class SpeciesManager {
 
   private mutateSpeciesTraits(
     parentTraits: GeneticTraits,
-    config: any,
+    config: Record<string, unknown>,
     intensity: number
   ): GeneticTraits {
-    const mutate = (value: number, range: any): number => {
-      const mutation = (Math.random() - 0.5) * (range.max - range.min) * intensity
-      return Math.max(range.min, Math.min(range.max, value + mutation))
+    const mutate = (value: number, range: Record<string, unknown>): number => {
+      const mutation =
+        (Math.random() - 0.5) * ((range.max as number) - (range.min as number)) * intensity
+      return Math.max(range.min as number, Math.min(range.max as number, value + mutation))
     }
 
     const parentHue = Number.isFinite(parentTraits.hue)
@@ -185,7 +189,10 @@ export class SpeciesManager {
     sourceTraits: GeneticTraits,
     mutateTraits: boolean = true
   ): SpeciesInfo {
-    const config: any = (AgentConfigData as any).GeneticTraits
+    const config = (AgentConfigData as Record<string, unknown>).GeneticTraits as Record<
+      string,
+      unknown
+    >
     const speciesId = this.generateSpeciesId()
 
     let baselineTraits: GeneticTraits

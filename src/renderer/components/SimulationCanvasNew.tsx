@@ -50,7 +50,6 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
   const lastFrameTimeRef = useRef<number>(0)
   const fpsRef = useRef<number>(60)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
-  const previousAgentCountRef = useRef<number>(0)
 
   const spawnCustomAgent = useCallback(
     (
@@ -201,7 +200,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     const context = canvas.getContext('2d')
     if (!context) return
 
-    const resizeCanvas = () => {
+    const resizeCanvas = (): void => {
       const container = canvas.parentElement
       if (container) {
         canvas.width = container.clientWidth
@@ -215,29 +214,29 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     resizeCanvas()
     window.addEventListener('resize', resizeCanvas)
 
-    const resizeObserver = new ResizeObserver(() => {
+    const resizeObserver = new ResizeObserver((): void => {
       resizeCanvas()
     })
     resizeObserver.observe(canvas.parentElement || canvas)
     context.imageSmoothingEnabled = true
 
     // Mouse event handlers for camera control
-    const handleMouseDown = (e: MouseEvent) => {
+    const handleMouseDown = (e: MouseEvent): void => {
       if (e.button === 1 || e.button === 2 || (e.button === 0 && e.ctrlKey)) {
         e.preventDefault()
         cameraRef.current.startDrag(e.clientX, e.clientY)
       }
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: MouseEvent): void => {
       cameraRef.current.drag(e.clientX, e.clientY)
     }
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (): void => {
       cameraRef.current.stopDrag()
     }
 
-    const handleWheel = (e: WheelEvent) => {
+    const handleWheel = (e: WheelEvent): void => {
       e.preventDefault()
       const rect = canvas.getBoundingClientRect()
       const mouseX = e.clientX - rect.left
@@ -245,7 +244,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       cameraRef.current.zoomAt(mouseX, mouseY, -e.deltaY, canvas.width, canvas.height)
     }
 
-    const handleClick = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent): void => {
       if (e.ctrlKey) return // Skip if panning
 
       const rect = canvas.getBoundingClientRect()
@@ -297,7 +296,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     let lastTouchY = 0
     let isPanning = false
 
-    const handleTouchStart = (e: TouchEvent) => {
+    const handleTouchStart = (e: TouchEvent): void => {
       if (e.touches.length === 2) {
         // Pinch to zoom
         const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -313,7 +312,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       }
     }
 
-    const handleTouchMove = (e: TouchEvent) => {
+    const handleTouchMove = (e: TouchEvent): void => {
       e.preventDefault()
 
       if (e.touches.length === 2) {
@@ -341,7 +340,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       }
     }
 
-    const handleTouchEnd = (e: TouchEvent) => {
+    const handleTouchEnd = (e: TouchEvent): void => {
       if (e.touches.length === 0) {
         cameraRef.current.stopDrag()
         isPanning = false
@@ -390,7 +389,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     canvas.addEventListener('contextmenu', (e) => e.preventDefault())
 
     // Keyboard events for trails toggle and placement cancel
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key.toLowerCase() === 'r') {
         Agent.trailsEnabled = !Agent.trailsEnabled
       }
@@ -406,7 +405,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
 
-    return () => {
+    return (): void => {
       window.removeEventListener('resize', resizeCanvas)
       resizeObserver.disconnect()
       canvas.removeEventListener('mousedown', handleMouseDown)
@@ -435,7 +434,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
     agentsRef.current = []
     foodRef.current = []
 
-    const { AgentCount, FoodSettings, ClusterSettings } = config
+    const { AgentCount, FoodSettings } = config
     const speciesManager = evolutionRef.current.speciesManager
     const clusters = clusterManager.getClusters()
     console.log(
@@ -585,7 +584,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       })
     }
 
-    const animate = (currentTime: number) => {
+    const animate = (currentTime: number): void => {
       const canvas = canvasRef.current
       const context = canvas?.getContext('2d')
       if (!canvas || !context) return
@@ -751,7 +750,7 @@ export const SimulationCanvasNew: React.FC<SimulationCanvasProps> = ({
       stopAnimation()
     }
 
-    return () => stopAnimation()
+    return (): void => stopAnimation()
   }, [isRunning, startAnimation, stopAnimation])
 
   return (
