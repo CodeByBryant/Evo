@@ -180,7 +180,6 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({
   allAgents = [],
   agentHistory = new Map(),
   onAgentSelect,
-  screenPosition,
   resetKey
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -242,7 +241,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({
     }
   }, [selectedAgent, sizeMode])
 
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent): void => {
     if (
       (e.target as HTMLElement).closest('.dna-panel-header') &&
       !(e.target as HTMLElement).closest('button')
@@ -274,7 +273,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({
     setIsDragging(false)
   }, [])
 
-  const handleResizeStart = (e: React.MouseEvent) => {
+  const handleResizeStart = (e: React.MouseEvent): void => {
     e.preventDefault()
     e.stopPropagation()
     setIsResizing(true)
@@ -315,7 +314,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({
       window.addEventListener('touchmove', handleDragMove)
       window.addEventListener('mouseup', handleDragEnd)
       window.addEventListener('touchend', handleDragEnd)
-      return () => {
+      return (): void => {
         window.removeEventListener('mousemove', handleDragMove)
         window.removeEventListener('touchmove', handleDragMove)
         window.removeEventListener('mouseup', handleDragEnd)
@@ -328,7 +327,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({
     if (isResizing) {
       window.addEventListener('mousemove', handleResizeMove)
       window.addEventListener('mouseup', handleResizeEnd)
-      return () => {
+      return (): void => {
         window.removeEventListener('mousemove', handleResizeMove)
         window.removeEventListener('mouseup', handleResizeEnd)
       }
@@ -347,7 +346,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({
 
     let animationFrameId: number
 
-    const drawDoubleHelix = () => {
+    const drawDoubleHelix = (): void => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       const centerX = canvas.width / 2
@@ -407,7 +406,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({
 
     drawDoubleHelix()
 
-    return () => {
+    return (): void => {
       cancelAnimationFrame(animationFrameId)
     }
   }, [selectedAgent, activeTab])
@@ -651,7 +650,7 @@ export const DNAPanel: React.FC<DNAPanelProps> = ({
                 <div className="info-item">
                   <span className="label">Body Shape:</span>
                   <span className="value">
-                    {(() => {
+                    {((): string => {
                       const sides = Math.round(selectedAgent.geneticTraits.bodyShape ?? 3)
                       const names: { [k: number]: string } = {
                         3: 'Triangle',

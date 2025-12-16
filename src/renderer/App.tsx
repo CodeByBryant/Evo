@@ -13,7 +13,9 @@ import AgentConfigData from './core/utilities/AgentConfig.json'
 import { loadEvolutionConfig } from './core/utilities/loadConfig'
 
 export const App: React.FC = () => {
-  const [config, setConfig] = useState<SimulationConfig>(AgentConfigData as any as SimulationConfig)
+  const [config, setConfig] = useState<SimulationConfig>(
+    AgentConfigData as unknown as SimulationConfig
+  )
   const [isRunning, setIsRunning] = useState(true)
   const [speed, setSpeed] = useState(1)
   const [stats, setStats] = useState<SimulationStats>({
@@ -32,8 +34,7 @@ export const App: React.FC = () => {
   const [currentAgents, setCurrentAgents] = useState<Agent[]>([])
   const [agentHistory, setAgentHistory] = useState<Map<string, Agent>>(new Map())
   const [loadedAgents, setLoadedAgents] = useState<Agent[] | null>(null)
-  const [showHelp, setShowHelp] = useState(false)
-  const [evolutionConfig, setEvolutionConfig] = useState<EvolutionConfig>(loadEvolutionConfig())
+  const [evolutionConfig] = useState<EvolutionConfig>(loadEvolutionConfig())
   const [placementMode, setPlacementMode] = useState(false)
   const [pendingAgentTraits, setPendingAgentTraits] = useState<GeneticTraits | null>(null)
   const [showAgentBuilder, setShowAgentBuilder] = useState(false)
@@ -42,7 +43,7 @@ export const App: React.FC = () => {
 
   // Keyboard shortcuts
   React.useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const handleKeyPress = (e: KeyboardEvent): void => {
       // Spacebar to pause/play
       if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const target = e.target as HTMLElement
@@ -59,7 +60,7 @@ export const App: React.FC = () => {
     }
 
     window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
+    return (): void => window.removeEventListener('keydown', handleKeyPress)
   }, [selectedAgent])
 
   const handleToggleRunning = useCallback(() => {
@@ -155,11 +156,6 @@ export const App: React.FC = () => {
     console.log(`[App] Loading ${agents.length} agents from save`)
     setLoadedAgents(agents)
     setResetKey((prev) => prev + 1)
-  }, [])
-
-  const handleEvolutionConfigChange = useCallback((newConfig: EvolutionConfig) => {
-    console.log('[App] Evolution config updated:', newConfig)
-    setEvolutionConfig(newConfig)
   }, [])
 
   const handleSpawnAgent = useCallback(

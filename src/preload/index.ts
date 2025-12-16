@@ -2,12 +2,13 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
-  setFullscreen: (fullscreen: boolean) => ipcRenderer.invoke('set-fullscreen', fullscreen),
-  getFullscreenState: () => ipcRenderer.invoke('get-fullscreen-state'),
-  toggleFullscreen: () => ipcRenderer.invoke('toggle-fullscreen'),
-  maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
-  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
-  closeWindow: () => ipcRenderer.invoke('close-window')
+  setFullscreen: (fullscreen: boolean): Promise<unknown> =>
+    ipcRenderer.invoke('set-fullscreen', fullscreen),
+  getFullscreenState: (): Promise<unknown> => ipcRenderer.invoke('get-fullscreen-state'),
+  toggleFullscreen: (): Promise<unknown> => ipcRenderer.invoke('toggle-fullscreen'),
+  maximizeWindow: (): Promise<unknown> => ipcRenderer.invoke('maximize-window'),
+  minimizeWindow: (): Promise<unknown> => ipcRenderer.invoke('minimize-window'),
+  closeWindow: (): Promise<unknown> => ipcRenderer.invoke('close-window')
 }
 
 if (process.contextIsolated) {

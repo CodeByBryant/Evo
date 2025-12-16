@@ -52,7 +52,10 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
   onSpawnAgent
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const config = (AgentConfigData as any).GeneticTraits
+  const config = (AgentConfigData as Record<string, unknown>).GeneticTraits as Record<
+    string,
+    unknown
+  >
 
   const [traits, setTraits] = useState<GeneticTraits>({
     size: config.size.default,

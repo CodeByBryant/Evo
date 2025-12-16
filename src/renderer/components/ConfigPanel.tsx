@@ -9,7 +9,7 @@ interface ConfigPanelProps {
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => {
   const [collapsed, setCollapsed] = useState(true)
 
-  const updateConfig = (updates: Partial<SimulationConfig>) => {
+  const updateConfig = (updates: Partial<SimulationConfig>): void => {
     onConfigChange({ ...config, ...updates })
   }
 

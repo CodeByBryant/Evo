@@ -221,7 +221,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     (nodeId: string, nodesMap: Map<string, FamilyTreeNode>): Set<string> => {
       const lineage = new Set<string>()
 
-      const getAncestors = (id: string, visited = new Set<string>()) => {
+      const getAncestors = (id: string, visited = new Set<string>()): void => {
         if (visited.has(id)) return
         visited.add(id)
         lineage.add(id)
@@ -235,7 +235,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         }
       }
 
-      const getDescendants = (id: string, visited = new Set<string>()) => {
+      const getDescendants = (id: string, visited = new Set<string>()): void => {
         if (visited.has(id)) return
         visited.add(id)
         lineage.add(id)
@@ -310,7 +310,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     const interval = setInterval(() => {
       setAnimationFrame((f) => (f + 1) % 360)
     }, 50)
-    return () => clearInterval(interval)
+    return (): void => clearInterval(interval)
   }, [])
 
   const lineageSet = useMemo(() => {
@@ -467,7 +467,6 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         if (!parentNode || !parentPos) return
 
         const isInLineage = lineageSet.has(node.id) && lineageSet.has(parentId)
-        const isSelected = selectedAgent?.id === node.id || selectedAgent?.id === parentId
 
         // Calculate mutation count for edge coloring
         const traitDiff = calculateTraitDifferences(parentNode.geneticTraits, node.geneticTraits)
@@ -742,7 +741,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     const minimap = minimapRef.current
     if (!canvas) return
 
-    const resizeCanvas = () => {
+    const resizeCanvas = (): void => {
       canvas.width = canvas.offsetWidth
       canvas.height = canvas.offsetHeight
       if (minimap) {
@@ -755,7 +754,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
 
     resizeCanvas()
     window.addEventListener('resize', resizeCanvas)
-    return () => window.removeEventListener('resize', resizeCanvas)
+    return (): void => window.removeEventListener('resize', resizeCanvas)
   }, [renderTree, renderMinimap])
 
   const getNodeAtPosition = useCallback(
@@ -791,12 +790,12 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     [nodes, viewOffset, zoom, calculatePositions]
   )
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent): void => {
     setIsDragging(true)
     setDragStart({ x: e.clientX - viewOffset.x, y: e.clientY - viewOffset.y })
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent): void => {
     if (isDragging) {
       setViewOffset({
         x: e.clientX - dragStart.x,
@@ -817,7 +816,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     }
   }
 
-  const handleMouseUp = (e: React.MouseEvent) => {
+  const handleMouseUp = (e: React.MouseEvent): void => {
     if (
       !isDragging ||
       (Math.abs(e.clientX - dragStart.x - viewOffset.x) < 5 &&
@@ -837,7 +836,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     setIsDragging(false)
   }
 
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent): void => {
     e.preventDefault()
     const delta = e.deltaY > 0 ? 0.9 : 1.1
     setZoom((prev) => Math.max(0.1, Math.min(4, prev * delta)))
@@ -860,7 +859,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     }
   }
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: React.TouchEvent): void => {
     e.preventDefault()
 
     if (e.touches.length === 1) {
@@ -876,7 +875,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     }
   }
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent): void => {
     e.preventDefault()
 
     if (e.touches.length === 1 && isDragging) {
@@ -905,7 +904,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
     }
   }
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = (e: React.TouchEvent): void => {
     if (e.touches.length === 0) {
       if (touchStartPos && !lastTouchDistance) {
         const touch = e.changedTouches[0]
@@ -1171,7 +1170,7 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
 
         {hoveredNode &&
           !isDragging &&
-          (() => {
+          ((): number | JSX.Element => {
             const parentNode =
               hoveredNode.parentIds.length > 0 ? nodes.get(hoveredNode.parentIds[0]) : null
             const traitDiff = parentNode
