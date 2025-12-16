@@ -4,8 +4,6 @@ Learn how to use all of Evo's features to create and observe evolving AI agents.
 
 ## Interface Overview
 
-![Evo Interface](https://raw.githubusercontent.com/CodeByBryant/Evo/main/docs/images/interface.png)
-
 The interface consists of:
 - **Main Canvas**: Where the simulation runs
 - **Sidebar**: Controls and statistics

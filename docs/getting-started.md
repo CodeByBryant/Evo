@@ -94,8 +94,26 @@ See the [User Guide](./user-guide.md) for detailed instructions on all features.
 ### Common Issues
 
 **Port 5000 already in use**
+
+On macOS/Linux:
 ```bash
-# Kill the process using port 5000 or change the port in vite.config.ts
+# Find and kill the process using port 5000
+lsof -ti:5000 | xargs kill -9
+```
+
+On Windows:
+```bash
+# Find the process
+netstat -ano | findstr :5000
+# Kill the process (replace PID with the actual process ID)
+taskkill /PID <PID> /F
+```
+
+Alternatively, you can change the port in `vite.config.ts`:
+```typescript
+server: {
+  port: 3000,  // Change to a different port
+}
 ```
 
 **Build fails on Windows**
