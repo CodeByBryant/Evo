@@ -25,7 +25,13 @@ interface CollapsibleSectionProps {
   children: React.ReactNode
 }
 
-const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, icon, isOpen, onToggle, children }) => {
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
+  title,
+  icon,
+  isOpen,
+  onToggle,
+  children
+}) => {
   return (
     <div className="trait-section">
       <button className="section-header" onClick={onToggle}>
@@ -47,7 +53,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const config = (AgentConfigData as any).GeneticTraits
-  
+
   const [traits, setTraits] = useState<GeneticTraits>({
     size: config.size.default,
     movementSpeed: config.movementSpeed.default,
@@ -85,11 +91,11 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
   const [spawnedSpeciesId, setSpawnedSpeciesId] = useState<string | null>(null)
 
   const toggleSection = useCallback((section: string) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }, [])
 
   const updateTrait = useCallback((key: keyof GeneticTraits, value: number | boolean) => {
-    setTraits(prev => ({ ...prev, [key]: value }))
+    setTraits((prev) => ({ ...prev, [key]: value }))
   }, [])
 
   const handleSpawn = useCallback(() => {
@@ -136,7 +142,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
         turnRate: 0.1
       }
     }
-    setTraits(prev => ({ ...prev, ...presets[preset] }))
+    setTraits((prev) => ({ ...prev, ...presets[preset] }))
   }, [])
 
   const resetSpeciesId = useCallback(() => {
@@ -146,32 +152,32 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !isOpen) return
-    
+
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    
+
     const width = canvas.width
     const height = canvas.height
     const centerX = width / 2
     const centerY = height / 2
-    
+
     ctx.fillStyle = '#0a0a0f'
     ctx.fillRect(0, 0, width, height)
-    
+
     const sides = Math.round(traits.bodyShape)
     const radius = traits.size * 0.9
     const hue = traits.hue
-    
+
     ctx.save()
     ctx.translate(centerX, centerY)
-    
+
     const rayCount = Math.round(traits.sensorRayCount)
     const fov = (traits.fieldOfView * Math.PI) / 180
     const rayLength = traits.sensorRayLength * 0.5
-    
+
     ctx.strokeStyle = `hsla(${hue}, 70%, 60%, 0.3)`
     ctx.lineWidth = 1
-    
+
     for (let i = 0; i < rayCount; i++) {
       const angle = -Math.PI / 2 + (i - (rayCount - 1) / 2) * (fov / Math.max(rayCount - 1, 1))
       ctx.beginPath()
@@ -179,10 +185,10 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
       ctx.lineTo(Math.cos(angle) * rayLength, Math.sin(angle) * rayLength)
       ctx.stroke()
     }
-    
+
     ctx.beginPath()
     for (let i = 0; i < sides; i++) {
-      const angle = (i * 2 * Math.PI / sides) - Math.PI / 2
+      const angle = (i * 2 * Math.PI) / sides - Math.PI / 2
       const x = Math.cos(angle) * radius
       const y = Math.sin(angle) * radius
       if (i === 0) {
@@ -192,36 +198,35 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
       }
     }
     ctx.closePath()
-    
+
     ctx.fillStyle = `hsl(${hue}, 60%, 50%)`
     ctx.fill()
     ctx.strokeStyle = `hsl(${hue}, 60%, 35%)`
     ctx.lineWidth = 2
     ctx.stroke()
-    
+
     const eyeSize = radius * 0.15
     const eyeOffset = radius * 0.25
     const eyeY = -radius * 0.2
-    
+
     ctx.fillStyle = '#0a0a0f'
     ctx.beginPath()
     ctx.arc(-eyeOffset, eyeY, eyeSize, 0, Math.PI * 2)
     ctx.arc(eyeOffset, eyeY, eyeSize, 0, Math.PI * 2)
     ctx.fill()
-    
+
     ctx.fillStyle = traits.colorVision ? '#ff44ff' : '#4ade80'
     ctx.beginPath()
     ctx.arc(-eyeOffset, eyeY, eyeSize * 0.5, 0, Math.PI * 2)
     ctx.arc(eyeOffset, eyeY, eyeSize * 0.5, 0, Math.PI * 2)
     ctx.fill()
-    
+
     ctx.restore()
-    
+
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
     ctx.font = '11px Inter, system-ui, sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText(SHAPE_NAMES[sides] || `${sides}-gon`, centerX, height - 10)
-    
   }, [traits, isOpen])
 
   useEffect(() => {
@@ -240,20 +245,23 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
           <i className="bi bi-x-lg"></i>
         </button>
       </div>
-      
+
       <div className="agent-builder-content">
-        <canvas 
-          ref={canvasRef} 
-          width={160} 
-          height={160} 
-          className="agent-preview-canvas"
-        />
-        
+        <canvas ref={canvasRef} width={160} height={160} className="agent-preview-canvas" />
+
         <div className="preset-buttons">
-          <button className="preset-btn" onClick={() => applyPreset('fast')}>Fast</button>
-          <button className="preset-btn" onClick={() => applyPreset('tank')}>Tank</button>
-          <button className="preset-btn" onClick={() => applyPreset('scout')}>Scout</button>
-          <button className="preset-btn" onClick={() => applyPreset('hunter')}>Hunter</button>
+          <button className="preset-btn" onClick={() => applyPreset('fast')}>
+            Fast
+          </button>
+          <button className="preset-btn" onClick={() => applyPreset('tank')}>
+            Tank
+          </button>
+          <button className="preset-btn" onClick={() => applyPreset('scout')}>
+            Scout
+          </button>
+          <button className="preset-btn" onClick={() => applyPreset('hunter')}>
+            Hunter
+          </button>
         </div>
 
         <div className="traits-container">
@@ -277,7 +285,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('bodyShape', parseInt(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Size</span>
@@ -292,16 +300,21 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('size', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Color</span>
-                <span className="value" style={{ 
-                  backgroundColor: `hsl(${traits.hue}, 60%, 50%)`,
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  color: traits.hue > 50 && traits.hue < 200 ? '#000' : '#fff'
-                }}>{traits.hue}°</span>
+                <span
+                  className="value"
+                  style={{
+                    backgroundColor: `hsl(${traits.hue}, 60%, 50%)`,
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    color: traits.hue > 50 && traits.hue < 200 ? '#000' : '#fff'
+                  }}
+                >
+                  {traits.hue}°
+                </span>
               </label>
               <input
                 type="range"
@@ -334,7 +347,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('movementSpeed', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Acceleration</span>
@@ -349,7 +362,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('acceleration', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Turn Rate</span>
@@ -364,7 +377,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('turnRate', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Drag</span>
@@ -401,7 +414,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('sensorRayCount', parseInt(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Ray Length</span>
@@ -416,7 +429,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('sensorRayLength', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Precision</span>
@@ -431,7 +444,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('sensorPrecision', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Field of View</span>
@@ -446,7 +459,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('fieldOfView', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-toggle">
               <label>
                 <span>Color Vision</span>
@@ -481,7 +494,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('energyEfficiency', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Digestion Rate</span>
@@ -496,7 +509,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('digestionRate', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Max Capacity</span>
@@ -533,7 +546,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('mutationRate', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Repro Threshold</span>
@@ -548,7 +561,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('reproductionThreshold', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Offspring Count</span>
@@ -585,7 +598,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('learningRate', parseFloat(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Memory Neurons</span>
@@ -600,7 +613,7 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
                 onChange={(e) => updateTrait('memoryNeurons', parseInt(e.target.value))}
               />
             </div>
-            
+
             <div className="trait-slider">
               <label>
                 <span>Aggression</span>
@@ -622,7 +635,9 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
           <div className="multi-place-toggle">
             <label>
               <span>Multi-place Mode</span>
-              <span className="hint">{multiPlace ? 'Click multiple times to spawn' : 'Single spawn'}</span>
+              <span className="hint">
+                {multiPlace ? 'Click multiple times to spawn' : 'Single spawn'}
+              </span>
             </label>
             <button
               className={`toggle-btn ${multiPlace ? 'active' : ''}`}
@@ -639,21 +654,25 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
           {multiPlace && spawnedSpeciesId && (
             <div className="species-info">
               <span>Species: {spawnedSpeciesId.substring(0, 8)}</span>
-              <button className="reset-species-btn" onClick={resetSpeciesId} title="Reset species ID for next batch">
+              <button
+                className="reset-species-btn"
+                onClick={resetSpeciesId}
+                title="Reset species ID for next batch"
+              >
                 <i className="bi bi-arrow-counterclockwise"></i>
               </button>
             </div>
           )}
         </div>
-        
+
         <button className="spawn-btn" onClick={handleSpawn}>
           <i className="bi bi-plus-circle" style={{ marginRight: '6px' }}></i>
           {multiPlace ? 'Start Placing' : 'Spawn Agent'}
         </button>
-        
+
         <p className="spawn-hint">
-          {multiPlace 
-            ? 'Click anywhere on the canvas to place agents. All will share the same species.' 
+          {multiPlace
+            ? 'Click anywhere on the canvas to place agents. All will share the same species.'
             : 'Click anywhere on the canvas to place your agent'}
         </p>
       </div>

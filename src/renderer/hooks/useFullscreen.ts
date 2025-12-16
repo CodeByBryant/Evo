@@ -25,7 +25,7 @@ export interface UseFullscreenResult {
 
 export const useFullscreen = (): UseFullscreenResult => {
   const [isFullscreen, setIsFullscreen] = useState(false)
-  
+
   const electronAPI = getElectronAPI()
   const isElectron = electronAPI?.ipcRenderer !== undefined
 
@@ -49,18 +49,21 @@ export const useFullscreen = (): UseFullscreenResult => {
 
   useEffect(() => {
     const electron = getElectronAPI()
-    
+
     if (isElectron && electron?.ipcRenderer) {
       const handleFullscreenChange = (_event: unknown, fullscreen: unknown) => {
         setIsFullscreen(fullscreen as boolean)
       }
-      
+
       electron.ipcRenderer.on('fullscreen-changed', handleFullscreenChange)
-      
-      electron.ipcRenderer.invoke('get-fullscreen-state').then((state) => {
-        setIsFullscreen(state as boolean)
-      }).catch(() => {})
-      
+
+      electron.ipcRenderer
+        .invoke('get-fullscreen-state')
+        .then((state) => {
+          setIsFullscreen(state as boolean)
+        })
+        .catch(() => {})
+
       return () => {
         electron.ipcRenderer?.removeListener('fullscreen-changed', handleFullscreenChange)
       }
@@ -69,9 +72,9 @@ export const useFullscreen = (): UseFullscreenResult => {
       document.addEventListener('webkitfullscreenchange', checkFullscreen)
       document.addEventListener('mozfullscreenchange', checkFullscreen)
       document.addEventListener('MSFullscreenChange', checkFullscreen)
-      
+
       checkFullscreen()
-      
+
       return () => {
         document.removeEventListener('fullscreenchange', checkFullscreen)
         document.removeEventListener('webkitfullscreenchange', checkFullscreen)
@@ -92,7 +95,7 @@ export const useFullscreen = (): UseFullscreenResult => {
           mozRequestFullScreen?: () => Promise<void>
           msRequestFullscreen?: () => Promise<void>
         }
-        
+
         if (elem.requestFullscreen) {
           await elem.requestFullscreen()
         } else if (elem.webkitRequestFullscreen) {
@@ -120,7 +123,7 @@ export const useFullscreen = (): UseFullscreenResult => {
           mozCancelFullScreen?: () => Promise<void>
           msExitFullscreen?: () => Promise<void>
         }
-        
+
         if (document.exitFullscreen) {
           await document.exitFullscreen()
         } else if (doc.webkitExitFullscreen) {

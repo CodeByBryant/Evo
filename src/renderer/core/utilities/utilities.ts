@@ -49,7 +49,7 @@ export namespace Utilities {
     b = Math.min(255, Math.round(b * (1 + percentage)))
 
     // Convert RGB back to hex
-    let newHex: string =
+    const newHex: string =
       '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()
 
     return newHex

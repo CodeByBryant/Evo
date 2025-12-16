@@ -36,16 +36,12 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange
               min="1"
               max="50"
               value={config.AgentCount}
-              onChange={(e) =>
-                updateConfig({ AgentCount: parseInt(e.target.value) })
-              }
+              onChange={(e) => updateConfig({ AgentCount: parseInt(e.target.value) })}
             />
           </div>
 
           <div className="mb-3">
-            <label className="form-label">
-              Movement Speed: {config.MovementSpeed.toFixed(1)}
-            </label>
+            <label className="form-label">Movement Speed: {config.MovementSpeed.toFixed(1)}</label>
             <input
               type="range"
               className="form-range"
@@ -53,16 +49,12 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange
               max="5"
               step="0.1"
               value={config.MovementSpeed}
-              onChange={(e) =>
-                updateConfig({ MovementSpeed: parseFloat(e.target.value) })
-              }
+              onChange={(e) => updateConfig({ MovementSpeed: parseFloat(e.target.value) })}
             />
           </div>
 
           <div className="mb-3">
-            <label className="form-label">
-              Rotation Speed: {config.RotationSpeed.toFixed(2)}
-            </label>
+            <label className="form-label">Rotation Speed: {config.RotationSpeed.toFixed(2)}</label>
             <input
               type="range"
               className="form-range"
@@ -70,16 +62,12 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange
               max="0.5"
               step="0.01"
               value={config.RotationSpeed}
-              onChange={(e) =>
-                updateConfig({ RotationSpeed: parseFloat(e.target.value) })
-              }
+              onChange={(e) => updateConfig({ RotationSpeed: parseFloat(e.target.value) })}
             />
           </div>
 
           <div className="mb-3">
-            <label className="form-label">
-              Sensor Rays: {config.Sensor.RayCount}
-            </label>
+            <label className="form-label">Sensor Rays: {config.Sensor.RayCount}</label>
             <input
               type="range"
               className="form-range"
@@ -95,9 +83,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange
           </div>
 
           <div className="mb-3">
-            <label className="form-label">
-              Sensor Length: {config.Sensor.RayLength}
-            </label>
+            <label className="form-label">Sensor Length: {config.Sensor.RayLength}</label>
             <input
               type="range"
               className="form-range"

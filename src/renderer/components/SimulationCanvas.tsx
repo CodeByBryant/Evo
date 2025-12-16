@@ -22,34 +22,33 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   const lastFrameTimeRef = useRef<number>(0)
   const fpsRef = useRef<number>(60)
 
-  const drawIsometricGrid = useCallback((
-    context: CanvasRenderingContext2D,
-    width: number,
-    height: number
-  ) => {
-    const gridSize = 50
-    const lineColor = '#111111'
+  const drawIsometricGrid = useCallback(
+    (context: CanvasRenderingContext2D, width: number, height: number) => {
+      const gridSize = 50
+      const lineColor = '#111111'
 
-    context.strokeStyle = lineColor
-    context.lineWidth = 0.3
-    context.globalAlpha = 0.3
+      context.strokeStyle = lineColor
+      context.lineWidth = 0.3
+      context.globalAlpha = 0.3
 
-    for (let x = 0; x < width; x += gridSize) {
-      context.beginPath()
-      context.moveTo(x, 0)
-      context.lineTo(x, height)
-      context.stroke()
-    }
+      for (let x = 0; x < width; x += gridSize) {
+        context.beginPath()
+        context.moveTo(x, 0)
+        context.lineTo(x, height)
+        context.stroke()
+      }
 
-    for (let y = 0; y < height; y += gridSize) {
-      context.beginPath()
-      context.moveTo(0, y)
-      context.lineTo(width, y)
-      context.stroke()
-    }
+      for (let y = 0; y < height; y += gridSize) {
+        context.beginPath()
+        context.moveTo(0, y)
+        context.lineTo(width, y)
+        context.stroke()
+      }
 
-    context.globalAlpha = 1.0
-  }, [])
+      context.globalAlpha = 1.0
+    },
+    []
+  )
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -99,22 +98,25 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     initializeSimulation()
   }, [initializeSimulation])
 
-  const handleFoodCollisions = useCallback((canvas: HTMLCanvasElement) => {
-    for (const agent of agentsRef.current) {
-      const eatenFood = agent.checkFoodCollision(foodRef.current)
-      if (eatenFood && config.FoodSettings.RespawnOnEat) {
-        const index = foodRef.current.indexOf(eatenFood)
-        if (index !== -1) {
-          foodRef.current[index] = new Food(
-            Math.random() * canvas.width,
-            Math.random() * canvas.height
-          )
+  const handleFoodCollisions = useCallback(
+    (canvas: HTMLCanvasElement) => {
+      for (const agent of agentsRef.current) {
+        const eatenFood = agent.checkFoodCollision(foodRef.current)
+        if (eatenFood && config.FoodSettings.RespawnOnEat) {
+          const index = foodRef.current.indexOf(eatenFood)
+          if (index !== -1) {
+            foodRef.current[index] = new Food(
+              Math.random() * canvas.width,
+              Math.random() * canvas.height
+            )
+          }
+          agent.energy = Math.min(100, agent.energy + 20)
+          agent.fitness += 1
         }
-        agent.energy = Math.min(100, agent.energy + 20)
-        agent.fitness += 1
       }
-    }
-  }, [config.FoodSettings.RespawnOnEat])
+    },
+    [config.FoodSettings.RespawnOnEat]
+  )
 
   const startAnimation = useCallback(() => {
     if (onStatsUpdate) {

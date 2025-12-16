@@ -38,9 +38,9 @@ export const StatsChart: React.FC<StatsChartProps> = ({ stats, width = 400, heig
     if (stats.length < 2) return
 
     // Calculate scales
-    const maxGen = Math.max(...stats.map(s => s.generation))
-    const maxPop = Math.max(...stats.map(s => s.population), 1)
-    const maxFitness = Math.max(...stats.map(s => s.maxFitness), 1)
+    const maxGen = Math.max(...stats.map((s) => s.generation))
+    const maxPop = Math.max(...stats.map((s) => s.population), 1)
+    const maxFitness = Math.max(...stats.map((s) => s.maxFitness), 1)
 
     const xScale = width / Math.max(maxGen, 1)
     const yScalePop = (height * 0.4) / maxPop
@@ -74,10 +74,9 @@ export const StatsChart: React.FC<StatsChartProps> = ({ stats, width = 400, heig
     ctx.fillStyle = '#00ff88'
     ctx.font = '10px monospace'
     ctx.fillText('Population', 10, 15)
-    
+
     ctx.fillStyle = '#ff8800'
     ctx.fillText('Max Fitness', 10, 30)
-
   }, [stats, width, height])
 
   return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto' }} />

@@ -37,34 +37,54 @@ export class Camera {
     this.isDragging = false
   }
 
-  public zoomAt(mouseX: number, mouseY: number, delta: number, canvasWidth: number, canvasHeight: number): void {
+  public zoomAt(
+    mouseX: number,
+    mouseY: number,
+    delta: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): void {
     const zoomFactor = delta > 0 ? 1.1 : 0.9
     const newZoom = Math.max(0.1, Math.min(5, this.zoom * zoomFactor))
-    
+
     // Zoom towards mouse position
     const worldX = (mouseX - canvasWidth / 2) / this.zoom + this.x
     const worldY = (mouseY - canvasHeight / 2) / this.zoom + this.y
-    
+
     this.zoom = newZoom
-    
+
     this.x = worldX - (mouseX - canvasWidth / 2) / this.zoom
     this.y = worldY - (mouseY - canvasHeight / 2) / this.zoom
   }
 
-  public applyTransform(context: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number): void {
+  public applyTransform(
+    context: CanvasRenderingContext2D,
+    canvasWidth: number,
+    canvasHeight: number
+  ): void {
     context.translate(canvasWidth / 2, canvasHeight / 2)
     context.scale(this.zoom, this.zoom)
     context.translate(-this.x, -this.y)
   }
 
-  public screenToWorld(screenX: number, screenY: number, canvasWidth: number, canvasHeight: number): { x: number; y: number } {
+  public screenToWorld(
+    screenX: number,
+    screenY: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): { x: number; y: number } {
     return {
       x: (screenX - canvasWidth / 2) / this.zoom + this.x,
       y: (screenY - canvasHeight / 2) / this.zoom + this.y
     }
   }
 
-  public worldToScreen(worldX: number, worldY: number, canvasWidth: number, canvasHeight: number): { x: number; y: number } {
+  public worldToScreen(
+    worldX: number,
+    worldY: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): { x: number; y: number } {
     return {
       x: (worldX - this.x) * this.zoom + canvasWidth / 2,
       y: (worldY - this.y) * this.zoom + canvasHeight / 2

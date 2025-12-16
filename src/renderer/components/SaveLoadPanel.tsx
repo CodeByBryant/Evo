@@ -22,17 +22,19 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
     const saveData = {
       name,
       date: new Date().toISOString(),
-      data: JSON.stringify(agents.map(a => ({
-        position: a.position,
-        width: a.width,
-        height: a.height,
-        fitness: a.fitness,
-        energy: a.energy,
-        age: a.age,
-        generation: a.generation,
-        species: a.species,
-        genome: a.NeuralNetwork.getGenomeData()
-      })))
+      data: JSON.stringify(
+        agents.map((a) => ({
+          position: a.position,
+          width: a.width,
+          height: a.height,
+          fitness: a.fitness,
+          energy: a.energy,
+          age: a.age,
+          generation: a.generation,
+          species: a.species,
+          genome: a.NeuralNetwork.getGenomeData()
+        }))
+      )
     }
 
     const newSaves = [...saves, saveData]
@@ -53,7 +55,7 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
         agent.age = d.age
         agent.generation = d.generation
         agent.species = d.species
-        
+
         // Restore neural network weights from genome
         if (d.genome) {
           const genome = d.genome
@@ -69,7 +71,7 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
             }
           }
         }
-        
+
         return agent
       })
       console.log(`[SaveLoadPanel] Successfully loaded ${loadedAgents.length} agents`)
@@ -89,13 +91,17 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
 
   const handleExport = () => {
     console.log(`[SaveLoadPanel] Exporting ${agents.length} agents to JSON file`)
-    const dataStr = JSON.stringify(agents.map(a => ({
-      position: a.position,
-      fitness: a.fitness,
-      energy: a.energy,
-      genome: a.NeuralNetwork.getGenomeData()
-    })), null, 2)
-    
+    const dataStr = JSON.stringify(
+      agents.map((a) => ({
+        position: a.position,
+        fitness: a.fitness,
+        energy: a.energy,
+        genome: a.NeuralNetwork.getGenomeData()
+      })),
+      null,
+      2
+    )
+
     const blob = new Blob([dataStr], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -114,7 +120,7 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
     input.onchange = (e: any) => {
       const file = e.target.files[0]
       if (!file) return
-      
+
       console.log(`[SaveLoadPanel] Importing file: ${file.name}`)
       const reader = new FileReader()
       reader.onload = (e: any) => {
@@ -130,54 +136,87 @@ export const SaveLoadPanel: React.FC<SaveLoadPanelProps> = ({ agents, onLoad }) 
     }
     input.click()
   }
-  
+
   return (
     <div className="sidebar-section save-load-panel">
-      <div 
-        className="section-header" 
+      <div
+        className="section-header"
         onClick={() => setExpanded(!expanded)}
         style={{ cursor: 'pointer', marginBottom: expanded ? '0.75rem' : '0' }}
       >
         <h3 className="section-title">Save / Load</h3>
-        <i className={`bi bi-chevron-${expanded ? 'up' : 'down'}`} style={{ color: '#555', fontSize: '0.7rem' }}></i>
+        <i
+          className={`bi bi-chevron-${expanded ? 'up' : 'down'}`}
+          style={{ color: '#555', fontSize: '0.7rem' }}
+        ></i>
       </div>
-      
+
       {expanded && (
         <>
-          <div className="save-controls" style={{ display: 'flex', gap: '4px', marginBottom: '0.5rem' }}>
-            <button className="btn-control" onClick={handleSave} style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}>
+          <div
+            className="save-controls"
+            style={{ display: 'flex', gap: '4px', marginBottom: '0.5rem' }}
+          >
+            <button
+              className="btn-control"
+              onClick={handleSave}
+              style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
+            >
               Save
             </button>
-            <button className="btn-control" onClick={handleExport} style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}>
+            <button
+              className="btn-control"
+              onClick={handleExport}
+              style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
+            >
               Export
             </button>
-            <button className="btn-control" onClick={handleImport} style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}>
+            <button
+              className="btn-control"
+              onClick={handleImport}
+              style={{ flex: 1, fontSize: '0.65rem', padding: '4px' }}
+            >
               Import
             </button>
           </div>
-          
+
           {saves.length > 0 && (
             <div className="saves-list" style={{ maxHeight: '100px', overflowY: 'auto' }}>
               {saves.map((save, idx) => (
-                <div key={idx} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '0.35rem 0',
-                  borderBottom: '1px solid #1a1a1a',
-                  fontSize: '0.7rem'
-                }}>
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.35rem 0',
+                    borderBottom: '1px solid #1a1a1a',
+                    fontSize: '0.7rem'
+                  }}
+                >
                   <span style={{ color: '#888' }}>{save.name}</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <button 
+                    <button
                       onClick={() => handleLoad(save.data)}
-                      style={{ background: 'none', border: 'none', color: '#00ff88', cursor: 'pointer', padding: '2px' }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#00ff88',
+                        cursor: 'pointer',
+                        padding: '2px'
+                      }}
                     >
                       <i className="bi bi-play-fill"></i>
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(idx)}
-                      style={{ background: 'none', border: 'none', color: '#ff4444', cursor: 'pointer', padding: '2px' }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ff4444',
+                        cursor: 'pointer',
+                        padding: '2px'
+                      }}
                     >
                       <i className="bi bi-x"></i>
                     </button>

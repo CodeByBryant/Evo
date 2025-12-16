@@ -119,15 +119,18 @@ export const App: React.FC = () => {
     }
   }, [])
 
-  const handleAgentSelect = useCallback((agent: Agent | null, screenPos?: { x: number; y: number }) => {
-    if (agent) {
-      console.log(
-        `[App] Agent selected: ${agent.id.substring(0, 8)}, Species: ${agent.species.substring(0, 8)}`
-      )
-      setAgentScreenPos(screenPos || null)
-    }
-    setSelectedAgent(agent)
-  }, [])
+  const handleAgentSelect = useCallback(
+    (agent: Agent | null, screenPos?: { x: number; y: number }) => {
+      if (agent) {
+        console.log(
+          `[App] Agent selected: ${agent.id.substring(0, 8)}, Species: ${agent.species.substring(0, 8)}`
+        )
+        setAgentScreenPos(screenPos || null)
+      }
+      setSelectedAgent(agent)
+    },
+    []
+  )
 
   const handleCloseDNA = useCallback(() => {
     setSelectedAgent(null)
@@ -159,27 +162,33 @@ export const App: React.FC = () => {
     setEvolutionConfig(newConfig)
   }, [])
 
-  const handleSpawnAgent = useCallback((traits: GeneticTraits, multiPlace?: boolean, speciesId?: string) => {
-    console.log('[App] Spawning custom agent with placement mode, multiPlace:', multiPlace)
-    setPendingAgentTraits(traits)
-    setPlacementMode(true)
-    setMultiPlaceMode(multiPlace || false)
-    setMultiPlaceSpeciesId(speciesId || null)
-    setShowAgentBuilder(false)
-  }, [])
+  const handleSpawnAgent = useCallback(
+    (traits: GeneticTraits, multiPlace?: boolean, speciesId?: string) => {
+      console.log('[App] Spawning custom agent with placement mode, multiPlace:', multiPlace)
+      setPendingAgentTraits(traits)
+      setPlacementMode(true)
+      setMultiPlaceMode(multiPlace || false)
+      setMultiPlaceSpeciesId(speciesId || null)
+      setShowAgentBuilder(false)
+    },
+    []
+  )
 
-  const handlePlacementComplete = useCallback((newSpeciesId?: string) => {
-    console.log('[App] Agent placed successfully, multiPlaceMode:', multiPlaceMode)
-    if (multiPlaceMode) {
-      if (newSpeciesId && !multiPlaceSpeciesId) {
-        setMultiPlaceSpeciesId(newSpeciesId)
+  const handlePlacementComplete = useCallback(
+    (newSpeciesId?: string) => {
+      console.log('[App] Agent placed successfully, multiPlaceMode:', multiPlaceMode)
+      if (multiPlaceMode) {
+        if (newSpeciesId && !multiPlaceSpeciesId) {
+          setMultiPlaceSpeciesId(newSpeciesId)
+        }
+      } else {
+        setPlacementMode(false)
+        setPendingAgentTraits(null)
+        setMultiPlaceSpeciesId(null)
       }
-    } else {
-      setPlacementMode(false)
-      setPendingAgentTraits(null)
-      setMultiPlaceSpeciesId(null)
-    }
-  }, [multiPlaceMode, multiPlaceSpeciesId])
+    },
+    [multiPlaceMode, multiPlaceSpeciesId]
+  )
 
   const handleCancelPlacement = useCallback(() => {
     console.log('[App] Placement cancelled')
@@ -208,27 +217,38 @@ export const App: React.FC = () => {
         {/* Evolution Statistics */}
         <div className="sidebar-section evolution-stats">
           <h3 className="section-title">Evolution</h3>
-          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+          <div
+            className="stats-grid"
+            style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}
+          >
             <div className="stat" style={{ textAlign: 'center' }}>
-              <span className="stat-label" style={{ fontSize: '0.6rem' }}>Gen</span>
+              <span className="stat-label" style={{ fontSize: '0.6rem' }}>
+                Gen
+              </span>
               <span className="stat-value" style={{ color: '#00ff88', fontSize: '1rem' }}>
                 {stats.generation || 0}
               </span>
             </div>
             <div className="stat" style={{ textAlign: 'center' }}>
-              <span className="stat-label" style={{ fontSize: '0.6rem' }}>Species</span>
+              <span className="stat-label" style={{ fontSize: '0.6rem' }}>
+                Species
+              </span>
               <span className="stat-value" style={{ color: '#ff8800', fontSize: '1rem' }}>
                 {stats.speciesCount || 0}
               </span>
             </div>
             <div className="stat" style={{ textAlign: 'center' }}>
-              <span className="stat-label" style={{ fontSize: '0.6rem' }}>Avg Fit</span>
+              <span className="stat-label" style={{ fontSize: '0.6rem' }}>
+                Avg Fit
+              </span>
               <span className="stat-value" style={{ color: '#00ddff', fontSize: '1rem' }}>
                 {(stats.avgFitness || 0).toFixed(0)}
               </span>
             </div>
             <div className="stat" style={{ textAlign: 'center' }}>
-              <span className="stat-label" style={{ fontSize: '0.6rem' }}>Max Fit</span>
+              <span className="stat-label" style={{ fontSize: '0.6rem' }}>
+                Max Fit
+              </span>
               <span className="stat-value" style={{ color: '#ff00ff', fontSize: '1rem' }}>
                 {(stats.maxFitness || 0).toFixed(0)}
               </span>
@@ -249,13 +269,13 @@ export const App: React.FC = () => {
 
         {/* Agent Builder Button */}
         <div className="sidebar-section">
-          <button 
+          <button
             className="btn-control"
             onClick={() => setShowAgentBuilder(true)}
-            style={{ 
-              width: '100%', 
-              display: 'flex', 
-              alignItems: 'center', 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
               padding: '8px'
@@ -267,7 +287,14 @@ export const App: React.FC = () => {
         </div>
 
         {/* Controls hint - compact */}
-        <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+        <div
+          className="sidebar-footer"
+          style={{
+            borderTop: '1px solid var(--border)',
+            paddingTop: '0.75rem',
+            marginTop: '0.5rem'
+          }}
+        >
           <span style={{ color: '#666', fontSize: '0.6rem' }}>
             Click agent for DNA | Scroll to zoom | R = trails | Space = pause
           </span>
