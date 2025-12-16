@@ -2,13 +2,15 @@
 
 # 🧬 Evo
 
-**Neural Evolution Sandbox**
+<img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=28&duration=2800&pause=2000&color=A855F7&center=true&vCenter=true&width=700&lines=Neural+Evolution+Sandbox;Watch+AI+Evolve+in+Real-Time;Genetic+Algorithms+%7C+Neural+Networks;Infinite+World+Exploration" alt="Typing SVG" />
+
+**Experience the emergence of complex behaviors from simple rules, just like nature intended.**
 
 [![CI](https://github.com/CodeByBryant/Evo/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeByBryant/Evo/actions/workflows/ci.yml)
 [![Deploy](https://github.com/CodeByBryant/Evo/actions/workflows/deploy-web.yml/badge.svg)](https://github.com/CodeByBryant/Evo/actions/workflows/deploy-web.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 
 [**🎮 Play Online**](https://codebybryant.github.io/Evo/) • [**📥 Download**](https://github.com/CodeByBryant/Evo/releases) • [**📖 Documentation**](./docs/README.md)
 
@@ -16,39 +18,62 @@
 
 ---
 
-**Evo** is an advanced neural network-based evolutionary sandbox where AI agents evolve through natural selection. Agents navigate an **infinite 2D world**, sense their environment using raycasting, and make autonomous decisions using neural networks. Watch species emerge, compete for resources, and evolve over generations in real-time!
+## 🌟 About Evo
 
-Built with **React**, **TypeScript**, and **Electron**. Inspired by **Cell Lab**, **Thrive**, **The Life Engine**, and **Bionic Chaos Evolution**.
+> **Evo** is an advanced neural network-based evolutionary sandbox where AI agents evolve through natural selection.
+
+Agents navigate an **infinite 2D world**, sense their environment using raycasting, and make decisions through neural networks that evolve over generations. Watch species emerge, compete for resources, and evolve complex behaviors in real-time!
+
+```typescript
+const evo = {
+    type: "Neural Evolution Sandbox",
+    features: ["Genetic Algorithms", "Neural Networks", "Infinite World", "Species Tracking"],
+    inspiration: ["Cell Lab", "Thrive", "The Life Engine", "Bionic Chaos Evolution"],
+    goal: "Watch AI evolve complex behaviors from simple rules 🧬"
+};
+```
+
+---
 
 ## 🚀 Quick Start
 
-### Play Online (No Installation)
+<div align="center">
 
-👉 **[Launch Evo in Your Browser](https://codebybryant.github.io/Evo/)**
+### Play Online (No Installation Required)
 
-### Download Desktop App
+[![Play Now](https://img.shields.io/badge/🎮_Play_Evo_Now-Launch_in_Browser-blueviolet?style=for-the-badge)](https://codebybryant.github.io/Evo/)
+
+</div>
+
+### 📥 Download Desktop App
+
+<div align="center">
 
 | Platform | Download |
 |:--------:|:--------:|
-| **Windows** | [📥 Download .exe](https://github.com/CodeByBryant/Evo/releases/latest) |
-| **macOS** | [📥 Download .dmg](https://github.com/CodeByBryant/Evo/releases/latest) |
-| **Linux** | [📥 Download .AppImage](https://github.com/CodeByBryant/Evo/releases/latest) |
+| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white) | [📥 Download .exe](https://github.com/CodeByBryant/Evo/releases/latest) |
+| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white) | [📥 Download .dmg](https://github.com/CodeByBryant/Evo/releases/latest) |
+| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black) | [📥 Download .AppImage](https://github.com/CodeByBryant/Evo/releases/latest) |
+
+</div>
+
+---
 
 ## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
 
 ### 🧬 Evolution & Genetics
 - **Full Genetic Algorithm**: Reproduction, crossover, mutation, and natural selection
 - **Generational Evolution**: Watch populations evolve over hundreds of generations
 - **DNA Visualization**: Beautiful animated double helix showing agent genomes
 - **Species Tracking**: Automatic species identification with color coding
-- **Fitness-Based Selection**: Only the fittest agents reproduce
-- **Configurable Evolution**: Adjust mutation rates, selection pressure, population size, and more
+- **Configurable Evolution**: Adjust mutation rates, selection pressure, and more
 
-### 🌍 Infinite World
-- **Infinite Scrollable Map**: Pan and zoom through an endless 2D world
-- **Camera Controls**: Middle/Right mouse to pan, scroll to zoom, Ctrl+Click to pan
-- **Smooth Navigation**: Explore the ecosystem from different perspectives
-- **Dynamic Grid**: Visual grid that adapts to zoom level
+</td>
+<td width="50%">
 
 ### 🧠 Advanced Neural Networks
 - **Multi-Layer Perceptron**: Configurable architecture with modern activation functions
@@ -57,76 +82,58 @@ Built with **React**, **TypeScript**, and **Electron**. Inspired by **Cell Lab**
 - **Weight Initialization**: Xavier and He initialization methods
 - **Activation Functions**: Swish, ELU, Leaky ReLU, Tanh
 
-### 👁️ Smart Sensors
-- **Dual Detection**: Agents sense both other agents and food
-- **Intelligent Raycasting**: Line-of-sight detection system
-- **Configurable Sensors**: Adjust ray count, length, and detection types
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🌍 Infinite World
+- **Infinite Scrollable Map**: Pan and zoom through an endless 2D world
+- **Camera Controls**: Middle/Right mouse to pan, scroll to zoom
+- **Smooth Navigation**: Explore the ecosystem from different perspectives
+- **Dynamic Grid**: Visual grid that adapts to zoom level
+
+</td>
+<td width="50%">
 
 ### 📊 Evolution Tracking
 - **Real-Time Charts**: Population and fitness graphs over generations
-- **Live Statistics**: Generation, species count, avg/max fitness, population
+- **Live Statistics**: Generation, species count, avg/max fitness
 - **Performance Metrics**: FPS counter and simulation status
 - **Historical Data**: Track evolution progress over 50+ generations
 
-### 🎮 Interactive Features
-- **Agent Inspection**: Click any agent to view its DNA and information
-- **Evolution Controls**: Fine-tune mutation rate, selection rate, generation time
-- **Save/Load System**: Save best organisms and load them later
-- **Export/Import**: Share your evolved populations as JSON files
-- **Speed Control**: Adjust simulation speed from 0.1x to 3x
+</td>
+</tr>
+</table>
 
-### 🎨 Modern UI
-- **Sleek Dark Theme**: Modern grey/black aesthetic
-- **Species Colors**: Each species has a unique color based on its genome
-- **Selection Highlighting**: Selected agents glow yellow
-- **Responsive Design**: Adapts to any screen size
-- **Collapsible Sidebar**: Maximize canvas space when needed
+---
 
-### ⚡ Performance
-- **Optimized Rendering**: Efficient canvas drawing and camera transforms
-- **Smart Updates**: Only redraws what changed
-- **React Optimization**: Memoized callbacks and proper state management
-- **60 FPS Target**: Smooth animations even with many agents
+## 💻 Tech Stack
 
-## 💻 Development
+<div align="center">
 
-### Prerequisites
-- Node.js (v18 or later)
-- npm or yarn
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Electron](https://img.shields.io/badge/Electron-47848F?style=for-the-badge&logo=electron&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 
-### Installation
+</div>
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/CodeByBryant/Evo.git
-   cd Evo
-   ```
+---
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+## 🎮 Controls
 
-3. Start the web development server:
-   ```bash
-   npm run dev:web
-   ```
+<div align="center">
 
-4. (Optional) Run as Electron desktop app:
-   ```bash
-   npm run dev
-   ```
+| Action | Control |
+|:------:|:-------:|
+| **Select Agent** | Left Click |
+| **Pan Camera** | Middle Mouse / Right Mouse / Ctrl+Click |
+| **Zoom** | Mouse Wheel |
+| **Deselect** | Click Empty Space |
 
-For detailed development instructions, see the [Development Guide](./docs/development.md).
-
-## 🎮 How to Use
-
-### Mouse Controls
-- **Click Agent**: Select and view DNA in double helix visualization
-- **Middle Mouse / Right Mouse**: Pan camera around infinite world
-- **Ctrl + Left Click**: Alternative pan method
-- **Mouse Wheel**: Zoom in/out
-- **Left Click (empty space)**: Deselect agent
+</div>
 
 ### Simulation Controls
 - **Start/Pause**: Toggle simulation execution
@@ -134,133 +141,127 @@ For detailed development instructions, see the [Development Guide](./docs/develo
 - **Speed Slider**: Adjust simulation speed (0.1x - 3.0x)
 
 ### Evolution Settings
-- **Generation Time**: How long each generation lasts (steps)
+- **Generation Time**: How long each generation lasts
 - **Selection Rate**: Percentage of top performers that survive
 - **Mutation Rate**: Probability of genetic mutations
 - **Population Size**: Target number of agents
-- **Reproduction Threshold**: Energy needed to reproduce
-- **Max Age**: Maximum lifespan before death
 
-### Configuration Panel
-Adjust agent and neural network parameters:
-- Agent count, size, movement speed, rotation speed
-- Sensor ray count, ray length, detection types
-- Neural network architecture and activation functions
-- Food settings, colors, spawn rates
-
-### Save/Load
-- **Save Current**: Save your current population to browser storage
-- **Export**: Download population as JSON file
-- **Import**: Load a saved JSON file
-- **Load Save**: Restore a previously saved population
+---
 
 ## 🧬 How Evolution Works
 
-### 1. **Life Cycle**
-Each agent lives, consumes food, and either survives or dies based on:
-- **Energy**: Depletes over time, replenished by eating food
-- **Age**: Agents die when they reach maximum age
-- **Fitness**: Increases by eating food and surviving
+```mermaid
+graph LR
+    A[🌱 Birth] --> B[🏃 Life]
+    B --> C{Energy?}
+    C -->|High| D[🔄 Reproduce]
+    C -->|Low| E[💀 Death]
+    D --> F[🧬 Crossover & Mutation]
+    F --> A
+    E --> G[📊 Selection]
+    G --> A
+```
 
-### 2. **Reproduction**
-Agents with enough energy can reproduce:
-- **Sexual Reproduction**: Two parents create offspring through crossover
-- **Asexual Reproduction**: Single parent clones with mutations
-- **Mutation**: Random changes to neural network weights and biases
+### The Evolution Cycle
 
-### 3. **Natural Selection**
-At the end of each generation:
-- Agents are ranked by fitness (food eaten, survival time)
-- Top performers (selection rate %) survive
-- Survivors create the next generation
-- Weak performers are eliminated
+1. **🌱 Life Cycle** - Agents consume food, expend energy, and age
+2. **🔄 Reproduction** - Fit agents reproduce through crossover and mutation
+3. **📊 Natural Selection** - Top performers survive, weak are eliminated
+4. **🌈 Speciation** - Species naturally emerge with unique colors
 
-### 4. **Species Formation**
-- Each agent has a unique species ID
-- Species are colored based on their genome
-- Track multiple species competing in the ecosystem
-- Watch speciation emerge naturally
+---
 
-## 📊 Statistics Dashboard
+## 🛠️ Development
 
-### Evolution Progress
-- **Generation**: Current generation number
-- **Species**: Number of distinct species
-- **Avg Fitness**: Average fitness across all agents
-- **Max Fitness**: Highest fitness in current generation
+### Prerequisites
+- Node.js (v18 or later)
+- npm or yarn
 
-### Real-Time Charts
-- **Population Graph**: Track population changes over time
-- **Fitness Graph**: Monitor evolution of fitness
-- **Historical Data**: View trends across generations
-
-### Agent Information (DNA Panel)
-When you click an agent, view:
-- **Animated Double Helix**: Visual representation of genome
-- **Genome Length**: Number of neural network parameters
-- **Species ID**: Unique identifier
-- **Fitness Score**: Performance metric
-- **Energy Level**: Current energy
-- **Age**: Steps lived
-- **Position**: World coordinates
-- **Generation**: When the agent was born
-- **Parents**: Number of parent agents
-
-## 🛠️ Available Scripts
+### Installation
 
 ```bash
-# Web development
+# Clone the repository
+git clone https://github.com/CodeByBryant/Evo.git
+cd Evo
+
+# Install dependencies
+npm install
+
+# Start web development server
+npm run dev:web
+
+# (Optional) Run as Electron desktop app
+npm run dev
+```
+
+### Available Scripts
+
+```bash
+# Web
 npm run dev:web      # Start Vite dev server
 npm run build:web    # Build for production
-npm run preview:web  # Preview production build
 
-# Desktop development
+# Desktop
 npm run dev          # Start Electron app
-npm run build        # Build Electron app
 npm run build:win    # Build for Windows
 npm run build:mac    # Build for macOS
 npm run build:linux  # Build for Linux
 
-# Code quality
+# Code Quality
 npm run lint         # Lint code
-npm run format       # Format code with Prettier
-npm run typecheck    # TypeScript type checking
+npm run format       # Format with Prettier
+npm run typecheck    # TypeScript checking
 ```
 
-## 🔮 What Makes This Special
+---
 
-### Inspired by the Best
-- **Cell Lab**: Genome editing and species design
-- **Thrive**: Scientific accuracy and evolutionary stages
-- **The Life Engine**: Visual organism details and community sharing
-- **Bionic Chaos Evolution**: Neural network visualization and generational tracking
+## 🔮 What Makes Evo Special
 
-### Key Innovations
-1. **Infinite World**: Unlike bounded simulations, agents exist in endless space
-2. **Visual DNA**: Double helix animation shows actual neural network weights
-3. **Real Genetics**: True crossover and mutation, not simplified rules
-4. **Species Emergence**: Natural speciation without manual intervention
-5. **Full Evolution Cycle**: Birth, life, death, and reproduction
-6. **Performance**: Handles 100+ agents at 60 FPS
+<div align="center">
+
+| Feature | Description |
+|:-------:|:-----------:|
+| 🌍 **Infinite World** | Unlike bounded simulations, agents exist in endless space |
+| 🧬 **Visual DNA** | Double helix animation shows actual neural network weights |
+| 🔬 **Real Genetics** | True crossover and mutation, not simplified rules |
+| 🌈 **Species Emergence** | Natural speciation without manual intervention |
+| ⚡ **Performance** | Handles 100+ agents at 60 FPS |
+
+</div>
+
+---
 
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to:
-- Report bugs via GitHub Issues
-- Submit feature requests
-- Create pull requests with improvements
-- Share your evolved populations
-
-## 📄 License
-
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
-
-## 👨‍💻 Author
-
-Developed with ❤️ by **Bryant Ejorh** ([CodeByBryant](https://github.com/CodeByBryant))
+- 🐛 Report bugs via GitHub Issues
+- 💡 Submit feature requests
+- 🔧 Create pull requests with improvements
+- 🧬 Share your evolved populations
 
 ---
 
-**Watch evolution in action! 🧬✨**
+## 📄 License
 
-Experience the emergence of complex behaviors from simple rules, just like nature intended.
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.
+
+---
+
+<div align="center">
+
+## 👨‍💻 Author
+
+Developed with ❤️ by **Bryant Ejorh** ([@CodeByBryant](https://github.com/CodeByBryant))
+
+[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=google-chrome&logoColor=white)](https://codebybryant.github.io/Portfolio/)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/CodeByBryant)
+
+---
+
+### 💭 "_Watch evolution in action! Experience the emergence of complex behaviors from simple rules._"
+
+### ⭐ Star this repo if you find it interesting!
+
+**Made with ❤️ and lots of ☕**
+
+</div>
