@@ -1,8 +1,38 @@
-# Evo
+<div align="center">
+
+# 🧬 Evo
+
+**Neural Evolution Sandbox**
+
+[![CI](https://github.com/CodeByBryant/Evo/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeByBryant/Evo/actions/workflows/ci.yml)
+[![Deploy](https://github.com/CodeByBryant/Evo/actions/workflows/deploy-web.yml/badge.svg)](https://github.com/CodeByBryant/Evo/actions/workflows/deploy-web.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
+
+[**🎮 Play Online**](https://codebybryant.github.io/Evo/) • [**📥 Download**](https://github.com/CodeByBryant/Evo/releases) • [**📖 Documentation**](./docs/README.md)
+
+</div>
+
+---
 
 **Evo** is an advanced neural network-based evolutionary sandbox where AI agents evolve through natural selection. Agents navigate an **infinite 2D world**, sense their environment using raycasting, and make autonomous decisions using neural networks. Watch species emerge, compete for resources, and evolve over generations in real-time!
 
-Built with **React**, **TypeScript**, and inspired by **Cell Lab**, **Thrive**, **The Life Engine**, and **Bionic Chaos Evolution**.
+Built with **React**, **TypeScript**, and **Electron**. Inspired by **Cell Lab**, **Thrive**, **The Life Engine**, and **Bionic Chaos Evolution**.
+
+## 🚀 Quick Start
+
+### Play Online (No Installation)
+
+👉 **[Launch Evo in Your Browser](https://codebybryant.github.io/Evo/)**
+
+### Download Desktop App
+
+| Platform | Download |
+|:--------:|:--------:|
+| **Windows** | [📥 Download .exe](https://github.com/CodeByBryant/Evo/releases/latest) |
+| **macOS** | [📥 Download .dmg](https://github.com/CodeByBryant/Evo/releases/latest) |
+| **Linux** | [📥 Download .AppImage](https://github.com/CodeByBryant/Evo/releases/latest) |
 
 ## ✨ Features
 
@@ -58,25 +88,13 @@ Built with **React**, **TypeScript**, and inspired by **Cell Lab**, **Thrive**, 
 - **React Optimization**: Memoized callbacks and proper state management
 - **60 FPS Target**: Smooth animations even with many agents
 
-## 🚀 Getting Started
+## 💻 Development
 
-### Replit (Recommended)
-
-This project is optimized for Replit:
-
-```bash
-npm run dev:web
-```
-
-Access the sandbox at `http://localhost:5000`
-
-### Local Development
-
-#### Prerequisites
+### Prerequisites
 - Node.js (v18 or later)
 - npm or yarn
 
-#### Installation
+### Installation
 
 1. Clone the repository:
    ```bash
@@ -98,6 +116,8 @@ Access the sandbox at `http://localhost:5000`
    ```bash
    npm run dev
    ```
+
+For detailed development instructions, see the [Development Guide](./docs/development.md).
 
 ## 🎮 How to Use
 
@@ -189,12 +209,12 @@ When you click an agent, view:
 ## 🛠️ Available Scripts
 
 ```bash
-# Web development (Replit)
+# Web development
 npm run dev:web      # Start Vite dev server
 npm run build:web    # Build for production
 npm run preview:web  # Preview production build
 
-# Desktop development (Local only)
+# Desktop development
 npm run dev          # Start Electron app
 npm run build        # Build Electron app
 npm run build:win    # Build for Windows
