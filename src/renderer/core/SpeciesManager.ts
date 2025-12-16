@@ -20,10 +20,8 @@ export class SpeciesManager {
   }
 
   public createNewSpecies(parentSpeciesId?: string): SpeciesInfo {
-    const config = (AgentConfigData as Record<string, unknown>).GeneticTraits as Record<
-      string,
-      unknown
-    >
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = (AgentConfigData as any).GeneticTraits
     const speciesId = this.generateSpeciesId()
 
     let baselineTraits: GeneticTraits
@@ -81,8 +79,10 @@ export class SpeciesManager {
     }
   }
 
-  private generateUniqueSpeciesTraits(config: Record<string, unknown>): GeneticTraits {
-    const randomInRange = (rangeConfig: Record<string, unknown>): number => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private generateUniqueSpeciesTraits(config: any): GeneticTraits {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const randomInRange = (rangeConfig: any): number => {
       const min = rangeConfig.min as number
       const max = rangeConfig.max as number
       const range = max - min
@@ -121,10 +121,12 @@ export class SpeciesManager {
 
   private mutateSpeciesTraits(
     parentTraits: GeneticTraits,
-    config: Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config: any,
     intensity: number
   ): GeneticTraits {
-    const mutate = (value: number, range: Record<string, unknown>): number => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mutate = (value: number, range: any): number => {
       const mutation =
         (Math.random() - 0.5) * ((range.max as number) - (range.min as number)) * intensity
       return Math.max(range.min as number, Math.min(range.max as number, value + mutation))
@@ -189,10 +191,8 @@ export class SpeciesManager {
     sourceTraits: GeneticTraits,
     mutateTraits: boolean = true
   ): SpeciesInfo {
-    const config = (AgentConfigData as Record<string, unknown>).GeneticTraits as Record<
-      string,
-      unknown
-    >
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = (AgentConfigData as any).GeneticTraits
     const speciesId = this.generateSpeciesId()
 
     let baselineTraits: GeneticTraits

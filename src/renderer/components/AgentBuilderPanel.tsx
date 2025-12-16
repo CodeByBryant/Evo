@@ -52,10 +52,8 @@ export const AgentBuilderPanel: React.FC<AgentBuilderPanelProps> = ({
   onSpawnAgent
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const config = (AgentConfigData as Record<string, unknown>).GeneticTraits as Record<
-    string,
-    unknown
-  >
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const config: any = (AgentConfigData as any).GeneticTraits
 
   const [traits, setTraits] = useState<GeneticTraits>({
     size: config.size.default,

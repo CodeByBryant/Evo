@@ -241,10 +241,9 @@ export class EvolutionManager {
     }
 
     // Extinction mitigation: emergency spawning for low population
-    const extinctionConfig = (AgentConfigData as Record<string, unknown>).ExtinctionMitigation as
-      | Record<string, unknown>
-      | undefined
-    if (extinctionConfig && agents.length < (extinctionConfig.MinPopulationForBoost as number)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const extinctionConfig: any = (AgentConfigData as any).ExtinctionMitigation
+    if (extinctionConfig && agents.length < extinctionConfig.MinPopulationForBoost) {
       const emergencySpawnChance = extinctionConfig.EmergencySpawnRate || 0.01
 
       // If completely extinct, spawn multiple agents from elite templates or create new ones
@@ -370,17 +369,10 @@ export class EvolutionManager {
             emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
 
             // Start agents at reproductive age so they can breed immediately
-            const lifeConfig = (AgentConfigData as Record<string, unknown>).LifeStageSettings as
-              | Record<string, unknown>
-              | undefined
-            const minReproAge =
-              (
-                (lifeConfig?.LifeProgressSegments as Record<string, unknown>)?.Adult as Record<
-                  string,
-                  unknown
-                >
-              )?.start || 0.15
-            emergencyAgent.age = Math.floor(this.config.maxAge * ((minReproAge as number) + 0.05))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const lifeConfig: any = (AgentConfigData as any).LifeStageSettings
+            const minReproAge = lifeConfig?.LifeProgressSegments?.Adult?.start || 0.15
+            emergencyAgent.age = Math.floor(this.config.maxAge * (minReproAge + 0.05))
 
             agents.push(emergencyAgent)
             newBirths++
@@ -430,16 +422,9 @@ export class EvolutionManager {
         emergencyAgent.energy = emergencyAgent.geneticTraits.maxEnergyCapacity * 0.9
 
         // Start at reproductive age
-        const lifeConfig = (AgentConfigData as Record<string, unknown>).LifeStageSettings as
-          | Record<string, unknown>
-          | undefined
-        const minReproAge =
-          (
-            (lifeConfig?.LifeProgressSegments as Record<string, unknown>)?.Adult as Record<
-              string,
-              unknown
-            >
-          )?.start || 0.15
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const lifeConfig: any = (AgentConfigData as any).LifeStageSettings
+        const minReproAge = lifeConfig?.LifeProgressSegments?.Adult?.start || 0.15
         emergencyAgent.age = Math.floor(this.config.maxAge * (minReproAge + 0.05))
 
         agents.push(emergencyAgent)
@@ -558,6 +543,6 @@ export class EvolutionManager {
       }
     }
 
-    return avgTraits as GeneticTraits
+    return avgTraits as unknown as GeneticTraits
   }
 }

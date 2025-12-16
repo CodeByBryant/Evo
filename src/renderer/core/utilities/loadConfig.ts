@@ -11,7 +11,8 @@ export const DEFAULT_EVOLUTION_CONFIG: EvolutionConfig = {
 }
 
 export function loadEvolutionConfig(): EvolutionConfig {
-  const configData = AgentConfigData as Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const configData = AgentConfigData as any
 
   if (configData.EvolutionSettings) {
     return {
