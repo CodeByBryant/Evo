@@ -38,9 +38,9 @@
     "MaxSize": 10
   },
   "ClusterSettings": {
-    "ClusterCount": 30,
-    "ClusterRadius": 350,
-    "ClusterSpacing": 800
+    "ClusterCount": 6,
+    "ClusterRadius": 1000,
+    "ClusterSpacing": 3000
   },
   "LifeStageSettings": {
     "MaturityYears": 40,
