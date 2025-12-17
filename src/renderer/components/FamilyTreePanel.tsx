@@ -49,6 +49,10 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
+  const [animationFrame, setAnimationFrame] = useState(0)
+  const [showDeadAgents, setShowDeadAgents] = useState(true)
+  const [filterToLineage, setFilterToLineage] = useState(false)
+  const [showStats, setShowStats] = useState(false)
 
   useEffect(() => {
     setNodes(new Map())
@@ -973,6 +977,25 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         >
           <i className="bi bi-diagram-3" style={{ marginRight: '4px' }}></i>
           Lineage
+        </button>
+
+        <button
+          onClick={() => setFilterToLineage(!filterToLineage)}
+          disabled={!selectedAgent}
+          style={{
+            padding: '5px 10px',
+            background: filterToLineage ? 'rgba(255, 200, 100, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+            color: filterToLineage ? '#fa8' : 'rgba(255, 255, 255, 0.6)',
+            border: filterToLineage ? '1px solid rgba(255, 200, 100, 0.3)' : '1px solid transparent',
+            borderRadius: '4px',
+            cursor: selectedAgent ? 'pointer' : 'not-allowed',
+            fontSize: '11px',
+            opacity: selectedAgent ? 1 : 0.5,
+            transition: 'all 0.2s'
+          }}
+        >
+          <i className="bi bi-funnel" style={{ marginRight: '4px' }}></i>
+          Filter
         </button>
 
         <button
