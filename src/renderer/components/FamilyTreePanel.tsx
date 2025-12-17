@@ -49,6 +49,10 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null)
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
+  const [animationFrame, setAnimationFrame] = useState(0)
+  const [showDeadAgents, setShowDeadAgents] = useState(true)
+  const [filterToLineage, setFilterToLineage] = useState(false)
+  const [showStats, setShowStats] = useState(false)
 
   useEffect(() => {
     setNodes(new Map())
