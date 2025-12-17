@@ -2,8 +2,6 @@
 
 # 🧬 Evo
 
-<img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=28&duration=2800&pause=2000&color=A855F7&center=true&vCenter=true&width=700&lines=Neural+Evolution+Sandbox;Watch+AI+Evolve+in+Real-Time;Genetic+Algorithms+%7C+Neural+Networks;Infinite+World+Exploration" alt="Typing SVG" />
-
 **Experience the emergence of complex behaviors from simple rules, just like nature intended.**
 
 [![CI](https://github.com/CodeByBryant/Evo/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeByBryant/Evo/actions/workflows/ci.yml)
