@@ -980,6 +980,25 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
         </button>
 
         <button
+          onClick={() => setFilterToLineage(!filterToLineage)}
+          disabled={!selectedAgent}
+          style={{
+            padding: '5px 10px',
+            background: filterToLineage ? 'rgba(255, 200, 100, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+            color: filterToLineage ? '#fa8' : 'rgba(255, 255, 255, 0.6)',
+            border: filterToLineage ? '1px solid rgba(255, 200, 100, 0.3)' : '1px solid transparent',
+            borderRadius: '4px',
+            cursor: selectedAgent ? 'pointer' : 'not-allowed',
+            fontSize: '11px',
+            opacity: selectedAgent ? 1 : 0.5,
+            transition: 'all 0.2s'
+          }}
+        >
+          <i className="bi bi-funnel" style={{ marginRight: '4px' }}></i>
+          Filter
+        </button>
+
+        <button
           onClick={() => setShowDeadAgents(!showDeadAgents)}
           style={{
             padding: '5px 10px',
