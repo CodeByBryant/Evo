@@ -220,7 +220,6 @@ npm run typecheck    # TypeScript checking
 | Feature | Description |
 |:-------:|:-----------:|
 | 🌍 **Infinite World** | Unlike bounded simulations, agents exist in endless space |
-| 🧬 **Visual DNA** | Double helix animation shows actual neural network weights |
 | 🔬 **Real Genetics** | True crossover and mutation, not simplified rules |
 | 🌈 **Species Emergence** | Natural speciation without manual intervention |
 | ⚡ **Performance** | Handles 100+ agents at 60 FPS |
