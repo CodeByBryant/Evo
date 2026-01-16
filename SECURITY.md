@@ -9,7 +9,6 @@ If you discover a security vulnerability in **EvoSquares**, please help us addre
 
 2. **Contact Us Directly**:  
    Go to the Security tab under the repository name and click on 'Report a vulnerability'
-
    - A detailed description of the vulnerability.
    - Steps to reproduce the issue.
    - Any relevant code or screenshots.

@@ -19,42 +19,46 @@ This guide covers setting up a development environment and contributing to Evo.
 1. **Fork the repository** on GitHub
 
 2. **Clone your fork**
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/Evo.git
    cd Evo
    ```
 
 3. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 4. **Start development server**
-   
+
    Web version (recommended for development):
+
    ```bash
    npm run dev:web
    ```
-   
+
    Desktop version:
+
    ```bash
    npm run dev
    ```
 
 ## Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev:web` | Start web development server |
-| `npm run dev` | Start Electron development app |
-| `npm run build:web` | Build web version for production |
-| `npm run build` | Build Electron app |
-| `npm run build:win` | Build for Windows |
-| `npm run build:mac` | Build for macOS |
-| `npm run build:linux` | Build for Linux |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format code with Prettier |
-| `npm run typecheck` | Run TypeScript type checking |
+| Script                | Description                      |
+| --------------------- | -------------------------------- |
+| `npm run dev:web`     | Start web development server     |
+| `npm run dev`         | Start Electron development app   |
+| `npm run build:web`   | Build web version for production |
+| `npm run build`       | Build Electron app               |
+| `npm run build:win`   | Build for Windows                |
+| `npm run build:mac`   | Build for macOS                  |
+| `npm run build:linux` | Build for Linux                  |
+| `npm run lint`        | Run ESLint                       |
+| `npm run format`      | Format code with Prettier        |
+| `npm run typecheck`   | Run TypeScript type checking     |
 
 ## Project Structure
 
@@ -82,22 +86,26 @@ src/
 ## Code Style
 
 ### TypeScript
+
 - Use strict TypeScript with proper typing
 - Avoid `any` types when possible
 - Use interfaces for object shapes
 
 ### React
+
 - Use functional components with hooks
 - Keep components small and focused
 - Use `useCallback` and `useMemo` appropriately
 
 ### Formatting
+
 - 2 spaces for indentation
 - Single quotes for strings
 - Semicolons required
 - Run `npm run format` before committing
 
 ### Linting
+
 - ESLint is configured for the project
 - Run `npm run lint` to check for issues
 - All lint errors must be resolved before merging
@@ -107,6 +115,7 @@ src/
 ### Workflow
 
 1. **Create a feature branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -121,6 +130,7 @@ src/
    - Check for console errors
 
 4. **Lint and format**
+
    ```bash
    npm run lint
    npm run format
@@ -128,6 +138,7 @@ src/
    ```
 
 5. **Commit your changes**
+
    ```bash
    git add .
    git commit -m "feat: add your feature description"
@@ -155,16 +166,19 @@ Follow conventional commits:
 ## Architecture Decisions
 
 ### Why React?
+
 - Component-based architecture for UI
 - Rich ecosystem and tooling
 - TypeScript support
 
 ### Why Canvas?
+
 - High performance for many moving objects
 - Direct control over rendering
 - Efficient for 2D simulations
 
 ### Why Electron?
+
 - Cross-platform desktop support
 - Native OS integration
 - File system access for saves
@@ -178,6 +192,7 @@ Follow conventional commits:
 3. Import and use in parent component
 
 Example:
+
 ```typescript
 // src/renderer/components/MyComponent.tsx
 import React from 'react'
@@ -213,11 +228,13 @@ export const MyComponent: React.FC<MyComponentProps> = ({ value }) => {
 ## Debugging
 
 ### Browser DevTools
+
 - Use React DevTools for component inspection
 - Console logs appear in browser console
 - Network tab for any API calls
 
 ### Electron DevTools
+
 - DevTools automatically open in development
 - Main process logs appear in terminal
 - Use `console.log` for debugging
@@ -225,11 +242,13 @@ export const MyComponent: React.FC<MyComponentProps> = ({ value }) => {
 ### Common Issues
 
 **TypeScript errors:**
+
 - Run `npm run typecheck` for details
 - Check import statements
 - Verify type definitions
 
 **Simulation bugs:**
+
 - Add console.log in update loop
 - Reduce speed to observe behavior
 - Check for NaN values in calculations
@@ -237,12 +256,14 @@ export const MyComponent: React.FC<MyComponentProps> = ({ value }) => {
 ## Building Releases
 
 ### Web Release
+
 ```bash
 npm run build:web
 # Output in ./dist/
 ```
 
 ### Desktop Release
+
 ```bash
 # All platforms
 npm run build

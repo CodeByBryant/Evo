@@ -2,7 +2,7 @@ export const BRANDING = {
   APP_NAME: 'Evo',
   APP_TAGLINE: 'Neural Evolution Sandbox',
   APP_DESCRIPTION: 'Watch AI agents learn and evolve in real-time',
-  VERSION: '2.0.0'
+  VERSION: '0.1.0'
 } as const
 
 export const THEME = {

@@ -24,11 +24,11 @@ Agents navigate an **infinite 2D world**, sense their environment using raycasti
 
 ```typescript
 const evo = {
-    type: "Neural Evolution Sandbox",
-    features: ["Genetic Algorithms", "Neural Networks", "Infinite World", "Species Tracking"],
-    inspiration: ["Cell Lab", "Thrive", "The Life Engine", "Bionic Chaos Evolution"],
-    goal: "Watch AI evolve complex behaviors from simple rules 🧬"
-};
+  type: 'Neural Evolution Sandbox',
+  features: ['Genetic Algorithms', 'Neural Networks', 'Infinite World', 'Species Tracking'],
+  inspiration: ['Cell Lab', 'Thrive', 'The Life Engine', 'Bionic Chaos Evolution'],
+  goal: 'Watch AI evolve complex behaviors from simple rules 🧬'
+}
 ```
 
 ---
@@ -47,11 +47,11 @@ const evo = {
 
 <div align="center">
 
-| Platform | Download |
-|:--------:|:--------:|
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white) | [📥 Download .exe](https://github.com/CodeByBryant/Evo/releases/latest) |
-| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white) | [📥 Download .dmg](https://github.com/CodeByBryant/Evo/releases/latest) |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black) | [📥 Download .AppImage](https://github.com/CodeByBryant/Evo/releases/latest) |
+|                                                Platform                                                |                                   Download                                   |
+| :----------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
+| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white) |   [📥 Download .exe](https://github.com/CodeByBryant/Evo/releases/latest)    |
+|    ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)    |   [📥 Download .dmg](https://github.com/CodeByBryant/Evo/releases/latest)    |
+|    ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)    | [📥 Download .AppImage](https://github.com/CodeByBryant/Evo/releases/latest) |
 
 </div>
 
@@ -64,6 +64,7 @@ const evo = {
 <td width="50%">
 
 ### 🧬 Evolution & Genetics
+
 - **Full Genetic Algorithm**: Reproduction, crossover, mutation, and natural selection
 - **Generational Evolution**: Watch populations evolve over hundreds of generations
 - **DNA Visualization**: Beautiful animated double helix showing agent genomes
@@ -74,6 +75,7 @@ const evo = {
 <td width="50%">
 
 ### 🧠 Advanced Neural Networks
+
 - **Multi-Layer Perceptron**: Configurable architecture with modern activation functions
 - **Crossover Reproduction**: Genetic combination from two parents
 - **Adaptive Mutation**: Gaussian and uniform mutation strategies
@@ -86,6 +88,7 @@ const evo = {
 <td width="50%">
 
 ### 🌍 Infinite World
+
 - **Infinite Scrollable Map**: Pan and zoom through an endless 2D world
 - **Camera Controls**: Middle/Right mouse to pan, scroll to zoom
 - **Smooth Navigation**: Explore the ecosystem from different perspectives
@@ -95,6 +98,7 @@ const evo = {
 <td width="50%">
 
 ### 📊 Evolution Tracking
+
 - **Real-Time Charts**: Population and fitness graphs over generations
 - **Live Statistics**: Generation, species count, avg/max fitness
 - **Performance Metrics**: FPS counter and simulation status
@@ -124,21 +128,23 @@ const evo = {
 
 <div align="center">
 
-| Action | Control |
-|:------:|:-------:|
-| **Select Agent** | Left Click |
-| **Pan Camera** | Middle Mouse / Right Mouse / Ctrl+Click |
-| **Zoom** | Mouse Wheel |
-| **Deselect** | Click Empty Space |
+|      Action      |                 Control                 |
+| :--------------: | :-------------------------------------: |
+| **Select Agent** |               Left Click                |
+|  **Pan Camera**  | Middle Mouse / Right Mouse / Ctrl+Click |
+|     **Zoom**     |               Mouse Wheel               |
+|   **Deselect**   |            Click Empty Space            |
 
 </div>
 
 ### Simulation Controls
+
 - **Start/Pause**: Toggle simulation execution
 - **Reset**: Start fresh with new random population
 - **Speed Slider**: Adjust simulation speed (0.1x - 3.0x)
 
 ### Evolution Settings
+
 - **Generation Time**: How long each generation lasts
 - **Selection Rate**: Percentage of top performers that survive
 - **Mutation Rate**: Probability of genetic mutations
@@ -172,6 +178,7 @@ graph LR
 ## 🛠️ Development
 
 ### Prerequisites
+
 - Node.js (v18 or later)
 - npm or yarn
 
@@ -217,12 +224,12 @@ npm run typecheck    # TypeScript checking
 
 <div align="center">
 
-| Feature | Description |
-|:-------:|:-----------:|
-| 🌍 **Infinite World** | Unlike bounded simulations, agents exist in endless space |
-| 🔬 **Real Genetics** | True crossover and mutation, not simplified rules |
-| 🌈 **Species Emergence** | Natural speciation without manual intervention |
-| ⚡ **Performance** | Handles 100+ agents at 60 FPS |
+|         Feature          |                        Description                        |
+| :----------------------: | :-------------------------------------------------------: |
+|  🌍 **Infinite World**   | Unlike bounded simulations, agents exist in endless space |
+|   🔬 **Real Genetics**   |     True crossover and mutation, not simplified rules     |
+| 🌈 **Species Emergence** |      Natural speciation without manual intervention       |
+|    ⚡ **Performance**    |               Handles 100+ agents at 60 FPS               |
 
 </div>
 
@@ -231,6 +238,7 @@ npm run typecheck    # TypeScript checking
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to:
+
 - 🐛 Report bugs via GitHub Issues
 - 💡 Submit feature requests
 - 🔧 Create pull requests with improvements

@@ -1,6 +1,6 @@
 {
   "name": "evo",
-  "version": "2.0.0",
+  "version": "0.1.0",
   "description": "Evo - An interactive neural evolution sandbox where AI agents learn and adapt in real-time.",
   "main": "./out/main/index.js",
   "author": "Bryant Ejorh <codebybryant@example.com> (https://github.com/CodeByBryant)",
