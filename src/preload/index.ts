@@ -1,12 +1,16 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// Custom APIs for renderer
-const api = {}
+const api = {
+  setFullscreen: (fullscreen: boolean): Promise<unknown> =>
+    ipcRenderer.invoke('set-fullscreen', fullscreen),
+  getFullscreenState: (): Promise<unknown> => ipcRenderer.invoke('get-fullscreen-state'),
+  toggleFullscreen: (): Promise<unknown> => ipcRenderer.invoke('toggle-fullscreen'),
+  maximizeWindow: (): Promise<unknown> => ipcRenderer.invoke('maximize-window'),
+  minimizeWindow: (): Promise<unknown> => ipcRenderer.invoke('minimize-window'),
+  closeWindow: (): Promise<unknown> => ipcRenderer.invoke('close-window')
+}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
