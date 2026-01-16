@@ -5,6 +5,7 @@ Learn how to use all of Evo's features to create and observe evolving AI agents.
 ## Interface Overview
 
 The interface consists of:
+
 - **Main Canvas**: Where the simulation runs
 - **Sidebar**: Controls and statistics
 - **DNA Panel**: Agent information (appears when selecting an agent)
@@ -13,21 +14,21 @@ The interface consists of:
 
 ### Mouse Controls
 
-| Action | Effect |
-|--------|--------|
-| **Left Click** (on agent) | Select agent, view DNA |
-| **Left Click** (empty space) | Deselect agent |
-| **Middle Mouse / Right Mouse** | Pan camera |
-| **Ctrl + Left Click** | Alternative pan |
-| **Mouse Wheel** | Zoom in/out |
+| Action                         | Effect                 |
+| ------------------------------ | ---------------------- |
+| **Left Click** (on agent)      | Select agent, view DNA |
+| **Left Click** (empty space)   | Deselect agent         |
+| **Middle Mouse / Right Mouse** | Pan camera             |
+| **Ctrl + Left Click**          | Alternative pan        |
+| **Mouse Wheel**                | Zoom in/out            |
 
 ### Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| **Space** | Pause/Resume simulation |
-| **Escape** | Close DNA panel |
-| **R** | Toggle agent trails |
+| Key        | Action                  |
+| ---------- | ----------------------- |
+| **Space**  | Pause/Resume simulation |
+| **Escape** | Close DNA panel         |
+| **R**      | Toggle agent trails     |
 
 ## Sidebar Panels
 
@@ -49,21 +50,25 @@ The interface consists of:
 Adjust simulation parameters:
 
 **Agent Settings:**
+
 - Agent count
 - Agent size
 - Movement speed
 - Rotation speed
 
 **Sensor Settings:**
+
 - Ray count
 - Ray length
 - Detection types (food, agents)
 
 **Neural Network:**
+
 - Architecture (layer sizes)
 - Activation function
 
 **Food Settings:**
+
 - Spawn count
 - Spawn rate
 - Energy value
@@ -92,6 +97,7 @@ Adjust simulation parameters:
 ### Fitness Factors
 
 Agents gain fitness by:
+
 - Eating food (+energy, +fitness)
 - Surviving longer (+fitness over time)
 - Reproducing successfully
@@ -107,10 +113,12 @@ Agents gain fitness by:
 When you click an agent, the DNA panel shows:
 
 ### Visual Elements
+
 - **Double Helix Animation**: Visual representation of the genome
 - **Species Color**: Unique color based on genome
 
 ### Statistics
+
 - **Genome Length**: Number of neural network parameters
 - **Species ID**: Unique identifier
 - **Fitness Score**: Performance metric
@@ -132,39 +140,47 @@ Click **"Create Agent"** in the sidebar to open the Agent Builder:
 ## Save & Load
 
 ### Saving
+
 - **Save Current**: Save population to browser storage
 - **Export**: Download population as JSON file
 
 ### Loading
+
 - **Load Save**: Restore a previously saved population
 - **Import**: Load a JSON file
 
 ### Sharing
+
 Export your evolved populations and share them with others!
 
 ## Tips for Interesting Evolutions
 
 ### Getting Started
+
 1. Start with default settings
 2. Watch for 10-20 generations
 3. Note which behaviors emerge
 
 ### Encouraging Diversity
+
 - Increase mutation rate (0.1 - 0.3)
 - Lower selection rate (0.1 - 0.2)
 - Increase generation time
 
 ### Fast Evolution
+
 - Higher selection pressure (selection rate 0.3+)
 - Smaller population
 - More food available
 
 ### Complex Behaviors
+
 - More sensor rays
 - Longer ray length
 - Larger neural networks (more hidden layers)
 
 ### Observing Speciation
+
 - Run for 50+ generations
 - Keep population moderate (50-100)
 - Watch the species count in statistics
@@ -172,11 +188,13 @@ Export your evolved populations and share them with others!
 ## Performance Tips
 
 ### For Smooth Experience
+
 - Keep agent count under 100
 - Reduce sensor ray count if laggy
 - Lower simulation speed if FPS drops
 
 ### For Longer Runs
+
 - Use desktop app (better performance)
 - Save periodically
 - Export interesting populations
@@ -184,21 +202,25 @@ Export your evolved populations and share them with others!
 ## Troubleshooting
 
 ### Simulation is Slow
+
 - Reduce agent count
 - Decrease sensor ray count
 - Close other browser tabs
 
 ### Agents Not Evolving
+
 - Increase mutation rate
 - Ensure food is spawning
 - Check generation time isn't too short
 
 ### All Agents Die
+
 - Increase food spawn rate
 - Lower energy consumption
 - Reduce max age initially
 
 ### Species Count Stays at 1
+
 - Increase mutation rate
 - Run for more generations
 - Ensure reproduction is occurring

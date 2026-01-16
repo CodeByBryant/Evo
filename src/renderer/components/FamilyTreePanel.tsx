@@ -986,7 +986,9 @@ export const FamilyTreePanel: React.FC<FamilyTreePanelProps> = ({
             padding: '5px 10px',
             background: filterToLineage ? 'rgba(255, 200, 100, 0.2)' : 'rgba(255, 255, 255, 0.06)',
             color: filterToLineage ? '#fa8' : 'rgba(255, 255, 255, 0.6)',
-            border: filterToLineage ? '1px solid rgba(255, 200, 100, 0.3)' : '1px solid transparent',
+            border: filterToLineage
+              ? '1px solid rgba(255, 200, 100, 0.3)'
+              : '1px solid transparent',
             borderRadius: '4px',
             cursor: selectedAgent ? 'pointer' : 'not-allowed',
             fontSize: '11px',

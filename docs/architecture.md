@@ -56,6 +56,7 @@ The simulation runs in a continuous loop, updating all agents and food entities 
 ### Agent System
 
 Each agent contains:
+
 - **Neural Network**: Multi-layer perceptron for decision making
 - **Sensors**: Raycasting system for environment perception
 - **Genetic Information**: DNA that encodes traits and behaviors
@@ -63,15 +64,15 @@ Each agent contains:
 
 ```typescript
 interface Agent {
-  id: string;
-  species: string;
-  position: { x: number; y: number };
-  velocity: { x: number; y: number };
-  energy: number;
-  age: number;
-  fitness: number;
-  neuralNetwork: NeuralNetwork;
-  genome: number[];
+  id: string
+  species: string
+  position: { x: number; y: number }
+  velocity: { x: number; y: number }
+  energy: number
+  age: number
+  fitness: number
+  neuralNetwork: NeuralNetwork
+  genome: number[]
 }
 ```
 
@@ -89,6 +90,7 @@ Input Layer         Hidden Layers         Output Layer
 ```
 
 **Supported Activation Functions:**
+
 - Swish
 - ELU
 - Leaky ReLU
@@ -120,6 +122,7 @@ Evo uses HTML Canvas for efficient 2D rendering:
 ```
 
 Features:
+
 - Camera transformation for infinite world navigation
 - Efficient redraw with dirty region tracking
 - Selection highlighting and agent trails
@@ -151,16 +154,20 @@ Evo uses React's built-in state management with `useState` and `useCallback`:
 ## Configuration Files
 
 ### Simulation Config (`AgentConfig.json`)
+
 Controls agent behavior, neural network structure, and simulation parameters.
 
 ### Evolution Config
+
 Runtime-adjustable evolution parameters:
+
 - Generation time
 - Selection rate
 - Mutation rate
 - Population size
 
 ### Build Config
+
 - `vite.config.ts` - Web build configuration
 - `electron.vite.config.ts` - Electron build configuration
 - `electron-builder.yml` - Desktop app packaging
@@ -181,7 +188,7 @@ Edit `src/renderer/core/NeuralNetwork.ts`:
 ```typescript
 export function yourActivation(x: number): number {
   // Your implementation
-  return x;
+  return x
 }
 ```
 

@@ -16,11 +16,11 @@ No installation required!
 
 For the best experience with full features, download the desktop app:
 
-| Platform | Download |
-|----------|----------|
-| Windows | [Download .exe](https://github.com/CodeByBryant/Evo/releases/latest) |
-| macOS | [Download .dmg](https://github.com/CodeByBryant/Evo/releases/latest) |
-| Linux | [Download .AppImage](https://github.com/CodeByBryant/Evo/releases/latest) |
+| Platform | Download                                                                  |
+| -------- | ------------------------------------------------------------------------- |
+| Windows  | [Download .exe](https://github.com/CodeByBryant/Evo/releases/latest)      |
+| macOS    | [Download .dmg](https://github.com/CodeByBryant/Evo/releases/latest)      |
+| Linux    | [Download .AppImage](https://github.com/CodeByBryant/Evo/releases/latest) |
 
 ## Installation from Source
 
@@ -33,12 +33,14 @@ For the best experience with full features, download the desktop app:
 ### Steps
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/CodeByBryant/Evo.git
    cd Evo
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
@@ -46,11 +48,13 @@ For the best experience with full features, download the desktop app:
 3. **Start the development server**
 
    For web version:
+
    ```bash
    npm run dev:web
    ```
 
    For desktop (Electron) version:
+
    ```bash
    npm run dev
    ```
@@ -62,12 +66,14 @@ For the best experience with full features, download the desktop app:
 ## Building for Production
 
 ### Web Build
+
 ```bash
 npm run build:web
 npm run preview:web  # Preview the build
 ```
 
 ### Desktop Builds
+
 ```bash
 # Build for your current platform
 npm run build
@@ -96,12 +102,14 @@ See the [User Guide](./user-guide.md) for detailed instructions on all features.
 **Port 5000 already in use**
 
 On macOS/Linux:
+
 ```bash
 # Find and kill the process using port 5000
 lsof -ti:5000 | xargs kill -9
 ```
 
 On Windows:
+
 ```bash
 # Find the process
 netstat -ano | findstr :5000
@@ -110,6 +118,7 @@ taskkill /PID <PID> /F
 ```
 
 Alternatively, you can change the port in `vite.config.ts`:
+
 ```typescript
 server: {
   port: 3000,  // Change to a different port
@@ -117,12 +126,14 @@ server: {
 ```
 
 **Build fails on Windows**
+
 ```bash
 # Make sure you have Windows Build Tools installed
 npm install --global windows-build-tools
 ```
 
 **Electron app doesn't start**
+
 ```bash
 # Try rebuilding native modules
 npm run postinstall

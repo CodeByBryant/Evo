@@ -17,6 +17,7 @@ dist
 dist-ssr
 out
 release
+resources
 *.local
 
 # Editor directories and files
