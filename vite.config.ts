@@ -5,6 +5,7 @@ export default defineConfig({
   root: 'src/renderer',
   // Base path for GitHub Pages deployment - repository name
   base: process.env.GITHUB_ACTIONS ? '/Evo/' : '/',
+  publicDir: resolve(__dirname, 'public'),
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src/renderer')
