@@ -3,11 +3,37 @@
   "version": "2.0.0",
   "description": "Evo - An interactive neural evolution sandbox where AI agents learn and adapt in real-time.",
   "main": "./out/main/index.js",
-  "author": "CodeByBryant",
-  "homepage": "https://electron-vite.org",
+  "author": "Bryant Ejorh <codebybryant@example.com> (https://github.com/CodeByBryant)",
+  "homepage": "https://codebybryant.github.io/Evo/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CodeByBryant/Evo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CodeByBryant/Evo/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "evolution",
+    "neural-network",
+    "genetic-algorithm",
+    "simulation",
+    "artificial-intelligence",
+    "machine-learning",
+    "electron",
+    "react",
+    "typescript",
+    "evolutionary-computing",
+    "natural-selection",
+    "agent-based-simulation"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "format": "prettier --write .",
-    "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "lint": "eslint .",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
@@ -24,27 +50,27 @@
     "build:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.1",
-    "@electron-toolkit/utils": "^3.0.0",
-    "@types/react": "^19.2.6",
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "electron-updater": "^6.1.7",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "electron-updater": "^6.7.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@electron-toolkit/eslint-config-prettier": "^2.0.0",
-    "@electron-toolkit/eslint-config-ts": "^2.0.0",
-    "@electron-toolkit/tsconfig": "^1.0.1",
-    "@types/node": "^20.14.8",
-    "electron": "^39.2.7",
-    "electron-builder": "^24.13.3",
-    "electron-vite": "^2.3.0",
-    "eslint": "^8.57.0",
-    "prettier": "^3.3.2",
-    "typescript": "^5.5.2",
-    "vite": "^5.3.1"
+    "@electron-toolkit/eslint-config-prettier": "^3.0.0",
+    "@electron-toolkit/eslint-config-ts": "^3.1.0",
+    "@electron-toolkit/tsconfig": "^2.0.0",
+    "@types/node": "^22.10.6",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
+    "electron-vite": "^5.0.0",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.1.7"
   }
 }
