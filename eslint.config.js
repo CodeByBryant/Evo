@@ -6,7 +6,14 @@ const { configs: tsConfigs } = tsConfigPkg
 
 export default [
   {
-    ignores: ['out/**', 'dist/**', 'node_modules/**', 'build/**', '*.config.ts', '*.config.js']
+    ignores: [
+      'out/**',
+      'dist/**',
+      'node_modules/**',
+      'build/**',
+      'vite.config.ts',
+      'electron.vite.config.ts'
+    ]
   },
   js.configs.recommended,
   ...tsConfigs.recommended,

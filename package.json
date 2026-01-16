@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Evo - An interactive neural evolution sandbox where AI agents learn and adapt in real-time.",
   "main": "./out/main/index.js",
-  "author": "Bryant Ejorh <codebybryant@example.com> (https://github.com/CodeByBryant)",
+  "author": "Bryant Ejorh (https://github.com/CodeByBryant)",
   "homepage": "https://codebybryant.github.io/Evo/",
   "repository": {
     "type": "git",
@@ -28,8 +28,7 @@
     "agent-based-simulation"
   ],
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "format": "prettier --write .",
