@@ -65,7 +65,7 @@
     "@electron-toolkit/tsconfig": "^2.0.0",
     "@types/node": "^22.10.6",
     "electron": "^40.0.0",
-    "electron-builder": "^26.4.0",
+    "electron-builder": "^26.7.0",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",
     "prettier": "^3.8.0",
