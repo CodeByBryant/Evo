@@ -1,0 +1,17 @@
+# Default owner
+* @CodeByBryant
+
+# Simulation engine
+/packages/simulation/ @CodeByBryant
+
+# Contracts and persistence
+/packages/contracts/ @CodeByBryant
+/packages/config/ @CodeByBryant
+
+# Renderer and UI
+/packages/renderer/ @CodeByBryant
+/packages/ui/ @CodeByBryant
+
+# Desktop and release configuration
+/apps/desktop/ @CodeByBryant
+/.github/ @CodeByBryant
