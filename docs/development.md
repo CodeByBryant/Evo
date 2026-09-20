@@ -2,7 +2,37 @@
 
 This guide covers setting up a development environment and contributing to Evo.
 
-## Development Setup
+Evo is being rebuilt as a pnpm workspace around a headless simulation engine (see [ADR 0001](decisions/0001-separate-simulation-engine.md) and [ADR 0002](decisions/0002-workspace-layout.md)). The original app is archived in `legacy/prototype`.
+
+## Workspace Setup (new engine)
+
+### Prerequisites
+
+- **Node.js** v22 or later
+- **pnpm**, via corepack: `corepack enable` (the version is pinned in `package.json`)
+
+### Commands
+
+Run from the repository root:
+
+| Command          | Description                                                         |
+| ---------------- | ------------------------------------------------------------------- |
+| `pnpm install`   | Install all workspace dependencies                                  |
+| `pnpm check`     | Typecheck, lint (including dependency rules), and test              |
+| `pnpm build`     | Compile-check every package and build the web app                   |
+| `pnpm typecheck` | TypeScript checks for every package                                 |
+| `pnpm lint`      | Dependency-rule check plus ESLint                                   |
+| `pnpm test`      | Tool tests plus every package's Vitest suite                        |
+| `pnpm format`    | Format with Prettier (`pnpm format:check` verifies without writing) |
+| `pnpm lint:deps` | Only the workspace dependency-rule check                            |
+
+### Layout and rules
+
+Packages live in `packages/*` (`contracts`, `config`, `simulation`, `renderer`, `ui`) and `apps/*` (`web`, `desktop`, `simulator-cli`). Allowed dependencies are documented in [the dependency diagram](architecture/dependency-diagram.md) and enforced in CI. The simulation package must stay headless and deterministic: no React, DOM, Electron, `Math.random()`, or wall-clock time.
+
+## Legacy Prototype Setup
+
+The commands below apply to the archived prototype. Run them from `legacy/prototype`.
 
 ### Prerequisites
 
