@@ -1,9 +1,26 @@
 version: 2
 updates:
   - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'chore'
+    groups:
+      development-dependencies:
+        dependency-type: 'development'
+      production-dependencies:
+        dependency-type: 'production'
+
+  - package-ecosystem: 'npm'
     directory: '/legacy/prototype'
     schedule:
       interval: 'weekly'
     commit-message:
-      prefix: 'Fix' #
+      prefix: 'Fix'
     versioning-strategy: 'auto'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
