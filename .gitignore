@@ -74,3 +74,4 @@ temp
 *.pid.lock
 
 .dev
+.pnpm-store
