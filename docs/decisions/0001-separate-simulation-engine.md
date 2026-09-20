@@ -8,7 +8,7 @@ In prototype v0.1 the simulation, genetics, brain, and rendering are entangled (
 
 ## Proposed solution
 
-Rebuild Evo as a pnpm monorepo where the engine is the foundation, following `.dev/roadmap.md`:
+Rebuild Evo as a pnpm monorepo where the engine is the foundation, following the project rebuild roadmap (phases 0-10, maintained outside the repo):
 
 ```text
 contracts  (no internal deps)
@@ -18,6 +18,7 @@ renderer   -> contracts
 ui         -> contracts
 web        -> simulation + renderer + ui
 desktop    -> web
+experiment -> simulation + config
 cli        -> simulation + config + experiment
 ```
 
@@ -25,7 +26,7 @@ cli        -> simulation + config + experiment
 - UI and renderer consume immutable snapshots and events; they never mutate simulation state.
 - No global generations and no silent recovery from extinction.
 - Fixed-topology brains first; no ECS framework; keep Vite and Electron for now.
-- Work happens on `rewrite/simulation-engine` through small PRs into `main` (see `.dev/repo-discipline.md`, "first five pull requests").
+- Work happens on `rewrite/simulation-engine` through small PRs into `main` (governance, CI, monorepo skeleton, contracts, deterministic kernel, in that order).
 
 ## Alternatives considered
 
