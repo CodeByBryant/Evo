@@ -177,6 +177,8 @@ graph LR
 
 ## 🛠️ Development
 
+> **Note:** the current app is the archived v0.1 prototype and lives in `legacy/prototype`. The repository is being rebuilt as a workspace around a headless simulation engine (see `docs/decisions/`). Run all commands below from `legacy/prototype`.
+
 ### Prerequisites
 
 - Node.js (v18 or later)
@@ -187,7 +189,7 @@ graph LR
 ```bash
 # Clone the repository
 git clone https://github.com/CodeByBryant/Evo.git
-cd Evo
+cd Evo/legacy/prototype
 
 # Install dependencies
 npm install

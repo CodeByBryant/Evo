@@ -15,3 +15,6 @@
 # Desktop and release configuration
 /apps/desktop/ @CodeByBryant
 /.github/ @CodeByBryant
+
+# Legacy prototype (archived; see docs/archive)
+/legacy/ @CodeByBryant

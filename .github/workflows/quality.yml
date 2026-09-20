@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# Until the pnpm workspace lands, every job runs against the legacy prototype.
+defaults:
+  run:
+    working-directory: legacy/prototype
+
 jobs:
   format:
     name: Format check
@@ -23,12 +28,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: legacy/prototype/package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
       - name: Check formatting
-        run: npx prettier --check .
+        working-directory: .
+        run: ./legacy/prototype/node_modules/.bin/prettier --check .
 
   lint:
     name: Lint
@@ -43,6 +50,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: legacy/prototype/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -63,6 +71,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: legacy/prototype/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -83,6 +92,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: legacy/prototype/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -108,6 +118,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: legacy/prototype/package-lock.json
 
       - name: Install dependencies
         run: npm ci

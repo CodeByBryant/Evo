@@ -26,12 +26,15 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: legacy/prototype/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: legacy/prototype
 
       - name: Build Windows app
         run: npm run build:win
+        working-directory: legacy/prototype
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -40,8 +43,8 @@ jobs:
         with:
           name: windows-release
           path: |
-            release/*.exe
-            release/*.msi
+            legacy/prototype/release/*.exe
+            legacy/prototype/release/*.msi
           retention-days: 30
 
       - name: Upload to Release
@@ -49,8 +52,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release/*.exe
-            release/*.msi
+            legacy/prototype/release/*.exe
+            legacy/prototype/release/*.msi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -65,12 +68,15 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: legacy/prototype/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: legacy/prototype
 
       - name: Build Linux app
         run: npm run build:linux
+        working-directory: legacy/prototype
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -79,9 +85,9 @@ jobs:
         with:
           name: linux-release
           path: |
-            release/*.AppImage
-            release/*.deb
-            release/*.snap
+            legacy/prototype/release/*.AppImage
+            legacy/prototype/release/*.deb
+            legacy/prototype/release/*.snap
           retention-days: 30
 
       - name: Upload to Release
@@ -89,9 +95,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release/*.AppImage
-            release/*.deb
-            release/*.snap
+            legacy/prototype/release/*.AppImage
+            legacy/prototype/release/*.deb
+            legacy/prototype/release/*.snap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -106,12 +112,15 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: legacy/prototype/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: legacy/prototype
 
       - name: Build macOS app
         run: npm run build:mac
+        working-directory: legacy/prototype
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -120,8 +129,8 @@ jobs:
         with:
           name: macos-release
           path: |
-            release/*.dmg
-            release/*.zip
+            legacy/prototype/release/*.dmg
+            legacy/prototype/release/*.zip
           retention-days: 30
 
       - name: Upload to Release
@@ -129,7 +138,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release/*.dmg
-            release/*.zip
+            legacy/prototype/release/*.dmg
+            legacy/prototype/release/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
