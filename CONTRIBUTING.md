@@ -66,7 +66,15 @@ We’re always open to new ideas! If you have an idea for a feature or improveme
    Implement your changes in your branch. Ensure your code is clean, well-documented, and adheres to the project's code style.
 
 2. **Test Your Changes**:  
-   Before submitting your changes, test them thoroughly to ensure they work as intended.
+   Before submitting your changes, run the checks from the repository root (see [docs/development.md](docs/development.md)):
+
+   ```bash
+   pnpm format:check
+   pnpm check
+   pnpm build
+   ```
+
+   Simulation changes must keep the engine deterministic and respect the [package dependency rules](docs/architecture/dependency-diagram.md).
 
 3. **Push Your Branch**:  
    Push your changes to your forked repository:
