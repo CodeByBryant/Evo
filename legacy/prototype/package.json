@@ -55,7 +55,7 @@
     "@types/react-dom": "^19.2.3",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "electron-updater": "^6.7.3",
+    "electron-updater": "^6.8.9",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
