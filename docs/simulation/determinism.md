@@ -170,7 +170,12 @@ These are computed from the spec above with a reference script and must be repro
 | header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `a81b84c3f1dd01f771fbffcae405f4e6` |
 | same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `a81b84c3f1dd01f771fbffcae405f4e6` |
 
-`normal()` vectors are added together with `ln` in the foundations PR, since they depend on it.
+**`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
+
+- Seed `12345`, stream `world`, `normal()` six times: `-0.08395824436766462, 0.9547267480700918, 0.45671744440420514, -0.09525980130307461, -0.8689923299360515, 1.5297792797712502`. The second value of each pair is the cached spare.
+- Seed `0`, stream `environment`, `normal(10, 2)` four times: `11.022975575089307, 10.285749822714616, 9.212597100828681, 9.657366487438306`.
+
+**Deterministic math accuracy.** `sin`, `cos`, `atan2` and `ln` are tested against the platform functions: within `1e-15` absolute for `sin`/`cos` over `|x| <= 1,000,000` (including neighborhoods of multiples of pi/2), within `1e-15` for `atan2`, and within `2e-16` relative for `ln` over `1e-300..1e300`. Inputs outside each function's documented domain throw `RangeError`. The vectors above were also reproduced with a `Math.log` reference and agree exactly.
 
 ## 11. Enforcement summary
 
