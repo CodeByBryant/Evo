@@ -3,6 +3,35 @@ import tseslint from 'typescript-eslint'
 import prettier from 'eslint-config-prettier'
 
 const DETERMINISM_HINT = 'Use the seeded RandomSource and the simulation clock instead.'
+const MATH_HINT = 'use the engine math in math/trig.ts (docs/simulation/determinism.md).'
+const ITERATION_HINT =
+  'iterate stores in id order or a fixed array (docs/simulation/determinism.md).'
+
+// Transcendental and other implementation-defined Math functions (see determinism.md, section 6).
+const PLATFORM_MATH = [
+  'sin',
+  'cos',
+  'tan',
+  'asin',
+  'acos',
+  'atan',
+  'atan2',
+  'sinh',
+  'cosh',
+  'tanh',
+  'asinh',
+  'acosh',
+  'atanh',
+  'log',
+  'log2',
+  'log10',
+  'log1p',
+  'exp',
+  'expm1',
+  'pow',
+  'hypot',
+  'cbrt'
+]
 
 export default tseslint.config(
   {
@@ -55,13 +84,35 @@ export default tseslint.config(
         'error',
         { object: 'Math', property: 'random', message: DETERMINISM_HINT },
         { object: 'Date', property: 'now', message: DETERMINISM_HINT },
-        { object: 'performance', property: 'now', message: DETERMINISM_HINT }
+        { object: 'performance', property: 'now', message: DETERMINISM_HINT },
+        ...PLATFORM_MATH.map((property) => ({
+          object: 'Math',
+          property,
+          message: `Math.${property} is implementation-defined; ${MATH_HINT}`
+        })),
+        ...['keys', 'values', 'entries'].map((property) => ({
+          object: 'Object',
+          property,
+          message: `Object.${property} depends on enumeration order; ${ITERATION_HINT}`
+        }))
       ],
       'no-restricted-syntax': [
         'error',
         {
           selector: "NewExpression[callee.name='Date'][arguments.length=0]",
           message: `Wall-clock time is not allowed in simulation code. ${DETERMINISM_HINT}`
+        },
+        {
+          selector: "BinaryExpression[operator='**'], AssignmentExpression[operator='**=']",
+          message: `The ** operator is implementation-defined for non-integer exponents; ${MATH_HINT}`
+        },
+        {
+          selector: 'ForInStatement',
+          message: `for...in depends on property enumeration order; ${ITERATION_HINT}`
+        },
+        {
+          selector: "CallExpression[callee.property.name='sort'][arguments.length=0]",
+          message: 'Array.prototype.sort without a comparator sorts lexicographically; pass one.'
         }
       ]
     }
