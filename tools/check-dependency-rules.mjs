@@ -5,9 +5,11 @@
  * - Every `@evo/*` dependency must be an allowed edge.
  * - `@evo/simulation` must not depend on UI, bundler, or desktop packages.
  * - Source files must not import `@evo/*` packages that are not allowed edges.
+ * - Simulation systems (`packages/simulation/src/systems/`) must not import sibling systems
+ *   or anything under `world/`: ordering is controlled exclusively by `World`.
  */
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
-import { join, relative, resolve } from 'node:path'
+import { join, posix, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /** package name (without scope) -> internal packages it may depend on. */
@@ -90,6 +92,39 @@ export function checkImports(shortName, files) {
   return errors
 }
 
+const stripExtension = (path) => path.replace(/\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/, '')
+
+const SYSTEMS_DIR = 'packages/simulation/src/systems/'
+const WORLD_DIR = 'packages/simulation/src/world'
+
+/**
+ * A system may only mutate state it owns and never talks to another system.
+ * `files` use repo-relative POSIX paths. Only files under the systems directory are checked.
+ */
+export function checkSystemImports(files) {
+  const errors = []
+  for (const { path, text } of files) {
+    if (!path.startsWith(SYSTEMS_DIR)) continue
+    const own = stripExtension(path)
+    for (const match of text.matchAll(IMPORT_RE)) {
+      const spec = match[1]
+      if (!spec.startsWith('.')) continue
+      const target = stripExtension(posix.normalize(posix.join(posix.dirname(path), spec)))
+      if (target === own) continue
+      if (target === SYSTEMS_DIR.slice(0, -1) || target.startsWith(SYSTEMS_DIR)) {
+        errors.push(
+          `${path}: systems must not import other systems ("${spec}"); pass data through world-owned buffers`
+        )
+      } else if (target === WORLD_DIR || target.startsWith(`${WORLD_DIR}/`)) {
+        errors.push(
+          `${path}: systems must not import from world/ ("${spec}"); World orchestrates systems, not the reverse`
+        )
+      }
+    }
+  }
+  return errors
+}
+
 function listSourceFiles(dir) {
   const out = []
   if (!existsSync(dir)) return out
@@ -127,6 +162,7 @@ export function run(root) {
       text: readFileSync(path, 'utf8')
     }))
     errors.push(...checkImports(pkg.name.slice(SCOPE.length), files))
+    errors.push(...checkSystemImports(files))
   }
   return { packages: packages.length, errors }
 }
