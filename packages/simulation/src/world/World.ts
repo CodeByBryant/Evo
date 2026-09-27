@@ -1,5 +1,11 @@
 import { resolveWorldConfig, validateSeed } from '@evo/config'
-import type { ValidationResult, WorldConfig, WorldOptions, WorldSnapshot } from '@evo/contracts'
+import type {
+  HistoricalOrganismRecord,
+  ValidationResult,
+  WorldConfig,
+  WorldOptions,
+  WorldSnapshot
+} from '@evo/contracts'
 import type { IntentBuffer, PerceptionBuffer } from '../buffers/types'
 import type { ClockState } from '../clock/SimulationClock'
 import { SimulationClock } from '../clock/SimulationClock'
@@ -10,6 +16,7 @@ import { lifeStageFor } from '../organisms/lifeStage'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
+import { HistoryStore } from '../history/HistoryStore'
 import { TWO_PI, wrapAngle } from '../math/scalar'
 import { MetricsCollector } from '../metrics/MetricsCollector'
 import { RandomStreams, STREAM_NAMES } from '../random/streams'
@@ -51,6 +58,8 @@ export class World {
   private readonly resources: ResourceStore
   private readonly metricsCollector: MetricsCollector
   private readonly resourceIndex: SpatialHash<ResourceState>
+  private readonly organismIndex: SpatialHash<OrganismState>
+  private readonly historyStore: HistoryStore
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
   private readonly intentBuffer: IntentBuffer = new Map()
 
@@ -90,6 +99,11 @@ export class World {
       this.config.organisms.sensorRadius,
       (resource) => resource
     )
+    this.organismIndex = new SpatialHash<OrganismState>(
+      this.config.reproduction.searchRadius,
+      (organism) => organism
+    )
+    this.historyStore = new HistoryStore(this.config.history.maxHistoricalOrganisms)
 
     this.environmentSystem = new EnvironmentSystem(
       this.config,
@@ -125,8 +139,15 @@ export class World {
       this.events
     )
     this.metabolismSystem = new MetabolismSystem(this.config, this.organisms, this.events)
-    this.reproductionSystem = new ReproductionSystem()
-    this.deathSystem = new DeathSystem(this.config, this.organisms, this.events)
+    this.reproductionSystem = new ReproductionSystem(
+      this.config,
+      this.organisms,
+      this.organismIndex,
+      this.ids,
+      this.randomStreams.get('reproduction'),
+      this.events
+    )
+    this.deathSystem = new DeathSystem(this.config, this.organisms, this.events, this.historyStore)
 
     this.events.beginTick()
     this.spawnInitialPopulation()
@@ -192,12 +213,13 @@ export class World {
 
     this.environmentSystem.update(tick)
     this.resourceIndex.rebuild(this.resources.values())
+    this.organismIndex.rebuild(this.organisms.values())
     this.perceptionSystem.update()
     this.decisionSystem.update()
     this.movementSystem.update(tick)
     this.interactionSystem.update(tick)
     this.metabolismSystem.update(tick)
-    this.reproductionSystem.update()
+    this.reproductionSystem.update(tick)
     this.deathSystem.update(tick)
 
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
@@ -264,6 +286,15 @@ export class World {
       })),
       metrics: this.metricsCollector.snapshot()
     }
+  }
+
+  /**
+   * A compact, retained record of every organism that has died, oldest first (bounded by
+   * `history.maxHistoricalOrganisms`). Separate from `snapshot()` so the hot render-loop path
+   * stays cheap; history is queried occasionally, not every frame (docs/decisions/0005).
+   */
+  historicalOrganisms(): HistoricalOrganismRecord[] {
+    return this.historyStore.list()
   }
 
   /**

@@ -7,6 +7,7 @@ import type { OrganismState } from '../src/entities/OrganismStore'
 import { ResourceStore } from '../src/entities/ResourceStore'
 import type { ResourceState } from '../src/entities/ResourceStore'
 import { EventLog } from '../src/events/EventLog'
+import { HistoryStore } from '../src/history/HistoryStore'
 import { atan2 } from '../src/math/trig'
 import { SeededRandom } from '../src/random/SeededRandom'
 import { deriveStreamWords } from '../src/random/streams'
@@ -49,6 +50,16 @@ const resource = (id: number, overrides: Partial<ResourceState> = {}): ResourceS
 
 const makeResourceIndex = (): SpatialHash<ResourceState> =>
   new SpatialHash<ResourceState>(60, (r) => r)
+
+const makeOrganismIndex = (cellSize = 50): SpatialHash<OrganismState> =>
+  new SpatialHash<OrganismState>(cellSize, (o) => o)
+
+/** An `IdGenerator` whose next allocated id is `n` (as if `n` ids were already handed out). */
+const idsFrom = (n: number): IdGenerator => {
+  const ids = new IdGenerator()
+  for (let i = 0; i < n; i++) ids.allocate()
+  return ids
+}
 
 describe('EnvironmentSystem', () => {
   it('spawnInitial creates exactly resources.initialCount resources within bounds', () => {
@@ -549,8 +560,235 @@ describe('MetabolismSystem', () => {
 })
 
 describe('ReproductionSystem', () => {
-  it('is a callable no-op', () => {
-    expect(() => new ReproductionSystem().update()).not.toThrow()
+  it('records a failed attempt with no-partner when no eligible partner is in range', () => {
+    const config = resolveWorldConfig()
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { age: 100, energy: 100 }))
+    const index = makeOrganismIndex()
+    index.rebuild(organisms.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new ReproductionSystem(
+      config,
+      organisms,
+      index,
+      new IdGenerator(),
+      stream(1, 'reproduction'),
+      events
+    ).update(1)
+
+    expect(events.eventsThisTick()).toEqual([
+      {
+        type: 'reproduction-attempted',
+        tick: 1,
+        organismId: 1,
+        partnerId: null,
+        childId: null,
+        succeeded: false,
+        failureReason: 'no-partner'
+      }
+    ])
+    expect(organisms.get(1)?.energy).toBe(100)
+    expect(organisms.get(1)?.reproductionCooldownRemaining).toBe(0)
+  })
+
+  it('pairs two eligible organisms: both pay energyCost, both get the cooldown, a child is born', () => {
+    const config = resolveWorldConfig()
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { x: 10, y: 10, age: 100, energy: 100 }))
+    organisms.add(organism(2, { x: 11, y: 10, age: 100, energy: 100 }))
+    const index = makeOrganismIndex()
+    index.rebuild(organisms.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new ReproductionSystem(
+      config,
+      organisms,
+      index,
+      idsFrom(3),
+      stream(1, 'reproduction'),
+      events
+    ).update(1)
+
+    expect(organisms.get(1)?.energy).toBe(100 - config.reproduction.energyCost)
+    expect(organisms.get(2)?.energy).toBe(100 - config.reproduction.energyCost)
+    expect(organisms.get(1)?.reproductionCooldownRemaining).toBe(config.reproduction.cooldown)
+    expect(organisms.get(2)?.reproductionCooldownRemaining).toBe(config.reproduction.cooldown)
+
+    expect(organisms.size).toBe(3)
+    const child = organisms.get(3)
+    expect(child).toMatchObject({ parentIds: [1, 2], age: 0, birthTick: 1 })
+    const bornEvent = events.eventsThisTick().find((e) => e.type === 'organism-born')
+    expect(bornEvent).toMatchObject({ type: 'organism-born', tick: 1, parentIds: [1, 2] })
+    const attemptEvent = events
+      .eventsThisTick()
+      .find((e) => e.type === 'reproduction-attempted' && e.organismId === 1)
+    expect(attemptEvent).toMatchObject({ succeeded: true, partnerId: 2 })
+  })
+
+  it('never pairs the same organism twice in one tick', () => {
+    const config = resolveWorldConfig({ reproduction: { searchRadius: 100 } })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { x: 0, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(2, { x: 1, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(3, { x: 2, y: 0, age: 100, energy: 100 }))
+    const index = makeOrganismIndex(100)
+    index.rebuild(organisms.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new ReproductionSystem(
+      config,
+      organisms,
+      index,
+      idsFrom(4),
+      stream(1, 'reproduction'),
+      events
+    ).update(1)
+
+    // Organism 1 pairs with 2 (nearest); organism 3 has no unpaired partner left.
+    const failed = events
+      .eventsThisTick()
+      .find((e) => e.type === 'reproduction-attempted' && e.organismId === 3)
+    expect(failed).toMatchObject({ succeeded: false, failureReason: 'no-partner' })
+  })
+
+  it('does not let a juvenile initiate or be chosen as a partner', () => {
+    const config = resolveWorldConfig()
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { x: 0, y: 0, age: 1, energy: 100 }))
+    organisms.add(organism(2, { x: 1, y: 0, age: 100, energy: 100 }))
+    const index = makeOrganismIndex()
+    index.rebuild(organisms.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new ReproductionSystem(
+      config,
+      organisms,
+      index,
+      new IdGenerator(),
+      stream(1, 'reproduction'),
+      events
+    ).update(1)
+
+    // Organism 1 is juvenile: no attempt recorded for it at all.
+    expect(events.eventsThisTick().some((e) => 'organismId' in e && e.organismId === 1)).toBe(false)
+    // Organism 2 finds no eligible partner (1 is juvenile), so it fails.
+    expect(events.eventsThisTick().find((e) => e.type === 'reproduction-attempted')).toMatchObject({
+      organismId: 2,
+      succeeded: false,
+      failureReason: 'no-partner'
+    })
+  })
+
+  it('gates on a positive cooldown, silently, and decrements cooldowns by deltaTime each tick', () => {
+    const config = resolveWorldConfig({ timestep: 2 })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { age: 100, energy: 100, reproductionCooldownRemaining: 5 }))
+    const index = makeOrganismIndex()
+    index.rebuild(organisms.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new ReproductionSystem(
+      config,
+      organisms,
+      index,
+      new IdGenerator(),
+      stream(1, 'reproduction'),
+      events
+    ).update(1)
+
+    expect(organisms.get(1)?.reproductionCooldownRemaining).toBe(3)
+    expect(events.eventsThisTick()).toEqual([])
+  })
+
+  it('floors the decremented cooldown at zero rather than going negative', () => {
+    const config = resolveWorldConfig({ timestep: 2 })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { age: 100, energy: 100, reproductionCooldownRemaining: 1 }))
+    const index = makeOrganismIndex()
+    index.rebuild(organisms.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new ReproductionSystem(
+      config,
+      organisms,
+      index,
+      new IdGenerator(),
+      stream(1, 'reproduction'),
+      events
+    ).update(1)
+
+    expect(organisms.get(1)?.reproductionCooldownRemaining).toBe(0)
+  })
+
+  it('rejects an attempt at the population cap without spending energy or a partner search', () => {
+    const config = resolveWorldConfig({ maxPopulation: 2, organisms: { initialCount: 2 } })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { x: 0, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(2, { x: 1, y: 0, age: 100, energy: 100 }))
+    const index = makeOrganismIndex()
+    index.rebuild(organisms.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new ReproductionSystem(
+      config,
+      organisms,
+      index,
+      new IdGenerator(),
+      stream(1, 'reproduction'),
+      events
+    ).update(1)
+
+    expect(organisms.size).toBe(2)
+    expect(organisms.get(1)?.energy).toBe(100)
+    expect(events.eventsThisTick().filter((e) => e.type === 'reproduction-attempted')).toEqual([
+      {
+        type: 'reproduction-attempted',
+        tick: 1,
+        organismId: 1,
+        partnerId: null,
+        childId: null,
+        succeeded: false,
+        failureReason: 'population-cap'
+      },
+      {
+        type: 'reproduction-attempted',
+        tick: 1,
+        organismId: 2,
+        partnerId: null,
+        childId: null,
+        succeeded: false,
+        failureReason: 'population-cap'
+      }
+    ])
+  })
+
+  it('gates silently on energy below minEnergy', () => {
+    const config = resolveWorldConfig({ reproduction: { minEnergy: 60 } })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { age: 100, energy: 59 }))
+    const index = makeOrganismIndex()
+    index.rebuild(organisms.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new ReproductionSystem(
+      config,
+      organisms,
+      index,
+      new IdGenerator(),
+      stream(1, 'reproduction'),
+      events
+    ).update(1)
+
+    expect(events.eventsThisTick()).toEqual([])
   })
 })
 
@@ -562,8 +800,9 @@ describe('DeathSystem', () => {
     organisms.add(organism(2, { energy: 50 }))
     const events = new EventLog(10)
     events.beginTick()
+    const history = new HistoryStore(10)
 
-    new DeathSystem(config, organisms, events).update(5)
+    new DeathSystem(config, organisms, events, history).update(5)
 
     expect(organisms.has(1)).toBe(false)
     expect(organisms.has(2)).toBe(true)
@@ -586,8 +825,9 @@ describe('DeathSystem', () => {
     organisms.add(organism(1, { age: 10, energy: 50 }))
     const events = new EventLog(10)
     events.beginTick()
+    const history = new HistoryStore(10)
 
-    new DeathSystem(config, organisms, events).update(1)
+    new DeathSystem(config, organisms, events, history).update(1)
 
     expect(organisms.has(1)).toBe(false)
     expect(events.eventsThisTick()[0]).toMatchObject({ cause: 'age' })
@@ -599,7 +839,7 @@ describe('DeathSystem', () => {
     organisms.add(organism(1, { energy: 1, age: 1 }))
     const events = new EventLog(10)
     events.beginTick()
-    new DeathSystem(config, organisms, events).update(1)
+    new DeathSystem(config, organisms, events, new HistoryStore(10)).update(1)
     expect(organisms.has(1)).toBe(true)
   })
 
@@ -611,7 +851,22 @@ describe('DeathSystem', () => {
     organisms.add(organism(3, { energy: 0 }))
     const events = new EventLog(10)
     events.beginTick()
-    new DeathSystem(config, organisms, events).update(1)
+    new DeathSystem(config, organisms, events, new HistoryStore(10)).update(1)
     expect(organisms.values().map((o) => o.id)).toEqual([2])
+  })
+
+  it('appends a historical record with the parent ids, birth tick, and death cause', () => {
+    const config = resolveWorldConfig()
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { energy: 0, parentIds: [7, 9], birthTick: 3 }))
+    const events = new EventLog(10)
+    events.beginTick()
+    const history = new HistoryStore(10)
+
+    new DeathSystem(config, organisms, events, history).update(20)
+
+    expect(history.list()).toEqual([
+      { id: 1, parentIds: [7, 9], birthTick: 3, deathTick: 20, deathCause: 'starvation' }
+    ])
   })
 })

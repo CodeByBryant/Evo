@@ -66,6 +66,27 @@ describe('100,000-tick runs', () => {
     expect(stepped.stateHash()).toBe(ran.stateHash())
   })
 
+  it('sustains a bounded population over 50,000 ticks (roadmap: sustained population)', () => {
+    // Default config, no overrides: population must neither collapse nor run away toward
+    // maxPopulation over a long run - this is what "the engine can sustain a population for a
+    // long simulated period" (roadmap Phase 3 exit criteria) means in practice.
+    const world = World.create({ seed: 1, validateEveryTicks: 1000 })
+    const samples: number[] = []
+    for (let i = 0; i < 50; i++) {
+      world.run(1000)
+      samples.push(world.snapshot().population.active)
+    }
+
+    expect(world.isExtinct).toBe(false)
+    const backHalf = samples.slice(25)
+    for (const active of backHalf) {
+      expect(active).toBeGreaterThanOrEqual(15)
+      expect(active).toBeLessThanOrEqual(40)
+    }
+    expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
+    expect(world.validate()).toEqual({ ok: true, errors: [] })
+  })
+
   it('extinction, once reached, is never reversed across a long remaining run', () => {
     const world = World.create({
       seed: 1,

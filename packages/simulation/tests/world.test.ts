@@ -177,14 +177,17 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     const snapshot = world.snapshot()
 
     // Pinned exact values: this scenario is fully deterministic for this seed/config/duration.
-    expect(snapshot.population.active).toBe(6)
-    expect(snapshot.metrics.deathsByStarvation).toBe(4)
+    expect(snapshot.population.active).toBe(26)
+    expect(snapshot.metrics.organismsBorn).toBe(47)
+    expect(snapshot.metrics.deathsByStarvation).toBe(21)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 
     // Non-pinned properties any correct implementation must satisfy:
     expect(snapshot.metrics.resourcesConsumed).toBeGreaterThan(0)
     expect(snapshot.metrics.energyConsumed).toBeGreaterThan(0)
+    expect(snapshot.metrics.organismsBorn).toBeGreaterThan(10) // more births than founders
+    expect(snapshot.metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(world.validate().ok).toBe(true)
     expect(world.events.list().some((event) => event.type === 'resource-consumed')).toBe(true)
     expect(
@@ -192,6 +195,16 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
         .list()
         .some((event) => event.type === 'organism-died' && event.cause === 'starvation')
     ).toBe(true)
+    expect(
+      world.events
+        .list()
+        .some((event) => event.type === 'reproduction-attempted' && event.succeeded)
+    ).toBe(true)
+    for (const organism of snapshot.organisms) {
+      if (organism.parentIds.length > 0) {
+        expect(organism.parentIds).toHaveLength(2)
+      }
+    }
   })
 })
 
@@ -216,6 +229,9 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
     expect(world.isExtinct).toBe(true)
     expect(world.snapshot().population.extinctionTick).toBe(845)
     expect(world.snapshot().metrics.deathsByStarvation).toBe(10)
+    // Confirms reproduction never masks the extinction: organisms start below
+    // reproduction.minEnergy and only lose energy from here, so none ever reproduce.
+    expect(world.snapshot().metrics.reproductionSuccesses).toBe(0)
 
     // Run far past extinction: no hidden organism ever appears, extinctionTick never changes.
     world.run(5000)
@@ -223,6 +239,56 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
     expect(snapshot.population.active).toBe(0)
     expect(snapshot.population.extinctionTick).toBe(845)
     expect(snapshot.organisms).toEqual([])
+    expect(world.validate().ok).toBe(true)
+  })
+})
+
+describe('scenario C: reproduction (roadmap testing scenario C)', () => {
+  // 2 mature organisms, high energy, a small world (so they're always within searchRadius).
+  it('two eligible organisms reproduce: a child is born and both parents pay the cost', () => {
+    const world = World.create({
+      seed: 42,
+      config: {
+        environment: { width: 100, height: 100 },
+        maxPopulation: 100,
+        organisms: {
+          initialCount: 2,
+          initialEnergy: 100,
+          maturityAge: 0.05,
+          senescenceAge: 1000,
+          maxAge: 2000
+        },
+        resources: { initialCount: 0, spawnRate: 0 },
+        reproduction: {
+          minEnergy: 60,
+          energyCost: 10,
+          offspringEnergy: 20,
+          cooldown: 5,
+          searchRadius: 1000
+        }
+      }
+    })
+
+    world.run(1)
+    const snapshot = world.snapshot()
+
+    expect(snapshot.population.active).toBe(3)
+    expect(snapshot.metrics.reproductionAttempts).toBe(1)
+    expect(snapshot.metrics.reproductionSuccesses).toBe(1)
+    expect(snapshot.metrics.reproductionFailures).toBe(0)
+
+    const [parentA, parentB, child] = snapshot.organisms
+    expect(parentA?.energy).toBeLessThan(100)
+    expect(parentB?.energy).toBeLessThan(100)
+    expect(parentA?.reproductionCooldownRemaining).toBe(5)
+    expect(parentB?.reproductionCooldownRemaining).toBe(5)
+    expect(child).toMatchObject({ id: 2, parentIds: [0, 1], age: 0, lifeStage: 'juvenile' })
+    expect(child?.energy).toBe(20)
+
+    const bornEvent = world.events
+      .list()
+      .find((e) => e.type === 'organism-born' && e.organismId === 2)
+    expect(bornEvent).toMatchObject({ parentIds: [0, 1] })
     expect(world.validate().ok).toBe(true)
   })
 })

@@ -7,8 +7,9 @@ import { fileURLToPath } from 'node:url'
  * A static, structural check that complements the runtime determinism tests: the roadmap's
  * "random stream isolation works" category isn't fully covered by hash comparisons alone, because
  * a system that draws from an unused stream would still be reproducible (same seed -> same
- * result); it just wouldn't be *isolated* in spirit. Reading a stream that Phase 2 has no business
- * touching should fail loudly here, not be discovered by accident in Phase 3.
+ * result); it just wouldn't be *isolated* in spirit. Reading a stream that the current phase has
+ * no business touching should fail loudly here, not be discovered by accident later. `reproduction`
+ * left this list in Phase 3 once `ReproductionSystem` became real (docs/decisions/0005).
  */
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -31,9 +32,9 @@ const engineFiles = [
   ...collectFiles(join(ROOT, 'src', 'world'))
 ]
 
-const RESERVED_FOR_LATER_PHASES = ['genetics', 'reproduction', 'learning', 'events'] as const
+const RESERVED_FOR_LATER_PHASES = ['genetics', 'learning', 'events'] as const
 
-describe('reserved random streams are never drawn from by the Phase 2 engine', () => {
+describe('reserved random streams are never drawn from by systems/ or world/', () => {
   it.each(RESERVED_FOR_LATER_PHASES)(
     'stream "%s" is not referenced in systems/ or world/',
     (name) => {

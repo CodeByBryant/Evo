@@ -61,8 +61,9 @@ export class MetricsCollector {
 
   /**
    * Records the active population for this tick. `extinctionTick` is set the first time the
-   * population reaches zero and is never cleared: the Phase 2 engine has no way to create an
-   * organism outside of `World.create`, so population can only ever fall, never recover.
+   * population reaches zero and is never cleared: reproduction always requires at least one
+   * existing organism as a parent, so a population of zero can never produce more, under any
+   * extinction policy this engine implements.
    */
   updatePopulation(activeCount: number, tick: number): void {
     if (activeCount === 0 && this.extinctTick === null) {
