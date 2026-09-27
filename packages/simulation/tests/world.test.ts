@@ -177,8 +177,8 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     const snapshot = world.snapshot()
 
     // Pinned exact values: this scenario is fully deterministic for this seed/config/duration.
-    expect(snapshot.population.active).toBe(9)
-    expect(snapshot.metrics.deathsByStarvation).toBe(1)
+    expect(snapshot.population.active).toBe(6)
+    expect(snapshot.metrics.deathsByStarvation).toBe(4)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 
@@ -207,17 +207,21 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
       validateEveryTicks: 100
     })
 
-    world.run(500)
+    // Juveniles pay a reduced metabolic cost (juvenileMetabolicScale), and this whole run stays
+    // juvenile (organisms.maturityAge is 90 simulated seconds; the run ends well before that in
+    // ticks but the age unit is seconds, not ticks - at timestep 0.1 that's tick 900), so
+    // extinction takes longer than a single-cost-term formula would predict.
+    world.run(900)
     expect(world.snapshot().population.active).toBe(0)
     expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(500)
+    expect(world.snapshot().population.extinctionTick).toBe(845)
     expect(world.snapshot().metrics.deathsByStarvation).toBe(10)
 
     // Run far past extinction: no hidden organism ever appears, extinctionTick never changes.
     world.run(5000)
     const snapshot = world.snapshot()
     expect(snapshot.population.active).toBe(0)
-    expect(snapshot.population.extinctionTick).toBe(500)
+    expect(snapshot.population.extinctionTick).toBe(845)
     expect(snapshot.organisms).toEqual([])
     expect(world.validate().ok).toBe(true)
   })

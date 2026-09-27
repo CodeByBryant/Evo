@@ -177,9 +177,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(1)`                                            | `900b01e9654563a45806cca4a0353b67` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `a81b84c3f1dd01f771fbffcae405f4e6` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `a81b84c3f1dd01f771fbffcae405f4e6` |
+| header only: `"EVOH"`, `writeUint32(2)`                                            | `dfb410a7fb90a35283f01a1c42a10d0b` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `7bc1354f42366f6b62c02fb98d5e2292` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `7bc1354f42366f6b62c02fb98d5e2292` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 

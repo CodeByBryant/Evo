@@ -5,13 +5,13 @@ import { HASH_SCHEMA_VERSION, SimulationClock, StateHasher, utf8Encode } from '.
 describe('StateHasher', () => {
   it('matches the published vectors', () => {
     expect(new StateHasher().digest()).toBe('027ae52ecfc796215593990d4b41437c')
-    expect(StateHasher.withHeader().digest()).toBe('900b01e9654563a45806cca4a0353b67')
+    expect(StateHasher.withHeader().digest()).toBe('dfb410a7fb90a35283f01a1c42a10d0b')
     const sample = StateHasher.withHeader()
       .writeUint32(7)
       .writeFloat64(-0)
       .writeFloat64(0.5)
       .writeUint8(1)
-    expect(sample.digest()).toBe('a81b84c3f1dd01f771fbffcae405f4e6')
+    expect(sample.digest()).toBe('7bc1354f42366f6b62c02fb98d5e2292')
   })
 
   it('canonicalizes -0 to +0', () => {
@@ -85,7 +85,7 @@ describe('StateHasher', () => {
   })
 
   it('exposes the schema version written into the header', () => {
-    expect(HASH_SCHEMA_VERSION).toBe(1)
+    expect(HASH_SCHEMA_VERSION).toBe(2)
   })
 
   it('writes booleans as one byte', () => {

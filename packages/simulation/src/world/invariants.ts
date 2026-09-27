@@ -9,6 +9,8 @@ export interface InvariantContext {
   readonly tick: number
   readonly extinctionTick: number | null
   readonly metrics: MetricsSnapshot
+  /** The next id `IdGenerator` will allocate; used to validate `parentIds` reference real ids. */
+  readonly nextEntityId: number
 }
 
 function checkFinite(label: string, field: string, value: number, errors: string[]): void {
@@ -19,6 +21,8 @@ function checkOrganism(
   organism: OrganismState,
   width: number,
   height: number,
+  tick: number,
+  nextEntityId: number,
   errors: string[]
 ): void {
   const label = `organism ${organism.id}`
@@ -29,10 +33,31 @@ function checkOrganism(
   checkFinite(label, 'heading', organism.heading, errors)
   checkFinite(label, 'age', organism.age, errors)
   checkFinite(label, 'energy', organism.energy, errors)
+  checkFinite(
+    label,
+    'reproductionCooldownRemaining',
+    organism.reproductionCooldownRemaining,
+    errors
+  )
   if (organism.age < 0) errors.push(`${label}: age is negative`)
   if (organism.energy < 0) errors.push(`${label}: energy is negative`)
+  if (organism.reproductionCooldownRemaining < 0) {
+    errors.push(`${label}: reproductionCooldownRemaining is negative`)
+  }
   if (organism.x < 0 || organism.x > width) errors.push(`${label}: x is outside [0, ${width}]`)
   if (organism.y < 0 || organism.y > height) errors.push(`${label}: y is outside [0, ${height}]`)
+  if (
+    !Number.isInteger(organism.birthTick) ||
+    organism.birthTick < 0 ||
+    organism.birthTick > tick
+  ) {
+    errors.push(`${label}: birthTick (${organism.birthTick}) is not a valid tick in [0, ${tick}]`)
+  }
+  for (const parentId of organism.parentIds) {
+    if (!Number.isInteger(parentId) || parentId < 0 || parentId >= nextEntityId) {
+      errors.push(`${label}: parentIds contains an invalid id (${parentId})`)
+    }
+  }
 }
 
 function checkResource(
@@ -57,9 +82,13 @@ function checkResource(
  */
 export function checkInvariants(context: InvariantContext): ValidationResult {
   const errors: string[] = []
-  const { organisms, resources, config, tick, extinctionTick, metrics } = context
+  const { organisms, resources, config, tick, extinctionTick, metrics, nextEntityId } = context
   const width = config.environment.width
   const height = config.environment.height
+
+  if (organisms.length > config.maxPopulation) {
+    errors.push(`population (${organisms.length}) exceeds maxPopulation (${config.maxPopulation})`)
+  }
 
   let previousOrganismId = -1
   for (const organism of organisms) {
@@ -67,7 +96,7 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
       errors.push(`organisms are not in strictly ascending id order at organism ${organism.id}`)
     }
     previousOrganismId = organism.id
-    checkOrganism(organism, width, height, errors)
+    checkOrganism(organism, width, height, tick, nextEntityId, errors)
   }
 
   let previousResourceId = -1
