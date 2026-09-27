@@ -227,7 +227,8 @@ export class World {
       config: this.config,
       tick: this.clockImpl.tick,
       extinctionTick: this.metricsCollector.extinctionTick,
-      metrics: this.metricsCollector.snapshot()
+      metrics: this.metricsCollector.snapshot(),
+      nextEntityId: this.ids.nextId
     })
   }
 
@@ -303,6 +304,11 @@ export class World {
         .writeFloat64(organism.heading)
         .writeFloat64(organism.age)
         .writeFloat64(organism.energy)
+        .writeFloat64(organism.birthTick)
+        .writeFloat64(organism.lastTurnMagnitude)
+        .writeFloat64(organism.reproductionCooldownRemaining)
+      hasher.writeUint32(organism.parentIds.length)
+      for (const parentId of organism.parentIds) hasher.writeUint32(parentId)
     }
 
     const resources = this.resources.values()
@@ -322,6 +328,9 @@ export class World {
       .writeUint32(metrics.deathsByAge)
       .writeUint32(metrics.resourcesSpawned)
       .writeUint32(metrics.resourcesConsumed)
+      .writeUint32(metrics.reproductionAttempts)
+      .writeUint32(metrics.reproductionSuccesses)
+      .writeUint32(metrics.reproductionFailures)
       .writeFloat64(metrics.energyConsumed)
       .writeFloat64(metrics.energyWasted)
 

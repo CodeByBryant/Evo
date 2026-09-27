@@ -50,6 +50,7 @@ const baseContext = (overrides: Partial<InvariantContext> = {}): InvariantContex
   tick: 100,
   extinctionTick: null,
   metrics: zeroMetrics,
+  nextEntityId: 1000,
   ...overrides
 })
 
@@ -174,6 +175,59 @@ describe('checkInvariants', () => {
     expect(result.errors.some((e) => e.includes('energyWasted') && e.includes('not finite'))).toBe(
       true
     )
+  })
+
+  it('rejects a population exceeding maxPopulation', () => {
+    const config = { ...DEFAULT_WORLD_CONFIG, maxPopulation: 1 }
+    const result = checkInvariants(baseContext({ config, organisms: [organism(1), organism(2)] }))
+    expect(result.errors).toContain('population (2) exceeds maxPopulation (1)')
+  })
+
+  it('accepts a population exactly at maxPopulation', () => {
+    const config = { ...DEFAULT_WORLD_CONFIG, maxPopulation: 2 }
+    const result = checkInvariants(baseContext({ config, organisms: [organism(1), organism(2)] }))
+    expect(result.ok).toBe(true)
+  })
+
+  it('catches a negative or non-finite reproductionCooldownRemaining', () => {
+    for (const bad of [-1, Number.NaN, Infinity]) {
+      const result = checkInvariants(
+        baseContext({ organisms: [organism(1, { reproductionCooldownRemaining: bad })] })
+      )
+      expect(result.ok).toBe(false)
+    }
+  })
+
+  it('catches a birthTick outside [0, tick] or non-integer', () => {
+    for (const bad of [-1, 1.5, 101]) {
+      const result = checkInvariants(
+        baseContext({ tick: 100, organisms: [organism(1, { birthTick: bad })] })
+      )
+      expect(result.errors.some((e) => e.includes('birthTick'))).toBe(true)
+    }
+  })
+
+  it('accepts a birthTick equal to the current tick', () => {
+    const result = checkInvariants(
+      baseContext({ tick: 100, organisms: [organism(1, { birthTick: 100 })] })
+    )
+    expect(result.ok).toBe(true)
+  })
+
+  it('catches a parentIds entry that is not a real, already-allocated id', () => {
+    for (const bad of [-1, 1.5, 1000, 1001]) {
+      const result = checkInvariants(
+        baseContext({ nextEntityId: 1000, organisms: [organism(5, { parentIds: [bad] })] })
+      )
+      expect(result.errors.some((e) => e.includes('parentIds'))).toBe(true)
+    }
+  })
+
+  it('accepts parentIds referencing already-allocated ids', () => {
+    const result = checkInvariants(
+      baseContext({ nextEntityId: 10, organisms: [organism(5, { parentIds: [1, 2] })] })
+    )
+    expect(result.ok).toBe(true)
   })
 
   it('reports every violation at once, not just the first', () => {

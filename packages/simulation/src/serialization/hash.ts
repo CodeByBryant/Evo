@@ -4,7 +4,7 @@ import { utf8Encode } from './utf8'
  * Version of the canonical state-hash layout (determinism.md, section 7.3). Any change to the
  * field list, order, or encoding requires bumping this and regenerating the golden hashes.
  */
-export const HASH_SCHEMA_VERSION = 1
+export const HASH_SCHEMA_VERSION = 2
 
 const HEADER_MAGIC = 'EVOH'
 

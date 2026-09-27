@@ -260,7 +260,7 @@ describe('MovementSystem', () => {
   it('derives velocity from heading and thrust, scaled by maxSpeed', () => {
     const config = resolveWorldConfig({ organisms: { maxSpeed: 10, maxTurnRate: 100 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { heading: 0 }))
+    organisms.add(organism(1, { heading: 0, age: 100 }))
     const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 0.5 }]])
     const events = new EventLog(10)
     events.beginTick()
@@ -270,6 +270,34 @@ describe('MovementSystem', () => {
     const moved = organisms.get(1)
     expect(moved?.vx).toBeCloseTo(5, 10)
     expect(moved?.vy).toBeCloseTo(0, 10)
+  })
+
+  it('scales maxSpeed by juvenileSpeedScale for juveniles', () => {
+    const config = resolveWorldConfig({
+      organisms: { maxSpeed: 10, maxTurnRate: 100, maturityAge: 90, juvenileSpeedScale: 0.4 }
+    })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { heading: 0, age: 1 }))
+    const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 1 }]])
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new MovementSystem(config, organisms, intentBuffer, events).update(1)
+
+    expect(organisms.get(1)?.vx).toBeCloseTo(4, 10)
+  })
+
+  it('records the clamped turn magnitude as lastTurnMagnitude', () => {
+    const config = resolveWorldConfig({ organisms: { maxTurnRate: 1 }, timestep: 0.5 })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { heading: 0 }))
+    const intentBuffer: IntentBuffer = new Map([[1, { turn: -10, thrust: 0 }]])
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new MovementSystem(config, organisms, intentBuffer, events).update(1)
+
+    expect(organisms.get(1)?.lastTurnMagnitude).toBeCloseTo(0.5, 12)
   })
 
   it('clamps position to the world rectangle', () => {
@@ -323,7 +351,7 @@ describe('InteractionSystem', () => {
       resources: { radius: 1 }
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, energy: 50 }))
+    organisms.add(organism(1, { x: 0, y: 0, energy: 50, age: 100 }))
     const resources = new ResourceStore()
     resources.add(resource(1, { x: 1, y: 0, remaining: config.resources.energyValue }))
     const index = makeResourceIndex()
@@ -344,6 +372,27 @@ describe('InteractionSystem', () => {
       energyGained: 10,
       energyWasted: config.resources.energyValue - 10
     })
+  })
+
+  it('scales capture radius and effective maxEnergy by juvenileSizeScale for juveniles', () => {
+    const config = resolveWorldConfig({
+      organisms: { radius: 2, maxEnergy: 100, maturityAge: 90, juvenileSizeScale: 0.5 },
+      resources: { radius: 1 }
+    })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { x: 2.5, y: 0, energy: 40, age: 1 }))
+    const resources = new ResourceStore()
+    resources.add(resource(1, { x: 0, y: 0, remaining: config.resources.energyValue }))
+    const index = makeResourceIndex()
+    index.rebuild(resources.values())
+    const events = new EventLog(10)
+    events.beginTick()
+
+    // Juvenile capture radius is (2 * 0.5) + 1 = 2, so a resource 2.5 away is out of reach
+    // (a mature organism's radius of (2 * 1) + 1 = 3 would have reached it).
+    new InteractionSystem(config, organisms, resources, index, events).update(1)
+    expect(organisms.get(1)?.energy).toBe(40)
+    expect(resources.has(1)).toBe(true)
   })
 
   it('never lets two organisms consume the same resource in one tick', () => {
@@ -414,11 +463,11 @@ describe('InteractionSystem', () => {
 describe('MetabolismSystem', () => {
   it('charges basalCost + movementCost * speed^2, scaled by timestep', () => {
     const config = resolveWorldConfig({
-      organisms: { basalCost: 1, movementCost: 0.1 },
+      organisms: { basalCost: 1, movementCost: 0.1, turningCost: 0, sensorCost: 0 },
       timestep: 2
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { vx: 3, vy: 4, energy: 100, age: 5 }))
+    organisms.add(organism(1, { vx: 3, vy: 4, energy: 100, age: 100 }))
     const events = new EventLog(10)
     events.beginTick()
 
@@ -428,7 +477,50 @@ describe('MetabolismSystem', () => {
     const expectedCost = (1 + 0.1 * speedSquared) * 2
     const updated = organisms.get(1)
     expect(updated?.energy).toBeCloseTo(100 - expectedCost, 12)
-    expect(updated?.age).toBeCloseTo(5 + 2, 12)
+    expect(updated?.age).toBeCloseTo(100 + 2, 12)
+  })
+
+  it('adds turningCost * lastTurnMagnitude^2 and sensorCost to the formula', () => {
+    const config = resolveWorldConfig({
+      organisms: {
+        basalCost: 1,
+        movementCost: 0,
+        turningCost: 0.2,
+        sensorCost: 0.3
+      },
+      timestep: 1
+    })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { energy: 100, age: 100, lastTurnMagnitude: 2 }))
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new MetabolismSystem(config, organisms, events).update(1)
+
+    const expectedCost = 1 + 0.2 * (2 * 2) + 0.3
+    expect(organisms.get(1)?.energy).toBeCloseTo(100 - expectedCost, 12)
+  })
+
+  it('scales the whole formula by juvenileMetabolicScale for juveniles', () => {
+    const config = resolveWorldConfig({
+      organisms: {
+        basalCost: 1,
+        movementCost: 0,
+        turningCost: 0,
+        sensorCost: 0,
+        maturityAge: 90,
+        juvenileMetabolicScale: 0.5
+      },
+      timestep: 1
+    })
+    const organisms = new OrganismStore()
+    organisms.add(organism(1, { energy: 100, age: 5 }))
+    const events = new EventLog(10)
+    events.beginTick()
+
+    new MetabolismSystem(config, organisms, events).update(1)
+
+    expect(organisms.get(1)?.energy).toBeCloseTo(100 - 0.5, 12)
   })
 
   it('does not clamp energy at zero (Death owns removal)', () => {
