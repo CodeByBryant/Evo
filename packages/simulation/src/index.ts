@@ -1,18 +1,8 @@
-/** Placeholder engine version; replaced when the kernel lands (Phase 2). */
-export const ENGINE_VERSION = '0.0.0'
+/** Engine version. Bumped when the public simulation API changes in a way consumers should note. */
+export const ENGINE_VERSION = '0.2.0'
 
-export interface WorldOptions {
-  seed: number
-}
-
-/** Placeholder world. The real deterministic kernel is built in Phase 2. */
-export class World {
-  readonly seed: number
-
-  constructor(options: WorldOptions) {
-    this.seed = options.seed
-  }
-}
+export { World } from './world/World'
+export type { WorldCreateOptions } from './world/World'
 
 export { PI, TWO_PI, HALF_PI, clamp, lerp, wrapAngle } from './math/scalar'
 export { MAX_TRIG_ARGUMENT, sin, cos, atan2, ln } from './math/trig'
