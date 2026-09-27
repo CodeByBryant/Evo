@@ -109,9 +109,11 @@ finish:
 output: hex(h1) hex(h2) hex(h3) hex(h4), each as 8 lowercase hex digits (uint32)
 ```
 
-### 7.3 Canonical stream, schema version 1 (draft until goldens are recorded)
+### 7.3 Canonical stream, schema versions
 
-The stream is versioned. It begins with the four ASCII bytes `EVOH`, then `writeUint32(HASH_SCHEMA_VERSION)` (currently `1`). Any change to the field list, order, or encoding below requires bumping `HASH_SCHEMA_VERSION` and regenerating the golden hashes with a rationale in the PR.
+The stream is versioned. It begins with the four ASCII bytes `EVOH`, then `writeUint32(HASH_SCHEMA_VERSION)`. Any change to the field list, order, or encoding requires bumping `HASH_SCHEMA_VERSION` and regenerating the golden hashes with a rationale in the PR. Old versions stay documented here rather than being edited in place, so a reader can tell what a golden entry recorded under an older version actually hashed.
+
+#### Version 1 (Phase 2; superseded by version 2 in Phase 3)
 
 | Order | Section    | Contents (in this order)                                                                                                                              |
 | ----- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -126,7 +128,16 @@ The stream is versioned. It begins with the four ASCII bytes `EVOH`, then `write
 | 9     | extinction | present flag (u8); when present, `extinctionTick` (f64), otherwise `0` (f64)                                                                          |
 | 10    | events     | `eventsEmitted` (f64)                                                                                                                                 |
 
-`WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections with a version bump.
+#### Version 2 (current, Phase 3+)
+
+Sections 1-5 and 9-10 are unchanged from version 1. Sections 6 and 8 append new fields at the end (never inserted or reordered), per ADR 0005:
+
+| Order | Section   | Contents (in this order)                                                                                                                                                                                                                               |
+| ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 6     | organisms | count (u32), then per organism in ascending id: `id` (u32), `x`, `y`, `vx`, `vy`, `heading`, `age`, `energy`, `birthTick`, `lastTurnMagnitude`, `reproductionCooldownRemaining` (all f64), then `parentIds` (`writeUint32(count)` then each id as u32) |
+| 8     | metrics   | `organismsBorn`, `deathsByStarvation`, `deathsByAge`, `resourcesSpawned`, `resourcesConsumed`, `reproductionAttempts`, `reproductionSuccesses`, `reproductionFailures` (u32 each), `energyConsumed`, `energyWasted` (f64 each)                         |
+
+`WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
 ## 8. State identity versus the event log
 
