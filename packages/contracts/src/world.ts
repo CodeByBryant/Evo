@@ -35,8 +35,22 @@ export interface OrganismConfig {
   basalCost: number
   /** Energy lost per second per squared unit of speed. */
   movementCost: number
+  /** Energy lost per second per squared radian of `lastTurnMagnitude`. */
+  turningCost: number
+  /** Flat energy lost per second for maintaining senses. */
+  sensorCost: number
   /** Age in seconds at which an organism dies of old age. */
   maxAge: number
+  /** Age in seconds below which an organism is a juvenile: cannot reproduce, smaller and slower. */
+  maturityAge: number
+  /** Age in seconds at and after which an organism is senescent (still able to reproduce). */
+  senescenceAge: number
+  /** Multiplier in `(0, 1]` applied to capture radius and effective `maxEnergy` while juvenile. */
+  juvenileSizeScale: number
+  /** Multiplier in `(0, 1]` applied to `maxSpeed` while juvenile. */
+  juvenileSpeedScale: number
+  /** Multiplier in `(0, 1]` applied to the whole metabolism formula while juvenile. */
+  juvenileMetabolicScale: number
 }
 
 export interface ResourceConfig {
@@ -51,10 +65,29 @@ export interface ResourceConfig {
   radius: number
 }
 
+/**
+ * Local, continuous reproduction. A partner is required; there is no asexual fallback
+ * (docs/decisions/0005-continuous-organism-ecology.md).
+ */
+export interface ReproductionConfig {
+  /** Energy required to attempt reproduction. */
+  minEnergy: number
+  /** Energy each parent pays on a successful reproduction. */
+  energyCost: number
+  /** The newborn's starting energy (capped at `organisms.maxEnergy` as usual). */
+  offspringEnergy: number
+  /** Seconds before either parent may reproduce again. */
+  cooldown: number
+  /** Distance within which a partner is sought. */
+  searchRadius: number
+}
+
 export interface HistoryConfig {
   /** Events retained in the bounded event log; older events are dropped. `0` retains none. */
   maxEvents: number
   eventDetail: EventDetail
+  /** Historical (dead) organism records retained; older records are dropped. `0` retains none. */
+  maxHistoricalOrganisms: number
 }
 
 /**
@@ -69,6 +102,7 @@ export interface WorldConfig {
   environment: EnvironmentConfig
   organisms: OrganismConfig
   resources: ResourceConfig
+  reproduction: ReproductionConfig
   history: HistoryConfig
 }
 
@@ -80,6 +114,7 @@ export interface WorldConfigOverrides {
   environment?: Partial<EnvironmentConfig>
   organisms?: Partial<OrganismConfig>
   resources?: Partial<ResourceConfig>
+  reproduction?: Partial<ReproductionConfig>
   history?: Partial<HistoryConfig>
 }
 

@@ -32,6 +32,10 @@ const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismS
   heading: 0,
   age: 0,
   energy: 50,
+  parentIds: [],
+  birthTick: 0,
+  reproductionCooldownRemaining: 0,
+  lastTurnMagnitude: 0,
   ...overrides
 })
 
@@ -483,7 +487,9 @@ describe('DeathSystem', () => {
   })
 
   it('removes an organism that reached maxAge and records the cause', () => {
-    const config = resolveWorldConfig({ organisms: { maxAge: 10 } })
+    const config = resolveWorldConfig({
+      organisms: { maturityAge: 1, senescenceAge: 5, maxAge: 10 }
+    })
     const organisms = new OrganismStore()
     organisms.add(organism(1, { age: 10, energy: 50 }))
     const events = new EventLog(10)

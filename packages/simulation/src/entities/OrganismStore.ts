@@ -10,6 +10,10 @@ export interface OrganismState {
   heading: number
   age: number
   energy: number
+  readonly parentIds: readonly EntityId[]
+  readonly birthTick: number
+  reproductionCooldownRemaining: number
+  lastTurnMagnitude: number
 }
 
 /**

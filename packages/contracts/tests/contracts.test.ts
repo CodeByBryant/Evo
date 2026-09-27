@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_SEED } from '../src/index'
-import type { DeathCause, WorldEvent, WorldEventType } from '../src/index'
+import type {
+  DeathCause,
+  HistoricalOrganismRecord,
+  LifeStage,
+  ReproductionFailureReason,
+  WorldEvent,
+  WorldEventType
+} from '../src/index'
 
 /** Compile-time exhaustiveness: adding a WorldEvent variant without handling it fails typecheck. */
 function describeEvent(event: WorldEvent): string {
@@ -55,5 +62,46 @@ describe('contracts', () => {
 
   it('MAX_SEED is the largest uint32', () => {
     expect(MAX_SEED).toBe(4294967295)
+  })
+
+  it('life stages and reproduction failure reasons are the documented sets', () => {
+    const stages: LifeStage[] = ['juvenile', 'mature', 'senescent']
+    const reasons: ReproductionFailureReason[] = ['no-partner', 'population-cap']
+    expect(new Set(stages).size).toBe(3)
+    expect(new Set(reasons).size).toBe(2)
+  })
+
+  it('constructs a successful and a failed reproduction-attempted event', () => {
+    const succeeded: WorldEvent = {
+      type: 'reproduction-attempted',
+      tick: 10,
+      organismId: 1,
+      partnerId: 2,
+      childId: 3,
+      succeeded: true,
+      failureReason: null
+    }
+    const failed: WorldEvent = {
+      type: 'reproduction-attempted',
+      tick: 10,
+      organismId: 1,
+      partnerId: null,
+      childId: null,
+      succeeded: false,
+      failureReason: 'no-partner'
+    }
+    expect(describeEvent(succeeded)).toBe('reproduction 1')
+    expect(describeEvent(failed)).toBe('reproduction 1')
+  })
+
+  it('constructs a HistoricalOrganismRecord', () => {
+    const record: HistoricalOrganismRecord = {
+      id: 5,
+      parentIds: [1, 2],
+      birthTick: 100,
+      deathTick: 200,
+      deathCause: 'starvation'
+    }
+    expect(record.parentIds).toEqual([1, 2])
   })
 })

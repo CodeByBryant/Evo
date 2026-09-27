@@ -14,6 +14,7 @@ const ROOT_KEYS = [
   'environment',
   'organisms',
   'resources',
+  'reproduction',
   'history'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height']
@@ -28,10 +29,18 @@ const ORGANISM_KEYS = [
   'wanderJitter',
   'basalCost',
   'movementCost',
-  'maxAge'
+  'turningCost',
+  'sensorCost',
+  'maxAge',
+  'maturityAge',
+  'senescenceAge',
+  'juvenileSizeScale',
+  'juvenileSpeedScale',
+  'juvenileMetabolicScale'
 ]
 const RESOURCE_KEYS = ['initialCount', 'maxCount', 'spawnRate', 'energyValue', 'radius']
-const HISTORY_KEYS = ['maxEvents', 'eventDetail']
+const REPRODUCTION_KEYS = ['minEnergy', 'energyCost', 'offspringEnergy', 'cooldown', 'searchRadius']
+const HISTORY_KEYS = ['maxEvents', 'eventDetail', 'maxHistoricalOrganisms']
 
 const EXTINCTION_POLICIES = ['stop', 'allow-immigration', 'seed-bank', 'sandbox-recovery']
 const EVENT_DETAILS = ['essential', 'verbose']
@@ -74,6 +83,22 @@ function checkNumber(
   }
   if (rule.nonnegative && value < 0) {
     errors.push(`${path} must be nonnegative`)
+    return undefined
+  }
+  return value
+}
+
+/** A multiplier in `(0, 1]` (juvenile scaling factors). */
+function checkFraction(
+  section: PlainObject,
+  key: string,
+  path: string,
+  errors: string[]
+): number | undefined {
+  const value = checkNumber(section, key, path, {}, errors)
+  if (value === undefined) return undefined
+  if (value <= 0 || value > 1) {
+    errors.push(`${path} must be greater than zero and at most one`)
     return undefined
   }
   return value
@@ -165,6 +190,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   }
 
   const organisms = checkSection(value, 'organisms', ORGANISM_KEYS, errors)
+  let organismsMaxEnergy: number | undefined
   if (organisms) {
     const initialCount = checkNumber(
       organisms,
@@ -187,6 +213,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       { positive: true },
       errors
     )
+    organismsMaxEnergy = maxEnergy
     const radius = checkNumber(organisms, 'radius', 'organisms.radius', { positive: true }, errors)
     checkNumber(organisms, 'maxSpeed', 'organisms.maxSpeed', { nonnegative: true }, errors)
     checkNumber(organisms, 'maxTurnRate', 'organisms.maxTurnRate', { nonnegative: true }, errors)
@@ -194,7 +221,26 @@ export function validateWorldConfig(value: unknown): ValidationResult {
     checkNumber(organisms, 'wanderJitter', 'organisms.wanderJitter', { nonnegative: true }, errors)
     checkNumber(organisms, 'basalCost', 'organisms.basalCost', { nonnegative: true }, errors)
     checkNumber(organisms, 'movementCost', 'organisms.movementCost', { nonnegative: true }, errors)
-    checkNumber(organisms, 'maxAge', 'organisms.maxAge', { positive: true }, errors)
+    checkNumber(organisms, 'turningCost', 'organisms.turningCost', { nonnegative: true }, errors)
+    checkNumber(organisms, 'sensorCost', 'organisms.sensorCost', { nonnegative: true }, errors)
+    const maxAge = checkNumber(organisms, 'maxAge', 'organisms.maxAge', { positive: true }, errors)
+    const maturityAge = checkNumber(
+      organisms,
+      'maturityAge',
+      'organisms.maturityAge',
+      { positive: true },
+      errors
+    )
+    const senescenceAge = checkNumber(
+      organisms,
+      'senescenceAge',
+      'organisms.senescenceAge',
+      { positive: true },
+      errors
+    )
+    checkFraction(organisms, 'juvenileSizeScale', 'organisms.juvenileSizeScale', errors)
+    checkFraction(organisms, 'juvenileSpeedScale', 'organisms.juvenileSpeedScale', errors)
+    checkFraction(organisms, 'juvenileMetabolicScale', 'organisms.juvenileMetabolicScale', errors)
 
     if (initialCount !== undefined && maxPopulation !== undefined && initialCount > maxPopulation) {
       errors.push('organisms.initialCount must not exceed maxPopulation')
@@ -206,6 +252,12 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       if (radius * 2 >= Math.min(width, height)) {
         errors.push('organisms.radius must be less than half of the smaller environment dimension')
       }
+    }
+    if (maturityAge !== undefined && senescenceAge !== undefined && maturityAge >= senescenceAge) {
+      errors.push('organisms.maturityAge must be less than organisms.senescenceAge')
+    }
+    if (senescenceAge !== undefined && maxAge !== undefined && senescenceAge >= maxAge) {
+      errors.push('organisms.senescenceAge must be less than organisms.maxAge')
     }
   }
 
@@ -239,6 +291,50 @@ export function validateWorldConfig(value: unknown): ValidationResult {
     }
   }
 
+  const reproduction = checkSection(value, 'reproduction', REPRODUCTION_KEYS, errors)
+  if (reproduction) {
+    const minEnergy = checkNumber(
+      reproduction,
+      'minEnergy',
+      'reproduction.minEnergy',
+      { positive: true },
+      errors
+    )
+    const energyCost = checkNumber(
+      reproduction,
+      'energyCost',
+      'reproduction.energyCost',
+      { positive: true },
+      errors
+    )
+    const offspringEnergy = checkNumber(
+      reproduction,
+      'offspringEnergy',
+      'reproduction.offspringEnergy',
+      { positive: true },
+      errors
+    )
+    checkNumber(reproduction, 'cooldown', 'reproduction.cooldown', { nonnegative: true }, errors)
+    checkNumber(
+      reproduction,
+      'searchRadius',
+      'reproduction.searchRadius',
+      { positive: true },
+      errors
+    )
+
+    if (energyCost !== undefined && minEnergy !== undefined && energyCost > minEnergy) {
+      errors.push('reproduction.energyCost must not exceed reproduction.minEnergy')
+    }
+    if (
+      offspringEnergy !== undefined &&
+      organismsMaxEnergy !== undefined &&
+      offspringEnergy > organismsMaxEnergy
+    ) {
+      errors.push('reproduction.offspringEnergy must not exceed organisms.maxEnergy')
+    }
+  }
+
   const history = checkSection(value, 'history', HISTORY_KEYS, errors)
   if (history) {
     checkNumber(
@@ -249,6 +345,13 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       errors
     )
     checkChoice(history, 'eventDetail', 'history.eventDetail', EVENT_DETAILS, errors)
+    checkNumber(
+      history,
+      'maxHistoricalOrganisms',
+      'history.maxHistoricalOrganisms',
+      { integer: true, nonnegative: true },
+      errors
+    )
   }
 
   return { ok: errors.length === 0, errors }
@@ -295,6 +398,7 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     environment: mergeSection(base.environment, given['environment']),
     organisms: mergeSection(base.organisms, given['organisms']),
     resources: mergeSection(base.resources, given['resources']),
+    reproduction: mergeSection(base.reproduction, given['reproduction']),
     history: mergeSection(base.history, given['history'])
   }
   const result = validateWorldConfig(merged)

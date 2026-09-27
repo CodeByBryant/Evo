@@ -6,6 +6,7 @@ import { SimulationClock } from '../clock/SimulationClock'
 import { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
+import { lifeStageFor } from '../organisms/lifeStage'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
@@ -156,7 +157,11 @@ export class World {
         vy: 0,
         heading,
         age: 0,
-        energy: this.config.organisms.initialEnergy
+        energy: this.config.organisms.initialEnergy,
+        parentIds: [],
+        birthTick: 0,
+        reproductionCooldownRemaining: 0,
+        lastTurnMagnitude: 0
       }
       this.organisms.add(organism)
       this.events.record({
@@ -239,12 +244,15 @@ export class World {
       },
       organisms: this.organisms.values().map((organism) => ({
         id: organism.id,
+        parentIds: organism.parentIds,
         position: { x: organism.x, y: organism.y },
         velocity: { x: organism.vx, y: organism.vy },
         heading: organism.heading,
         radius: this.config.organisms.radius,
         age: organism.age,
-        energy: organism.energy
+        energy: organism.energy,
+        lifeStage: lifeStageFor(organism.age, this.config.organisms),
+        reproductionCooldownRemaining: organism.reproductionCooldownRemaining
       })),
       resources: this.resources.values().map((resource) => ({
         id: resource.id,

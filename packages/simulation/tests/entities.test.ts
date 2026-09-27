@@ -35,6 +35,10 @@ const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismS
   heading: 0,
   age: 0,
   energy: 50,
+  parentIds: [],
+  birthTick: 0,
+  reproductionCooldownRemaining: 0,
+  lastTurnMagnitude: 0,
   ...overrides
 })
 

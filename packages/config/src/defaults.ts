@@ -32,7 +32,14 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     wanderJitter: 1.5,
     basalCost: 0.5,
     movementCost: 0.005,
-    maxAge: 600
+    turningCost: 0.05,
+    sensorCost: 0.1,
+    maxAge: 600,
+    maturityAge: 90,
+    senescenceAge: 510,
+    juvenileSizeScale: 0.5,
+    juvenileSpeedScale: 0.7,
+    juvenileMetabolicScale: 0.7
   },
   resources: {
     initialCount: 100,
@@ -41,5 +48,12 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     energyValue: 30,
     radius: 3
   },
-  history: { maxEvents: 10_000, eventDetail: 'essential' }
+  reproduction: {
+    minEnergy: 60,
+    energyCost: 20,
+    offspringEnergy: 25,
+    cooldown: 30,
+    searchRadius: 50
+  },
+  history: { maxEvents: 10_000, eventDetail: 'essential', maxHistoricalOrganisms: 10_000 }
 } satisfies WorldConfig)

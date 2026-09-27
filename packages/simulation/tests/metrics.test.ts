@@ -14,6 +14,9 @@ describe('MetricsCollector', () => {
       deathsByAge: 0,
       resourcesSpawned: 0,
       resourcesConsumed: 0,
+      reproductionAttempts: 0,
+      reproductionSuccesses: 0,
+      reproductionFailures: 0,
       energyConsumed: 0,
       energyWasted: 0
     })
@@ -36,6 +39,24 @@ describe('MetricsCollector', () => {
         energyGained: 20,
         energyWasted: 10,
         position: pos
+      },
+      {
+        type: 'reproduction-attempted',
+        tick: 1,
+        organismId: 1,
+        partnerId: 2,
+        childId: 3,
+        succeeded: true,
+        failureReason: null
+      },
+      {
+        type: 'reproduction-attempted',
+        tick: 1,
+        organismId: 3,
+        partnerId: null,
+        childId: null,
+        succeeded: false,
+        failureReason: 'no-partner'
       }
     ]
     metrics.recordEvents(events)
@@ -45,6 +66,9 @@ describe('MetricsCollector', () => {
       deathsByAge: 1,
       resourcesSpawned: 1,
       resourcesConsumed: 1,
+      reproductionAttempts: 2,
+      reproductionSuccesses: 1,
+      reproductionFailures: 1,
       energyConsumed: 20,
       energyWasted: 10
     })
@@ -70,7 +94,7 @@ describe('MetricsCollector', () => {
     expect(metrics.snapshot()).toMatchObject({ deathsByStarvation: 0, deathsByAge: 0 })
   })
 
-  it('verbose-only and reserved events are ignored', () => {
+  it('verbose-only events are ignored', () => {
     const metrics = new MetricsCollector()
     metrics.recordEvents([
       { type: 'organism-moved', tick: 0, organismId: 1, from: pos, to: pos },
@@ -81,8 +105,7 @@ describe('MetricsCollector', () => {
         previous: 1,
         current: 2,
         reason: 'metabolism'
-      },
-      { type: 'reproduction-attempted', tick: 0, organismId: 1, partnerId: null, succeeded: false }
+      }
     ])
     expect(metrics.snapshot()).toEqual({
       organismsBorn: 0,
@@ -90,6 +113,9 @@ describe('MetricsCollector', () => {
       deathsByAge: 0,
       resourcesSpawned: 0,
       resourcesConsumed: 0,
+      reproductionAttempts: 0,
+      reproductionSuccesses: 0,
+      reproductionFailures: 0,
       energyConsumed: 0,
       energyWasted: 0
     })

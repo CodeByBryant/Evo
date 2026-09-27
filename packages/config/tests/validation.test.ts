@@ -29,7 +29,15 @@ describe('DEFAULT_WORLD_CONFIG', () => {
   it('is deeply frozen', () => {
     expect(Object.isFrozen(DEFAULT_WORLD_CONFIG)).toBe(true)
     expect(Object.isFrozen(DEFAULT_WORLD_CONFIG.organisms)).toBe(true)
+    expect(Object.isFrozen(DEFAULT_WORLD_CONFIG.reproduction)).toBe(true)
     expect(Object.isFrozen(DEFAULT_WORLD_CONFIG.history)).toBe(true)
+  })
+
+  it('orders life stages sensibly: 0 < maturityAge < senescenceAge < maxAge', () => {
+    const { maturityAge, senescenceAge, maxAge } = DEFAULT_WORLD_CONFIG.organisms
+    expect(maturityAge).toBeGreaterThan(0)
+    expect(senescenceAge).toBeGreaterThan(maturityAge)
+    expect(maxAge).toBeGreaterThan(senescenceAge)
   })
 
   it('defaults to the stop extinction policy', () => {
@@ -68,6 +76,69 @@ describe('validateWorldConfig', () => {
     )
     expect(errorsFor((c) => (c.history.maxEvents = -1))).toContain(
       'history.maxEvents must be nonnegative'
+    )
+  })
+
+  it('validates the new metabolism and life-stage fields', () => {
+    expect(errorsFor((c) => (c.organisms.turningCost = -1))).toContain(
+      'organisms.turningCost must be nonnegative'
+    )
+    expect(errorsFor((c) => (c.organisms.sensorCost = -1))).toContain(
+      'organisms.sensorCost must be nonnegative'
+    )
+    expect(errorsFor((c) => (c.organisms.maturityAge = 0))).toContain(
+      'organisms.maturityAge must be greater than zero'
+    )
+    expect(errorsFor((c) => (c.organisms.senescenceAge = 0))).toContain(
+      'organisms.senescenceAge must be greater than zero'
+    )
+  })
+
+  it('validates the juvenile scaling factors are in (0, 1]', () => {
+    for (const key of [
+      'juvenileSizeScale',
+      'juvenileSpeedScale',
+      'juvenileMetabolicScale'
+    ] as const) {
+      expect(errorsFor((c) => (c.organisms[key] = 0))).toContain(
+        `organisms.${key} must be greater than zero and at most one`
+      )
+      expect(errorsFor((c) => (c.organisms[key] = -0.1))).toContain(
+        `organisms.${key} must be greater than zero and at most one`
+      )
+      expect(errorsFor((c) => (c.organisms[key] = 1.1))).toContain(
+        `organisms.${key} must be greater than zero and at most one`
+      )
+      expect(errorsFor((c) => (c.organisms[key] = 1))).not.toContain(
+        `organisms.${key} must be greater than zero and at most one`
+      )
+    }
+  })
+
+  it('validates the reproduction section', () => {
+    expect(errorsFor((c) => (c.reproduction.minEnergy = 0))).toContain(
+      'reproduction.minEnergy must be greater than zero'
+    )
+    expect(errorsFor((c) => (c.reproduction.energyCost = 0))).toContain(
+      'reproduction.energyCost must be greater than zero'
+    )
+    expect(errorsFor((c) => (c.reproduction.offspringEnergy = 0))).toContain(
+      'reproduction.offspringEnergy must be greater than zero'
+    )
+    expect(errorsFor((c) => (c.reproduction.cooldown = -1))).toContain(
+      'reproduction.cooldown must be nonnegative'
+    )
+    expect(errorsFor((c) => (c.reproduction.searchRadius = 0))).toContain(
+      'reproduction.searchRadius must be greater than zero'
+    )
+  })
+
+  it('validates history.maxHistoricalOrganisms', () => {
+    expect(errorsFor((c) => (c.history.maxHistoricalOrganisms = -1))).toContain(
+      'history.maxHistoricalOrganisms must be nonnegative'
+    )
+    expect(errorsFor((c) => (c.history.maxHistoricalOrganisms = 1.5))).toContain(
+      'history.maxHistoricalOrganisms must be an integer'
     )
   })
 
@@ -147,6 +218,18 @@ describe('validateWorldConfig', () => {
     expect(errorsFor((c) => (c.resources.radius = 250))).toContain(
       'resources.radius must be less than half of the smaller environment dimension'
     )
+    expect(errorsFor((c) => (c.organisms.maturityAge = c.organisms.senescenceAge))).toContain(
+      'organisms.maturityAge must be less than organisms.senescenceAge'
+    )
+    expect(errorsFor((c) => (c.organisms.senescenceAge = c.organisms.maxAge))).toContain(
+      'organisms.senescenceAge must be less than organisms.maxAge'
+    )
+    expect(errorsFor((c) => (c.reproduction.energyCost = c.reproduction.minEnergy + 1))).toContain(
+      'reproduction.energyCost must not exceed reproduction.minEnergy'
+    )
+    expect(
+      errorsFor((c) => (c.reproduction.offspringEnergy = c.organisms.maxEnergy + 1))
+    ).toContain('reproduction.offspringEnergy must not exceed organisms.maxEnergy')
   })
 
   it('reports every problem at once, not just the first', () => {
@@ -212,12 +295,15 @@ describe('resolveWorldConfig', () => {
     const config = resolveWorldConfig({
       timestep: 0.05,
       organisms: { initialCount: 10 },
-      resources: { initialCount: 100 }
+      resources: { initialCount: 100 },
+      reproduction: { cooldown: 5 }
     })
     expect(config.timestep).toBe(0.05)
     expect(config.organisms.initialCount).toBe(10)
     expect(config.organisms.maxEnergy).toBe(DEFAULT_WORLD_CONFIG.organisms.maxEnergy)
     expect(config.environment).toEqual(DEFAULT_WORLD_CONFIG.environment)
+    expect(config.reproduction.cooldown).toBe(5)
+    expect(config.reproduction.minEnergy).toBe(DEFAULT_WORLD_CONFIG.reproduction.minEnergy)
   })
 
   it('throws ConfigValidationError listing every problem', () => {
