@@ -5,7 +5,6 @@
     "types": []
   },
   "include": [
-    "src",
-    "tests"
+    "src"
   ]
 }

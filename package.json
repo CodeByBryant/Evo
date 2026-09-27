@@ -17,7 +17,8 @@
     "format:check": "prettier --check .",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
     "lint:deps": "node tools/check-dependency-rules.mjs",
-    "test:tools": "node --test \"tools/**/*.test.mjs\""
+    "test:tools": "node --test \"tools/**/*.test.mjs\"",
+    "test:determinism": "pnpm --filter @evo/simulation test:determinism"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
