@@ -8,12 +8,16 @@
   },
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:determinism": "vitest run --config vitest.determinism.config.ts"
   },
   "dependencies": {
     "@evo/contracts": "workspace:*",
     "@evo/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2"
   }
 }

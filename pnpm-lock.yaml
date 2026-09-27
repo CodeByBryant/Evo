@@ -102,6 +102,10 @@ importers:
       '@evo/contracts':
         specifier: workspace:*
         version: link:../contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.2
+        version: 26.6.2
 
   packages/ui:
     dependencies:
