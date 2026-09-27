@@ -1,13 +1,13 @@
 {
   "hashSchemaVersion": 2,
-  "engineVersion": "0.3.0",
+  "engineVersion": "0.4.0",
   "entries": [
     {
       "name": "default-1k",
       "seed": 12345,
       "config": {},
       "steps": 1000,
-      "expectedHash": "c0b39bcc7fd7a02cc46999d0247cc112"
+      "expectedHash": "aac2e4db4b326dac83633a859e5bb48d"
     },
     {
       "name": "scenario-a-foraging-5k",
@@ -16,7 +16,7 @@
         "organisms": { "initialCount": 10 }
       },
       "steps": 5000,
-      "expectedHash": "c187f1a9d32d5fd8415a84280e0ec852"
+      "expectedHash": "21b4f619300f36d1bd2cecb52e857767"
     },
     {
       "name": "scenario-b-extinction-20k",
@@ -52,7 +52,7 @@
       "seed": 999,
       "config": {},
       "steps": 100000,
-      "expectedHash": "c5ff486a539b03e2e5ad69b2ac0839f0"
+      "expectedHash": "e8e4a47dc3de9a1d4179c34771cbe2c1"
     }
   ]
 }
