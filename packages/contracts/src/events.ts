@@ -57,12 +57,23 @@ export interface EnergyChangedEvent extends BaseEvent {
   readonly reason: 'consumption' | 'metabolism'
 }
 
-/** Defined for Phase 3; never emitted by the Phase 2 engine. */
+/**
+ * Only organisms that clear the maturity/cooldown/energy gates count as "attempting" - an
+ * organism that's simply immature never generates one of these, the same way an organism that
+ * finds no food never generates a failed `resource-consumed` (docs/decisions/0005).
+ */
+export type ReproductionFailureReason = 'no-partner' | 'population-cap'
+
+/** Essential tier: not gated by `history.eventDetail`. Emitted starting in Phase 3. */
 export interface ReproductionAttemptedEvent extends BaseEvent {
   readonly type: 'reproduction-attempted'
   readonly organismId: EntityId
   readonly partnerId: EntityId | null
+  /** Set when `succeeded` is `true`. */
+  readonly childId: EntityId | null
   readonly succeeded: boolean
+  /** Set when `succeeded` is `false`. */
+  readonly failureReason: ReproductionFailureReason | null
 }
 
 export type WorldEvent =

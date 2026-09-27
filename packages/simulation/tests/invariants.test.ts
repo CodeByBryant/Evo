@@ -12,6 +12,9 @@ const zeroMetrics: MetricsSnapshot = {
   deathsByAge: 0,
   resourcesSpawned: 0,
   resourcesConsumed: 0,
+  reproductionAttempts: 0,
+  reproductionSuccesses: 0,
+  reproductionFailures: 0,
   energyConsumed: 0,
   energyWasted: 0
 }
@@ -25,6 +28,10 @@ const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismS
   heading: 0,
   age: 1,
   energy: 50,
+  parentIds: [],
+  birthTick: 0,
+  reproductionCooldownRemaining: 0,
+  lastTurnMagnitude: 0,
   ...overrides
 })
 

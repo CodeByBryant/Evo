@@ -11,6 +11,9 @@ export class MetricsCollector {
   private deathsByAge = 0
   private resourcesSpawned = 0
   private resourcesConsumed = 0
+  private reproductionAttempts = 0
+  private reproductionSuccesses = 0
+  private reproductionFailures = 0
   private energyConsumed = 0
   private energyWasted = 0
   private extinctTick: number | null = null
@@ -44,9 +47,13 @@ export class MetricsCollector {
           this.energyConsumed += event.energyGained
           this.energyWasted += event.energyWasted
           break
+        case 'reproduction-attempted':
+          this.reproductionAttempts += 1
+          if (event.succeeded) this.reproductionSuccesses += 1
+          else this.reproductionFailures += 1
+          break
         case 'organism-moved':
         case 'energy-changed':
-        case 'reproduction-attempted':
           break
       }
     }
@@ -74,6 +81,9 @@ export class MetricsCollector {
       deathsByAge: this.deathsByAge,
       resourcesSpawned: this.resourcesSpawned,
       resourcesConsumed: this.resourcesConsumed,
+      reproductionAttempts: this.reproductionAttempts,
+      reproductionSuccesses: this.reproductionSuccesses,
+      reproductionFailures: this.reproductionFailures,
       energyConsumed: this.energyConsumed,
       energyWasted: this.energyWasted
     }

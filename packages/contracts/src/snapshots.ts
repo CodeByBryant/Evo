@@ -1,14 +1,30 @@
 import type { EntityId } from './entity'
 import type { Vec2 } from './math'
+import type { DeathCause } from './world'
+import type { LifeStage } from './organism'
 
 export interface OrganismSnapshot {
   readonly id: EntityId
+  /** Empty for founders. */
+  readonly parentIds: readonly EntityId[]
   readonly position: Readonly<Vec2>
   readonly velocity: Readonly<Vec2>
   readonly heading: number
   readonly radius: number
   readonly age: number
   readonly energy: number
+  readonly lifeStage: LifeStage
+  readonly reproductionCooldownRemaining: number
+}
+
+/** A compact, retained record of an organism after it dies (docs/decisions/0005). */
+export interface HistoricalOrganismRecord {
+  readonly id: EntityId
+  /** Empty for founders. */
+  readonly parentIds: readonly EntityId[]
+  readonly birthTick: number
+  readonly deathTick: number
+  readonly deathCause: DeathCause
 }
 
 export interface ResourceSnapshot {
@@ -31,6 +47,9 @@ export interface MetricsSnapshot {
   readonly deathsByAge: number
   readonly resourcesSpawned: number
   readonly resourcesConsumed: number
+  readonly reproductionAttempts: number
+  readonly reproductionSuccesses: number
+  readonly reproductionFailures: number
   readonly energyConsumed: number
   readonly energyWasted: number
 }
