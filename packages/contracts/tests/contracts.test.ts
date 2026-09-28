@@ -4,6 +4,7 @@ import type {
   DeathCause,
   HistoricalOrganismRecord,
   LifeStage,
+  OrganismSnapshot,
   ReproductionFailureReason,
   WorldEvent,
   WorldEventType
@@ -103,5 +104,24 @@ describe('contracts', () => {
       deathCause: 'starvation'
     }
     expect(record.parentIds).toEqual([1, 2])
+  })
+
+  it('OrganismSnapshot has no generation counter, genome, or health/alive field', () => {
+    const snapshot: OrganismSnapshot = {
+      id: 1,
+      parentIds: [],
+      position: { x: 0, y: 0 },
+      velocity: { x: 0, y: 0 },
+      heading: 0,
+      radius: 5,
+      age: 0,
+      energy: 50,
+      lifeStage: 'mature',
+      reproductionCooldownRemaining: 0
+    }
+    const keys = Object.keys(snapshot)
+    for (const forbidden of ['generation', 'genomeId', 'genome', 'health', 'alive']) {
+      expect(keys).not.toContain(forbidden)
+    }
   })
 })

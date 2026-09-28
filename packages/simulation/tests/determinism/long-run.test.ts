@@ -7,6 +7,12 @@ import { World } from '../../src/index'
  * snapshots, chunked replays - stays exactly reproducible. This is deliberately slow and lives
  * outside the default `pnpm test` (see ../../vitest.config.ts); run it with
  * `pnpm test:determinism`.
+ *
+ * Since Phase 3, every config below reproduces heavily over 100,000 ticks (default economics
+ * make that easy to reach), so these same tests now also prove that id allocation and the
+ * `'reproduction'` random stream survive chunk and step boundaries exactly - not just the
+ * fields Phase 2 already exercised. The explicit `reproductionSuccesses` assertions make that
+ * coverage visible rather than incidental.
  */
 describe('100,000-tick runs', () => {
   it('runs 100,000 ticks headlessly without ever violating an invariant', () => {
@@ -21,6 +27,7 @@ describe('100,000-tick runs', () => {
     const b = World.create({ seed: 55, validateEveryTicks: 1000 })
     a.run(100_000)
     b.run(100_000)
+    expect(a.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(a.stateHash()).toBe(b.stateHash())
     expect(a.snapshot()).toEqual(b.snapshot())
   })
@@ -41,6 +48,10 @@ describe('100,000-tick runs', () => {
     const direct = World.create({ seed: 314159, config: { organisms: { initialCount: 30 } } })
     direct.run(100_000)
 
+    // Reproduction allocates ids and draws from the 'reproduction' stream mid-run; this config
+    // reproduces heavily by 100,000 ticks, so a mismatched chunk boundary around a birth would
+    // show up here as a hash divergence, not just a tick-count coincidence.
+    expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(chunked.clock.tick).toBe(direct.clock.tick)
     expect(chunked.stateHash()).toBe(direct.stateHash())
     expect(chunked.snapshot()).toEqual(direct.snapshot())
@@ -53,6 +64,7 @@ describe('100,000-tick runs', () => {
     const direct = World.create({ seed: 7, config: { organisms: { initialCount: 10 } } })
     direct.run(100_000)
 
+    expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(chunked.stateHash()).toBe(direct.stateHash())
   })
 
@@ -63,6 +75,7 @@ describe('100,000-tick runs', () => {
     const ran = World.create({ seed: 42, config: { organisms: { initialCount: 5 } } })
     ran.run(20_000)
 
+    expect(stepped.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(stepped.stateHash()).toBe(ran.stateHash())
   })
 
@@ -99,11 +112,41 @@ describe('100,000-tick runs', () => {
     world.run(1000)
     expect(world.isExtinct).toBe(true)
     const extinctionTick = world.snapshot().population.extinctionTick
+    // This config starves organisms before any of them ever reach reproduction.minEnergy, so
+    // reproduction never even attempts here - see the boom-then-bust test below for the case
+    // where reproduction succeeds repeatedly before the population still goes extinct.
+    expect(world.snapshot().metrics.reproductionSuccesses).toBe(0)
 
     world.run(99_000)
 
     expect(world.snapshot().population.active).toBe(0)
     expect(world.snapshot().population.extinctionTick).toBe(extinctionTick)
+    expect(world.validate()).toEqual({ ok: true, errors: [] })
+  })
+
+  it('extinction is permanent even after reproduction has already succeeded repeatedly', () => {
+    // A population that initially thrives (resources.spawnRate too slow to keep up with a
+    // reproducing population) still goes fully and permanently extinct once resources run out -
+    // reproduction having worked earlier gives it nothing to revive from once organisms=0.
+    const world = World.create({
+      seed: 5,
+      config: {
+        organisms: { initialCount: 15 },
+        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 }
+      },
+      validateEveryTicks: 1000
+    })
+
+    world.run(20_000)
+    expect(world.isExtinct).toBe(true)
+    expect(world.snapshot().population.extinctionTick).toBe(17_002)
+    expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
+
+    world.run(80_000)
+
+    expect(world.snapshot().population.active).toBe(0)
+    expect(world.snapshot().population.extinctionTick).toBe(17_002)
+    expect(world.snapshot().organisms).toEqual([])
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })
 })

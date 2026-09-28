@@ -42,6 +42,18 @@ const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismS
   ...overrides
 })
 
+describe('OrganismState shape', () => {
+  it('has no generation counter, genome, or health/alive field (roadmap: no generations)', () => {
+    // Reproduction is local and continuous, not generational; a `generation` field would imply
+    // discrete cohorts that don't exist here, the same way `genomeId`/`health`/`alive` would
+    // imply mechanics no system implements yet (docs/decisions/0005).
+    const keys = Object.keys(organism(1))
+    for (const forbidden of ['generation', 'genomeId', 'genome', 'health', 'alive']) {
+      expect(keys).not.toContain(forbidden)
+    }
+  })
+})
+
 describe('OrganismStore', () => {
   it('adds, gets, and reports size', () => {
     const store = new OrganismStore()
