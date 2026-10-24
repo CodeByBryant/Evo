@@ -1,13 +1,14 @@
-import type { WorldConfig } from '@evo/contracts'
 import type { PerceptionBuffer } from '../buffers/types'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
 import type { SpatialHash } from '../spatial/SpatialHash'
 
-/** Finds the nearest resource within sensor range for every organism. Writes only the buffer. */
+/**
+ * Finds the nearest resource within each organism's own sensor range (its `sensorRadius` gene).
+ * Writes only the buffer.
+ */
 export class PerceptionSystem {
   constructor(
-    private readonly config: WorldConfig,
     private readonly organisms: OrganismStore,
     private readonly resourceIndex: SpatialHash<ResourceState>,
     private readonly perceptionBuffer: PerceptionBuffer
@@ -15,9 +16,11 @@ export class PerceptionSystem {
 
   update(): void {
     this.perceptionBuffer.clear()
-    const sensorRadius = this.config.organisms.sensorRadius
     for (const organism of this.organisms.values()) {
-      const hit = this.resourceIndex.nearest({ x: organism.x, y: organism.y }, sensorRadius)
+      const hit = this.resourceIndex.nearest(
+        { x: organism.x, y: organism.y },
+        organism.genome.sensory.sensorRadius
+      )
       this.perceptionBuffer.set(
         organism.id,
         hit

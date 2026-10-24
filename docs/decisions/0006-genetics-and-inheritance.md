@@ -99,7 +99,7 @@ Each independent gene (or correlated group) consumes the same draws per birth wh
 
 `LineageRecord { genomeId, parentGenomeIds, organismIds, createdAtTick, descendantCount }` (roadmap 4.6) in a new `LineageStore`: registered at birth, marked at death, **never removed**. Queries: parents, ancestors, descendants, most-recent common ancestor, founders, and lineage extinction (no living organism carries the genome or any descendant). Ancestry in a sexual population is a DAG whose ancestor sets grow quickly, so `descendantCount` and the traversal queries are computed **on demand**, not maintained per birth. The store holds only small integer records (growth is O(births)); bounding or pruning it is a Phase 8/9 concern. Like `HistoryStore` it is a derived record and is **not part of the state hash**. It is exposed as `World.lineage`.
 
-`OrganismSnapshot`, `OrganismBornEvent` and `HistoricalOrganismRecord` gain `genomeId`; the full genome is available through `World.genomeOf(organismId)` (a defensive copy), so `snapshot()` stays cheap for the render loop.
+`OrganismSnapshot`, `OrganismBornEvent` and `HistoricalOrganismRecord` gain `genomeId`; the full genome is available through `World.genomeOf(organismId)` (genomes are deeply frozen, so the object itself is safe to hold), so `snapshot()` stays cheap for the render loop.
 
 ### Learning inheritance
 

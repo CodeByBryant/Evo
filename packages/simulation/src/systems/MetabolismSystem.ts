@@ -2,6 +2,7 @@ import type { WorldConfig } from '@evo/contracts'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { basalCostOf, sensorCostOf } from '../organisms/traits'
 
 /**
  * Charges the explicit, tested metabolic cost
@@ -23,23 +24,19 @@ export class MetabolismSystem {
 
   update(tick: number): void {
     const dt = this.config.timestep
-    const {
-      basalCost,
-      movementCost,
-      turningCost,
-      sensorCost,
-      juvenileMetabolicScale,
-      maturityAge,
-      senescenceAge
-    } = this.config.organisms
+    const { juvenileMetabolicScale } = this.config.organisms
 
     for (const organism of this.organisms.values()) {
       const speedSquared = organism.vx * organism.vx + organism.vy * organism.vy
       const turnSquared = organism.lastTurnMagnitude * organism.lastTurnMagnitude
-      const stage = lifeStageFor(organism.age, { maturityAge, senescenceAge })
+      const genome = organism.genome
+      const stage = lifeStageFor(organism.age, genome.physical)
       const scale = stage === 'juvenile' ? juvenileMetabolicScale : 1
       const cost =
-        (basalCost + movementCost * speedSquared + turningCost * turnSquared + sensorCost) *
+        (basalCostOf(genome, this.config) +
+          genome.metabolic.movementCost * speedSquared +
+          genome.metabolic.turningCost * turnSquared +
+          sensorCostOf(genome, this.config)) *
         scale *
         dt
       const previous = organism.energy

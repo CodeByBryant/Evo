@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_WORLD_CONFIG } from '@evo/config'
 import type { MetricsSnapshot } from '@evo/contracts'
+import { buildGeneSpecs } from '../src/genetics/GeneSpecs'
 import { checkInvariants } from '../src/world/invariants'
 import type { InvariantContext } from '../src/world/invariants'
 import type { OrganismState } from '../src/entities/OrganismStore'
+import { organismFor, withGenes } from './support/organism'
 import type { ResourceState } from '../src/entities/ResourceStore'
 
 const zeroMetrics: MetricsSnapshot = {
@@ -19,21 +21,8 @@ const zeroMetrics: MetricsSnapshot = {
   energyWasted: 0
 }
 
-const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismState => ({
-  id,
-  x: 10,
-  y: 10,
-  vx: 0,
-  vy: 0,
-  heading: 0,
-  age: 1,
-  energy: 50,
-  parentIds: [],
-  birthTick: 0,
-  reproductionCooldownRemaining: 0,
-  lastTurnMagnitude: 0,
-  ...overrides
-})
+const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismState =>
+  organismFor(DEFAULT_WORLD_CONFIG, id, overrides)
 
 const resource = (id: number, overrides: Partial<ResourceState> = {}): ResourceState => ({
   id,
@@ -51,6 +40,8 @@ const baseContext = (overrides: Partial<InvariantContext> = {}): InvariantContex
   extinctionTick: null,
   metrics: zeroMetrics,
   nextEntityId: 1000,
+  nextGenomeId: 1000,
+  geneSpecs: buildGeneSpecs(DEFAULT_WORLD_CONFIG),
   ...overrides
 })
 
@@ -238,5 +229,43 @@ describe('checkInvariants', () => {
       })
     )
     expect(result.errors.length).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe('genome invariants', () => {
+  it('accepts organisms whose genomes are valid', () => {
+    expect(checkInvariants(baseContext({ organisms: [organism(1), organism(2)] })).ok).toBe(true)
+  })
+
+  it('reports a gene outside its range, naming the organism and the gene', () => {
+    const broken = withGenes(organism(1), { 'physical.maxSpeed': 1000 })
+    const result = checkInvariants(baseContext({ organisms: [broken] }))
+    expect(result.ok).toBe(false)
+    expect(result.errors).toContain(
+      'organism 1: genome: physical.maxSpeed (1000) is outside its range [10, 40]'
+    )
+  })
+
+  it('reports life-stage ages that are out of order', () => {
+    const broken = withGenes(organism(1), {
+      'physical.maturityAge': 150,
+      'physical.senescenceAge': 150
+    })
+    expect(checkInvariants(baseContext({ organisms: [broken] })).errors).toContain(
+      'organism 1: genome: physical.senescenceAge must be greater than physical.maturityAge'
+    )
+  })
+
+  it('reports a genome id that has not been allocated', () => {
+    const result = checkInvariants(baseContext({ nextGenomeId: 1, organisms: [organism(5)] }))
+    expect(result.errors).toContain('organism 5: genome: genome id (5) has not been allocated yet')
+  })
+
+  it('reports two organisms sharing one genome id', () => {
+    const first = organism(1)
+    const second = { ...organism(2), genome: first.genome }
+    expect(checkInvariants(baseContext({ organisms: [first, second] })).errors).toContain(
+      'organism 2: genome id 1 is shared with another organism'
+    )
   })
 })

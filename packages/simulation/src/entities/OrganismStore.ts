@@ -1,4 +1,4 @@
-import type { EntityId } from '@evo/contracts'
+import type { EntityId, Genome } from '@evo/contracts'
 
 /** Live, mutable organism state. Systems mutate these fields directly through `values()`. */
 export interface OrganismState {
@@ -11,6 +11,8 @@ export interface OrganismState {
   age: number
   energy: number
   readonly parentIds: readonly EntityId[]
+  /** Immutable. Every trait a system reads comes from here, not from global config. */
+  readonly genome: Genome
   readonly birthTick: number
   reproductionCooldownRemaining: number
   lastTurnMagnitude: number

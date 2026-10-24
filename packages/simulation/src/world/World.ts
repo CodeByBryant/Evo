@@ -1,5 +1,7 @@
 import { resolveWorldConfig, validateSeed } from '@evo/config'
 import type {
+  EntityId,
+  Genome,
   HistoricalOrganismRecord,
   ValidationResult,
   WorldConfig,
@@ -16,6 +18,9 @@ import { lifeStageFor } from '../organisms/lifeStage'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
+import { buildGeneSpecs } from '../genetics/GeneSpecs'
+import type { GeneSpec } from '../genetics/GeneSpecs'
+import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
 import { HistoryStore } from '../history/HistoryStore'
 import { TWO_PI, wrapAngle } from '../math/scalar'
 import { MetricsCollector } from '../metrics/MetricsCollector'
@@ -60,6 +65,8 @@ export class World {
   private readonly resourceIndex: SpatialHash<ResourceState>
   private readonly organismIndex: SpatialHash<OrganismState>
   private readonly historyStore: HistoryStore
+  private readonly geneSpecs: GeneSpec[]
+  private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
   private readonly intentBuffer: IntentBuffer = new Map()
 
@@ -90,17 +97,21 @@ export class World {
 
     this.clockImpl = new SimulationClock(this.config.timestep)
     this.ids = new IdGenerator()
+    this.genomeIds = new IdGenerator()
+    this.geneSpecs = buildGeneSpecs(this.config)
     this.randomStreams = new RandomStreams(this.seed)
     this.organisms = new OrganismStore()
     this.resources = new ResourceStore()
     this.events = new EventLog(this.config.history.maxEvents)
     this.metricsCollector = new MetricsCollector()
+    // Grid cell sizes are the upper bound of the gene ranges: a query is correct for any cell
+    // size, so this only affects efficiency, and it must not depend on an individual genome.
     this.resourceIndex = new SpatialHash<ResourceState>(
-      this.config.organisms.sensorRadius,
+      geneRangeMax(this.geneSpecs, 'sensory.sensorRadius'),
       (resource) => resource
     )
     this.organismIndex = new SpatialHash<OrganismState>(
-      this.config.reproduction.searchRadius,
+      geneRangeMax(this.geneSpecs, 'reproduction.searchRadius'),
       (organism) => organism
     )
     this.historyStore = new HistoryStore(this.config.history.maxHistoricalOrganisms)
@@ -113,7 +124,6 @@ export class World {
       this.events
     )
     this.perceptionSystem = new PerceptionSystem(
-      this.config,
       this.organisms,
       this.resourceIndex,
       this.perceptionBuffer
@@ -144,10 +154,11 @@ export class World {
       this.organisms,
       this.organismIndex,
       this.ids,
+      this.genomeIds,
       this.randomStreams.get('reproduction'),
       this.events
     )
-    this.deathSystem = new DeathSystem(this.config, this.organisms, this.events, this.historyStore)
+    this.deathSystem = new DeathSystem(this.organisms, this.events, this.historyStore)
 
     this.events.beginTick()
     this.spawnInitialPopulation()
@@ -164,14 +175,22 @@ export class World {
     this.environmentSystem.spawnInitial(0)
 
     const worldRandom = this.randomStreams.get('world')
+    const geneticsRandom = this.randomStreams.get('genetics')
     const { width, height } = this.config.environment
     for (let i = 0; i < this.config.organisms.initialCount; i++) {
       const id = this.ids.allocate()
       const x = worldRandom.float() * width
       const y = worldRandom.float() * height
       const heading = wrapAngle(worldRandom.float() * TWO_PI)
+      const genome = createFounderGenome(
+        this.genomeIds.allocate(),
+        this.geneSpecs,
+        this.config.genetics.brain,
+        geneticsRandom
+      )
       const organism: OrganismState = {
         id,
+        genome,
         x,
         y,
         vx: 0,
@@ -189,10 +208,19 @@ export class World {
         type: 'organism-born',
         tick: 0,
         organismId: id,
+        genomeId: genome.id,
         parentIds: [],
         position: { x, y }
       })
     }
+  }
+
+  /**
+   * The genome of an active organism, or `undefined` if there is no such organism. Genomes are
+   * deeply frozen, so the returned object is safe to hold or share.
+   */
+  genomeOf(organismId: EntityId): Genome | undefined {
+    return this.organisms.get(organismId)?.genome
   }
 
   /** The current tick, simulated time, and timestep. Read-only: `step()` is the only mutator. */
@@ -250,7 +278,9 @@ export class World {
       tick: this.clockImpl.tick,
       extinctionTick: this.metricsCollector.extinctionTick,
       metrics: this.metricsCollector.snapshot(),
-      nextEntityId: this.ids.nextId
+      nextEntityId: this.ids.nextId,
+      nextGenomeId: this.genomeIds.nextId,
+      geneSpecs: this.geneSpecs
     })
   }
 
@@ -267,11 +297,12 @@ export class World {
       },
       organisms: this.organisms.values().map((organism) => ({
         id: organism.id,
+        genomeId: organism.genome.id,
         parentIds: organism.parentIds,
         position: { x: organism.x, y: organism.y },
         velocity: { x: organism.vx, y: organism.vy },
         heading: organism.heading,
-        radius: this.config.organisms.radius,
+        radius: organism.genome.physical.radius,
         age: organism.age,
         energy: organism.energy,
         lifeStage: lifeStageFor(organism.age, this.config.organisms),
@@ -311,6 +342,7 @@ export class World {
       .writeFloat64(clockState.time)
       .writeFloat64(clockState.deltaTime)
     hasher.writeUint32(this.ids.nextId)
+    hasher.writeUint32(this.genomeIds.nextId)
 
     for (const name of STREAM_NAMES) {
       const state = this.randomStreams.get(name).getState()
@@ -340,6 +372,20 @@ export class World {
         .writeFloat64(organism.reproductionCooldownRemaining)
       hasher.writeUint32(organism.parentIds.length)
       for (const parentId of organism.parentIds) hasher.writeUint32(parentId)
+
+      const genome = organism.genome
+      hasher.writeUint32(genome.id)
+      hasher.writeUint32(genome.parentIds.length)
+      for (const parentId of genome.parentIds) hasher.writeUint32(parentId)
+      for (const value of genomeToVector(genome)) hasher.writeFloat64(value)
+      const { architecture, weights } = genome.brain
+      hasher
+        .writeUint32(architecture.inputSize)
+        .writeUint32(architecture.hiddenSize)
+        .writeUint32(architecture.memorySize)
+        .writeUint32(architecture.outputSize)
+        .writeUint32(weights.length)
+      for (const weight of weights) hasher.writeFloat64(weight)
     }
 
     const resources = this.resources.values()
@@ -371,4 +417,11 @@ export class World {
 
     return hasher.digest()
   }
+}
+
+/** The upper bound of a gene's range, used to size spatial grids. */
+function geneRangeMax(specs: readonly GeneSpec[], path: string): number {
+  const spec = specs.find((candidate) => candidate.path === path)
+  if (!spec) throw new Error(`missing gene spec ${path}`)
+  return spec.max
 }

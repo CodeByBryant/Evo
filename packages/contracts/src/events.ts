@@ -1,4 +1,5 @@
 import type { EntityId } from './entity'
+import type { GenomeId } from './genome'
 import type { DeathCause } from './world'
 import type { Vec2 } from './math'
 
@@ -10,6 +11,7 @@ interface BaseEvent {
 export interface OrganismBornEvent extends BaseEvent {
   readonly type: 'organism-born'
   readonly organismId: EntityId
+  readonly genomeId: GenomeId
   /** Empty for founders. */
   readonly parentIds: readonly EntityId[]
   readonly position: Readonly<Vec2>

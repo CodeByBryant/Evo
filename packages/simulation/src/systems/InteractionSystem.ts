@@ -3,6 +3,7 @@ import type { OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { maxEnergyOf } from '../organisms/traits'
 import type { SpatialHash } from '../spatial/SpatialHash'
 
 /**
@@ -27,15 +28,14 @@ export class InteractionSystem {
 
   update(tick: number): void {
     const consumed = new Set<EntityId>()
-    const { radius, maxEnergy, juvenileSizeScale, maturityAge, senescenceAge } =
-      this.config.organisms
+    const { juvenileSizeScale } = this.config.organisms
     const resourceRadius = this.config.resources.radius
 
     for (const organism of this.organisms.values()) {
-      const stage = lifeStageFor(organism.age, { maturityAge, senescenceAge })
+      const stage = lifeStageFor(organism.age, organism.genome.physical)
       const sizeScale = stage === 'juvenile' ? juvenileSizeScale : 1
-      const captureRadius = radius * sizeScale + resourceRadius
-      const effectiveMaxEnergy = maxEnergy * sizeScale
+      const captureRadius = organism.genome.physical.radius * sizeScale + resourceRadius
+      const effectiveMaxEnergy = maxEnergyOf(organism.genome, this.config) * sizeScale
 
       const hits = this.resourceIndex.queryRadius({ x: organism.x, y: organism.y }, captureRadius)
       const hit = hits.find((candidate) => !consumed.has(candidate.item.id))

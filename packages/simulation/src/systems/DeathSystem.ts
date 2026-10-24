@@ -1,10 +1,10 @@
-import type { DeathCause, WorldConfig } from '@evo/contracts'
+import type { DeathCause } from '@evo/contracts'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import type { HistoryStore } from '../history/HistoryStore'
 
 /**
- * Removes organisms that starved (`energy <= 0`) or died of old age (`age >= maxAge`), in
+ * Removes organisms that starved (`energy <= 0`) or died of old age (`age >=` its own `maxAge` gene), in
  * ascending id order. This is the only place organisms leave the active store; extinction is
  * never hidden or silently reversed (docs/simulation/update-order.md, stage 10). Owns the whole
  * "an organism died" transaction: removal, the historical record, and the event, all in the same
@@ -12,7 +12,6 @@ import type { HistoryStore } from '../history/HistoryStore'
  */
 export class DeathSystem {
   constructor(
-    private readonly config: WorldConfig,
     private readonly organisms: OrganismStore,
     private readonly events: EventLog,
     private readonly history: HistoryStore
@@ -23,7 +22,7 @@ export class DeathSystem {
       let cause: DeathCause | null = null
       if (organism.energy <= 0) {
         cause = 'starvation'
-      } else if (organism.age >= this.config.organisms.maxAge) {
+      } else if (organism.age >= organism.genome.physical.maxAge) {
         cause = 'age'
       }
       if (cause === null) continue
@@ -31,6 +30,7 @@ export class DeathSystem {
       this.organisms.remove(organism.id)
       this.history.append({
         id: organism.id,
+        genomeId: organism.genome.id,
         parentIds: organism.parentIds,
         birthTick: organism.birthTick,
         deathTick: tick,

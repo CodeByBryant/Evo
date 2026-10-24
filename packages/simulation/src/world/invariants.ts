@@ -1,6 +1,9 @@
 import type { MetricsSnapshot, ValidationResult, WorldConfig } from '@evo/contracts'
 import type { OrganismState } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
+import type { GeneSpec } from '../genetics/GeneSpecs'
+import { architectureOf } from '../genetics/GenomeFactory'
+import { validateGenome } from '../genetics/GenomeValidation'
 
 export interface InvariantContext {
   readonly organisms: readonly OrganismState[]
@@ -11,6 +14,10 @@ export interface InvariantContext {
   readonly metrics: MetricsSnapshot
   /** The next id `IdGenerator` will allocate; used to validate `parentIds` reference real ids. */
   readonly nextEntityId: number
+  /** The next genome id that will be allocated; every living genome id is below it. */
+  readonly nextGenomeId: number
+  /** The world's gene table, which every living genome must satisfy. */
+  readonly geneSpecs: readonly GeneSpec[]
 }
 
 function checkFinite(label: string, field: string, value: number, errors: string[]): void {
@@ -82,7 +89,18 @@ function checkResource(
  */
 export function checkInvariants(context: InvariantContext): ValidationResult {
   const errors: string[] = []
-  const { organisms, resources, config, tick, extinctionTick, metrics, nextEntityId } = context
+  const {
+    organisms,
+    resources,
+    config,
+    tick,
+    extinctionTick,
+    metrics,
+    nextEntityId,
+    nextGenomeId,
+    geneSpecs
+  } = context
+  const seenGenomeIds = new Set<number>()
   const width = config.environment.width
   const height = config.environment.height
 
@@ -97,6 +115,20 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
     }
     previousOrganismId = organism.id
     checkOrganism(organism, width, height, tick, nextEntityId, errors)
+
+    const genomeResult = validateGenome(organism.genome, geneSpecs, {
+      brain: architectureOf(config.genetics.brain),
+      nextGenomeId
+    })
+    for (const message of genomeResult.errors) {
+      errors.push(`organism ${organism.id}: genome: ${message}`)
+    }
+    if (seenGenomeIds.has(organism.genome.id)) {
+      errors.push(
+        `organism ${organism.id}: genome id ${organism.genome.id} is shared with another organism`
+      )
+    }
+    seenGenomeIds.add(organism.genome.id)
   }
 
   let previousResourceId = -1

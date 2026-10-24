@@ -10,7 +10,7 @@ const NO_INTENT: OrganismIntent = { turn: 0, thrust: 0 }
 
 /**
  * Applies each organism's intent: turns it (bounded by `maxTurnRate`), sets its speed (bounded by
- * `maxSpeed`, scaled down for juveniles), and moves it, clamped to the world rectangle. Velocity
+ * the organism's `maxSpeed` gene, scaled down for juveniles), and moves it, clamped to the world rectangle. Velocity
  * is always derived from heading and speed, never set independently. Also records the turn
  * actually applied as `lastTurnMagnitude`, which `MetabolismSystem` reads afterward.
  */
@@ -28,18 +28,19 @@ export class MovementSystem {
 
   update(tick: number): void {
     const dt = this.config.timestep
-    const { maxTurnRate, maxSpeed, juvenileSpeedScale, maturityAge, senescenceAge } =
-      this.config.organisms
-    const maxTurn = maxTurnRate * dt
+    const { juvenileSpeedScale } = this.config.organisms
     const width = this.config.environment.width
     const height = this.config.environment.height
 
     for (const organism of this.organisms.values()) {
+      const genes = organism.genome.physical
+      const maxTurn = genes.maxTurnRate * dt
       const intent = this.intentBuffer.get(organism.id) ?? NO_INTENT
       const turn = clamp(intent.turn, -maxTurn, maxTurn)
       const heading = wrapAngle(organism.heading + turn)
-      const stage = lifeStageFor(organism.age, { maturityAge, senescenceAge })
-      const scaledMaxSpeed = stage === 'juvenile' ? maxSpeed * juvenileSpeedScale : maxSpeed
+      const stage = lifeStageFor(organism.age, genes)
+      const scaledMaxSpeed =
+        stage === 'juvenile' ? genes.maxSpeed * juvenileSpeedScale : genes.maxSpeed
       const speed = clamp(intent.thrust, 0, 1) * scaledMaxSpeed
       const vx = cos(heading) * speed
       const vy = sin(heading) * speed
