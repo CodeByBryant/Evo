@@ -1,8 +1,14 @@
-import type { EntityId, WorldConfig } from '@evo/contracts'
+import type { EntityId, Genome, WorldConfig } from '@evo/contracts'
 import type { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import type { RecombinationStrategy } from '../genetics/Recombination'
+import { architectureOf, genomeFromParts, genomeToVector } from '../genetics/GenomeFactory'
+import { inheritedBrainWeights } from '../genetics/LearningInheritance'
+import { brainLayoutOf } from '../learning/BrainLayout'
+import type { BrainLayout } from '../learning/BrainLayout'
+import { createBrainState } from '../learning/BrainState'
+import type { BrainState } from '../learning/BrainState'
 import { clamp, TWO_PI, wrapAngle } from '../math/scalar'
 import type { LineageStore } from '../lineage/LineageStore'
 import { lifeStageFor } from '../organisms/lifeStage'
@@ -24,9 +30,13 @@ import type { SpatialHash } from '../spatial/SpatialHash'
  * cooldown, and a child is born near the parents' midpoint with `parentIds` in ascending order.
  * The child's genome is built from both parents' genomes by recombination then mutation, drawing
  * only from the `genetics` stream (the lower-id parent is "mother"), and is registered in the
- * lineage store under a new `GenomeId`; spawn jitter and heading use the `reproduction` stream.
+ * lineage store under a new `GenomeId`; under the brain controller each parent contributes its
+ * learned weights according to `genetics.learningInheritance` (docs/learning/brain.md) and the
+ * child starts with a fresh `BrainState`; spawn jitter and heading use the `reproduction` stream.
  */
 export class ReproductionSystem {
+  private readonly layout: BrainLayout
+
   constructor(
     private readonly config: WorldConfig,
     private readonly organisms: OrganismStore,
@@ -37,7 +47,33 @@ export class ReproductionSystem {
     private readonly lineage: LineageStore,
     private readonly random: SeededRandom,
     private readonly events: EventLog
-  ) {}
+  ) {
+    this.layout = brainLayoutOf(architectureOf(config.genetics.brain))
+  }
+
+  /**
+   * The genome a parent contributes to recombination: its own, or - when learning is inherited
+   * (`partial` or `lamarckian`) - one whose learnable weights are moved toward what the parent
+   * learned. Only the learnable tail of the weights can differ, and the id is unchanged.
+   */
+  private effectiveGenome(genome: Genome, brain: BrainState | null): Genome {
+    const { mode, fraction } = this.config.genetics.learningInheritance
+    if (brain === null || mode === 'baldwinian') return genome
+    const { learnOffset } = this.layout
+    const tail = inheritedBrainWeights(
+      genome.brain.weights.slice(learnOffset),
+      brain.learned,
+      mode,
+      fraction
+    )
+    return genomeFromParts({
+      id: genome.id,
+      parentIds: genome.parentIds,
+      vector: genomeToVector(genome),
+      architecture: genome.brain.architecture,
+      weights: genome.brain.weights.slice(0, learnOffset).concat(tail)
+    })
+  }
 
   update(tick: number): void {
     const dt = this.config.timestep
@@ -108,7 +144,11 @@ export class ReproductionSystem {
       const childId = this.ids.allocate()
       const [mother, father] = organism.id < partner.id ? [organism, partner] : [partner, organism]
       const parentIds: EntityId[] = [mother.id, father.id]
-      const childGenome = this.recombiner.combine(mother.genome, father.genome, this.geneticsRandom)
+      const childGenome = this.recombiner.combine(
+        this.effectiveGenome(mother.genome, mother.brain),
+        this.effectiveGenome(father.genome, father.brain),
+        this.geneticsRandom
+      )
 
       const midX = (organism.x + partner.x) / 2
       const midY = (organism.y + partner.y) / 2
@@ -117,6 +157,10 @@ export class ReproductionSystem {
       const y = clamp(midY + (this.random.float() * 2 - 1) * radius, 0, height)
       const heading = wrapAngle(this.random.float() * TWO_PI)
 
+      const childEnergy = Math.min(
+        genome.reproduction.offspringInvestment + partner.genome.reproduction.offspringInvestment,
+        maxEnergyOf(childGenome, this.config)
+      )
       const child: OrganismState = {
         id: childId,
         parentIds,
@@ -127,13 +171,14 @@ export class ReproductionSystem {
         vy: 0,
         heading,
         age: 0,
-        energy: Math.min(
-          genome.reproduction.offspringInvestment + partner.genome.reproduction.offspringInvestment,
-          maxEnergyOf(childGenome, this.config)
-        ),
+        energy: childEnergy,
         birthTick: tick,
         reproductionCooldownRemaining: 0,
-        lastTurnMagnitude: 0
+        lastTurnMagnitude: 0,
+        brain:
+          this.config.learning.controller === 'brain'
+            ? createBrainState(childGenome, this.layout, childEnergy)
+            : null
       }
       this.organisms.add(child)
       this.lineage.register({

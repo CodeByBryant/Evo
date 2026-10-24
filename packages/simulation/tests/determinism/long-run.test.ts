@@ -198,20 +198,23 @@ describe('100,000-tick runs', () => {
       seed: 5,
       config: {
         organisms: { initialCount: 15 },
-        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 }
+        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
+        // Reflex controller: this pin is about the Phase 4 forager. It moved from 11,901 only
+        // because the larger genome draws more founder weights from the genetics stream.
+        learning: { controller: 'reflex' }
       },
       validateEveryTicks: 1000
     })
 
     world.run(20_000)
     expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(11_901)
+    expect(world.snapshot().population.extinctionTick).toBe(18_482)
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
 
     world.run(80_000)
 
     expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(11_901)
+    expect(world.snapshot().population.extinctionTick).toBe(18_482)
     expect(world.snapshot().organisms).toEqual([])
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })

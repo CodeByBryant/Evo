@@ -1,5 +1,7 @@
 import { resolveWorldConfig, validateSeed } from '@evo/config'
+import { ACTION_SIZE, OBSERVATION_SIZE } from '@evo/contracts'
 import type {
+  BrainSnapshot,
   EntityId,
   Genome,
   HistoricalOrganismRecord,
@@ -8,7 +10,7 @@ import type {
   WorldOptions,
   WorldSnapshot
 } from '@evo/contracts'
-import type { IntentBuffer, PerceptionBuffer } from '../buffers/types'
+import type { IntentBuffer, PeerBuffer, PerceptionBuffer } from '../buffers/types'
 import type { ClockState } from '../clock/SimulationClock'
 import { SimulationClock } from '../clock/SimulationClock'
 import { IdGenerator } from '../entities/IdGenerator'
@@ -26,10 +28,15 @@ import { HistoryStore } from '../history/HistoryStore'
 import { LineageStore } from '../lineage/LineageStore'
 import type { LineageQueries } from '../lineage/LineageStore'
 import { TWO_PI, wrapAngle } from '../math/scalar'
+import { architectureOf } from '../genetics/GenomeFactory'
+import { brainLayoutOf } from '../learning/BrainLayout'
+import type { BrainLayout } from '../learning/BrainLayout'
+import { createBrainState, writeBrainState } from '../learning/BrainState'
 import { MetricsCollector } from '../metrics/MetricsCollector'
 import { RandomStreams, STREAM_NAMES } from '../random/streams'
 import { StateHasher } from '../serialization/hash'
 import { SpatialHash } from '../spatial/SpatialHash'
+import { BrainSystem } from '../systems/BrainSystem'
 import { DeathSystem } from '../systems/DeathSystem'
 import { DecisionSystem } from '../systems/DecisionSystem'
 import { EnvironmentSystem } from '../systems/EnvironmentSystem'
@@ -72,11 +79,14 @@ export class World {
   private readonly geneSpecs: GeneSpec[]
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
+  private readonly peerBuffer: PeerBuffer = new Map()
   private readonly intentBuffer: IntentBuffer = new Map()
+  private readonly brainLayout: BrainLayout
 
   private readonly environmentSystem: EnvironmentSystem
   private readonly perceptionSystem: PerceptionSystem
   private readonly decisionSystem: DecisionSystem
+  private readonly brainSystem: BrainSystem
   private readonly movementSystem: MovementSystem
   private readonly interactionSystem: InteractionSystem
   private readonly metabolismSystem: MetabolismSystem
@@ -128,10 +138,14 @@ export class World {
       this.randomStreams.get('environment'),
       this.events
     )
+    this.brainLayout = brainLayoutOf(architectureOf(this.config.genetics.brain))
     this.perceptionSystem = new PerceptionSystem(
       this.organisms,
       this.resourceIndex,
-      this.perceptionBuffer
+      this.perceptionBuffer,
+      this.config.learning.controller === 'brain'
+        ? { organismIndex: this.organismIndex, buffer: this.peerBuffer }
+        : undefined
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
@@ -139,6 +153,15 @@ export class World {
       this.perceptionBuffer,
       this.intentBuffer,
       this.randomStreams.get('world')
+    )
+    this.brainSystem = new BrainSystem(
+      this.config,
+      this.organisms,
+      this.perceptionBuffer,
+      this.peerBuffer,
+      this.intentBuffer,
+      this.events,
+      this.randomStreams.get('learning')
     )
     this.movementSystem = new MovementSystem(
       this.config,
@@ -151,7 +174,8 @@ export class World {
       this.organisms,
       this.resources,
       this.resourceIndex,
-      this.events
+      this.events,
+      this.intentBuffer
     )
     this.metabolismSystem = new MetabolismSystem(this.config, this.organisms, this.events)
     this.reproductionSystem = new ReproductionSystem(
@@ -213,7 +237,11 @@ export class World {
         parentIds: [],
         birthTick: 0,
         reproductionCooldownRemaining: 0,
-        lastTurnMagnitude: 0
+        lastTurnMagnitude: 0,
+        brain:
+          this.config.learning.controller === 'brain'
+            ? createBrainState(genome, this.brainLayout, this.config.organisms.initialEnergy)
+            : null
       }
       this.organisms.add(organism)
       this.lineageStore.register({
@@ -249,6 +277,34 @@ export class World {
     return this.organisms.get(organismId)?.genome
   }
 
+  /**
+   * A read-only view of an organism's brain: its latest observation, hidden activations, memory,
+   * network output and action taken, value estimate, last reward breakdown and lifetime
+   * telemetry (docs/learning/brain.md). `undefined` when there is no such organism or the
+   * controller is `'reflex'`. Before an organism's first decision its vectors are zeros.
+   */
+  brainOf(organismId: EntityId): BrainSnapshot | undefined {
+    const brain = this.organisms.get(organismId)?.brain
+    if (!brain) return undefined
+    const zeros = (length: number): number[] => new Array<number>(length).fill(0)
+    return {
+      organismId,
+      observation:
+        brain.lastObservation.length > 0 ? brain.lastObservation.slice() : zeros(OBSERVATION_SIZE),
+      hidden: brain.prevHidden.slice(),
+      memory: brain.memory.slice(),
+      output: brain.lastOutput.length > 0 ? brain.lastOutput.slice() : zeros(ACTION_SIZE),
+      action: brain.prevAction.slice(),
+      value: brain.prevValue,
+      reward: { ...brain.reward },
+      telemetry: {
+        rewardTotal: brain.rewardTotal,
+        updates: brain.updates,
+        weightChange: brain.weightChange
+      }
+    }
+  }
+
   /** The current tick, simulated time, and timestep. Read-only: `step()` is the only mutator. */
   get clock(): ClockState {
     return this.clockImpl.state()
@@ -269,12 +325,14 @@ export class World {
     this.resourceIndex.rebuild(this.resources.values())
     this.organismIndex.rebuild(this.organisms.values())
     this.perceptionSystem.update()
-    this.decisionSystem.update()
+    if (this.config.learning.controller === 'brain') this.brainSystem.decide()
+    else this.decisionSystem.update()
     this.movementSystem.update(tick)
     this.interactionSystem.update(tick)
     this.metabolismSystem.update(tick)
     this.reproductionSystem.update(tick)
     this.deathSystem.update(tick)
+    if (this.config.learning.controller === 'brain') this.brainSystem.settle()
 
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, tick)
@@ -413,6 +471,7 @@ export class World {
         .writeUint32(architecture.outputSize)
         .writeUint32(weights.length)
       for (const weight of weights) hasher.writeFloat64(weight)
+      writeBrainState(hasher, organism.brain)
     }
 
     const resources = this.resources.values()

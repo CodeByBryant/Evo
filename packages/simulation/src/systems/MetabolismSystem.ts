@@ -2,11 +2,11 @@ import type { WorldConfig } from '@evo/contracts'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
-import { basalCostOf, sensorCostOf } from '../organisms/traits'
+import { basalCostOf, learningCostOf, sensorCostOf } from '../organisms/traits'
 
 /**
  * Charges the explicit, tested metabolic cost
- * `(basalCost + movementCost*speed^2 + turningCost*lastTurnMagnitude^2 + sensorCost) *
+ * `(basalCost + movementCost*speed^2 + turningCost*lastTurnMagnitude^2 + sensorCost + learningCost) *
  * juvenileMetabolicScale (if juvenile, else 1)` (per second of simulated time) and ages every
  * organism. Never clamps energy at zero: `DeathSystem`, which runs immediately afterward, is the
  * sole owner of removing organisms.
@@ -36,7 +36,8 @@ export class MetabolismSystem {
         (basalCostOf(genome, this.config) +
           genome.metabolic.movementCost * speedSquared +
           genome.metabolic.turningCost * turnSquared +
-          sensorCostOf(genome, this.config)) *
+          sensorCostOf(genome, this.config) +
+          learningCostOf(genome, this.config)) *
         scale *
         dt
       const previous = organism.energy

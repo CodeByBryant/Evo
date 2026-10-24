@@ -38,9 +38,10 @@ const stream = (name: Parameters<typeof deriveStreamWords>[1]) =>
 
 describe('MovementSystem reads physical genes', () => {
   function runMovement(organism: OrganismState, intent: { turn: number; thrust: number }) {
+    const full = { ...intent, strafe: 0, interact: true }
     const organisms = new OrganismStore()
     organisms.add(organism)
-    const intents: IntentBuffer = new Map([[organism.id, intent]])
+    const intents: IntentBuffer = new Map([[organism.id, full]])
     const events = new EventLog(10)
     events.beginTick()
     new MovementSystem(config, organisms, intents, events).update(1)

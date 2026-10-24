@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url'
  * result); it just wouldn't be *isolated* in spirit. Reading a stream that the current phase has
  * no business touching should fail loudly here, not be discovered by accident later. `reproduction`
  * left this list in Phase 3 once `ReproductionSystem` became real (docs/decisions/0005), and
- * `genetics` in Phase 4 once founders' genomes were drawn from it (docs/decisions/0006).
+ * `genetics` in Phase 4 once founders' genomes were drawn from it (docs/decisions/0006), and
+ * `learning` in Phase 5 once `BrainSystem` drew exploration noise from it (docs/decisions/0007).
  */
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -33,7 +34,7 @@ const engineFiles = [
   ...collectFiles(join(ROOT, 'src', 'world'))
 ]
 
-const RESERVED_FOR_LATER_PHASES = ['learning', 'events'] as const
+const RESERVED_FOR_LATER_PHASES = ['events'] as const
 
 describe('reserved random streams are never drawn from by systems/ or world/', () => {
   it.each(RESERVED_FOR_LATER_PHASES)(

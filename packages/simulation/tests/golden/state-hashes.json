@@ -1,5 +1,5 @@
 {
-  "hashSchemaVersion": 3,
+  "hashSchemaVersion": 4,
   "engineVersion": "0.6.0",
   "entries": [
     {
@@ -7,52 +7,66 @@
       "seed": 12345,
       "config": {},
       "steps": 1000,
-      "expectedHash": "a5ebbffa46b73084759bd8a939a98b0e"
+      "expectedHash": "91c64b48aa9ef7172803c401586a9218"
     },
     {
       "name": "scenario-a-foraging-5k",
       "seed": 1,
       "config": {
-        "organisms": { "initialCount": 10 }
+        "organisms": {
+          "initialCount": 10
+        }
       },
       "steps": 5000,
-      "expectedHash": "b8f276d8de9494ab670bb925a7e34af9"
+      "expectedHash": "0570adb9e90589a6fc30e72cc3df287f"
     },
     {
       "name": "scenario-b-extinction-20k",
       "seed": 1,
       "config": {
-        "organisms": { "initialCount": 10 },
-        "resources": { "initialCount": 0, "spawnRate": 0 }
+        "organisms": {
+          "initialCount": 10
+        },
+        "resources": {
+          "initialCount": 0,
+          "spawnRate": 0
+        }
       },
       "steps": 20000,
-      "expectedHash": "8a7fbd77fbd9e14fc5492774f7793258"
+      "expectedHash": "4284f01c4a9a4d9047f060fef33ae4d5"
     },
     {
       "name": "verbose-events-200",
       "seed": 7,
       "config": {
-        "history": { "eventDetail": "verbose", "maxEvents": 100000 }
+        "history": {
+          "eventDetail": "verbose",
+          "maxEvents": 100000
+        }
       },
       "steps": 200,
-      "expectedHash": "e8a18cfc4bdf5df438f559c4d942b7fb"
+      "expectedHash": "0704c9db20f4d609ecac67feef73f1b0"
     },
     {
       "name": "zero-population-100",
       "seed": 3,
       "config": {
-        "organisms": { "initialCount": 0 },
-        "resources": { "initialCount": 0 }
+        "organisms": {
+          "initialCount": 0
+        },
+        "resources": {
+          "initialCount": 0
+        }
       },
       "steps": 100,
-      "expectedHash": "3cc2d631d6afa976f76cda2f5717fb35"
+      "expectedHash": "5baa0cd17e44ac7afe9d651325608db3"
     },
     {
       "name": "long-run-100k",
       "seed": 999,
       "config": {},
       "steps": 100000,
-      "expectedHash": "a5a78b641dc34f38c398c5581ef5c154"
+      "expectedHash": "93ded58d67dc386cec9d536e4acfbdcc"
     }
   ]
 }

@@ -6,9 +6,10 @@ import { atan2 } from '../math/trig'
 import type { SeededRandom } from '../random/SeededRandom'
 
 /**
- * Placeholder controller: seek the nearest perceived resource, otherwise wander. Replaced by the
- * learned brain in Phase 5 (docs/simulation/update-order.md, stage 5). Writes only the intent
- * buffer; `MovementSystem` is responsible for physically limiting the intent.
+ * The `reflex` controller (Phase 4's hand-coded forager): seek the nearest perceived resource,
+ * otherwise wander. It runs when `learning.controller` is `'reflex'`; the learned brain
+ * (`BrainSystem`) replaces it otherwise (docs/simulation/update-order.md, stage 5). It never
+ * strafes and always tries to interact. Writes only the intent buffer; `MovementSystem` is responsible for physically limiting the intent.
  */
 export class DecisionSystem {
   constructor(
@@ -31,12 +32,16 @@ export class DecisionSystem {
         )
         this.intentBuffer.set(organism.id, {
           turn: wrapAngle(desiredHeading - organism.heading),
-          thrust: 1
+          thrust: 1,
+          strafe: 0,
+          interact: true
         })
       } else {
         this.intentBuffer.set(organism.id, {
           turn: (this.random.float() * 2 - 1) * jitter,
-          thrust: 0.5
+          thrust: 0.5,
+          strafe: 0,
+          interact: true
         })
       }
     }
