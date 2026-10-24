@@ -128,7 +128,7 @@ The stream is versioned. It begins with the four ASCII bytes `EVOH`, then `write
 | 9     | extinction | present flag (u8); when present, `extinctionTick` (f64), otherwise `0` (f64)                                                                          |
 | 10    | events     | `eventsEmitted` (f64)                                                                                                                                 |
 
-#### Version 2 (current, Phase 3+)
+#### Version 2 (Phase 3; superseded by version 3 in Phase 4)
 
 Sections 1-5 and 9-10 are unchanged from version 1. Sections 6 and 8 append new fields at the end (never inserted or reordered), per ADR 0005:
 
@@ -136,6 +136,17 @@ Sections 1-5 and 9-10 are unchanged from version 1. Sections 6 and 8 append new 
 | ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 6     | organisms | count (u32), then per organism in ascending id: `id` (u32), `x`, `y`, `vx`, `vy`, `heading`, `age`, `energy`, `birthTick`, `lastTurnMagnitude`, `reproductionCooldownRemaining` (all f64), then `parentIds` (`writeUint32(count)` then each id as u32) |
 | 8     | metrics   | `organismsBorn`, `deathsByStarvation`, `deathsByAge`, `resourcesSpawned`, `resourcesConsumed`, `reproductionAttempts`, `reproductionSuccesses`, `reproductionFailures` (u32 each), `energyConsumed`, `energyWasted` (f64 each)                         |
+
+#### Version 3 (current, Phase 4+)
+
+Takes effect in the Phase 4 PR in which organisms start carrying genomes. Sections 1-3, 5 and 7-10 are unchanged from version 2. Sections 4 and 6 append new fields at the end (never inserted or reordered), per ADR 0006:
+
+| Order | Section   | Contents (in this order)                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4     | ids       | `nextEntityId` (u32), then `nextGenomeId` (u32)                                                                                                                                                                                                                                                                                                                                                                            |
+| 6     | organisms | count (u32), then per organism in ascending id: every version 2 field, then the genome: `genomeId` (u32); `parentGenomeIds` as count (u32) then each id (u32); every scalar gene in the fixed `GENE_SPECS` order (f64 each; integers and booleans are written as their numeric value); the brain architecture `inputSize`, `hiddenSize`, `memorySize`, `outputSize` (u32 each); the weight count (u32); every weight (f64) |
+
+The `LineageStore` and `HistoryStore` are derived records of what happened, not simulation state, and are **not** hashed (they cannot influence any later tick). The `genetics` stream's four state words are already hashed in section 5 because it has been one of the named streams since version 1.
 
 `WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
