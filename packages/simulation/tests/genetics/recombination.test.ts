@@ -5,7 +5,7 @@ import {
   crossoverWeights,
   GenomeRecombiner
 } from '../../src/genetics/Recombination'
-import { brainBlockLengths, genomeToVector } from '../../src/genetics/GenomeFactory'
+import { architectureOf, brainBlockLengths, genomeToVector } from '../../src/genetics/GenomeFactory'
 import { validateGenome } from '../../src/genetics/GenomeValidation'
 import { fixture, founder, genomeWith, geneticsStream, sameState, synthetic } from './helpers'
 
@@ -181,11 +181,11 @@ describe('crossoverWeights', () => {
 
   it('handles the default architecture block by block', () => {
     const f = fixture()
-    const lengths = brainBlockLengths(f.config.genetics.brain)
+    const lengths = brainBlockLengths(architectureOf(f.config.genetics.brain))
     const a = founder(f, 0, 1).brain.weights
     const b = founder(f, 1, 2).brain.weights
     const child = crossoverWeights(a, b, lengths, geneticsStream(1))
-    expect(child).toHaveLength(249)
+    expect(child).toHaveLength(314)
     expect(child.every((value, i) => value === a[i] || value === b[i])).toBe(true)
   })
 })
@@ -315,7 +315,7 @@ describe('GenomeRecombiner', () => {
 
   it('refuses parents with different brain architectures', () => {
     const { f, recombiner: r } = recombiner()
-    const other = fixture({ genetics: { brain: { hiddenSize: 4 } } })
+    const other = fixture({ genetics: { brain: { hiddenSize: 6 } } })
     expect(() => r.combine(founder(f, 0, 1), founder(other, 1, 1), geneticsStream(1))).toThrow(
       RangeError
     )

@@ -113,7 +113,7 @@ describe('genomeDistance', () => {
   })
 
   it('refuses to compare genomes with different brain architectures', () => {
-    const other = fixture({ genetics: { brain: { hiddenSize: 4 } } })
+    const other = fixture({ genetics: { brain: { hiddenSize: 6 } } })
     expect(() => distance(a, founder(other, 1, 1))).toThrow(RangeError)
   })
 
