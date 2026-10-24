@@ -106,12 +106,20 @@ describe('children get new genomes', () => {
     expect(world.genomeOf(child.id)?.parentIds).toEqual([0, 1])
   })
 
-  it('copies the mother’s genes while inheritance is not yet heritable', () => {
+  it('differs from both parents, since mutation is on by default', () => {
     const mother = world.genomeOf(snapshot.organisms[0]!.id)!
+    const father = world.genomeOf(snapshot.organisms[1]!.id)!
     const childGenome = world.genomeOf(child.id)!
-    expect(genomeToVector(childGenome)).toEqual(genomeToVector(mother))
-    expect(childGenome.brain.weights).toEqual(mother.brain.weights)
+    expect(childGenome.brain.weights).not.toEqual(mother.brain.weights)
+    expect(childGenome.brain.weights).not.toEqual(father.brain.weights)
     expect(childGenome).not.toBe(mother)
+  })
+
+  it('is registered in the world’s lineage with both parents', () => {
+    expect(world.lineage.parentsOf(2)).toEqual([0, 1])
+    expect(world.lineage.descendantsOf(0)).toEqual([2])
+    expect(world.lineage.commonAncestor(2, 0)).toBe(0)
+    expect(world.lineage.founders()).toEqual([0, 1])
   })
 
   it('records the child genome on its birth event', () => {
@@ -173,5 +181,80 @@ describe('genomes are part of the state hash', () => {
     a.run(300)
     b.run(300)
     expect(a.stateHash()).toBe(b.stateHash())
+  })
+})
+
+describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () => {
+  // With mutation disabled every child blends identical parent genes, so only the brains differ
+  // and nothing the simulation does depends on a brain yet: Phase 3's pinned Scenario A returns.
+  it('reproduces Phase 3 Scenario A exactly when mutation is off', () => {
+    const world = World.create({
+      seed: 1,
+      config: { organisms: { initialCount: 10 }, genetics: { mutationRateScale: 0 } },
+      validateEveryTicks: 100
+    })
+    world.run(5000)
+    const snapshot = world.snapshot()
+    expect(snapshot.population.active).toBe(26)
+    expect(snapshot.metrics.organismsBorn).toBe(47)
+    expect(snapshot.metrics.deathsByStarvation).toBe(21)
+  })
+
+  it('changes the trajectory when mutation is on', () => {
+    const run = (genetics: object) => {
+      const world = World.create({ seed: 1, config: { organisms: { initialCount: 10 }, genetics } })
+      world.run(2000)
+      return world.stateHash()
+    }
+    expect(run({})).not.toBe(run({ mutationRateScale: 0 }))
+  })
+})
+
+describe('lineage over a run', () => {
+  const world = World.create({
+    seed: 1,
+    validateEveryTicks: 250,
+    config: { history: { maxEvents: 200_000 } }
+  })
+  world.run(4000)
+
+  it('registers every genome ever created, living or dead', () => {
+    const living = world.snapshot().organisms.length
+    const dead = world.historicalOrganisms().length
+    expect(world.lineage.size).toBe(living + dead)
+  })
+
+  it('keeps a dead organism’s record, with its parents', () => {
+    const record = world.historicalOrganisms().find((r) => r.parentIds.length > 0)!
+    const lineage = world.lineage.record(record.genomeId)!
+    expect(lineage).toBeDefined()
+    expect(lineage.parentGenomeIds).toHaveLength(2)
+    expect(world.genomeOf(record.id)).toBeUndefined()
+    for (const parent of lineage.parentGenomeIds) {
+      expect(world.lineage.record(parent)).toBeDefined()
+    }
+  })
+
+  it('traces every living organism back to a founder', () => {
+    const founders = new Set(world.lineage.founders())
+    expect(founders.size).toBe(world.config.organisms.initialCount)
+    for (const organism of world.snapshot().organisms) {
+      const ancestors = world.lineage.ancestorsOf(organism.genomeId)
+      const roots = ancestors.filter((id) => founders.has(id))
+      expect(roots.length + (founders.has(organism.genomeId) ? 1 : 0)).toBeGreaterThan(0)
+    }
+  })
+
+  it('knows when a founder lineage has died out and when it has not', () => {
+    const living = new Set(world.snapshot().organisms.map((o) => o.genomeId))
+    for (const founder of world.lineage.founders()) {
+      const survives =
+        living.has(founder) || world.lineage.descendantsOf(founder).some((id) => living.has(id))
+      expect(world.lineage.isLineageExtinct(founder)).toBe(!survives)
+    }
+  })
+
+  it('stays consistent with the world’s own validation', () => {
+    expect(world.validate()).toEqual({ ok: true, errors: [] })
   })
 })

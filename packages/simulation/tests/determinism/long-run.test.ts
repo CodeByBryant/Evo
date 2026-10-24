@@ -139,13 +139,13 @@ describe('100,000-tick runs', () => {
 
     world.run(20_000)
     expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(17_002)
+    expect(world.snapshot().population.extinctionTick).toBe(11_901)
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
 
     world.run(80_000)
 
     expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(17_002)
+    expect(world.snapshot().population.extinctionTick).toBe(11_901)
     expect(world.snapshot().organisms).toEqual([])
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })

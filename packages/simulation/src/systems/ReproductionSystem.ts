@@ -2,10 +2,12 @@ import type { EntityId, WorldConfig } from '@evo/contracts'
 import type { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
-import { copyGenomeAs } from '../genetics/GenomeFactory'
+import type { RecombinationStrategy } from '../genetics/Recombination'
 import { clamp, TWO_PI, wrapAngle } from '../math/scalar'
+import type { LineageStore } from '../lineage/LineageStore'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { maxEnergyOf, reproductionCostOf, reproductionThresholdOf } from '../organisms/traits'
+import type { RandomSource } from '../random/RandomSource'
 import type { SeededRandom } from '../random/SeededRandom'
 import type { SpatialHash } from '../spatial/SpatialHash'
 
@@ -20,7 +22,9 @@ import type { SpatialHash } from '../spatial/SpatialHash'
  * then the lack of an eligible, not-yet-paired partner within its own `searchRadius`; both record
  * a failed `reproduction-attempted`. On success, each parent pays its own cost and resets its own
  * cooldown, and a child is born near the parents' midpoint with `parentIds` in ascending order.
- * The child's genome is a copy of its mother's (the lower-id parent) under a new `GenomeId`.
+ * The child's genome is built from both parents' genomes by recombination then mutation, drawing
+ * only from the `genetics` stream (the lower-id parent is "mother"), and is registered in the
+ * lineage store under a new `GenomeId`; spawn jitter and heading use the `reproduction` stream.
  */
 export class ReproductionSystem {
   constructor(
@@ -28,7 +32,9 @@ export class ReproductionSystem {
     private readonly organisms: OrganismStore,
     private readonly organismIndex: SpatialHash<OrganismState>,
     private readonly ids: IdGenerator,
-    private readonly genomeIds: IdGenerator,
+    private readonly recombiner: RecombinationStrategy,
+    private readonly geneticsRandom: RandomSource,
+    private readonly lineage: LineageStore,
     private readonly random: SeededRandom,
     private readonly events: EventLog
   ) {}
@@ -102,11 +108,7 @@ export class ReproductionSystem {
       const childId = this.ids.allocate()
       const [mother, father] = organism.id < partner.id ? [organism, partner] : [partner, organism]
       const parentIds: EntityId[] = [mother.id, father.id]
-      const parentGenomeIds =
-        mother.genome.id < father.genome.id
-          ? [mother.genome.id, father.genome.id]
-          : [father.genome.id, mother.genome.id]
-      const childGenome = copyGenomeAs(mother.genome, this.genomeIds.allocate(), parentGenomeIds)
+      const childGenome = this.recombiner.combine(mother.genome, father.genome, this.geneticsRandom)
 
       const midX = (organism.x + partner.x) / 2
       const midY = (organism.y + partner.y) / 2
@@ -134,6 +136,12 @@ export class ReproductionSystem {
         lastTurnMagnitude: 0
       }
       this.organisms.add(child)
+      this.lineage.register({
+        genomeId: childGenome.id,
+        parentGenomeIds: childGenome.parentIds,
+        organismId: childId,
+        tick
+      })
 
       this.events.record({
         type: 'organism-born',

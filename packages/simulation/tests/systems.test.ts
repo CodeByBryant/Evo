@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { resolveWorldConfig } from '@evo/config'
 import type { PerceptionBuffer, IntentBuffer } from '../src/buffers/types'
 import { IdGenerator } from '../src/entities/IdGenerator'
-import { organismFor as organism } from './support/organism'
+import { makeReproduction, organismFor as organism } from './support/organism'
+import { LineageStore } from '../src/lineage/LineageStore'
 import { OrganismStore } from '../src/entities/OrganismStore'
 import type { OrganismState } from '../src/entities/OrganismStore'
 import { ResourceStore } from '../src/entities/ResourceStore'
@@ -20,7 +21,6 @@ import { InteractionSystem } from '../src/systems/InteractionSystem'
 import { MetabolismSystem } from '../src/systems/MetabolismSystem'
 import { MovementSystem } from '../src/systems/MovementSystem'
 import { PerceptionSystem } from '../src/systems/PerceptionSystem'
-import { ReproductionSystem } from '../src/systems/ReproductionSystem'
 
 const stream = (seed: number, name: Parameters<typeof deriveStreamWords>[1]) =>
   new SeededRandom(deriveStreamWords(seed, name))
@@ -554,15 +554,7 @@ describe('ReproductionSystem', () => {
     const events = new EventLog(10)
     events.beginTick()
 
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      new IdGenerator(),
-      idsFrom(100),
-      stream(1, 'reproduction'),
-      events
-    ).update(1)
+    makeReproduction(config, organisms, index, new IdGenerator(), events).system.update(1)
 
     expect(events.eventsThisTick()).toEqual([
       {
@@ -589,15 +581,7 @@ describe('ReproductionSystem', () => {
     const events = new EventLog(10)
     events.beginTick()
 
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      idsFrom(3),
-      idsFrom(100),
-      stream(1, 'reproduction'),
-      events
-    ).update(1)
+    makeReproduction(config, organisms, index, idsFrom(3), events).system.update(1)
 
     const cost =
       config.reproduction.offspringInvestment * (1 + config.reproduction.overheadFraction)
@@ -630,15 +614,7 @@ describe('ReproductionSystem', () => {
     const events = new EventLog(10)
     events.beginTick()
 
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      idsFrom(4),
-      idsFrom(100),
-      stream(1, 'reproduction'),
-      events
-    ).update(1)
+    makeReproduction(config, organisms, index, idsFrom(4), events).system.update(1)
 
     // Organism 1 pairs with 2 (nearest); organism 3 has no unpaired partner left.
     const failed = events
@@ -657,15 +633,7 @@ describe('ReproductionSystem', () => {
     const events = new EventLog(10)
     events.beginTick()
 
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      new IdGenerator(),
-      idsFrom(100),
-      stream(1, 'reproduction'),
-      events
-    ).update(1)
+    makeReproduction(config, organisms, index, new IdGenerator(), events).system.update(1)
 
     // Organism 1 is juvenile: no attempt recorded for it at all.
     expect(events.eventsThisTick().some((e) => 'organismId' in e && e.organismId === 1)).toBe(false)
@@ -686,15 +654,7 @@ describe('ReproductionSystem', () => {
     const events = new EventLog(10)
     events.beginTick()
 
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      new IdGenerator(),
-      idsFrom(100),
-      stream(1, 'reproduction'),
-      events
-    ).update(1)
+    makeReproduction(config, organisms, index, new IdGenerator(), events).system.update(1)
 
     expect(organisms.get(1)?.reproductionCooldownRemaining).toBe(3)
     expect(events.eventsThisTick()).toEqual([])
@@ -709,15 +669,7 @@ describe('ReproductionSystem', () => {
     const events = new EventLog(10)
     events.beginTick()
 
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      new IdGenerator(),
-      idsFrom(100),
-      stream(1, 'reproduction'),
-      events
-    ).update(1)
+    makeReproduction(config, organisms, index, new IdGenerator(), events).system.update(1)
 
     expect(organisms.get(1)?.reproductionCooldownRemaining).toBe(0)
   })
@@ -732,15 +684,7 @@ describe('ReproductionSystem', () => {
     const events = new EventLog(10)
     events.beginTick()
 
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      new IdGenerator(),
-      idsFrom(100),
-      stream(1, 'reproduction'),
-      events
-    ).update(1)
+    makeReproduction(config, organisms, index, new IdGenerator(), events).system.update(1)
 
     expect(organisms.size).toBe(2)
     expect(organisms.get(1)?.energy).toBe(100)
@@ -775,15 +719,7 @@ describe('ReproductionSystem', () => {
     const events = new EventLog(10)
     events.beginTick()
 
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      new IdGenerator(),
-      idsFrom(100),
-      stream(1, 'reproduction'),
-      events
-    ).update(1)
+    makeReproduction(config, organisms, index, new IdGenerator(), events).system.update(1)
 
     expect(events.eventsThisTick()).toEqual([])
   })
@@ -799,7 +735,7 @@ describe('DeathSystem', () => {
     events.beginTick()
     const history = new HistoryStore(10)
 
-    new DeathSystem(organisms, events, history).update(5)
+    new DeathSystem(organisms, events, history, new LineageStore()).update(5)
 
     expect(organisms.has(1)).toBe(false)
     expect(organisms.has(2)).toBe(true)
@@ -824,7 +760,7 @@ describe('DeathSystem', () => {
     events.beginTick()
     const history = new HistoryStore(10)
 
-    new DeathSystem(organisms, events, history).update(1)
+    new DeathSystem(organisms, events, history, new LineageStore()).update(1)
 
     expect(organisms.has(1)).toBe(false)
     expect(events.eventsThisTick()[0]).toMatchObject({ cause: 'age' })
@@ -836,7 +772,7 @@ describe('DeathSystem', () => {
     organisms.add(organism(config, 1, { energy: 1, age: 1 }))
     const events = new EventLog(10)
     events.beginTick()
-    new DeathSystem(organisms, events, new HistoryStore(10)).update(1)
+    new DeathSystem(organisms, events, new HistoryStore(10), new LineageStore()).update(1)
     expect(organisms.has(1)).toBe(true)
   })
 
@@ -848,7 +784,7 @@ describe('DeathSystem', () => {
     organisms.add(organism(config, 3, { energy: 0 }))
     const events = new EventLog(10)
     events.beginTick()
-    new DeathSystem(organisms, events, new HistoryStore(10)).update(1)
+    new DeathSystem(organisms, events, new HistoryStore(10), new LineageStore()).update(1)
     expect(organisms.values().map((o) => o.id)).toEqual([2])
   })
 
@@ -860,7 +796,7 @@ describe('DeathSystem', () => {
     events.beginTick()
     const history = new HistoryStore(10)
 
-    new DeathSystem(organisms, events, history).update(20)
+    new DeathSystem(organisms, events, history, new LineageStore()).update(20)
 
     expect(history.list()).toEqual([
       {

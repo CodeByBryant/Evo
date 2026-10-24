@@ -129,19 +129,19 @@ Default `partial` / `0.15`. In Phase 4 nothing learns, so `ReproductionSystem` p
 
 ## Lineage
 
-`LineageStore` (`World.lineage`) holds `LineageRecord { genomeId, parentGenomeIds, organismIds, createdAtTick, descendantCount }` for every genome ever created, including those whose organisms have died.
+`LineageStore` (exposed read-only as `World.lineage`; `ReproductionSystem` registers each child and `DeathSystem` marks deaths) holds `LineageRecord { genomeId, parentGenomeIds, organismIds, createdAtTick, descendantCount }` for every genome ever created, including those whose organisms have died.
 
-| Query                          | Result                                                                 |
-| ------------------------------ | ---------------------------------------------------------------------- |
-| `record(id)`                   | the record (with `descendantCount` computed on demand), or `undefined` |
-| `parentsOf(id)`                | parent genome ids, ascending                                           |
-| `ancestorsOf(id)`              | all ancestors (transitive), ascending                                  |
-| `descendantsOf(id)`            | all descendants (transitive), ascending                                |
-| `commonAncestor(a, b)`         | the shared ancestor with the greatest id (most recent), or `null`      |
-| `founders()` / `isFounder(id)` | genomes with no parents                                                |
-| `isLineageExtinct(id)`         | `true` if neither the genome nor any descendant has a living organism  |
+| Query                          | Result                                                                                                                                        |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `record(id)`                   | the record (with `descendantCount` computed on demand), or `undefined`                                                                        |
+| `parentsOf(id)`                | parent genome ids, ascending                                                                                                                  |
+| `ancestorsOf(id)`              | all ancestors (transitive), ascending                                                                                                         |
+| `descendantsOf(id)`            | all descendants (transitive), ascending                                                                                                       |
+| `commonAncestor(a, b)`         | the most recent (greatest-id) genome that is, or is an ancestor of, both; a genome counts as its own ancestor here; `null` if they never meet |
+| `founders()` / `isFounder(id)` | genomes with no parents                                                                                                                       |
+| `isLineageExtinct(id)`         | `true` if neither the genome nor any descendant has a living organism                                                                         |
 
-Every genome has two parents except founders. Traversals are on demand and de-duplicate shared ancestors. The store is not hashed.
+Every genome has two parents except founders. `World.validate()` checks that each living genome has a record, that the record names the same parents, and that those parents have records too (so a record survives its organism). Traversals are on demand and de-duplicate shared ancestors. The store is not hashed.
 
 ## Configuration
 

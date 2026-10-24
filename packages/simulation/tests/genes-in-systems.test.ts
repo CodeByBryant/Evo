@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { resolveWorldConfig } from '@evo/config'
 import type { GenePath } from '@evo/contracts'
 import type { IntentBuffer, PerceptionBuffer } from '../src/buffers/types'
-import { IdGenerator } from '../src/entities/IdGenerator'
 import { OrganismStore } from '../src/entities/OrganismStore'
 import type { OrganismState } from '../src/entities/OrganismStore'
 import { ResourceStore } from '../src/entities/ResourceStore'
 import type { ResourceState } from '../src/entities/ResourceStore'
 import { EventLog } from '../src/events/EventLog'
-import { genomeToVector } from '../src/genetics/GenomeFactory'
+import { buildGeneSpecs } from '../src/genetics/GeneSpecs'
+import { validateGenome } from '../src/genetics/GenomeValidation'
 import { HistoryStore } from '../src/history/HistoryStore'
+import { LineageStore } from '../src/lineage/LineageStore'
 import { SeededRandom } from '../src/random/SeededRandom'
 import { deriveStreamWords } from '../src/random/streams'
 import { SpatialHash } from '../src/spatial/SpatialHash'
@@ -19,8 +20,7 @@ import { InteractionSystem } from '../src/systems/InteractionSystem'
 import { MetabolismSystem } from '../src/systems/MetabolismSystem'
 import { MovementSystem } from '../src/systems/MovementSystem'
 import { PerceptionSystem } from '../src/systems/PerceptionSystem'
-import { ReproductionSystem } from '../src/systems/ReproductionSystem'
-import { organismFor, withGenes } from './support/organism'
+import { idsFrom, makeReproduction, organismFor, withGenes } from './support/organism'
 
 /**
  * Each system reads an organism's traits from its own genome, not from global config
@@ -35,12 +35,6 @@ const mature = (id: number, overrides: Partial<OrganismState> = {}): OrganismSta
 
 const stream = (name: Parameters<typeof deriveStreamWords>[1]) =>
   new SeededRandom(deriveStreamWords(1, name))
-
-const idsFrom = (n: number): IdGenerator => {
-  const ids = new IdGenerator()
-  for (let i = 0; i < n; i++) ids.allocate()
-  return ids
-}
 
 describe('MovementSystem reads physical genes', () => {
   function runMovement(organism: OrganismState, intent: { turn: number; thrust: number }) {
@@ -228,7 +222,7 @@ describe('DeathSystem reads the maxAge gene', () => {
     organisms.add(withGenes(mature(2, { age: 580 }), { 'physical.maxAge': 1000 }))
     const events = new EventLog(10)
     events.beginTick()
-    new DeathSystem(organisms, events, new HistoryStore(10)).update(5)
+    new DeathSystem(organisms, events, new HistoryStore(10), new LineageStore()).update(5)
     expect(organisms.has(1)).toBe(false)
     expect(organisms.has(2)).toBe(true)
     expect(events.eventsThisTick()[0]).toMatchObject({ organismId: 1, cause: 'age' })
@@ -236,21 +230,20 @@ describe('DeathSystem reads the maxAge gene', () => {
 })
 
 describe('ReproductionSystem reads reproduction genes', () => {
-  function run(organisms: OrganismStore, genomeStart = 100) {
+  function runFull(organisms: OrganismStore, genomeStart = 100, c = config) {
     const events = new EventLog(20)
     events.beginTick()
     const index = new SpatialHash<OrganismState>(100, (o) => o)
     index.rebuild(organisms.values())
-    new ReproductionSystem(
-      config,
-      organisms,
-      index,
-      idsFrom(50),
-      idsFrom(genomeStart),
-      stream('reproduction'),
-      events
-    ).update(1)
-    return events
+    const { system, lineage } = makeReproduction(c, organisms, index, idsFrom(50), events, {
+      genomeIdStart: genomeStart
+    })
+    system.update(1)
+    return { events, lineage }
+  }
+
+  function run(organisms: OrganismStore, genomeStart = 100) {
+    return runFull(organisms, genomeStart).events
   }
 
   type Genes = Partial<Record<GenePath, number>>
@@ -311,21 +304,78 @@ describe('ReproductionSystem reads reproduction genes', () => {
     ).toBe(true)
   })
 
-  it('gives the child a fresh genome that copies its mother’s, the lower-id parent', () => {
-    const organisms = pair({ 'physical.maxSpeed': 11 }, { 'physical.maxSpeed': 33 })
-    const events = run(organisms, 100)
-    const child = organisms.get(50) as OrganismState
-    const mother = organisms.get(1) as OrganismState
-    expect(child.genome.id).toBe(100)
-    expect(child.genome.parentIds).toEqual([1, 2])
-    expect(child.genome).not.toBe(mother.genome)
-    expect(child.genome.physical.maxSpeed).toBe(11)
-    expect(genomeToVector(child.genome)).toEqual(genomeToVector(mother.genome))
-    expect(child.genome.brain.weights).toEqual(mother.genome.brain.weights)
-    expect(events.eventsThisTick().find((e) => e.type === 'organism-born')).toMatchObject({
-      organismId: 50,
-      genomeId: 100,
-      parentIds: [1, 2]
+  describe('the child’s genome', () => {
+    const steady = resolveWorldConfig({ genetics: { mutationRateScale: 0, blendAlpha: 0 } })
+
+    it('gets a fresh id and names both parents’ genomes', () => {
+      const organisms = pair({ 'physical.maxSpeed': 11 }, { 'physical.maxSpeed': 33 })
+      const { events } = runFull(organisms, 100)
+      const child = organisms.get(50) as OrganismState
+      expect(child.genome.id).toBe(100)
+      expect(child.genome.parentIds).toEqual([1, 2])
+      expect(events.eventsThisTick().find((e) => e.type === 'organism-born')).toMatchObject({
+        organismId: 50,
+        genomeId: 100,
+        parentIds: [1, 2]
+      })
+    })
+
+    it('takes each gene from between its parents’ values when mutation is off', () => {
+      const organisms = pair(
+        { 'physical.maxSpeed': 11, 'sensory.sensorRadius': 40 },
+        { 'physical.maxSpeed': 33, 'sensory.sensorRadius': 100 }
+      )
+      runFull(organisms, 100, steady)
+      const child = (organisms.get(50) as OrganismState).genome
+      expect(child.physical.maxSpeed).toBeGreaterThanOrEqual(11)
+      expect(child.physical.maxSpeed).toBeLessThanOrEqual(33)
+      expect(child.sensory.sensorRadius).toBeGreaterThanOrEqual(40)
+      expect(child.sensory.sensorRadius).toBeLessThanOrEqual(100)
+    })
+
+    it('takes brain weights from both parents when mutation is off', () => {
+      const organisms = pair({}, {})
+      runFull(organisms, 100, steady)
+      const child = (organisms.get(50) as OrganismState).genome.brain.weights
+      const mother = (organisms.get(1) as OrganismState).genome.brain.weights
+      const father = (organisms.get(2) as OrganismState).genome.brain.weights
+      expect(child.every((w, i) => w === mother[i] || w === father[i])).toBe(true)
+      expect(child.some((w, i) => w === mother[i] && w !== father[i])).toBe(true)
+      expect(child.some((w, i) => w === father[i] && w !== mother[i])).toBe(true)
+    })
+
+    it('differs from both parents when mutation is on', () => {
+      const organisms = pair({}, {})
+      runFull(organisms)
+      const child = (organisms.get(50) as OrganismState).genome
+      for (const parentId of [1, 2]) {
+        const parent = (organisms.get(parentId) as OrganismState).genome
+        expect(child.brain.weights).not.toEqual(parent.brain.weights)
+      }
+    })
+
+    it('is always a valid genome', () => {
+      const organisms = pair({}, {})
+      runFull(organisms)
+      const child = (organisms.get(50) as OrganismState).genome
+      const specs = buildGeneSpecs(config)
+      expect(validateGenome(child, specs, { brain: child.brain.architecture })).toEqual({
+        ok: true,
+        errors: []
+      })
+    })
+
+    it('is registered in the lineage store with both parents', () => {
+      const organisms = pair({}, {})
+      const { lineage } = runFull(organisms, 100)
+      expect(lineage.record(100)).toEqual({
+        genomeId: 100,
+        parentGenomeIds: [1, 2],
+        organismIds: [50],
+        createdAtTick: 1,
+        descendantCount: 0
+      })
+      expect(lineage.descendantsOf(1)).toEqual([100])
     })
   })
 

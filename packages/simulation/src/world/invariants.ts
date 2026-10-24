@@ -4,6 +4,7 @@ import type { ResourceState } from '../entities/ResourceStore'
 import type { GeneSpec } from '../genetics/GeneSpecs'
 import { architectureOf } from '../genetics/GenomeFactory'
 import { validateGenome } from '../genetics/GenomeValidation'
+import type { LineageQueries } from '../lineage/LineageStore'
 
 export interface InvariantContext {
   readonly organisms: readonly OrganismState[]
@@ -18,6 +19,8 @@ export interface InvariantContext {
   readonly nextGenomeId: number
   /** The world's gene table, which every living genome must satisfy. */
   readonly geneSpecs: readonly GeneSpec[]
+  /** Every living genome, and every parent it names, must have a lineage record. */
+  readonly lineage: LineageQueries
 }
 
 function checkFinite(label: string, field: string, value: number, errors: string[]): void {
@@ -98,7 +101,8 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
     metrics,
     nextEntityId,
     nextGenomeId,
-    geneSpecs
+    geneSpecs,
+    lineage
   } = context
   const seenGenomeIds = new Set<number>()
   const width = config.environment.width
@@ -129,6 +133,18 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
       )
     }
     seenGenomeIds.add(organism.genome.id)
+
+    const record = lineage.record(organism.genome.id)
+    if (!record) {
+      errors.push(`organism ${organism.id}: genome ${organism.genome.id} has no lineage record`)
+    } else if (record.parentGenomeIds.join(',') !== organism.genome.parentIds.join(',')) {
+      errors.push(`organism ${organism.id}: lineage parents differ from the genome's parents`)
+    }
+    for (const parentId of organism.genome.parentIds) {
+      if (!lineage.record(parentId)) {
+        errors.push(`organism ${organism.id}: parent genome ${parentId} has no lineage record`)
+      }
+    }
   }
 
   let previousResourceId = -1

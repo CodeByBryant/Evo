@@ -126,18 +126,3 @@ export function createFounderGenome(
     weights
   })
 }
-
-/**
- * A new genome with the same genes and brain as `source` under a fresh identity. This is how a
- * child is made while inheritance is not yet heritable (it copies its "mother", the lower-id
- * parent); recombination and mutation replace it without changing the call site's shape.
- */
-export function copyGenomeAs(source: Genome, id: GenomeId, parentIds: readonly GenomeId[]): Genome {
-  return genomeFromParts({
-    id,
-    parentIds,
-    vector: genomeToVector(source),
-    architecture: source.brain.architecture,
-    weights: source.brain.weights
-  })
-}

@@ -21,7 +21,10 @@ import { EventLog } from '../events/EventLog'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
 import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
+import { GenomeRecombiner } from '../genetics/Recombination'
 import { HistoryStore } from '../history/HistoryStore'
+import { LineageStore } from '../lineage/LineageStore'
+import type { LineageQueries } from '../lineage/LineageStore'
 import { TWO_PI, wrapAngle } from '../math/scalar'
 import { MetricsCollector } from '../metrics/MetricsCollector'
 import { RandomStreams, STREAM_NAMES } from '../random/streams'
@@ -65,6 +68,7 @@ export class World {
   private readonly resourceIndex: SpatialHash<ResourceState>
   private readonly organismIndex: SpatialHash<OrganismState>
   private readonly historyStore: HistoryStore
+  private readonly lineageStore: LineageStore
   private readonly geneSpecs: GeneSpec[]
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
@@ -115,6 +119,7 @@ export class World {
       (organism) => organism
     )
     this.historyStore = new HistoryStore(this.config.history.maxHistoricalOrganisms)
+    this.lineageStore = new LineageStore()
 
     this.environmentSystem = new EnvironmentSystem(
       this.config,
@@ -154,11 +159,18 @@ export class World {
       this.organisms,
       this.organismIndex,
       this.ids,
-      this.genomeIds,
+      new GenomeRecombiner(this.geneSpecs, this.config.genetics, () => this.genomeIds.allocate()),
+      this.randomStreams.get('genetics'),
+      this.lineageStore,
       this.randomStreams.get('reproduction'),
       this.events
     )
-    this.deathSystem = new DeathSystem(this.organisms, this.events, this.historyStore)
+    this.deathSystem = new DeathSystem(
+      this.organisms,
+      this.events,
+      this.historyStore,
+      this.lineageStore
+    )
 
     this.events.beginTick()
     this.spawnInitialPopulation()
@@ -204,6 +216,12 @@ export class World {
         lastTurnMagnitude: 0
       }
       this.organisms.add(organism)
+      this.lineageStore.register({
+        genomeId: genome.id,
+        parentGenomeIds: [],
+        organismId: id,
+        tick: 0
+      })
       this.events.record({
         type: 'organism-born',
         tick: 0,
@@ -213,6 +231,14 @@ export class World {
         position: { x, y }
       })
     }
+  }
+
+  /**
+   * Who descended from whom, for every genome that has ever existed, including those whose
+   * organisms have died. Read-only; a derived record, not part of the state hash.
+   */
+  get lineage(): LineageQueries {
+    return this.lineageStore
   }
 
   /**
@@ -280,7 +306,8 @@ export class World {
       metrics: this.metricsCollector.snapshot(),
       nextEntityId: this.ids.nextId,
       nextGenomeId: this.genomeIds.nextId,
-      geneSpecs: this.geneSpecs
+      geneSpecs: this.geneSpecs,
+      lineage: this.lineageStore
     })
   }
 
