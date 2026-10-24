@@ -21,8 +21,8 @@ export class DecisionSystem {
 
   update(): void {
     this.intentBuffer.clear()
-    const jitter = this.config.organisms.wanderJitter * this.config.timestep
     for (const organism of this.organisms.values()) {
+      const jitter = organism.genome.behavioral.wanderJitter * this.config.timestep
       const perceived = this.perceptionBuffer.get(organism.id)
       if (perceived) {
         const desiredHeading = atan2(

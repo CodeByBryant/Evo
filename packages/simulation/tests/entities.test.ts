@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_WORLD_CONFIG } from '@evo/config'
 import { IdGenerator } from '../src/entities/IdGenerator'
 import { OrganismStore } from '../src/entities/OrganismStore'
 import type { OrganismState } from '../src/entities/OrganismStore'
+import { organismFor } from './support/organism'
 import { ResourceStore } from '../src/entities/ResourceStore'
 import type { ResourceState } from '../src/entities/ResourceStore'
 
@@ -26,29 +28,17 @@ describe('IdGenerator', () => {
   })
 })
 
-const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismState => ({
-  id,
-  x: 0,
-  y: 0,
-  vx: 0,
-  vy: 0,
-  heading: 0,
-  age: 0,
-  energy: 50,
-  parentIds: [],
-  birthTick: 0,
-  reproductionCooldownRemaining: 0,
-  lastTurnMagnitude: 0,
-  ...overrides
-})
+const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismState =>
+  organismFor(DEFAULT_WORLD_CONFIG, id, overrides)
 
 describe('OrganismState shape', () => {
-  it('has no generation counter, genome, or health/alive field (roadmap: no generations)', () => {
+  it('has no generation counter or health/alive field, and keeps its identity in the genome (roadmap: no generations)', () => {
     // Reproduction is local and continuous, not generational; a `generation` field would imply
-    // discrete cohorts that don't exist here, the same way `genomeId`/`health`/`alive` would
-    // imply mechanics no system implements yet (docs/decisions/0005).
+    // discrete cohorts that don't exist here, the same way `health`/`alive` would
+    // imply mechanics no system implements yet (docs/decisions/0005). A separate `genomeId` would
+    // duplicate the identity the genome already carries (docs/decisions/0006).
     const keys = Object.keys(organism(1))
-    for (const forbidden of ['generation', 'genomeId', 'genome', 'health', 'alive']) {
+    for (const forbidden of ['generation', 'genomeId', 'health', 'alive']) {
       expect(keys).not.toContain(forbidden)
     }
   })

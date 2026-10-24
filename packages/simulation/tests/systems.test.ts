@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { resolveWorldConfig } from '@evo/config'
 import type { PerceptionBuffer, IntentBuffer } from '../src/buffers/types'
 import { IdGenerator } from '../src/entities/IdGenerator'
+import { organismFor as organism } from './support/organism'
 import { OrganismStore } from '../src/entities/OrganismStore'
 import type { OrganismState } from '../src/entities/OrganismStore'
 import { ResourceStore } from '../src/entities/ResourceStore'
@@ -23,22 +24,6 @@ import { ReproductionSystem } from '../src/systems/ReproductionSystem'
 
 const stream = (seed: number, name: Parameters<typeof deriveStreamWords>[1]) =>
   new SeededRandom(deriveStreamWords(seed, name))
-
-const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismState => ({
-  id,
-  x: 0,
-  y: 0,
-  vx: 0,
-  vy: 0,
-  heading: 0,
-  age: 0,
-  energy: 50,
-  parentIds: [],
-  birthTick: 0,
-  reproductionCooldownRemaining: 0,
-  lastTurnMagnitude: 0,
-  ...overrides
-})
 
 const resource = (id: number, overrides: Partial<ResourceState> = {}): ResourceState => ({
   id,
@@ -141,8 +126,8 @@ describe('PerceptionSystem', () => {
   it('finds the nearest resource within sensor range and null otherwise', () => {
     const config = resolveWorldConfig({ organisms: { sensorRadius: 10 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0 }))
-    organisms.add(organism(2, { x: 100, y: 100 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0 }))
+    organisms.add(organism(config, 2, { x: 100, y: 100 }))
     const resources = new ResourceStore()
     resources.add(resource(1, { x: 5, y: 0 }))
     resources.add(resource(2, { x: 3, y: 0 }))
@@ -150,7 +135,7 @@ describe('PerceptionSystem', () => {
     index.rebuild(resources.values())
     const buffer: PerceptionBuffer = new Map()
 
-    new PerceptionSystem(config, organisms, index, buffer).update()
+    new PerceptionSystem(organisms, index, buffer).update()
 
     expect(buffer.get(1)?.resourceId).toBe(2)
     expect(buffer.get(2)).toBeNull()
@@ -159,12 +144,12 @@ describe('PerceptionSystem', () => {
   it('clears stale entries for organisms that no longer exist', () => {
     const config = resolveWorldConfig({ organisms: { sensorRadius: 10 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1))
+    organisms.add(organism(config, 1))
     const index = makeResourceIndex()
     index.rebuild([])
     const buffer: PerceptionBuffer = new Map([[99, null]])
 
-    new PerceptionSystem(config, organisms, index, buffer).update()
+    new PerceptionSystem(organisms, index, buffer).update()
 
     expect(buffer.has(99)).toBe(false)
     expect(buffer.has(1)).toBe(true)
@@ -175,7 +160,7 @@ describe('DecisionSystem', () => {
   it('seeks directly toward a perceived resource with zero turn error', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, heading: 0 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0, heading: 0 }))
     const perceptionBuffer: PerceptionBuffer = new Map([
       [1, { resourceId: 1, position: { x: 10, y: 0 }, distanceSquared: 100 }]
     ])
@@ -197,7 +182,7 @@ describe('DecisionSystem', () => {
   it('computes the correct signed turn toward an off-axis resource', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, heading: 0 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0, heading: 0 }))
     const perceptionBuffer: PerceptionBuffer = new Map([
       [1, { resourceId: 1, position: { x: 0, y: 10 }, distanceSquared: 100 }]
     ])
@@ -217,7 +202,7 @@ describe('DecisionSystem', () => {
   it('wanders with a bounded, RNG-driven turn and half thrust when nothing is perceived', () => {
     const config = resolveWorldConfig({ organisms: { wanderJitter: 2 }, timestep: 0.5 })
     const organisms = new OrganismStore()
-    organisms.add(organism(1))
+    organisms.add(organism(config, 1))
     const perceptionBuffer: PerceptionBuffer = new Map([[1, null]])
     const intentBuffer: IntentBuffer = new Map()
 
@@ -238,7 +223,7 @@ describe('DecisionSystem', () => {
     const config = resolveWorldConfig()
     const run = () => {
       const organisms = new OrganismStore()
-      organisms.add(organism(1))
+      organisms.add(organism(config, 1))
       const perceptionBuffer: PerceptionBuffer = new Map([[1, null]])
       const intentBuffer: IntentBuffer = new Map()
       new DecisionSystem(
@@ -258,7 +243,7 @@ describe('MovementSystem', () => {
   it('clamps turning to maxTurnRate * timestep', () => {
     const config = resolveWorldConfig({ organisms: { maxTurnRate: 1, maxSpeed: 0 }, timestep: 0.5 })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { heading: 0 }))
+    organisms.add(organism(config, 1, { heading: 0 }))
     const intentBuffer: IntentBuffer = new Map([[1, { turn: 10, thrust: 0 }]])
     const events = new EventLog(10)
     events.beginTick()
@@ -271,7 +256,7 @@ describe('MovementSystem', () => {
   it('derives velocity from heading and thrust, scaled by maxSpeed', () => {
     const config = resolveWorldConfig({ organisms: { maxSpeed: 10, maxTurnRate: 100 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { heading: 0, age: 100 }))
+    organisms.add(organism(config, 1, { heading: 0, age: 100 }))
     const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 0.5 }]])
     const events = new EventLog(10)
     events.beginTick()
@@ -288,7 +273,7 @@ describe('MovementSystem', () => {
       organisms: { maxSpeed: 10, maxTurnRate: 100, maturityAge: 90, juvenileSpeedScale: 0.4 }
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { heading: 0, age: 1 }))
+    organisms.add(organism(config, 1, { heading: 0, age: 1 }))
     const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 1 }]])
     const events = new EventLog(10)
     events.beginTick()
@@ -301,7 +286,7 @@ describe('MovementSystem', () => {
   it('records the clamped turn magnitude as lastTurnMagnitude', () => {
     const config = resolveWorldConfig({ organisms: { maxTurnRate: 1 }, timestep: 0.5 })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { heading: 0 }))
+    organisms.add(organism(config, 1, { heading: 0 }))
     const intentBuffer: IntentBuffer = new Map([[1, { turn: -10, thrust: 0 }]])
     const events = new EventLog(10)
     events.beginTick()
@@ -318,7 +303,7 @@ describe('MovementSystem', () => {
       timestep: 10
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 90, y: 5, heading: 0 }))
+    organisms.add(organism(config, 1, { x: 90, y: 5, heading: 0 }))
     const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 1 }]])
     const events = new EventLog(10)
     events.beginTick()
@@ -331,7 +316,7 @@ describe('MovementSystem', () => {
   it('treats a missing intent as "do nothing" rather than throwing', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 5, y: 5 }))
+    organisms.add(organism(config, 1, { x: 5, y: 5 }))
     const events = new EventLog(10)
     events.beginTick()
     expect(() => new MovementSystem(config, organisms, new Map(), events).update(1)).not.toThrow()
@@ -345,7 +330,7 @@ describe('MovementSystem', () => {
       [verbose, 1]
     ] as const) {
       const organisms = new OrganismStore()
-      organisms.add(organism(1))
+      organisms.add(organism(config, 1))
       const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 1 }]])
       const events = new EventLog(10)
       events.beginTick()
@@ -362,7 +347,7 @@ describe('InteractionSystem', () => {
       resources: { radius: 1 }
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, energy: 50, age: 100 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0, energy: 50, age: 100 }))
     const resources = new ResourceStore()
     resources.add(resource(1, { x: 1, y: 0, remaining: config.resources.energyValue }))
     const index = makeResourceIndex()
@@ -391,7 +376,7 @@ describe('InteractionSystem', () => {
       resources: { radius: 1 }
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 2.5, y: 0, energy: 40, age: 1 }))
+    organisms.add(organism(config, 1, { x: 2.5, y: 0, energy: 40, age: 1 }))
     const resources = new ResourceStore()
     resources.add(resource(1, { x: 0, y: 0, remaining: config.resources.energyValue }))
     const index = makeResourceIndex()
@@ -409,8 +394,8 @@ describe('InteractionSystem', () => {
   it('never lets two organisms consume the same resource in one tick', () => {
     const config = resolveWorldConfig({ organisms: { radius: 5 }, resources: { radius: 5 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, energy: 10 }))
-    organisms.add(organism(2, { x: 1, y: 0, energy: 10 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0, energy: 10 }))
+    organisms.add(organism(config, 2, { x: 1, y: 0, energy: 10 }))
     const resources = new ResourceStore()
     resources.add(resource(1, { x: 0.5, y: 0 }))
     const index = makeResourceIndex()
@@ -432,7 +417,7 @@ describe('InteractionSystem', () => {
   it('leaves an organism unfed when nothing is within its capture radius', () => {
     const config = resolveWorldConfig({ organisms: { radius: 1 }, resources: { radius: 1 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, energy: 10 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0, energy: 10 }))
     const resources = new ResourceStore()
     resources.add(resource(1, { x: 1000, y: 0 }))
     const index = makeResourceIndex()
@@ -454,7 +439,7 @@ describe('InteractionSystem', () => {
       history: { maxEvents: 10, eventDetail: 'verbose' }
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0 }))
     const resources = new ResourceStore()
     resources.add(resource(1, { x: 0, y: 0 }))
     const index = makeResourceIndex()
@@ -478,7 +463,7 @@ describe('MetabolismSystem', () => {
       timestep: 2
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { vx: 3, vy: 4, energy: 100, age: 100 }))
+    organisms.add(organism(config, 1, { vx: 3, vy: 4, energy: 100, age: 100 }))
     const events = new EventLog(10)
     events.beginTick()
 
@@ -502,7 +487,7 @@ describe('MetabolismSystem', () => {
       timestep: 1
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { energy: 100, age: 100, lastTurnMagnitude: 2 }))
+    organisms.add(organism(config, 1, { energy: 100, age: 100, lastTurnMagnitude: 2 }))
     const events = new EventLog(10)
     events.beginTick()
 
@@ -525,7 +510,7 @@ describe('MetabolismSystem', () => {
       timestep: 1
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { energy: 100, age: 5 }))
+    organisms.add(organism(config, 1, { energy: 100, age: 5 }))
     const events = new EventLog(10)
     events.beginTick()
 
@@ -537,7 +522,7 @@ describe('MetabolismSystem', () => {
   it('does not clamp energy at zero (Death owns removal)', () => {
     const config = resolveWorldConfig({ organisms: { basalCost: 1000 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { energy: 1 }))
+    organisms.add(organism(config, 1, { energy: 1 }))
     const events = new EventLog(10)
     events.beginTick()
     new MetabolismSystem(config, organisms, events).update(1)
@@ -547,7 +532,7 @@ describe('MetabolismSystem', () => {
   it('emits energy-changed only when history.eventDetail is verbose', () => {
     const verbose = resolveWorldConfig({ history: { maxEvents: 10, eventDetail: 'verbose' } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1))
+    organisms.add(organism(verbose, 1))
     const events = new EventLog(10)
     events.beginTick()
     new MetabolismSystem(verbose, organisms, events).update(1)
@@ -563,7 +548,7 @@ describe('ReproductionSystem', () => {
   it('records a failed attempt with no-partner when no eligible partner is in range', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { age: 100, energy: 100 }))
+    organisms.add(organism(config, 1, { age: 100, energy: 100 }))
     const index = makeOrganismIndex()
     index.rebuild(organisms.values())
     const events = new EventLog(10)
@@ -574,6 +559,7 @@ describe('ReproductionSystem', () => {
       organisms,
       index,
       new IdGenerator(),
+      idsFrom(100),
       stream(1, 'reproduction'),
       events
     ).update(1)
@@ -596,8 +582,8 @@ describe('ReproductionSystem', () => {
   it('pairs two eligible organisms: both pay the investment plus overhead, both get the cooldown, a child is born', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 10, y: 10, age: 100, energy: 100 }))
-    organisms.add(organism(2, { x: 11, y: 10, age: 100, energy: 100 }))
+    organisms.add(organism(config, 1, { x: 10, y: 10, age: 100, energy: 100 }))
+    organisms.add(organism(config, 2, { x: 11, y: 10, age: 100, energy: 100 }))
     const index = makeOrganismIndex()
     index.rebuild(organisms.values())
     const events = new EventLog(10)
@@ -608,6 +594,7 @@ describe('ReproductionSystem', () => {
       organisms,
       index,
       idsFrom(3),
+      idsFrom(100),
       stream(1, 'reproduction'),
       events
     ).update(1)
@@ -635,9 +622,9 @@ describe('ReproductionSystem', () => {
   it('never pairs the same organism twice in one tick', () => {
     const config = resolveWorldConfig({ reproduction: { searchRadius: 100 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, age: 100, energy: 100 }))
-    organisms.add(organism(2, { x: 1, y: 0, age: 100, energy: 100 }))
-    organisms.add(organism(3, { x: 2, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(config, 2, { x: 1, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(config, 3, { x: 2, y: 0, age: 100, energy: 100 }))
     const index = makeOrganismIndex(100)
     index.rebuild(organisms.values())
     const events = new EventLog(10)
@@ -648,6 +635,7 @@ describe('ReproductionSystem', () => {
       organisms,
       index,
       idsFrom(4),
+      idsFrom(100),
       stream(1, 'reproduction'),
       events
     ).update(1)
@@ -662,8 +650,8 @@ describe('ReproductionSystem', () => {
   it('does not let a juvenile initiate or be chosen as a partner', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, age: 1, energy: 100 }))
-    organisms.add(organism(2, { x: 1, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0, age: 1, energy: 100 }))
+    organisms.add(organism(config, 2, { x: 1, y: 0, age: 100, energy: 100 }))
     const index = makeOrganismIndex()
     index.rebuild(organisms.values())
     const events = new EventLog(10)
@@ -674,6 +662,7 @@ describe('ReproductionSystem', () => {
       organisms,
       index,
       new IdGenerator(),
+      idsFrom(100),
       stream(1, 'reproduction'),
       events
     ).update(1)
@@ -691,7 +680,7 @@ describe('ReproductionSystem', () => {
   it('gates on a positive cooldown, silently, and decrements cooldowns by deltaTime each tick', () => {
     const config = resolveWorldConfig({ timestep: 2 })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { age: 100, energy: 100, reproductionCooldownRemaining: 5 }))
+    organisms.add(organism(config, 1, { age: 100, energy: 100, reproductionCooldownRemaining: 5 }))
     const index = makeOrganismIndex()
     index.rebuild(organisms.values())
     const events = new EventLog(10)
@@ -702,6 +691,7 @@ describe('ReproductionSystem', () => {
       organisms,
       index,
       new IdGenerator(),
+      idsFrom(100),
       stream(1, 'reproduction'),
       events
     ).update(1)
@@ -713,7 +703,7 @@ describe('ReproductionSystem', () => {
   it('floors the decremented cooldown at zero rather than going negative', () => {
     const config = resolveWorldConfig({ timestep: 2 })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { age: 100, energy: 100, reproductionCooldownRemaining: 1 }))
+    organisms.add(organism(config, 1, { age: 100, energy: 100, reproductionCooldownRemaining: 1 }))
     const index = makeOrganismIndex()
     index.rebuild(organisms.values())
     const events = new EventLog(10)
@@ -724,6 +714,7 @@ describe('ReproductionSystem', () => {
       organisms,
       index,
       new IdGenerator(),
+      idsFrom(100),
       stream(1, 'reproduction'),
       events
     ).update(1)
@@ -734,8 +725,8 @@ describe('ReproductionSystem', () => {
   it('rejects an attempt at the population cap without spending energy or a partner search', () => {
     const config = resolveWorldConfig({ maxPopulation: 2, organisms: { initialCount: 2 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { x: 0, y: 0, age: 100, energy: 100 }))
-    organisms.add(organism(2, { x: 1, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(config, 1, { x: 0, y: 0, age: 100, energy: 100 }))
+    organisms.add(organism(config, 2, { x: 1, y: 0, age: 100, energy: 100 }))
     const index = makeOrganismIndex()
     index.rebuild(organisms.values())
     const events = new EventLog(10)
@@ -746,6 +737,7 @@ describe('ReproductionSystem', () => {
       organisms,
       index,
       new IdGenerator(),
+      idsFrom(100),
       stream(1, 'reproduction'),
       events
     ).update(1)
@@ -777,7 +769,7 @@ describe('ReproductionSystem', () => {
   it('gates silently on energy below minEnergy', () => {
     const config = resolveWorldConfig({ reproduction: { minEnergy: 60 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { age: 100, energy: 59 }))
+    organisms.add(organism(config, 1, { age: 100, energy: 59 }))
     const index = makeOrganismIndex()
     index.rebuild(organisms.values())
     const events = new EventLog(10)
@@ -788,6 +780,7 @@ describe('ReproductionSystem', () => {
       organisms,
       index,
       new IdGenerator(),
+      idsFrom(100),
       stream(1, 'reproduction'),
       events
     ).update(1)
@@ -800,13 +793,13 @@ describe('DeathSystem', () => {
   it('removes an organism that starved and records the cause', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { energy: 0, x: 3, y: 4 }))
-    organisms.add(organism(2, { energy: 50 }))
+    organisms.add(organism(config, 1, { energy: 0, x: 3, y: 4 }))
+    organisms.add(organism(config, 2, { energy: 50 }))
     const events = new EventLog(10)
     events.beginTick()
     const history = new HistoryStore(10)
 
-    new DeathSystem(config, organisms, events, history).update(5)
+    new DeathSystem(organisms, events, history).update(5)
 
     expect(organisms.has(1)).toBe(false)
     expect(organisms.has(2)).toBe(true)
@@ -826,12 +819,12 @@ describe('DeathSystem', () => {
       organisms: { maturityAge: 1, senescenceAge: 5, maxAge: 10 }
     })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { age: 10, energy: 50 }))
+    organisms.add(organism(config, 1, { age: 10, energy: 50 }))
     const events = new EventLog(10)
     events.beginTick()
     const history = new HistoryStore(10)
 
-    new DeathSystem(config, organisms, events, history).update(1)
+    new DeathSystem(organisms, events, history).update(1)
 
     expect(organisms.has(1)).toBe(false)
     expect(events.eventsThisTick()[0]).toMatchObject({ cause: 'age' })
@@ -840,37 +833,44 @@ describe('DeathSystem', () => {
   it('leaves healthy organisms alone', () => {
     const config = resolveWorldConfig({ organisms: { maxAge: 1000 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { energy: 1, age: 1 }))
+    organisms.add(organism(config, 1, { energy: 1, age: 1 }))
     const events = new EventLog(10)
     events.beginTick()
-    new DeathSystem(config, organisms, events, new HistoryStore(10)).update(1)
+    new DeathSystem(organisms, events, new HistoryStore(10)).update(1)
     expect(organisms.has(1)).toBe(true)
   })
 
   it('processes every organism even while removing some (ascending id order)', () => {
     const config = resolveWorldConfig({ organisms: { maxAge: 1000 } })
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { energy: 0 }))
-    organisms.add(organism(2, { energy: 50 }))
-    organisms.add(organism(3, { energy: 0 }))
+    organisms.add(organism(config, 1, { energy: 0 }))
+    organisms.add(organism(config, 2, { energy: 50 }))
+    organisms.add(organism(config, 3, { energy: 0 }))
     const events = new EventLog(10)
     events.beginTick()
-    new DeathSystem(config, organisms, events, new HistoryStore(10)).update(1)
+    new DeathSystem(organisms, events, new HistoryStore(10)).update(1)
     expect(organisms.values().map((o) => o.id)).toEqual([2])
   })
 
   it('appends a historical record with the parent ids, birth tick, and death cause', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
-    organisms.add(organism(1, { energy: 0, parentIds: [7, 9], birthTick: 3 }))
+    organisms.add(organism(config, 1, { energy: 0, parentIds: [7, 9], birthTick: 3 }))
     const events = new EventLog(10)
     events.beginTick()
     const history = new HistoryStore(10)
 
-    new DeathSystem(config, organisms, events, history).update(20)
+    new DeathSystem(organisms, events, history).update(20)
 
     expect(history.list()).toEqual([
-      { id: 1, parentIds: [7, 9], birthTick: 3, deathTick: 20, deathCause: 'starvation' }
+      {
+        id: 1,
+        genomeId: 1,
+        parentIds: [7, 9],
+        birthTick: 3,
+        deathTick: 20,
+        deathCause: 'starvation'
+      }
     ])
   })
 })

@@ -2,8 +2,10 @@ import type { EntityId, WorldConfig } from '@evo/contracts'
 import type { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
+import { copyGenomeAs } from '../genetics/GenomeFactory'
 import { clamp, TWO_PI, wrapAngle } from '../math/scalar'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { maxEnergyOf, reproductionCostOf, reproductionThresholdOf } from '../organisms/traits'
 import type { SeededRandom } from '../random/SeededRandom'
 import type { SpatialHash } from '../spatial/SpatialHash'
 
@@ -12,12 +14,13 @@ import type { SpatialHash } from '../spatial/SpatialHash'
  * (docs/decisions/0005). Every organism's `reproductionCooldownRemaining` is first decremented by
  * `deltaTime` (floored at zero); then organisms are processed in ascending id, each considered at
  * most once as an initiator. An organism attempts only once it clears three silent gates (not
- * juvenile, cooldown `<= 0`, `energy >= reproduction.minEnergy`) - organisms that don't clear them
- * simply don't attempt, no event. An attempting organism is blocked by, in order, the population
- * cap and then the lack of an eligible, not-yet-paired partner within `searchRadius`; both record
- * a failed `reproduction-attempted`. On success, each parent pays `offspringInvestment * (1 + overheadFraction)` and
- * resets its cooldown; the child starts at age 0 near the parents' midpoint, with `parentIds` in
- * ascending order.
+ * juvenile, cooldown `<= 0`, enough energy to attempt and to pay) - organisms that don't clear
+ * them simply don't attempt, no event. Every threshold is the organism's own gene
+ * (docs/decisions/0006). An attempting organism is blocked by, in order, the population cap and
+ * then the lack of an eligible, not-yet-paired partner within its own `searchRadius`; both record
+ * a failed `reproduction-attempted`. On success, each parent pays its own cost and resets its own
+ * cooldown, and a child is born near the parents' midpoint with `parentIds` in ascending order.
+ * The child's genome is a copy of its mother's (the lower-id parent) under a new `GenomeId`.
  */
 export class ReproductionSystem {
   constructor(
@@ -25,19 +28,14 @@ export class ReproductionSystem {
     private readonly organisms: OrganismStore,
     private readonly organismIndex: SpatialHash<OrganismState>,
     private readonly ids: IdGenerator,
+    private readonly genomeIds: IdGenerator,
     private readonly random: SeededRandom,
     private readonly events: EventLog
   ) {}
 
   update(tick: number): void {
     const dt = this.config.timestep
-    const { maturityAge, senescenceAge, maxEnergy, radius } = this.config.organisms
-    const { minEnergy, offspringInvestment, overheadFraction, cooldown, searchRadius } =
-      this.config.reproduction
-    const energyCost = offspringInvestment * (1 + overheadFraction)
-    const offspringEnergy = offspringInvestment + offspringInvestment
     const { width, height } = this.config.environment
-    const thresholds = { maturityAge, senescenceAge }
 
     const initiators = this.organisms.values()
     for (const organism of initiators) {
@@ -49,9 +47,10 @@ export class ReproductionSystem {
 
     const pairedIds = new Set<EntityId>()
     for (const organism of initiators) {
-      if (lifeStageFor(organism.age, thresholds) === 'juvenile') continue
+      const genome = organism.genome
+      if (lifeStageFor(organism.age, genome.physical) === 'juvenile') continue
       if (organism.reproductionCooldownRemaining > 0) continue
-      if (organism.energy < minEnergy) continue
+      if (organism.energy < reproductionThresholdOf(genome, this.config)) continue
       if (pairedIds.has(organism.id)) continue
 
       if (this.organisms.size >= this.config.maxPopulation) {
@@ -67,14 +66,17 @@ export class ReproductionSystem {
         continue
       }
 
-      const hits = this.organismIndex.queryRadius({ x: organism.x, y: organism.y }, searchRadius)
+      const hits = this.organismIndex.queryRadius(
+        { x: organism.x, y: organism.y },
+        genome.reproduction.searchRadius
+      )
       const partnerHit = hits.find(
         (hit) =>
           hit.item.id !== organism.id &&
           !pairedIds.has(hit.item.id) &&
-          lifeStageFor(hit.item.age, thresholds) !== 'juvenile' &&
+          lifeStageFor(hit.item.age, hit.item.genome.physical) !== 'juvenile' &&
           hit.item.reproductionCooldownRemaining <= 0 &&
-          hit.item.energy >= minEnergy
+          hit.item.energy >= reproductionThresholdOf(hit.item.genome, this.config)
       )
       if (!partnerHit) {
         this.events.record({
@@ -92,16 +94,23 @@ export class ReproductionSystem {
       const partner = partnerHit.item
       pairedIds.add(organism.id)
       pairedIds.add(partner.id)
-      organism.energy -= energyCost
-      partner.energy -= energyCost
-      organism.reproductionCooldownRemaining = cooldown
-      partner.reproductionCooldownRemaining = cooldown
+      organism.energy -= reproductionCostOf(genome, this.config)
+      partner.energy -= reproductionCostOf(partner.genome, this.config)
+      organism.reproductionCooldownRemaining = genome.reproduction.cooldown
+      partner.reproductionCooldownRemaining = partner.genome.reproduction.cooldown
 
       const childId = this.ids.allocate()
-      const parentIds: EntityId[] =
-        organism.id < partner.id ? [organism.id, partner.id] : [partner.id, organism.id]
+      const [mother, father] = organism.id < partner.id ? [organism, partner] : [partner, organism]
+      const parentIds: EntityId[] = [mother.id, father.id]
+      const parentGenomeIds =
+        mother.genome.id < father.genome.id
+          ? [mother.genome.id, father.genome.id]
+          : [father.genome.id, mother.genome.id]
+      const childGenome = copyGenomeAs(mother.genome, this.genomeIds.allocate(), parentGenomeIds)
+
       const midX = (organism.x + partner.x) / 2
       const midY = (organism.y + partner.y) / 2
+      const radius = genome.physical.radius
       const x = clamp(midX + (this.random.float() * 2 - 1) * radius, 0, width)
       const y = clamp(midY + (this.random.float() * 2 - 1) * radius, 0, height)
       const heading = wrapAngle(this.random.float() * TWO_PI)
@@ -109,13 +118,17 @@ export class ReproductionSystem {
       const child: OrganismState = {
         id: childId,
         parentIds,
+        genome: childGenome,
         x,
         y,
         vx: 0,
         vy: 0,
         heading,
         age: 0,
-        energy: Math.min(offspringEnergy, maxEnergy),
+        energy: Math.min(
+          genome.reproduction.offspringInvestment + partner.genome.reproduction.offspringInvestment,
+          maxEnergyOf(childGenome, this.config)
+        ),
         birthTick: tick,
         reproductionCooldownRemaining: 0,
         lastTurnMagnitude: 0
@@ -126,6 +139,7 @@ export class ReproductionSystem {
         type: 'organism-born',
         tick,
         organismId: childId,
+        genomeId: childGenome.id,
         parentIds,
         position: { x, y }
       })

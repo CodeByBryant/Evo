@@ -139,7 +139,7 @@ Sections 1-5 and 9-10 are unchanged from version 1. Sections 6 and 8 append new 
 
 #### Version 3 (current, Phase 4+)
 
-Takes effect in the Phase 4 PR in which organisms start carrying genomes. Sections 1-3, 5 and 7-10 are unchanged from version 2. Sections 4 and 6 append new fields at the end (never inserted or reordered), per ADR 0006:
+Introduced in Phase 4 when organisms started carrying genomes. Sections 1-3, 5 and 7-10 are unchanged from version 2. Sections 4 and 6 append new fields at the end (never inserted or reordered), per ADR 0006:
 
 | Order | Section   | Contents (in this order)                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ----- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -188,9 +188,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(2)`                                            | `dfb410a7fb90a35283f01a1c42a10d0b` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `7bc1354f42366f6b62c02fb98d5e2292` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `7bc1354f42366f6b62c02fb98d5e2292` |
+| header only: `"EVOH"`, `writeUint32(3)`                                            | `6df37fdcc239ba2c992d1d705f53c393` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `486214610a2227258a0e30943b304938` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `486214610a2227258a0e30943b304938` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 

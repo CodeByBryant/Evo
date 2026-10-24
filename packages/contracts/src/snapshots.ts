@@ -1,10 +1,13 @@
 import type { EntityId } from './entity'
+import type { GenomeId } from './genome'
 import type { Vec2 } from './math'
 import type { DeathCause } from './world'
 import type { LifeStage } from './organism'
 
 export interface OrganismSnapshot {
   readonly id: EntityId
+  /** The organism's genome; the full genome is available from `World.genomeOf`. */
+  readonly genomeId: GenomeId
   /** Empty for founders. */
   readonly parentIds: readonly EntityId[]
   readonly position: Readonly<Vec2>
@@ -20,6 +23,7 @@ export interface OrganismSnapshot {
 /** A compact, retained record of an organism after it dies (docs/decisions/0005). */
 export interface HistoricalOrganismRecord {
   readonly id: EntityId
+  readonly genomeId: GenomeId
   /** Empty for founders. */
   readonly parentIds: readonly EntityId[]
   readonly birthTick: number

@@ -1,13 +1,13 @@
 {
-  "hashSchemaVersion": 2,
-  "engineVersion": "0.4.0",
+  "hashSchemaVersion": 3,
+  "engineVersion": "0.5.0",
   "entries": [
     {
       "name": "default-1k",
       "seed": 12345,
       "config": {},
       "steps": 1000,
-      "expectedHash": "aac2e4db4b326dac83633a859e5bb48d"
+      "expectedHash": "0e0c5b6ae8ae22a576c3394f9e854359"
     },
     {
       "name": "scenario-a-foraging-5k",
@@ -16,7 +16,7 @@
         "organisms": { "initialCount": 10 }
       },
       "steps": 5000,
-      "expectedHash": "21b4f619300f36d1bd2cecb52e857767"
+      "expectedHash": "ec69e068465071d5d412b12cf564a862"
     },
     {
       "name": "scenario-b-extinction-20k",
@@ -26,7 +26,7 @@
         "resources": { "initialCount": 0, "spawnRate": 0 }
       },
       "steps": 20000,
-      "expectedHash": "1b78edbe8d55c057b849d8770041f8db"
+      "expectedHash": "8a7fbd77fbd9e14fc5492774f7793258"
     },
     {
       "name": "verbose-events-200",
@@ -35,7 +35,7 @@
         "history": { "eventDetail": "verbose", "maxEvents": 100000 }
       },
       "steps": 200,
-      "expectedHash": "de4a95eeba83778374fdd4673088f9dc"
+      "expectedHash": "e8a18cfc4bdf5df438f559c4d942b7fb"
     },
     {
       "name": "zero-population-100",
@@ -45,14 +45,14 @@
         "resources": { "initialCount": 0 }
       },
       "steps": 100,
-      "expectedHash": "0f54e5597014e1fa0b395ac252b66589"
+      "expectedHash": "3cc2d631d6afa976f76cda2f5717fb35"
     },
     {
       "name": "long-run-100k",
       "seed": 999,
       "config": {},
       "steps": 100000,
-      "expectedHash": "e8e4a47dc3de9a1d4179c34771cbe2c1"
+      "expectedHash": "ac2184973fc3d2d1910ead4ad885367c"
     }
   ]
 }

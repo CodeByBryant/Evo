@@ -98,17 +98,20 @@ describe('contracts', () => {
   it('constructs a HistoricalOrganismRecord', () => {
     const record: HistoricalOrganismRecord = {
       id: 5,
+      genomeId: 9,
       parentIds: [1, 2],
       birthTick: 100,
       deathTick: 200,
       deathCause: 'starvation'
     }
     expect(record.parentIds).toEqual([1, 2])
+    expect(record.genomeId).toBe(9)
   })
 
-  it('OrganismSnapshot has no generation counter, genome, or health/alive field', () => {
+  it('OrganismSnapshot has no generation counter, embedded genome, or health/alive field', () => {
     const snapshot: OrganismSnapshot = {
       id: 1,
+      genomeId: 1,
       parentIds: [],
       position: { x: 0, y: 0 },
       velocity: { x: 0, y: 0 },
@@ -120,7 +123,7 @@ describe('contracts', () => {
       reproductionCooldownRemaining: 0
     }
     const keys = Object.keys(snapshot)
-    for (const forbidden of ['generation', 'genomeId', 'genome', 'health', 'alive']) {
+    for (const forbidden of ['generation', 'genome', 'health', 'alive']) {
       expect(keys).not.toContain(forbidden)
     }
   })
