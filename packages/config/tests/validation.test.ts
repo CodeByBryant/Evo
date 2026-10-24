@@ -119,11 +119,11 @@ describe('validateWorldConfig', () => {
     expect(errorsFor((c) => (c.reproduction.minEnergy = 0))).toContain(
       'reproduction.minEnergy must be greater than zero'
     )
-    expect(errorsFor((c) => (c.reproduction.energyCost = 0))).toContain(
-      'reproduction.energyCost must be greater than zero'
+    expect(errorsFor((c) => (c.reproduction.offspringInvestment = 0))).toContain(
+      'reproduction.offspringInvestment must be greater than zero'
     )
-    expect(errorsFor((c) => (c.reproduction.offspringEnergy = 0))).toContain(
-      'reproduction.offspringEnergy must be greater than zero'
+    expect(errorsFor((c) => (c.reproduction.overheadFraction = -0.1))).toContain(
+      'reproduction.overheadFraction must be nonnegative'
     )
     expect(errorsFor((c) => (c.reproduction.cooldown = -1))).toContain(
       'reproduction.cooldown must be nonnegative'
@@ -224,12 +224,14 @@ describe('validateWorldConfig', () => {
     expect(errorsFor((c) => (c.organisms.senescenceAge = c.organisms.maxAge))).toContain(
       'organisms.senescenceAge must be less than organisms.maxAge'
     )
-    expect(errorsFor((c) => (c.reproduction.energyCost = c.reproduction.minEnergy + 1))).toContain(
-      'reproduction.energyCost must not exceed reproduction.minEnergy'
+    expect(
+      errorsFor((c) => (c.reproduction.offspringInvestment = c.reproduction.minEnergy))
+    ).toContain(
+      'reproduction.offspringInvestment * (1 + reproduction.overheadFraction) must not exceed reproduction.minEnergy'
     )
     expect(
-      errorsFor((c) => (c.reproduction.offspringEnergy = c.organisms.maxEnergy + 1))
-    ).toContain('reproduction.offspringEnergy must not exceed organisms.maxEnergy')
+      errorsFor((c) => (c.reproduction.offspringInvestment = c.organisms.maxEnergy))
+    ).toContain('twice reproduction.offspringInvestment must not exceed organisms.maxEnergy')
   })
 
   it('reports every problem at once, not just the first', () => {

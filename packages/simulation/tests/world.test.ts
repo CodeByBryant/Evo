@@ -261,8 +261,8 @@ describe('scenario C: reproduction (roadmap testing scenario C)', () => {
         resources: { initialCount: 0, spawnRate: 0 },
         reproduction: {
           minEnergy: 60,
-          energyCost: 10,
-          offspringEnergy: 20,
+          offspringInvestment: 10,
+          overheadFraction: 0,
           cooldown: 5,
           searchRadius: 1000
         }

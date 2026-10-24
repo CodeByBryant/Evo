@@ -593,7 +593,7 @@ describe('ReproductionSystem', () => {
     expect(organisms.get(1)?.reproductionCooldownRemaining).toBe(0)
   })
 
-  it('pairs two eligible organisms: both pay energyCost, both get the cooldown, a child is born', () => {
+  it('pairs two eligible organisms: both pay the investment plus overhead, both get the cooldown, a child is born', () => {
     const config = resolveWorldConfig()
     const organisms = new OrganismStore()
     organisms.add(organism(1, { x: 10, y: 10, age: 100, energy: 100 }))
@@ -612,8 +612,12 @@ describe('ReproductionSystem', () => {
       events
     ).update(1)
 
-    expect(organisms.get(1)?.energy).toBe(100 - config.reproduction.energyCost)
-    expect(organisms.get(2)?.energy).toBe(100 - config.reproduction.energyCost)
+    const cost =
+      config.reproduction.offspringInvestment * (1 + config.reproduction.overheadFraction)
+    expect(cost).toBe(20)
+    expect(organisms.get(1)?.energy).toBe(100 - cost)
+    expect(organisms.get(2)?.energy).toBe(100 - cost)
+    expect(organisms.get(3)?.energy).toBe(2 * config.reproduction.offspringInvestment)
     expect(organisms.get(1)?.reproductionCooldownRemaining).toBe(config.reproduction.cooldown)
     expect(organisms.get(2)?.reproductionCooldownRemaining).toBe(config.reproduction.cooldown)
 

@@ -1,11 +1,16 @@
 import { MAX_SEED } from '@evo/contracts'
 import type { ValidationResult, WorldConfig, WorldConfigOverrides } from '@evo/contracts'
 import { DEFAULT_WORLD_CONFIG } from './defaults'
-
-type PlainObject = Record<string, unknown>
-
-const isObject = (value: unknown): value is PlainObject =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
+import {
+  checkChoice,
+  checkFraction,
+  checkKeys,
+  checkNumber,
+  checkSection,
+  isObject
+} from './checks'
+import type { PlainObject } from './checks'
+import { checkGenetics } from './genetics'
 
 const ROOT_KEYS = [
   'timestep',
@@ -15,7 +20,8 @@ const ROOT_KEYS = [
   'organisms',
   'resources',
   'reproduction',
-  'history'
+  'history',
+  'genetics'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height']
 const ORGANISM_KEYS = [
@@ -31,6 +37,7 @@ const ORGANISM_KEYS = [
   'movementCost',
   'turningCost',
   'sensorCost',
+  'hue',
   'maxAge',
   'maturityAge',
   'senescenceAge',
@@ -39,116 +46,17 @@ const ORGANISM_KEYS = [
   'juvenileMetabolicScale'
 ]
 const RESOURCE_KEYS = ['initialCount', 'maxCount', 'spawnRate', 'energyValue', 'radius']
-const REPRODUCTION_KEYS = ['minEnergy', 'energyCost', 'offspringEnergy', 'cooldown', 'searchRadius']
+const REPRODUCTION_KEYS = [
+  'minEnergy',
+  'offspringInvestment',
+  'overheadFraction',
+  'cooldown',
+  'searchRadius'
+]
 const HISTORY_KEYS = ['maxEvents', 'eventDetail', 'maxHistoricalOrganisms']
 
 const EXTINCTION_POLICIES = ['stop', 'allow-immigration', 'seed-bank', 'sandbox-recovery']
 const EVENT_DETAILS = ['essential', 'verbose']
-
-interface NumberRule {
-  integer?: boolean
-  /** Value must be strictly greater than zero. */
-  positive?: boolean
-  /** Value must be zero or greater. */
-  nonnegative?: boolean
-}
-
-function checkNumber(
-  section: PlainObject,
-  key: string,
-  path: string,
-  rule: NumberRule,
-  errors: string[]
-): number | undefined {
-  const value = section[key]
-  if (value === undefined) {
-    errors.push(`${path} is required`)
-    return undefined
-  }
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    errors.push(`${path} must be a finite number`)
-    return undefined
-  }
-  if (rule.integer && !Number.isInteger(value)) {
-    errors.push(`${path} must be an integer`)
-    return undefined
-  }
-  if (rule.positive && value <= 0) {
-    errors.push(
-      rule.integer
-        ? `${path} must be an integer greater than zero`
-        : `${path} must be greater than zero`
-    )
-    return undefined
-  }
-  if (rule.nonnegative && value < 0) {
-    errors.push(`${path} must be nonnegative`)
-    return undefined
-  }
-  return value
-}
-
-/** A multiplier in `(0, 1]` (juvenile scaling factors). */
-function checkFraction(
-  section: PlainObject,
-  key: string,
-  path: string,
-  errors: string[]
-): number | undefined {
-  const value = checkNumber(section, key, path, {}, errors)
-  if (value === undefined) return undefined
-  if (value <= 0 || value > 1) {
-    errors.push(`${path} must be greater than zero and at most one`)
-    return undefined
-  }
-  return value
-}
-
-function checkKeys(section: PlainObject, allowed: string[], path: string, errors: string[]): void {
-  for (const key of Object.keys(section)) {
-    if (!allowed.includes(key)) {
-      errors.push(`unknown property "${path === '' ? key : `${path}.${key}`}"`)
-    }
-  }
-}
-
-function checkSection(
-  root: PlainObject,
-  key: string,
-  allowed: string[],
-  errors: string[]
-): PlainObject | undefined {
-  const section = root[key]
-  if (section === undefined) {
-    errors.push(`${key} is required`)
-    return undefined
-  }
-  if (!isObject(section)) {
-    errors.push(`${key} must be an object`)
-    return undefined
-  }
-  checkKeys(section, allowed, key, errors)
-  return section
-}
-
-function checkChoice(
-  section: PlainObject,
-  key: string,
-  path: string,
-  choices: string[],
-  errors: string[]
-): string | undefined {
-  const value = section[key]
-  if (value === undefined) {
-    errors.push(`${path} is required`)
-    return undefined
-  }
-  if (typeof value !== 'string' || !choices.includes(value)) {
-    errors.push(`${path} must be one of: ${choices.join(', ')}`)
-    return undefined
-  }
-  return value
-}
 
 /**
  * Validates a complete world configuration of unknown origin (for example parsed JSON).
@@ -241,6 +149,10 @@ export function validateWorldConfig(value: unknown): ValidationResult {
     checkFraction(organisms, 'juvenileSizeScale', 'organisms.juvenileSizeScale', errors)
     checkFraction(organisms, 'juvenileSpeedScale', 'organisms.juvenileSpeedScale', errors)
     checkFraction(organisms, 'juvenileMetabolicScale', 'organisms.juvenileMetabolicScale', errors)
+    const hue = checkNumber(organisms, 'hue', 'organisms.hue', {}, errors)
+    if (hue !== undefined && (hue < 0 || hue >= 1)) {
+      errors.push('organisms.hue must be at least zero and less than one')
+    }
 
     if (initialCount !== undefined && maxPopulation !== undefined && initialCount > maxPopulation) {
       errors.push('organisms.initialCount must not exceed maxPopulation')
@@ -300,18 +212,18 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       { positive: true },
       errors
     )
-    const energyCost = checkNumber(
+    const investment = checkNumber(
       reproduction,
-      'energyCost',
-      'reproduction.energyCost',
+      'offspringInvestment',
+      'reproduction.offspringInvestment',
       { positive: true },
       errors
     )
-    const offspringEnergy = checkNumber(
+    const overhead = checkNumber(
       reproduction,
-      'offspringEnergy',
-      'reproduction.offspringEnergy',
-      { positive: true },
+      'overheadFraction',
+      'reproduction.overheadFraction',
+      { nonnegative: true },
       errors
     )
     checkNumber(reproduction, 'cooldown', 'reproduction.cooldown', { nonnegative: true }, errors)
@@ -323,15 +235,22 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       errors
     )
 
-    if (energyCost !== undefined && minEnergy !== undefined && energyCost > minEnergy) {
-      errors.push('reproduction.energyCost must not exceed reproduction.minEnergy')
+    if (
+      investment !== undefined &&
+      overhead !== undefined &&
+      minEnergy !== undefined &&
+      investment * (1 + overhead) > minEnergy
+    ) {
+      errors.push(
+        'reproduction.offspringInvestment * (1 + reproduction.overheadFraction) must not exceed reproduction.minEnergy'
+      )
     }
     if (
-      offspringEnergy !== undefined &&
+      investment !== undefined &&
       organismsMaxEnergy !== undefined &&
-      offspringEnergy > organismsMaxEnergy
+      investment * 2 > organismsMaxEnergy
     ) {
-      errors.push('reproduction.offspringEnergy must not exceed organisms.maxEnergy')
+      errors.push('twice reproduction.offspringInvestment must not exceed organisms.maxEnergy')
     }
   }
 
@@ -354,6 +273,8 @@ export function validateWorldConfig(value: unknown): ValidationResult {
     )
   }
 
+  checkGenetics(value, errors)
+
   return { ok: errors.length === 0, errors }
 }
 
@@ -373,6 +294,23 @@ export class ConfigValidationError extends Error {
     super(`Invalid world configuration:\n${errors.map((message) => `  - ${message}`).join('\n')}`)
     this.name = 'ConfigValidationError'
     this.errors = errors
+  }
+}
+
+/** Merges the genetics section: its nested sections merge field by field, `genes` by gene path. */
+function mergeGenetics(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  return {
+    ...base,
+    ...override,
+    brain: mergeSection(defaults['brain'] as object, override['brain']),
+    learning: mergeSection(defaults['learning'] as object, override['learning']),
+    learningInheritance: mergeSection(
+      defaults['learningInheritance'] as object,
+      override['learningInheritance']
+    ),
+    genes: mergeSection(defaults['genes'] as object, override['genes'])
   }
 }
 
@@ -399,7 +337,8 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     organisms: mergeSection(base.organisms, given['organisms']),
     resources: mergeSection(base.resources, given['resources']),
     reproduction: mergeSection(base.reproduction, given['reproduction']),
-    history: mergeSection(base.history, given['history'])
+    history: mergeSection(base.history, given['history']),
+    genetics: mergeGenetics(base.genetics, given['genetics'])
   }
   const result = validateWorldConfig(merged)
   if (!result.ok) throw new ConfigValidationError(result.errors)

@@ -1,3 +1,5 @@
+import type { GeneticsConfig, GeneticsConfigOverrides } from './genome'
+
 /** Largest valid world seed (seeds are unsigned 32-bit integers). */
 export const MAX_SEED = 4_294_967_295
 
@@ -39,6 +41,8 @@ export interface OrganismConfig {
   turningCost: number
   /** Flat energy lost per second for maintaining senses. */
   sensorCost: number
+  /** Founder baseline hue in turns, `[0, 1)` (cosmetic; the `hue` gene's starting value). */
+  hue: number
   /** Age in seconds at which an organism dies of old age. */
   maxAge: number
   /** Age in seconds below which an organism is a juvenile: cannot reproduce, smaller and slower. */
@@ -72,10 +76,10 @@ export interface ResourceConfig {
 export interface ReproductionConfig {
   /** Energy required to attempt reproduction. */
   minEnergy: number
-  /** Energy each parent pays on a successful reproduction. */
-  energyCost: number
-  /** The newborn's starting energy (capped at `organisms.maxEnergy` as usual). */
-  offspringEnergy: number
+  /** Energy each parent gives the child; the child receives the sum, capped by its capacity. */
+  offspringInvestment: number
+  /** Fraction of the investment lost in the transfer: a parent pays `investment * (1 + overheadFraction)`. */
+  overheadFraction: number
   /** Seconds before either parent may reproduce again. */
   cooldown: number
   /** Distance within which a partner is sought. */
@@ -104,6 +108,7 @@ export interface WorldConfig {
   resources: ResourceConfig
   reproduction: ReproductionConfig
   history: HistoryConfig
+  genetics: GeneticsConfig
 }
 
 /** A partial configuration merged onto the defaults. */
@@ -116,6 +121,7 @@ export interface WorldConfigOverrides {
   resources?: Partial<ResourceConfig>
   reproduction?: Partial<ReproductionConfig>
   history?: Partial<HistoryConfig>
+  genetics?: GeneticsConfigOverrides
 }
 
 export interface WorldOptions {
