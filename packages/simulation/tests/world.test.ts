@@ -177,9 +177,11 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     const snapshot = world.snapshot()
 
     // Pinned exact values: this scenario is fully deterministic for this seed/config/duration.
-    expect(snapshot.population.active).toBe(26)
-    expect(snapshot.metrics.organismsBorn).toBe(47)
-    expect(snapshot.metrics.deathsByStarvation).toBe(21)
+    // (Heritable mutation is on by default; with it off this scenario gives Phase 3's original
+    // 26 active / 47 born / 21 starved - see world-genomes.test.ts.)
+    expect(snapshot.population.active).toBe(25)
+    expect(snapshot.metrics.organismsBorn).toBe(39)
+    expect(snapshot.metrics.deathsByStarvation).toBe(14)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 

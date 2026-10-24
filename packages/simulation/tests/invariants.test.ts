@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_WORLD_CONFIG } from '@evo/config'
 import type { MetricsSnapshot } from '@evo/contracts'
 import { buildGeneSpecs } from '../src/genetics/GeneSpecs'
+import { LineageStore } from '../src/lineage/LineageStore'
 import { checkInvariants } from '../src/world/invariants'
 import type { InvariantContext } from '../src/world/invariants'
 import type { OrganismState } from '../src/entities/OrganismStore'
@@ -32,6 +33,22 @@ const resource = (id: number, overrides: Partial<ResourceState> = {}): ResourceS
   ...overrides
 })
 
+/** A lineage store holding each organism's genome as a founder, so lineage checks pass by default. */
+const lineageFor = (organisms: readonly OrganismState[]): LineageStore => {
+  const store = new LineageStore()
+  for (const o of organisms) {
+    if (!store.record(o.genome.id)) {
+      store.register({
+        genomeId: o.genome.id,
+        parentGenomeIds: o.genome.parentIds.filter((p) => store.record(p)),
+        organismId: o.id,
+        tick: 0
+      })
+    }
+  }
+  return store
+}
+
 const baseContext = (overrides: Partial<InvariantContext> = {}): InvariantContext => ({
   organisms: [],
   resources: [],
@@ -42,7 +59,8 @@ const baseContext = (overrides: Partial<InvariantContext> = {}): InvariantContex
   nextEntityId: 1000,
   nextGenomeId: 1000,
   geneSpecs: buildGeneSpecs(DEFAULT_WORLD_CONFIG),
-  ...overrides
+  ...overrides,
+  lineage: overrides.lineage ?? lineageFor(overrides.organisms ?? [])
 })
 
 describe('checkInvariants', () => {
@@ -267,5 +285,52 @@ describe('genome invariants', () => {
     expect(checkInvariants(baseContext({ organisms: [first, second] })).errors).toContain(
       'organism 2: genome id 1 is shared with another organism'
     )
+  })
+
+  it('reports a living genome with no lineage record', () => {
+    const result = checkInvariants(
+      baseContext({ organisms: [organism(1)], lineage: new LineageStore() })
+    )
+    expect(result.errors).toContain('organism 1: genome 1 has no lineage record')
+  })
+
+  it('reports a lineage record whose parents differ from the genome’s', () => {
+    const child = {
+      ...organism(3),
+      genome: { ...organism(3).genome, parentIds: [1, 2] }
+    }
+    const store = new LineageStore()
+    store.register({ genomeId: 1, parentGenomeIds: [], organismId: 1, tick: 0 })
+    store.register({ genomeId: 2, parentGenomeIds: [], organismId: 2, tick: 0 })
+    store.register({ genomeId: 3, parentGenomeIds: [1], organismId: 3, tick: 1 })
+    expect(checkInvariants(baseContext({ organisms: [child], lineage: store })).errors).toContain(
+      "organism 3: lineage parents differ from the genome's parents"
+    )
+  })
+
+  it('reports a parent genome that has no lineage record', () => {
+    const child = {
+      ...organism(3),
+      genome: { ...organism(3).genome, parentIds: [1, 2] }
+    }
+    const store = new LineageStore()
+    store.register({ genomeId: 3, parentGenomeIds: [], organismId: 3, tick: 1 })
+    const errors = checkInvariants(baseContext({ organisms: [child], lineage: store })).errors
+    expect(errors).toContain('organism 3: parent genome 1 has no lineage record')
+    expect(errors).toContain('organism 3: parent genome 2 has no lineage record')
+  })
+
+  it('accepts a child whose parents have died but are still in the lineage', () => {
+    const child = {
+      ...organism(3),
+      genome: { ...organism(3).genome, parentIds: [1, 2] }
+    }
+    const store = new LineageStore()
+    store.register({ genomeId: 1, parentGenomeIds: [], organismId: 1, tick: 0 })
+    store.register({ genomeId: 2, parentGenomeIds: [], organismId: 2, tick: 0 })
+    store.markDeath(1)
+    store.markDeath(2)
+    store.register({ genomeId: 3, parentGenomeIds: [1, 2], organismId: 3, tick: 5 })
+    expect(checkInvariants(baseContext({ organisms: [child], lineage: store })).ok).toBe(true)
   })
 })
