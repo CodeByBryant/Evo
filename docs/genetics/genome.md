@@ -164,3 +164,22 @@ genetics: {
 ```
 
 plus `organisms.hue` (founder baseline), `reproduction.offspringInvestment` and `reproduction.overheadFraction`, which replace `reproduction.energyCost` and `reproduction.offspringEnergy`.
+
+## Verification
+
+Where each guarantee is checked (all paths under `packages/simulation/tests/`):
+
+| Guarantee                                                    | Checked in                                                                       |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| Mutation is bounded; parents are never modified              | `genetics/mutation.test.ts`, `genetics/recombination.test.ts`                    |
+| Both parents contribute (genes and brain weights)            | `genetics/recombination.test.ts`; end to end in `phase4-exit-criteria.test.ts`   |
+| Integer, boolean, circular and correlated genes behave       | `genetics/mutation.test.ts`, `genetics/recombination.test.ts` (synthetic tables) |
+| Brain weights preserve the architecture                      | `genetics/recombination.test.ts`, `phase4-exit-criteria.test.ts`                 |
+| Learning parameters mutate; all three inheritance modes      | `genetics/mutation.test.ts`, `genetics/learning-inheritance.test.ts`             |
+| Genome validation, repair and comparison                     | `genetics/validation.test.ts`, `genetics/distance.test.ts`                       |
+| Lineage queries and survival after death                     | `lineage.test.ts`, `world-genomes.test.ts`, `phase4-exit-criteria.test.ts`       |
+| Systems read the organism's own genes                        | `genes-in-systems.test.ts`, `traits.test.ts`                                     |
+| Mutation off reproduces Phase 3; mutation on changes the run | `world-genomes.test.ts` (Scenario A: 26 / 47 / 21 with mutation off)             |
+| Genomes valid and trait drift bounded over 100,000 ticks     | `determinism/long-run.test.ts`                                                   |
+| Chunked and stepped runs match, lineage included             | `determinism/long-run.test.ts`                                                   |
+| Lineage stays queryable and frozen after extinction          | `determinism/long-run.test.ts`                                                   |

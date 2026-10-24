@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { World } from '../../src/index'
+import { World, buildGeneSpecs, genomeToVector } from '../../src/index'
 
 /**
  * The roadmap's first-milestone check, at full scale: a seeded world can run 100,000 ticks
@@ -13,6 +13,11 @@ import { World } from '../../src/index'
  * `'reproduction'` random stream survive chunk and step boundaries exactly - not just the
  * fields Phase 2 already exercised. The explicit `reproductionSuccesses` assertions make that
  * coverage visible rather than incidental.
+ *
+ * Since Phase 4 the default configuration also mutates every birth, so the same runs exercise the
+ * `genetics` stream, genome identity and the lineage store across chunk and step boundaries. The
+ * lineage store is deliberately not part of the state hash, so its equivalence is asserted
+ * explicitly rather than inherited from the hash comparison.
  */
 describe('100,000-tick runs', () => {
   it('runs 100,000 ticks headlessly without ever violating an invariant', () => {
@@ -55,6 +60,32 @@ describe('100,000-tick runs', () => {
     expect(chunked.clock.tick).toBe(direct.clock.tick)
     expect(chunked.stateHash()).toBe(direct.stateHash())
     expect(chunked.snapshot()).toEqual(direct.snapshot())
+
+    // The lineage store is not hashed, so chunking must be shown not to disturb it directly.
+    expect(chunked.lineage.size).toBe(direct.lineage.size)
+    expect(chunked.lineage.size).toBeGreaterThan(chunked.config.organisms.initialCount)
+    expect(chunked.lineage.founders()).toEqual(direct.lineage.founders())
+    const last = chunked.lineage.size - 1
+    expect(chunked.lineage.record(last)).toEqual(direct.lineage.record(last))
+    expect(chunked.lineage.ancestorsOf(last)).toEqual(direct.lineage.ancestorsOf(last))
+    expect(chunked.historicalOrganisms()).toEqual(direct.historicalOrganisms())
+  })
+
+  it('mutation visibly changes genomes over a long run, identically each time', () => {
+    const run = (): World => {
+      const world = World.create({ seed: 77, validateEveryTicks: 1000 })
+      world.run(30_000)
+      return world
+    }
+    const a = run()
+    const b = run()
+    const baseline = buildGeneSpecs(a.config).map((spec) => spec.baseline)
+    const differing = a
+      .snapshot()
+      .organisms.filter((o) => genomeToVector(a.genomeOf(o.id)!).some((v, i) => v !== baseline[i]))
+    expect(differing.length).toBeGreaterThan(0)
+    expect(a.stateHash()).toBe(b.stateHash())
+    expect(a.lineage.size).toBe(b.lineage.size)
   })
 
   it('running in many small chunks still matches a single run of the same total', () => {
@@ -98,6 +129,41 @@ describe('100,000-tick runs', () => {
     }
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(world.validate()).toEqual({ ok: true, errors: [] })
+  })
+
+  it('keeps every genome valid and every trait mean near baseline over 100,000 ticks', () => {
+    // validateEveryTicks runs World.validate(), which checks each living genome against the gene
+    // table and brain architecture and each lineage record against its genome, every 500 ticks.
+    const world = World.create({ seed: 1, validateEveryTicks: 500 })
+    world.run(100_000)
+
+    const specs = buildGeneSpecs(world.config)
+    const genomes = world.snapshot().organisms.map((o) => world.genomeOf(o.id)!)
+    expect(genomes.length).toBeGreaterThan(0)
+    expect(genomes.length).toBeLessThan(world.config.maxPopulation)
+    specs.forEach((spec, i) => {
+      const average =
+        genomes.reduce((sum, g) => sum + (genomeToVector(g)[i] as number), 0) / genomes.length
+      // Drift is bounded: no gene's population mean runs off toward an edge of its range
+      // (measured worst case over 100,000 ticks on two seeds: 0.20 of the range width).
+      expect(Math.abs(average - spec.baseline) / (spec.max - spec.min)).toBeLessThan(0.35)
+    })
+    // One lineage record per genome ever created: the founders plus every birth.
+    expect(world.lineage.size).toBe(world.snapshot().metrics.organismsBorn)
+    expect(world.validate()).toEqual({ ok: true, errors: [] })
+  })
+
+  it('keeps every genome valid under heavy mutation pressure', () => {
+    // Ten times the default mutation rate and strength is far outside normal use; validity is
+    // guaranteed by construction (bounded operators), so no invariant may ever fire.
+    const world = World.create({
+      seed: 3,
+      validateEveryTicks: 250,
+      config: { genetics: { mutationRateScale: 10, mutationStrengthScale: 10 } }
+    })
+    expect(() => world.run(30_000)).not.toThrow()
+    expect(world.validate()).toEqual({ ok: true, errors: [] })
+    expect(world.lineage.size).toBeGreaterThan(world.config.organisms.initialCount)
   })
 
   it('extinction, once reached, is never reversed across a long remaining run', () => {
@@ -147,6 +213,48 @@ describe('100,000-tick runs', () => {
     expect(world.snapshot().population.active).toBe(0)
     expect(world.snapshot().population.extinctionTick).toBe(11_901)
     expect(world.snapshot().organisms).toEqual([])
+    expect(world.validate()).toEqual({ ok: true, errors: [] })
+  })
+
+  it('keeps the whole lineage queryable after the population goes extinct', () => {
+    const world = World.create({
+      seed: 5,
+      validateEveryTicks: 1000,
+      config: {
+        organisms: { initialCount: 15 },
+        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 }
+      }
+    })
+    world.run(20_000)
+    expect(world.isExtinct).toBe(true)
+
+    const size = world.lineage.size
+    expect(size).toBeGreaterThan(world.config.organisms.initialCount)
+    // Every founder lineage has died out, yet every record and ancestry link is still there.
+    for (const founder of world.lineage.founders()) {
+      expect(world.lineage.isLineageExtinct(founder)).toBe(true)
+      expect(world.lineage.record(founder)).toBeDefined()
+    }
+    const records = world.historicalOrganisms()
+    expect(records.length).toBe(size)
+    for (const record of records) {
+      const lineage = world.lineage.record(record.genomeId)
+      expect(lineage).toBeDefined()
+      for (const parent of lineage!.parentGenomeIds) {
+        expect(world.lineage.record(parent)).toBeDefined()
+      }
+    }
+    const newest = records[records.length - 1]!
+    if (newest.parentIds.length > 0) {
+      expect(world.lineage.ancestorsOf(newest.genomeId).length).toBeGreaterThan(0)
+    }
+
+    // And extinction adds nothing: the lineage is frozen from here on.
+    world.run(80_000)
+    expect(world.lineage.size).toBe(size)
+    for (const founder of world.lineage.founders()) {
+      expect(world.lineage.isLineageExtinct(founder)).toBe(true)
+    }
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })
 })
