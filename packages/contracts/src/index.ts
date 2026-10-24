@@ -2,6 +2,32 @@ export type { Vec2, Rect, Circle } from './math'
 export type { EntityId } from './entity'
 export type { ValidationResult } from './validation'
 export type { LifeStage } from './organism'
+export { GENE_DEFINITIONS } from './genome'
+export type {
+  GenomeId,
+  Genome,
+  PhysicalGenes,
+  SensoryGenes,
+  MetabolicGenes,
+  BehavioralGenes,
+  ReproductionGenes,
+  BrainArchitecture,
+  BrainGenome,
+  LearningGenes,
+  GeneGroup,
+  GeneKind,
+  GenePath,
+  GeneDefinition,
+  GeneRange,
+  GeneRangeOverrides,
+  LearningInheritanceMode,
+  LearningInheritanceConfig,
+  BrainConfig,
+  LearningBaseline,
+  GeneticsConfig,
+  GeneticsConfigOverrides,
+  LineageRecord
+} from './genome'
 export { MAX_SEED } from './world'
 export type {
   DeathCause,

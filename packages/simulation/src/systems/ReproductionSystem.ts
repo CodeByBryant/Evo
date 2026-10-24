@@ -15,7 +15,7 @@ import type { SpatialHash } from '../spatial/SpatialHash'
  * juvenile, cooldown `<= 0`, `energy >= reproduction.minEnergy`) - organisms that don't clear them
  * simply don't attempt, no event. An attempting organism is blocked by, in order, the population
  * cap and then the lack of an eligible, not-yet-paired partner within `searchRadius`; both record
- * a failed `reproduction-attempted`. On success, each parent pays `reproduction.energyCost` and
+ * a failed `reproduction-attempted`. On success, each parent pays `offspringInvestment * (1 + overheadFraction)` and
  * resets its cooldown; the child starts at age 0 near the parents' midpoint, with `parentIds` in
  * ascending order.
  */
@@ -32,8 +32,10 @@ export class ReproductionSystem {
   update(tick: number): void {
     const dt = this.config.timestep
     const { maturityAge, senescenceAge, maxEnergy, radius } = this.config.organisms
-    const { minEnergy, energyCost, offspringEnergy, cooldown, searchRadius } =
+    const { minEnergy, offspringInvestment, overheadFraction, cooldown, searchRadius } =
       this.config.reproduction
+    const energyCost = offspringInvestment * (1 + overheadFraction)
+    const offspringEnergy = offspringInvestment + offspringInvestment
     const { width, height } = this.config.environment
     const thresholds = { maturityAge, senescenceAge }
 

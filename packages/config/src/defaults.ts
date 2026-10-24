@@ -1,4 +1,4 @@
-import type { WorldConfig } from '@evo/contracts'
+import type { GenePath, GeneRange, WorldConfig } from '@evo/contracts'
 
 /** Recursively freezes plain objects so shared defaults cannot be mutated by accident. */
 function deepFreeze<T>(value: T): T {
@@ -34,6 +34,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     movementCost: 0.005,
     turningCost: 0.05,
     sensorCost: 0.1,
+    hue: 0.55,
     maxAge: 600,
     maturityAge: 90,
     senescenceAge: 510,
@@ -50,10 +51,74 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   },
   reproduction: {
     minEnergy: 60,
-    energyCost: 20,
-    offspringEnergy: 25,
+    offspringInvestment: 12.5,
+    overheadFraction: 0.6,
     cooldown: 30,
     searchRadius: 50
   },
-  history: { maxEvents: 10_000, eventDetail: 'essential', maxHistoricalOrganisms: 10_000 }
+  history: { maxEvents: 10_000, eventDetail: 'essential', maxHistoricalOrganisms: 10_000 },
+  genetics: {
+    mutationRateScale: 1,
+    mutationStrengthScale: 1,
+    blendAlpha: 0.25,
+    brain: {
+      inputSize: 16,
+      hiddenSize: 8,
+      memorySize: 4,
+      outputSize: 5,
+      initialWeightStd: 0.3,
+      weightMutationRate: 0.05,
+      weightMutationStd: 0.1
+    },
+    learning: {
+      learningRate: 0.05,
+      discountFactor: 0.95,
+      eligibilityTraceDecay: 0.9,
+      explorationRate: 0.1,
+      riskTolerance: 0.5,
+      noveltyPreference: 0.5,
+      persistence: 0.5
+    },
+    learningInheritance: { mode: 'partial', fraction: 0.15 },
+    genes: {}
+  }
 } satisfies WorldConfig)
+
+const range = (min: number, max: number, mutationStd = 0.05): GeneRange => ({
+  min,
+  max,
+  mutationRate: 0.1,
+  mutationStd
+})
+
+/**
+ * Default bounds and mutation parameters for every gene (docs/genetics/genome.md). The ranges of
+ * `maturityAge`, `senescenceAge` and `maxAge` are disjoint and ordered so that
+ * `maturityAge < senescenceAge < maxAge` holds for every genome by construction. Like the world
+ * defaults these are provisional and tuned by the engine's scenario tests.
+ */
+export const DEFAULT_GENE_RANGES: Readonly<Record<GenePath, Readonly<GeneRange>>> = deepFreeze({
+  'physical.radius': range(2.5, 10),
+  'physical.maxSpeed': range(10, 40),
+  'physical.maxTurnRate': range(1.5, 6),
+  'physical.maturityAge': range(45, 180),
+  'physical.senescenceAge': range(255, 560),
+  'physical.maxAge': range(570, 1200),
+  'physical.hue': range(0, 1),
+  'sensory.sensorRadius': range(30, 120),
+  'metabolic.basalCost': range(0.3, 0.8),
+  'metabolic.movementCost': range(0.003, 0.008),
+  'metabolic.turningCost': range(0.03, 0.08),
+  'behavioral.wanderJitter': range(0.75, 3),
+  'reproduction.minEnergy': range(40, 90),
+  'reproduction.offspringInvestment': range(6, 25),
+  'reproduction.cooldown': range(15, 60),
+  'reproduction.searchRadius': range(25, 100),
+  'learning.learningRate': range(0.001, 0.5, 0.1),
+  'learning.discountFactor': range(0, 1),
+  'learning.eligibilityTraceDecay': range(0, 1),
+  'learning.explorationRate': range(0, 1),
+  'learning.riskTolerance': range(0, 1),
+  'learning.noveltyPreference': range(0, 1),
+  'learning.persistence': range(0, 1)
+})

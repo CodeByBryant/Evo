@@ -34,7 +34,7 @@ The roadmap (3.4) makes the life-stage ages genome-controlled; Phase 3 had to pl
 
 ### Founders and the config baseline
 
-Founders get **identical** genomes built from the existing config values: `organisms.*` and `reproduction.*` keep their meaning as the founder baseline, which keeps every Phase 3 default meaningful. Brain weights are drawn from the `genetics` stream (Gaussian, std `genetics.brain.initialWeightStd`), one founder at a time in id order. Variation enters the population only at births.
+Each gene's effective range is its default range with any `genetics.genes` override applied; a default edge that excludes the founder baseline is **widened** to include it, so changing a baseline in `organisms.*` or `reproduction.*` never needs a matching range override (an edge set explicitly by an override is never moved, and config validation rejects a baseline outside it). Founders get **identical** genomes built from the existing config values: `organisms.*` and `reproduction.*` keep their meaning as the founder baseline, which keeps every Phase 3 default meaningful. Brain weights are drawn from the `genetics` stream (Gaussian, std `genetics.brain.initialWeightStd`), one founder at a time in id order. Variation enters the population only at births.
 
 ### Capability is not free: derived quantities
 
@@ -49,6 +49,8 @@ parent pays       = offspringInvestment * (1 + reproduction.overheadFraction)
 child energy      = min(investmentA + investmentB, child maxEnergy)
 ```
 
+Because genes vary independently, a parent could in principle hold a `minEnergy` below the cost it would pay. `ReproductionSystem` therefore requires `energy >= max(minEnergy, parent pays)` to attempt, so paying can never drive energy negative.
+
 The metabolism formula from ADR 0005 is otherwise unchanged and reads the organism's own `movementCost`, `turningCost` and derived terms. `movementCost` and `turningCost` are already coupled to _realized_ speed and turn (they multiply `speed^2` and `lastTurnMagnitude^2`), so a faster or more agile organism pays more when it actually moves.
 
 This **replaces** the config fields `reproduction.energyCost` and `reproduction.offspringEnergy` with `reproduction.offspringInvestment` (the per-parent baseline) and `reproduction.overheadFraction` (energy lost in the transfer). With investment `12.5` and overhead `0.6`, a parent pays `20` and the child receives `25`, exactly Phase 3's values. There are no external users of the old fields, so no compatibility shim is kept.
@@ -62,7 +64,7 @@ This **replaces** the config fields `reproduction.energyCost` and `reproduction.
 - **bit-flip** (booleans).
 - **circular** (`hue`): Gaussian in `[0, 1)` turns, wrapped.
 - **trait-shift** (correlated traits): genes sharing a `correlationGroup` receive one shared normalized delta, scaled into each gene's own range. The mechanism is required by the roadmap ("where appropriate"); the production table declares no group yet, and tests exercise it with a synthetic table.
-- **learning-parameter**: `learningRate` mutates in log space; the other learning genes are bounded Gaussians within `[0, 1]`.
+- **learning-parameter**: `learningRate` mutates multiplicatively (a Gaussian fraction of its current value, so it stays positive and scales sensibly; the engine has no deterministic `exp` to mutate in log space); the other learning genes are bounded Gaussians within `[0, 1]`.
 - **brain-weight**: each weight mutates independently with probability `genetics.brain.weightMutationRate` by `N(0, weightMutationStd)`.
 
 Global knobs: `genetics.mutationRateScale` multiplies every rate and `genetics.mutationStrengthScale` multiplies every std; `0` disables mutation entirely. Integer, boolean and circular behavior is proven with synthetic spec tables because the production table has no integer or boolean gene.
@@ -83,11 +85,11 @@ The two partners are symmetric, so "mother" is the parent with the lower organis
 - neural weights: **per-block single-point crossover** over each documented weight block (input-hidden, memory-hidden, and so on), with a random choice of which parent supplies the prefix. Every block therefore contains weights from both parents, so both brains actually contribute (roadmap 4.4);
 - then mutation is applied to the recombined result.
 
-Every gene consumes a fixed number of draws per birth regardless of configuration: the mutation gate draw is always taken and merely not applied when it fails, so changing a rate never shifts later draws within the stream. All of this draws from the `genetics` stream (reserved since Phase 2). Child spawn jitter and heading stay on the `reproduction` stream, so existing reproduction-stream sequences are untouched.
+Each independent gene (or correlated group) consumes the same draws per birth whatever the configuration: the mutation gate, value and direction draws are always taken and merely not applied when the gate fails, so changing a rate or strength never shifts later draws within the stream. All of this draws from the `genetics` stream (reserved since Phase 2). Child spawn jitter and heading stay on the `reproduction` stream, so existing reproduction-stream sequences are untouched.
 
 ### Constraints
 
-`validateGenome(genome, specs): ValidationResult` checks: every scalar gene within `[min, max]`; integers are integers; booleans are 0/1; brain architecture equals the configured architecture and the weight count equals the architecture's weight count (all finite); `learningRate >= 0`; `discountFactor` in `[0, 1]`; `offspringInvestment > 0`; and the ordering `maturityAge < senescenceAge < maxAge`. The default ranges of those three genes **do not overlap**, so the ordering holds by construction for any recombination or mutation; config validation rejects overlapping ranges. `repairGenome(genome, specs): Genome` is a pure clamp provided for tooling, but `ReproductionSystem` never calls it (roadmap 4.5: prefer rejecting invalid genomes in development). `World.validate()` rejects any living organism whose genome is invalid (roadmap: "No invalid genome").
+`validateGenome(genome, specs): ValidationResult` checks: every scalar gene within `[min, max]`; integers are integers; booleans are 0/1; brain architecture equals the configured architecture and the weight count equals the architecture's weight count (all finite); `learningRate >= 0`; `discountFactor` in `[0, 1]`; `offspringInvestment > 0`; and the ordering `maturityAge < senescenceAge < maxAge`. The ordering is enforced by the operators, not by keeping ranges apart: a gene declared `orderedAfter` another (`senescenceAge` after `maturityAge`, `maxAge` after `senescenceAge`) has its lower bound raised above the earlier gene (by a 1e-6 margin) in mutation, recombination and repair, so the ages stay ordered for any ranges, including after an unrelated change moves the earlier gene. Config validation requires each such gene's range maximum to exceed the earlier gene's, so there is always room. `repairGenome(genome, specs): Genome` is a pure clamp provided for tooling, but `ReproductionSystem` never calls it (roadmap 4.5: prefer rejecting invalid genomes in development). `World.validate()` rejects any living organism whose genome is invalid (roadmap: "No invalid genome").
 
 ### Comparison
 
