@@ -100,6 +100,7 @@ describe('contracts', () => {
       id: 5,
       genomeId: 9,
       parentIds: [1, 2],
+      speciesId: 3,
       birthTick: 100,
       deathTick: 200,
       deathCause: 'starvation',
@@ -107,6 +108,7 @@ describe('contracts', () => {
     }
     expect(record.parentIds).toEqual([1, 2])
     expect(record.genomeId).toBe(9)
+    expect(record.speciesId).toBe(3)
     expect(record.brain?.updates).toBe(12)
   })
 
@@ -115,6 +117,7 @@ describe('contracts', () => {
       id: 1,
       genomeId: 1,
       parentIds: [],
+      speciesId: null,
       position: { x: 0, y: 0 },
       velocity: { x: 0, y: 0 },
       heading: 0,

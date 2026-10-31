@@ -15,6 +15,8 @@ import { lifeStageFor } from '../organisms/lifeStage'
 import { maxEnergyOf, reproductionCostOf, reproductionThresholdOf } from '../organisms/traits'
 import type { RandomSource } from '../random/RandomSource'
 import type { SeededRandom } from '../random/SeededRandom'
+import { NO_SPECIES } from '../species/SpeciesRegistry'
+import type { SpeciesTracker } from '../species/SpeciesRegistry'
 import type { SpatialHash } from '../spatial/SpatialHash'
 
 /**
@@ -46,7 +48,8 @@ export class ReproductionSystem {
     private readonly geneticsRandom: RandomSource,
     private readonly lineage: LineageStore,
     private readonly random: SeededRandom,
-    private readonly events: EventLog
+    private readonly events: EventLog,
+    private readonly species: SpeciesTracker = NO_SPECIES
   ) {
     this.layout = brainLayoutOf(architectureOf(config.genetics.brain))
   }
@@ -73,6 +76,12 @@ export class ReproductionSystem {
       architecture: genome.brain.architecture,
       weights: genome.brain.weights.slice(0, learnOffset).concat(tail)
     })
+  }
+
+  /** With `species.reproductiveIsolation`, only members of one species mate. */
+  private sameSpecies(a: OrganismState, b: OrganismState): boolean {
+    if (!this.config.species.enabled || !this.config.species.reproductiveIsolation) return true
+    return this.species.speciesOf(a.id) === this.species.speciesOf(b.id)
   }
 
   update(tick: number): void {
@@ -115,6 +124,7 @@ export class ReproductionSystem {
       const partnerHit = hits.find(
         (hit) =>
           hit.item.id !== organism.id &&
+          this.sameSpecies(organism, hit.item) &&
           !pairedIds.has(hit.item.id) &&
           lifeStageFor(hit.item.age, hit.item.genome.physical) !== 'juvenile' &&
           hit.item.reproductionCooldownRemaining <= 0 &&
@@ -187,6 +197,12 @@ export class ReproductionSystem {
         organismId: childId,
         tick
       })
+      const speciesId = this.species.assign({
+        organismId: childId,
+        genome: childGenome,
+        parentOrganismId: mother.id,
+        tick
+      })
 
       this.events.record({
         type: 'organism-born',
@@ -194,6 +210,7 @@ export class ReproductionSystem {
         organismId: childId,
         genomeId: childGenome.id,
         parentIds,
+        speciesId,
         position: { x, y }
       })
       this.events.record({

@@ -23,6 +23,8 @@ export interface InvariantContext {
   readonly geneSpecs: readonly GeneSpec[]
   /** Every living genome, and every parent it names, must have a lineage record. */
   readonly lineage: LineageQueries
+  /** Every living organism must have an active species and the counts must agree. */
+  readonly species: { problems(livingOrganismIds: readonly number[]): string[] }
 }
 
 function checkFinite(label: string, field: string, value: number, errors: string[]): void {
@@ -193,6 +195,8 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
   if (metrics.resourcesConsumed < 0) errors.push('metrics.resourcesConsumed is negative')
   if (metrics.energyConsumed < 0) errors.push('metrics.energyConsumed is negative')
   if (metrics.energyWasted < 0) errors.push('metrics.energyWasted is negative')
+
+  errors.push(...context.species.problems(organisms.map((organism) => organism.id)))
 
   return { ok: errors.length === 0, errors }
 }

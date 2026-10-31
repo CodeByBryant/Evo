@@ -11,6 +11,7 @@ import {
 } from '../../src/genetics/GenomeFactory'
 import { GenomeRecombiner } from '../../src/genetics/Recombination'
 import { LineageStore } from '../../src/lineage/LineageStore'
+import type { SpeciesTracker } from '../../src/species/SpeciesRegistry'
 import { SeededRandom } from '../../src/random/SeededRandom'
 import { deriveStreamWords } from '../../src/random/streams'
 import type { SpatialHash } from '../../src/spatial/SpatialHash'
@@ -93,7 +94,7 @@ export function makeReproduction(
   index: SpatialHash<OrganismState>,
   ids: IdGenerator,
   events: EventLog,
-  options: { genomeIdStart?: number; seed?: number } = {}
+  options: { genomeIdStart?: number; seed?: number; species?: SpeciesTracker } = {}
 ): ReproductionFixture {
   const lineage = new LineageStore()
   for (const organism of organisms.values()) {
@@ -117,7 +118,8 @@ export function makeReproduction(
     new SeededRandom(deriveStreamWords(seed, 'genetics')),
     lineage,
     new SeededRandom(deriveStreamWords(seed, 'reproduction')),
-    events
+    events,
+    options.species
   )
   return { system, lineage }
 }

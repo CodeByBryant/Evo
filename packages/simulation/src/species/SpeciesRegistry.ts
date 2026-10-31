@@ -27,6 +27,19 @@ export interface SpeciesQueries {
   descendants(id: SpeciesId): SpeciesId[]
 }
 
+/** What the systems need from the registry; `NO_SPECIES` is the do-nothing implementation. */
+export interface SpeciesTracker {
+  assign(request: SpeciesAssignment): SpeciesId | null
+  release(organismId: EntityId, tick: number): void
+  speciesOf(organismId: EntityId): SpeciesId | undefined
+}
+
+export const NO_SPECIES: SpeciesTracker = {
+  assign: () => null,
+  release: () => undefined,
+  speciesOf: () => undefined
+}
+
 export interface SpeciesAssignment {
   organismId: EntityId
   genome: Genome
@@ -68,7 +81,7 @@ const copy = (entry: Entry): SpeciesRecord => ({
  * case reproduction reads it, deterministically), and it is not part of the state hash. With
  * `species.enabled: false` every operation is a no-op and `assign` returns `null`.
  */
-export class SpeciesRegistry implements SpeciesQueries {
+export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
   private readonly entries: Entry[] = []
   /** Ids of species with living members, ascending. */
   private readonly activeIds: SpeciesId[] = []

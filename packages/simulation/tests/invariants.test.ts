@@ -66,7 +66,8 @@ const baseContext = (overrides: Partial<InvariantContext> = {}): InvariantContex
   nextGenomeId: 1000,
   geneSpecs: buildGeneSpecs(DEFAULT_WORLD_CONFIG),
   ...overrides,
-  lineage: overrides.lineage ?? lineageFor(overrides.organisms ?? [])
+  lineage: overrides.lineage ?? lineageFor(overrides.organisms ?? []),
+  species: overrides.species ?? { problems: () => [] }
 })
 
 describe('checkInvariants', () => {

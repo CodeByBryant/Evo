@@ -4,6 +4,7 @@ import type { Vec2 } from './math'
 import type { BrainTelemetry } from './learning'
 import type { DeathCause } from './world'
 import type { LifeStage } from './organism'
+import type { SpeciesId } from './species'
 
 export interface OrganismSnapshot {
   readonly id: EntityId
@@ -11,6 +12,8 @@ export interface OrganismSnapshot {
   readonly genomeId: GenomeId
   /** Empty for founders. */
   readonly parentIds: readonly EntityId[]
+  /** The organism's species, or `null` when species are disabled. */
+  readonly speciesId: SpeciesId | null
   readonly position: Readonly<Vec2>
   readonly velocity: Readonly<Vec2>
   readonly heading: number
@@ -27,6 +30,8 @@ export interface HistoricalOrganismRecord {
   readonly genomeId: GenomeId
   /** Empty for founders. */
   readonly parentIds: readonly EntityId[]
+  /** The species the organism belonged to, or `null` when species are disabled. */
+  readonly speciesId: SpeciesId | null
   readonly birthTick: number
   readonly deathTick: number
   readonly deathCause: DeathCause
