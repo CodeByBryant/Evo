@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { World, buildGeneSpecs, genomeToVector } from '../../src/index'
+import { withoutEcology } from '../support/ecology'
 
 /**
  * The roadmap's first-milestone check, at full scale: a seeded world can run 100,000 ticks
@@ -117,7 +118,7 @@ describe('100,000-tick runs', () => {
     // controller; the brain controller's measured bands are in brain-long-run.test.ts.
     const world = World.create({
       seed: 1,
-      config: { learning: { controller: 'reflex' } },
+      config: withoutEcology({ learning: { controller: 'reflex' } }),
       validateEveryTicks: 1000
     })
     const samples: number[] = []
@@ -174,13 +175,16 @@ describe('100,000-tick runs', () => {
   it('extinction, once reached, is never reversed across a long remaining run', () => {
     const world = World.create({
       seed: 1,
-      config: {
+      // The Phase 5 world: slower terrain lowers movement cost, which changes how long starvation takes.
+      config: withoutEcology({
         organisms: { initialCount: 10 },
         resources: { initialCount: 0, spawnRate: 0 }
-      },
+      }),
       validateEveryTicks: 1000
     })
-    world.run(1000)
+    // Starvation takes about 1,100 ticks with this brain (it was just under 1,000 before Phase 6
+    // changed each founder brain's shape); the property is permanence, not the exact timing.
+    world.run(2000)
     expect(world.isExtinct).toBe(true)
     const extinctionTick = world.snapshot().population.extinctionTick
     // This config starves organisms before any of them ever reach reproduction.minEnergy, so
@@ -188,7 +192,7 @@ describe('100,000-tick runs', () => {
     // where reproduction succeeds repeatedly before the population still goes extinct.
     expect(world.snapshot().metrics.reproductionSuccesses).toBe(0)
 
-    world.run(99_000)
+    world.run(98_000)
 
     expect(world.snapshot().population.active).toBe(0)
     expect(world.snapshot().population.extinctionTick).toBe(extinctionTick)
@@ -201,25 +205,27 @@ describe('100,000-tick runs', () => {
     // reproduction having worked earlier gives it nothing to revive from once organisms=0.
     const world = World.create({
       seed: 5,
-      config: {
+      config: withoutEcology({
         organisms: { initialCount: 15 },
         resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
-        // Reflex controller: this pin is about the Phase 4 forager. It moved from 11,901 only
-        // because the larger genome draws more founder weights from the genetics stream.
+        // Reflex controller, ecology off: this pin is about the Phase 4 forager. It moved from
+        // 11,901 (Phase 4) to 18,482 (Phase 5) to 48,820 (Phase 6) only because each larger genome
+        // draws more founder weights from the genetics stream; the population hovers at 5-10 for
+        // a long time before the last animals die.
         learning: { controller: 'reflex' }
-      },
+      }),
       validateEveryTicks: 1000
     })
 
-    world.run(20_000)
+    world.run(60_000)
     expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(18_482)
+    expect(world.snapshot().population.extinctionTick).toBe(48_820)
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
 
-    world.run(80_000)
+    world.run(40_000)
 
     expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(18_482)
+    expect(world.snapshot().population.extinctionTick).toBe(48_820)
     expect(world.snapshot().organisms).toEqual([])
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })

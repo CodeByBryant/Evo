@@ -2,6 +2,7 @@ import type { EntityId } from './entity'
 import type { GenomeId } from './genome'
 import type { DeathCause } from './world'
 import type { Vec2 } from './math'
+import type { HazardKind, Season } from './ecology'
 import type { SpeciesId } from './species'
 
 interface BaseEvent {
@@ -30,6 +31,8 @@ export interface OrganismDiedEvent extends BaseEvent {
 export interface ResourceSpawnedEvent extends BaseEvent {
   readonly type: 'resource-spawned'
   readonly resourceId: EntityId
+  /** Index into the resource kinds (0 when kinds are off). */
+  readonly kind: number
   readonly position: Readonly<Vec2>
 }
 
@@ -37,6 +40,7 @@ export interface ResourceConsumedEvent extends BaseEvent {
   readonly type: 'resource-consumed'
   readonly organismId: EntityId
   readonly resourceId: EntityId
+  readonly kind: number
   /** Energy taken from the resource; `energyGained + energyWasted`. */
   readonly amount: number
   readonly energyGained: number
@@ -81,6 +85,39 @@ export interface ReproductionAttemptedEvent extends BaseEvent {
   readonly failureReason: ReproductionFailureReason | null
 }
 
+/** Health lost in one tick (one event per damaged organism per tick). */
+export interface OrganismDamagedEvent extends BaseEvent {
+  readonly type: 'organism-damaged'
+  readonly organismId: EntityId
+  /** Health lost this tick. */
+  readonly amount: number
+  readonly source: DamageSource
+  readonly healthAfter: number
+  readonly position: Readonly<Vec2>
+}
+
+export type DamageSource = 'hazard' | 'toxin' | 'both'
+
+/** A new season began. */
+export interface SeasonChangedEvent extends BaseEvent {
+  readonly type: 'season-changed'
+  readonly season: Season
+}
+
+export interface HazardSpawnedEvent extends BaseEvent {
+  readonly type: 'hazard-spawned'
+  readonly hazardId: number
+  readonly kind: HazardKind
+  readonly position: Readonly<Vec2>
+  readonly radius: number
+}
+
+export interface HazardExpiredEvent extends BaseEvent {
+  readonly type: 'hazard-expired'
+  readonly hazardId: number
+  readonly kind: HazardKind
+}
+
 export type WorldEvent =
   | OrganismBornEvent
   | OrganismDiedEvent
@@ -89,5 +126,9 @@ export type WorldEvent =
   | OrganismMovedEvent
   | EnergyChangedEvent
   | ReproductionAttemptedEvent
+  | OrganismDamagedEvent
+  | SeasonChangedEvent
+  | HazardSpawnedEvent
+  | HazardExpiredEvent
 
 export type WorldEventType = WorldEvent['type']

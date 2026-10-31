@@ -27,6 +27,14 @@ function describeEvent(event: WorldEvent): string {
       return `energy ${event.organismId}`
     case 'reproduction-attempted':
       return `reproduction ${event.organismId}`
+    case 'organism-damaged':
+      return `damaged ${event.organismId}`
+    case 'season-changed':
+      return `season ${event.season}`
+    case 'hazard-spawned':
+      return `hazard ${event.hazardId}`
+    case 'hazard-expired':
+      return `expired ${event.hazardId}`
     default: {
       const unreachable: never = event
       return unreachable
@@ -54,10 +62,14 @@ describe('contracts', () => {
       'resource-consumed',
       'organism-moved',
       'energy-changed',
-      'reproduction-attempted'
+      'reproduction-attempted',
+      'organism-damaged',
+      'season-changed',
+      'hazard-spawned',
+      'hazard-expired'
     ]
     const causes: DeathCause[] = ['starvation', 'age', 'damage', 'environment']
-    expect(new Set(types).size).toBe(7)
+    expect(new Set(types).size).toBe(11)
     expect(new Set(causes).size).toBe(4)
   })
 
@@ -104,6 +116,7 @@ describe('contracts', () => {
       birthTick: 100,
       deathTick: 200,
       deathCause: 'starvation',
+      migration: null,
       brain: { rewardTotal: 1.5, updates: 12, weightChange: 0.25 }
     }
     expect(record.parentIds).toEqual([1, 2])
@@ -112,7 +125,7 @@ describe('contracts', () => {
     expect(record.brain?.updates).toBe(12)
   })
 
-  it('OrganismSnapshot has no generation counter, embedded genome, or health/alive field', () => {
+  it('OrganismSnapshot has no generation counter, embedded genome, or alive flag', () => {
     const snapshot: OrganismSnapshot = {
       id: 1,
       genomeId: 1,
@@ -124,11 +137,12 @@ describe('contracts', () => {
       radius: 5,
       age: 0,
       energy: 50,
+      health: 100,
       lifeStage: 'mature',
       reproductionCooldownRemaining: 0
     }
     const keys = Object.keys(snapshot)
-    for (const forbidden of ['generation', 'genome', 'health', 'alive']) {
+    for (const forbidden of ['generation', 'genome', 'alive']) {
       expect(keys).not.toContain(forbidden)
     }
   })
@@ -138,7 +152,7 @@ describe('learning contracts', () => {
   it('fixes the observation and action sizes and labels them one to one', async () => {
     const { ACTION_LABELS, ACTION_SIZE, OBSERVATION_LABELS, OBSERVATION_SIZE } =
       await import('../src/index')
-    expect(OBSERVATION_SIZE).toBe(23)
+    expect(OBSERVATION_SIZE).toBe(33)
     expect(ACTION_SIZE).toBe(5)
     expect(OBSERVATION_LABELS).toHaveLength(OBSERVATION_SIZE)
     expect(ACTION_LABELS).toEqual(['thrust', 'turn', 'strafe', 'interact', 'explore'])

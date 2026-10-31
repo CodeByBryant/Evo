@@ -26,7 +26,7 @@ The mechanism, formulas and weight layout are specified in [docs/learning/brain.
 
 ### A recurrent network with an activation that needs no `exp`
 
-The determinism policy bans platform `exp`/`tanh`. The activation is **softsign**, `x / (1 + |x|)`, using only `+`, `/` and `abs`. The network is recurrent: a `memory` vector is fed back into the hidden layer and rewritten each tick, which is what gives the brain memory (roadmap 5.1). The critic's value head is an **8th weight block** present in every genome regardless of the learning algorithm, so a genome's shape never depends on which algorithm is running and ablations compare like for like. The default weight count becomes 314 (input 23, hidden 8, memory 4, output 5).
+The determinism policy bans platform `exp`/`tanh`. The activation is **softsign**, `x / (1 + |x|)`, using only `+`, `/` and `abs`. The network is recurrent: a `memory` vector is fed back into the hidden layer and rewritten each tick, which is what gives the brain memory (roadmap 5.1). The critic's value head is an **8th weight block** present in every genome regardless of the learning algorithm, so a genome's shape never depends on which algorithm is running and ablations compare like for like. The default weight count becomes 314 (input 23, hidden 8, memory 4, output 5). Phase 6 (ADR 0009) appended ten observation slots, making the input 33 and the default weight count 394.
 
 ### Learning changes a runtime overlay, never the genome
 
@@ -41,7 +41,7 @@ Only the output layer and value head learn. This keeps the update a local, inspe
 - **Reward-modulated Hebbian:** `delta = reward - runningBaseline`.
 - **Actor-critic:** `delta = reward + gamma * V(next) - V(prev)` (the TD error), which also trains the value head.
 
-Live genes: `learningRate`, `discountFactor`, `eligibilityTraceDecay`, `explorationRate`, `persistence` (how much exploration is kept as an organism ages, roadmap 5.6). `noveltyPreference` and `riskTolerance` stay **carried but unread**: there is no novelty reward and there are no hazards yet, and the docs say so plainly rather than inventing a meaning.
+Live genes: `learningRate`, `discountFactor`, `eligibilityTraceDecay`, `explorationRate`, `persistence` (how much exploration is kept as an organism ages, roadmap 5.6). `noveltyPreference` and `riskTolerance` stayed **carried but unread** in Phase 5: there was no novelty reward and there were no hazards, and the docs said so plainly rather than inventing a meaning. Phase 6 (ADR 0009) gave them one: `riskTolerance` scales the damage penalty and `noveltyPreference` the exploration reward.
 
 `learning.enabled: false` freezes the overlay but keeps exploration noise, so toggling it isolates the effect of learning from the effect of acting noisily.
 

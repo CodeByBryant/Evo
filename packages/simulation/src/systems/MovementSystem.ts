@@ -4,6 +4,7 @@ import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { clamp, wrapAngle } from '../math/scalar'
 import { cos, sin } from '../math/trig'
+import type { EcologyModel } from '../ecology/EcologyModel'
 import { lifeStageFor } from '../organisms/lifeStage'
 
 const NO_INTENT: OrganismIntent = { turn: 0, thrust: 0, strafe: 0, interact: false }
@@ -17,14 +18,18 @@ const NO_INTENT: OrganismIntent = { turn: 0, thrust: 0, strafe: 0, interact: fal
  */
 export class MovementSystem {
   private readonly emitVerbose: boolean
+  /** Whether regions or seasons scale top speed. */
+  private readonly terrainSlows: boolean
 
   constructor(
     private readonly config: WorldConfig,
     private readonly organisms: OrganismStore,
     private readonly intentBuffer: IntentBuffer,
-    private readonly events: EventLog
+    private readonly events: EventLog,
+    private readonly ecology: EcologyModel | null = null
   ) {
     this.emitVerbose = config.history.eventDetail === 'verbose'
+    this.terrainSlows = ecology !== null && (ecology.regionsOn || ecology.seasonsOn)
   }
 
   update(tick: number): void {
@@ -40,8 +45,11 @@ export class MovementSystem {
       const turn = clamp(intent.turn, -maxTurn, maxTurn)
       const heading = wrapAngle(organism.heading + turn)
       const stage = lifeStageFor(organism.age, genes)
-      const scaledMaxSpeed =
+      const baseMaxSpeed =
         stage === 'juvenile' ? genes.maxSpeed * juvenileSpeedScale : genes.maxSpeed
+      const scaledMaxSpeed = this.terrainSlows
+        ? baseMaxSpeed * (this.ecology as EcologyModel).movementScale(organism.x, organism.y, tick)
+        : baseMaxSpeed
       const speed = clamp(intent.thrust, 0, 1) * scaledMaxSpeed
       let vx = cos(heading) * speed
       let vy = sin(heading) * speed

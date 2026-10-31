@@ -12,13 +12,15 @@ describe('MetricsCollector', () => {
       organismsBorn: 0,
       deathsByStarvation: 0,
       deathsByAge: 0,
+      deathsByDamage: 0,
       resourcesSpawned: 0,
       resourcesConsumed: 0,
       reproductionAttempts: 0,
       reproductionSuccesses: 0,
       reproductionFailures: 0,
       energyConsumed: 0,
-      energyWasted: 0
+      energyWasted: 0,
+      damageTaken: 0
     })
   })
 
@@ -45,12 +47,13 @@ describe('MetricsCollector', () => {
       },
       { type: 'organism-died', tick: 1, organismId: 1, cause: 'starvation', position: pos },
       { type: 'organism-died', tick: 1, organismId: 2, cause: 'age', position: pos },
-      { type: 'resource-spawned', tick: 0, resourceId: 1, position: pos },
+      { type: 'resource-spawned', tick: 0, resourceId: 1, kind: 0, position: pos },
       {
         type: 'resource-consumed',
         tick: 1,
         organismId: 1,
         resourceId: 1,
+        kind: 0,
         amount: 30,
         energyGained: 20,
         energyWasted: 10,
@@ -80,13 +83,15 @@ describe('MetricsCollector', () => {
       organismsBorn: 2,
       deathsByStarvation: 1,
       deathsByAge: 1,
+      deathsByDamage: 0,
       resourcesSpawned: 1,
       resourcesConsumed: 1,
       reproductionAttempts: 2,
       reproductionSuccesses: 1,
       reproductionFailures: 1,
       energyConsumed: 20,
-      energyWasted: 10
+      energyWasted: 10,
+      damageTaken: 0
     })
   })
 
@@ -117,13 +122,48 @@ describe('MetricsCollector', () => {
     expect(metrics.snapshot().organismsBorn).toBe(2)
   })
 
-  it('death causes not produced yet (damage, environment) do not affect any counter', () => {
+  it('counts damage deaths and total damage taken, and ignores the unused environment cause', () => {
     const metrics = new MetricsCollector()
     metrics.recordEvents([
       { type: 'organism-died', tick: 0, organismId: 1, cause: 'damage', position: pos },
       { type: 'organism-died', tick: 0, organismId: 2, cause: 'environment', position: pos }
     ])
-    expect(metrics.snapshot()).toMatchObject({ deathsByStarvation: 0, deathsByAge: 0 })
+    expect(metrics.snapshot()).toMatchObject({
+      deathsByStarvation: 0,
+      deathsByAge: 0,
+      deathsByDamage: 1
+    })
+    metrics.recordEvents([
+      {
+        type: 'organism-damaged',
+        tick: 1,
+        organismId: 3,
+        amount: 4.5,
+        source: 'hazard',
+        healthAfter: 10,
+        position: pos
+      },
+      {
+        type: 'organism-damaged',
+        tick: 2,
+        organismId: 3,
+        amount: 1.5,
+        source: 'toxin',
+        healthAfter: 8.5,
+        position: pos
+      },
+      { type: 'season-changed', tick: 2, season: 'summer' },
+      {
+        type: 'hazard-spawned',
+        tick: 2,
+        hazardId: 0,
+        kind: 'storm',
+        position: pos,
+        radius: 10
+      },
+      { type: 'hazard-expired', tick: 3, hazardId: 0, kind: 'storm' }
+    ])
+    expect(metrics.snapshot().damageTaken).toBe(6)
   })
 
   it('verbose-only events are ignored', () => {
@@ -143,13 +183,15 @@ describe('MetricsCollector', () => {
       organismsBorn: 0,
       deathsByStarvation: 0,
       deathsByAge: 0,
+      deathsByDamage: 0,
       resourcesSpawned: 0,
       resourcesConsumed: 0,
       reproductionAttempts: 0,
       reproductionSuccesses: 0,
       reproductionFailures: 0,
       energyConsumed: 0,
-      energyWasted: 0
+      energyWasted: 0,
+      damageTaken: 0
     })
   })
 

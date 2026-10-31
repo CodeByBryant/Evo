@@ -1,13 +1,13 @@
 {
-  "hashSchemaVersion": 4,
-  "engineVersion": "0.7.0",
+  "hashSchemaVersion": 5,
+  "engineVersion": "0.8.0",
   "entries": [
     {
       "name": "default-1k",
       "seed": 12345,
       "config": {},
       "steps": 1000,
-      "expectedHash": "a0e836f6fcb7428bd595d4760b1d0e1d"
+      "expectedHash": "aeff3b6b7f3c84804bf04c03270bd00e"
     },
     {
       "name": "scenario-a-foraging-5k",
@@ -15,10 +15,36 @@
       "config": {
         "organisms": {
           "initialCount": 10
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 5000,
-      "expectedHash": "b0afb70834b94baaf24726a0992f104c"
+      "expectedHash": "de74eedf50f3af4ad18992cb91f1a8c4"
     },
     {
       "name": "scenario-b-extinction-20k",
@@ -30,10 +56,36 @@
         "resources": {
           "initialCount": 0,
           "spawnRate": 0
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 20000,
-      "expectedHash": "6bf45c33b3cf8621e2a3befa7c09fb55"
+      "expectedHash": "29b9d812da4cb6a77fa4c6f190d851b8"
     },
     {
       "name": "verbose-events-200",
@@ -42,10 +94,36 @@
         "history": {
           "eventDetail": "verbose",
           "maxEvents": 100000
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 200,
-      "expectedHash": "1cadd5512497d2a0f97c9edec55cba2a"
+      "expectedHash": "980142d38befc101f318a48c6145de06"
     },
     {
       "name": "zero-population-100",
@@ -56,28 +134,78 @@
         },
         "resources": {
           "initialCount": 0
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 100,
-      "expectedHash": "5baa0cd17e44ac7afe9d651325608db3"
+      "expectedHash": "e1b6a29ddcc66c3ab9a39355fb08198e"
     },
     {
       "name": "long-run-100k",
       "seed": 999,
       "config": {},
       "steps": 100000,
-      "expectedHash": "99f8311296874919e2d7c82e18a206be"
+      "expectedHash": "7809120dc65864881d6a9c2fdab14f2b"
     },
     {
       "name": "reflex-default-1k",
       "seed": 12345,
       "config": {
         "learning": {
-          "controller": "reflex"
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 1000,
-      "expectedHash": "91c64b48aa9ef7172803c401586a9218"
+      "expectedHash": "4aaa6e0cef45868756d45c735e20e889"
     },
     {
       "name": "reflex-scenario-a-5k",
@@ -87,11 +215,35 @@
           "initialCount": 10
         },
         "learning": {
-          "controller": "reflex"
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 5000,
-      "expectedHash": "0570adb9e90589a6fc30e72cc3df287f"
+      "expectedHash": "90af1161b9a442913ab4878b5210b767"
     },
     {
       "name": "reflex-scenario-b-20k",
@@ -105,22 +257,70 @@
           "spawnRate": 0
         },
         "learning": {
-          "controller": "reflex"
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 20000,
-      "expectedHash": "4284f01c4a9a4d9047f060fef33ae4d5"
+      "expectedHash": "1e5522906ae377a4392fe0898967f777"
     },
     {
       "name": "reflex-long-run-100k",
       "seed": 999,
       "config": {
         "learning": {
-          "controller": "reflex"
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 100000,
-      "expectedHash": "93ded58d67dc386cec9d536e4acfbdcc"
+      "expectedHash": "6b238957fafdbaf03d42c90de364230d"
     },
     {
       "name": "brain-hebbian-5k",
@@ -130,11 +330,35 @@
           "initialCount": 10
         },
         "learning": {
-          "algorithm": "hebbian"
+          "algorithm": "hebbian",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 5000,
-      "expectedHash": "9246795608a24a2286f2489c8ac17cec"
+      "expectedHash": "95d15c52f6f5a83ad3b6d46942e4b4f1"
     },
     {
       "name": "brain-learning-off-5k",
@@ -144,11 +368,35 @@
           "initialCount": 10
         },
         "learning": {
-          "enabled": false
+          "enabled": false,
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 5000,
-      "expectedHash": "2e27d42371adce99852cede9b0b2b54b"
+      "expectedHash": "d9574a1916519469ae68b598a6bfee03"
     },
     {
       "name": "brain-random-prior-off-5k",
@@ -161,10 +409,75 @@
           "brain": {
             "innatePrior": false
           }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 5000,
-      "expectedHash": "677f48ef1232ba78c703b1e6ee0eb8a5"
+      "expectedHash": "61536fa102e1c742073d10b24804387e"
+    },
+    {
+      "name": "ecology-default-12k",
+      "seed": 7,
+      "config": {},
+      "steps": 12000,
+      "expectedHash": "2cb5212a6dfccc4e8aad47703aa4c510"
+    },
+    {
+      "name": "ecology-reflex-8k",
+      "seed": 3,
+      "config": {
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 8000,
+      "expectedHash": "28db9fb75a73e0ad84cb6b57ccc8fc1d"
+    },
+    {
+      "name": "ecology-lethal-hazards-3k",
+      "seed": 5,
+      "config": {
+        "organisms": {
+          "initialCount": 40
+        },
+        "ecology": {
+          "health": {
+            "maxHealth": 8
+          },
+          "hazards": {
+            "areaCount": 10,
+            "areaRadius": 120,
+            "areaDamage": 40
+          }
+        }
+      },
+      "steps": 3000,
+      "expectedHash": "55f407e1a7cebb887a38a187120f65e9"
     }
   ]
 }

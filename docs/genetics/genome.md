@@ -30,8 +30,8 @@ Founders start at the **baseline** (the existing `organisms.*` / `reproduction.*
 | `learning.discountFactor`          | float            | 0.95 (`genetics.learning`)                | 0 - 1         | 0.1  | 0.05 | Brain (TD discount, trace decay)                             |
 | `learning.eligibilityTraceDecay`   | float            | 0.9 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (eligibility traces)                                   |
 | `learning.explorationRate`         | float            | 0.1 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (exploration noise)                                    |
-| `learning.riskTolerance`           | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | carried                                                      |
-| `learning.noveltyPreference`       | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | carried (no novelty signal yet)                              |
+| `learning.riskTolerance`           | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | scales the damage penalty (Phase 6: `1 - riskTolerance`)     |
+| `learning.noveltyPreference`       | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | scales the novelty reward (Phase 6)                          |
 | `learning.persistence`             | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (exploration annealing)                                |
 
 The ordering `maturityAge < senescenceAge < maxAge` is enforced by the operators: `senescenceAge` is declared `orderedAfter` `maturityAge`, and `maxAge` after `senescenceAge`, and mutation, recombination and repair raise such a gene's lower bound above the earlier gene (by a 1e-6 margin) even when the later gene itself did not mutate. Config validation requires each ordered gene's range maximum to exceed the earlier gene's, so there is always room. The default ranges happen not to overlap, but nothing relies on that.
@@ -58,7 +58,7 @@ At the baseline genome each quantity equals its Phase 3 value, which is what let
 
 ## Brain genome
 
-`brain = { architecture: { inputSize, hiddenSize, memorySize, outputSize }, weights: number[] }`. Every organism in a world has the same architecture (set by `genetics.brain`), so weight vectors are always compatible; topology does not evolve (roadmap 4.2). Since Phase 5 `inputSize` (23) and `outputSize` (5) are not config: they are derived from the `OBSERVATION_SIZE` and `ACTION_SIZE` contract constants, and `hiddenSize` / `memorySize` (default 8 / 4) stay configurable. See [docs/learning/brain.md](../learning/brain.md).
+`brain = { architecture: { inputSize, hiddenSize, memorySize, outputSize }, weights: number[] }`. Every organism in a world has the same architecture (set by `genetics.brain`), so weight vectors are always compatible; topology does not evolve (roadmap 4.2). Since Phase 5 `inputSize` (33 since Phase 6) and `outputSize` (5) are not config: they are derived from the `OBSERVATION_SIZE` and `ACTION_SIZE` contract constants, and `hiddenSize` / `memorySize` (default 8 / 4) stay configurable. See [docs/learning/brain.md](../learning/brain.md).
 
 `weights` is one flat vector made of eight consecutive **blocks** (the eighth, the critic's value head, was added in Phase 5). The layout is stable and documented; reordering it is a hash-schema change.
 
@@ -73,7 +73,7 @@ At the baseline genome each quantity equals its Phase 3 value, which is what let
 | 7   | `outputBias`     | output              | 5              |
 | 8   | `hiddenToValue`  | hidden, then 1 bias | 9              |
 
-Default total: 314 weights (249 in Phase 4, before the 23-input brain and the value head). Crossover operates per block (see below). Phase 5 interprets blocks 6-8 as the learnable ones; learning changes a per-organism overlay, never the genome.
+Default total: 394 weights (314 in Phase 5 with 23 inputs, 249 in Phase 4, before the brain and the value head). Crossover operates per block (see below). Phase 5 interprets blocks 6-8 as the learnable ones; learning changes a per-organism overlay, never the genome.
 
 ## Operators
 

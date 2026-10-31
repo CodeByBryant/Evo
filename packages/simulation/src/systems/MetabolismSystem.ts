@@ -1,4 +1,6 @@
 import type { WorldConfig } from '@evo/contracts'
+import type { RegenBuffer } from '../buffers/types'
+import type { EcologyModel } from '../ecology/EcologyModel'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
@@ -17,7 +19,9 @@ export class MetabolismSystem {
   constructor(
     private readonly config: WorldConfig,
     private readonly organisms: OrganismStore,
-    private readonly events: EventLog
+    private readonly events: EventLog,
+    private readonly ecology: EcologyModel | null = null,
+    private readonly regen?: RegenBuffer
   ) {
     this.emitVerbose = config.history.eventDetail === 'verbose'
   }
@@ -37,11 +41,15 @@ export class MetabolismSystem {
           genome.metabolic.movementCost * speedSquared +
           genome.metabolic.turningCost * turnSquared +
           sensorCostOf(genome, this.config) +
-          learningCostOf(genome, this.config)) *
+          learningCostOf(genome, this.config) +
+          (this.ecology === null
+            ? 0
+            : this.ecology.environmentalCost(organism.x, organism.y, tick))) *
         scale *
         dt
       const previous = organism.energy
-      organism.energy = previous - cost
+      const healing = this.regen?.get(organism.id) ?? 0
+      organism.energy = healing > 0 ? previous - cost - healing : previous - cost
       organism.age = organism.age + dt
 
       if (this.emitVerbose) {

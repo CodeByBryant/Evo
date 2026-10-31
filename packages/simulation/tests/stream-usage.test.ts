@@ -2,16 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { STREAM_NAMES } from '../src/random/streams'
 
 /**
  * A static, structural check that complements the runtime determinism tests: the roadmap's
  * "random stream isolation works" category isn't fully covered by hash comparisons alone, because
- * a system that draws from an unused stream would still be reproducible (same seed -> same
- * result); it just wouldn't be *isolated* in spirit. Reading a stream that the current phase has
- * no business touching should fail loudly here, not be discovered by accident later. `reproduction`
- * left this list in Phase 3 once `ReproductionSystem` became real (docs/decisions/0005), and
- * `genetics` in Phase 4 once founders' genomes were drawn from it (docs/decisions/0006), and
- * `learning` in Phase 5 once `BrainSystem` drew exploration noise from it (docs/decisions/0007).
+ * a stream nobody draws from is dead weight and a system that draws from the wrong stream would
+ * still be reproducible. Every named stream must be drawn from by the engine, and the draws must
+ * come from the owner the docs name (docs/simulation/determinism.md, section 3). Each stream left
+ * the "reserved" list when its owner arrived: `reproduction` in Phase 3, `genetics` in Phase 4,
+ * `learning` in Phase 5, and `events` and `terrain` in Phase 6 (docs/decisions/0009).
  */
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -29,28 +29,30 @@ function collectFiles(dir: string): string[] {
   return files
 }
 
-const engineFiles = [
-  ...collectFiles(join(ROOT, 'src', 'systems')),
-  ...collectFiles(join(ROOT, 'src', 'world'))
-]
+const sourceFiles = collectFiles(join(ROOT, 'src'))
 
-const RESERVED_FOR_LATER_PHASES = ['events'] as const
+/** Which source files draw from each stream, by the `get('name')` call `World` and the systems use. */
+function usersOf(name: string): string[] {
+  const pattern = new RegExp(`get\\(\\s*['"\`]${name}['"\`]\\s*\\)`)
+  return sourceFiles
+    .filter((file) => pattern.test(readFileSync(file, 'utf8')))
+    .map((file) => file.slice(ROOT.length))
+}
 
-describe('reserved random streams are never drawn from by systems/ or world/', () => {
-  it.each(RESERVED_FOR_LATER_PHASES)(
-    'stream "%s" is not referenced in systems/ or world/',
-    (name) => {
-      const pattern = new RegExp(`get\\(\\s*['"\`]${name}['"\`]\\s*\\)`)
-      for (const file of engineFiles) {
-        const text = readFileSync(file, 'utf8')
-        if (pattern.test(text)) {
-          throw new Error(`${file} references the reserved "${name}" random stream`)
-        }
+describe('every random stream has an owner', () => {
+  it.each(STREAM_NAMES)('stream "%s" is drawn from by the engine', (name) => {
+    expect(usersOf(name).length).toBeGreaterThan(0)
+  })
+
+  it('only the world assembly hands out the streams (systems receive them by injection)', () => {
+    for (const name of STREAM_NAMES) {
+      for (const user of usersOf(name)) {
+        expect(user, `stream "${name}"`).toMatch(/world\/World\.ts$/)
       }
     }
-  )
+  })
 
-  it('found at least one file to check (the scan is not silently empty)', () => {
-    expect(engineFiles.length).toBeGreaterThan(0)
+  it('found source files to scan (the scan is not silently empty)', () => {
+    expect(sourceFiles.length).toBeGreaterThan(10)
   })
 })

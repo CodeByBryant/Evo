@@ -5,6 +5,7 @@ import { architectureOf, genomeFromParts, genomeToVector } from '../../src/genet
 import { brainLayoutOf } from '../../src/learning/BrainLayout'
 import type { BrainState } from '../../src/learning/BrainState'
 import type { OrganismState } from '../../src/entities/OrganismStore'
+import { withoutEcology } from '../support/ecology'
 
 /**
  * Scenario D (roadmap): food appears only in one region, and learning is switched on and off.
@@ -21,7 +22,7 @@ import type { OrganismState } from '../../src/entities/OrganismStore'
 const REGION = { x: 350, y: 0, width: 150, height: 500 }
 
 describe('Scenario D: food in one region', () => {
-  const config: WorldConfigOverrides = { resources: { region: REGION } }
+  const config: WorldConfigOverrides = withoutEcology({ resources: { region: REGION } })
 
   it('spawns every resource, initial and later, inside the region', () => {
     const world = World.create({ seed: 3, config, validateEveryTicks: 100 })
@@ -50,7 +51,10 @@ describe('Scenario D: food in one region', () => {
 
   it('is reproducible, and learning on and off lead to different histories', () => {
     const run = (enabled: boolean) => {
-      const world = World.create({ seed: 8, config: { ...config, learning: { enabled } } })
+      const world = World.create({
+        seed: 8,
+        config: withoutEcology({ resources: { region: REGION }, learning: { enabled } })
+      })
       world.run(3000)
       return world.stateHash()
     }
@@ -74,7 +78,7 @@ describe('controlled experiment: learning to interact', () => {
   function lifeOf(seed: number, enabled: boolean, algorithm: LearningAlgorithmName) {
     const world = World.create({
       seed,
-      config: {
+      config: withoutEcology({
         maxPopulation: 1,
         organisms: {
           initialCount: 1,
@@ -90,7 +94,7 @@ describe('controlled experiment: learning to interact', () => {
         resources: { initialCount: 100, maxCount: 100, spawnRate: 2 },
         learning: { enabled, algorithm },
         genetics: { learning: { learningRate: 0.05 } }
-      }
+      })
     })
     const internals = world as unknown as { organisms: { values(): OrganismState[] } }
     const organism = internals.organisms.values()[0] as OrganismState & { genome: unknown }

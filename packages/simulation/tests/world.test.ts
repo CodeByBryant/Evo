@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ConfigValidationError } from '@evo/config'
 import { ENGINE_VERSION, World } from '../src/index'
+import { withoutEcology } from './support/ecology'
 
 describe('World.create', () => {
   it('exposes an engine version', () => {
@@ -45,7 +46,7 @@ describe('World.create', () => {
   it('creates exactly the configured initial population, within bounds, in ascending id order', () => {
     const world = World.create({
       seed: 1,
-      config: { organisms: { initialCount: 7 }, resources: { initialCount: 13 } }
+      config: withoutEcology({ organisms: { initialCount: 7 }, resources: { initialCount: 13 } })
     })
     const snapshot = world.snapshot()
     expect(snapshot.organisms).toHaveLength(7)
@@ -169,7 +170,10 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
   it('some organisms find food, some starve, and the world stays valid throughout', () => {
     const world = World.create({
       seed: 1,
-      config: { organisms: { initialCount: 10 }, learning: { controller: 'reflex' } },
+      config: withoutEcology({
+        organisms: { initialCount: 10 },
+        learning: { controller: 'reflex' }
+      }),
       validateEveryTicks: 100
     })
 
@@ -179,11 +183,12 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     // Pinned exact values: this scenario is fully deterministic for this seed/config/duration.
     // (Scenario A runs the reflex controller. Heritable mutation is on by default; with it off
     // this scenario gives Phase 3's original 26 active / 47 born / 21 starved - see
-    // world-genomes.test.ts. The pins below moved in Phase 5 only because the larger genome
-    // draws more founder weights from the `genetics` stream, which shifts later mutations.)
-    expect(snapshot.population.active).toBe(29)
-    expect(snapshot.metrics.organismsBorn).toBe(49)
-    expect(snapshot.metrics.deathsByStarvation).toBe(20)
+    // world-genomes.test.ts. The pins below moved in Phases 5 and 6 only because the larger
+    // genome draws more founder weights from the `genetics` stream, which shifts later mutations;
+    // with mutation off the result is still 26/47/21 after the Phase 6 genome growth.)
+    expect(snapshot.population.active).toBe(20)
+    expect(snapshot.metrics.organismsBorn).toBe(41)
+    expect(snapshot.metrics.deathsByStarvation).toBe(21)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 
@@ -217,11 +222,11 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
   it('the population goes fully extinct and never silently recovers', () => {
     const world = World.create({
       seed: 1,
-      config: {
+      config: withoutEcology({
         organisms: { initialCount: 10 },
         resources: { initialCount: 0, spawnRate: 0 },
         learning: { controller: 'reflex' }
-      },
+      }),
       validateEveryTicks: 100
     })
 

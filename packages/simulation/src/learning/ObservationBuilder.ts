@@ -30,6 +30,27 @@ export interface ObservationInput {
   readonly timeSinceFood: number
   readonly previousReward: number
   readonly previousAction: readonly number[]
+  /** Health as a fraction of maximum (default 1). */
+  readonly health?: number
+  /** The hazard whose edge is nearest within sensor range (default none). */
+  readonly hazard?: HazardSighting | null
+  /** The perceived food's kind, normalized to `[0, 1]` (default 0). */
+  readonly foodKind?: number
+  /** Cosine and sine of the year phase; 0 when seasons are off (default 0). */
+  readonly seasonCos?: number
+  readonly seasonSin?: number
+  /** Region plus season temperature in `[-1, 1]` (default 0). */
+  readonly temperature?: number
+  /** Region times season movement multiplier (default 1). */
+  readonly movementScale?: number
+}
+
+/** A hazard sensed: the vector to its centre and its radius. */
+export interface HazardSighting {
+  readonly dx: number
+  readonly dy: number
+  readonly distanceSquared: number
+  readonly radius: number
 }
 
 function writeSighting(
@@ -55,8 +76,32 @@ function writeSighting(
   )
 }
 
+function writeHazard(
+  out: number[],
+  hazard: HazardSighting | null,
+  cosHeading: number,
+  sinHeading: number,
+  sensorRadius: number
+): void {
+  if (hazard === null) {
+    out.push(0, 0, 0, 0)
+    return
+  }
+  const distance = Math.sqrt(hazard.distanceSquared)
+  const bodyX = hazard.dx * cosHeading + hazard.dy * sinHeading
+  const bodyY = -hazard.dx * sinHeading + hazard.dy * cosHeading
+  // Proximity is measured to the hazard's edge: 1 inside it, falling to 0 at the sensor radius.
+  const edge = Math.max(0, distance - hazard.radius)
+  out.push(
+    1,
+    distance > 0 ? bodyX / distance : 1,
+    distance > 0 ? bodyY / distance : 0,
+    clamp(1 - edge / sensorRadius, 0, 1)
+  )
+}
+
 /**
- * Builds the 23-number observation in the fixed order of `OBSERVATION_LABELS`
+ * Builds the 33-number observation in the fixed order of `OBSERVATION_LABELS`
  * (docs/learning/brain.md). Pure; every value is bounded to `[-1, 1]`.
  */
 export function buildObservation(input: ObservationInput): Observation {
@@ -78,6 +123,15 @@ export function buildObservation(input: ObservationInput): Observation {
   writeSighting(out, input.peer, cosHeading, sinHeading, input.sensorRadius)
   out.push(clamp(input.timeSinceFood, 0, 1), clamp(input.previousReward, -1, 1))
   for (const value of input.previousAction) out.push(value)
+  out.push(clamp(input.health ?? 1, 0, 1))
+  writeHazard(out, input.hazard ?? null, cosHeading, sinHeading, input.sensorRadius)
+  out.push(
+    clamp(input.foodKind ?? 0, 0, 1),
+    clamp(input.seasonCos ?? 0, -1, 1),
+    clamp(input.seasonSin ?? 0, -1, 1),
+    clamp(input.temperature ?? 0, -1, 1),
+    clamp(input.movementScale ?? 1, 0, 1)
+  )
   if (out.length !== OBSERVATION_SIZE) {
     throw new Error(`observation has ${out.length} values, expected ${OBSERVATION_SIZE}`)
   }

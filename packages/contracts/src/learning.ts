@@ -5,7 +5,7 @@ import type { EntityId } from './entity'
  * the network shape can never disagree with what the observation builder produces
  * (docs/learning/brain.md).
  */
-export const OBSERVATION_SIZE = 23
+export const OBSERVATION_SIZE = 33
 
 /** Number of values in an `Action`; the brain's output size is derived from this constant. */
 export const ACTION_SIZE = 5
@@ -42,7 +42,17 @@ export const OBSERVATION_LABELS: readonly string[] = [
   'previousTurn',
   'previousStrafe',
   'previousInteract',
-  'previousExplore'
+  'previousExplore',
+  'ownHealth',
+  'hazardPresent',
+  'hazardBearingCos',
+  'hazardBearingSin',
+  'hazardProximity',
+  'foodKind',
+  'seasonCos',
+  'seasonSin',
+  'regionTemperature',
+  'regionMovementScale'
 ]
 
 export const ACTION_LABELS: readonly string[] = ['thrust', 'turn', 'strafe', 'interact', 'explore']
@@ -55,7 +65,11 @@ export interface RewardBreakdown {
   readonly reproduction: number
   /** Metabolic cost paid, as a fraction of capacity, times its weight (a positive number). */
   readonly energyCost: number
-  /** `feeding + reproduction - energyCost`, clamped to `[-1, 1]`. */
+  /** Health lost this tick as a fraction of maximum health, times its weight and `1 - riskTolerance` (a positive number). */
+  readonly damage: number
+  /** The noveltyPreference gene times its weight, the first time per life the organism enters a coarse cell of the world. */
+  readonly exploration: number
+  /** `feeding + reproduction + exploration - energyCost - damage`, clamped to `[-1, 1]`. */
   readonly total: number
 }
 
@@ -69,6 +83,8 @@ export interface RewardWeights {
   feeding: number
   reproduction: number
   energyCost: number
+  damage: number
+  exploration: number
 }
 
 export interface LearningConfig {

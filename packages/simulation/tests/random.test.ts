@@ -77,6 +77,13 @@ describe('published test vectors', () => {
       ['21585272', '994942d2', 'e732875e', '8f0ba0d6', 'de7d2e4a']
     ],
     [
+      0,
+      'terrain',
+      '1422fca8',
+      ['408be392', '28a2f4a9', 'ffc296b7', 'c78f641a'],
+      ['5280de0d', '32e2d253', 'e744779f', 'e579bdc2', '947655ee']
+    ],
+    [
       4294967295,
       'events',
       'db27b2e6',
@@ -103,7 +110,8 @@ describe('published test vectors', () => {
       ['reproduction', '69d29d14'],
       ['environment', '6f3eec1b'],
       ['learning', 'f025d548'],
-      ['events', 'ba7b610b']
+      ['events', 'ba7b610b'],
+      ['terrain', 'c1662d8f']
     ])
   })
 
@@ -298,7 +306,8 @@ describe('RandomStreams', () => {
       'reproduction',
       'environment',
       'learning',
-      'events'
+      'events',
+      'terrain'
     ])
     const streams = new RandomStreams(5)
     for (const name of STREAM_NAMES) {

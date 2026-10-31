@@ -54,8 +54,9 @@ export interface BrainGenome {
 }
 
 /**
- * Learning genes. All but `riskTolerance` and `noveltyPreference` are read by the brain
- * (docs/learning/brain.md); those two are carried, inherited and compared but read by nothing.
+ * Learning genes, all read by the brain (docs/learning/brain.md). `riskTolerance` scales how much
+ * damage is penalized (`1 - riskTolerance`) and `noveltyPreference` scales the reward for entering
+ * new ground; both became live in Phase 6 (docs/decisions/0009).
  */
 export interface LearningGenes {
   readonly learningRate: number

@@ -113,7 +113,7 @@ describe('ablation matrix', () => {
           if (organism.parentIds.length !== 2) continue
           const parents = organism.parentIds.map((id) => byId.get(id)?.brain?.learned)
           if (parents.some((learned) => learned === undefined)) continue
-          const tail = organism.genome.brain.weights.slice(260)
+          const tail = organism.genome.brain.weights.slice(340)
           return tail.reduce((sum, w, i) => {
             const nearest = Math.min(
               ...parents.map((learned) => Math.abs(w - (learned as number[])[i]!))

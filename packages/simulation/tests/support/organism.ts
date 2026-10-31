@@ -1,5 +1,6 @@
 import { GENE_DEFINITIONS } from '@evo/contracts'
 import type { GenePath, WorldConfig } from '@evo/contracts'
+import type { EcologyModel } from '../../src/ecology/EcologyModel'
 import { IdGenerator } from '../../src/entities/IdGenerator'
 import type { OrganismState, OrganismStore } from '../../src/entities/OrganismStore'
 import type { EventLog } from '../../src/events/EventLog'
@@ -11,6 +12,7 @@ import {
 } from '../../src/genetics/GenomeFactory'
 import { GenomeRecombiner } from '../../src/genetics/Recombination'
 import { LineageStore } from '../../src/lineage/LineageStore'
+import { maxHealthOf } from '../../src/organisms/traits'
 import type { SpeciesTracker } from '../../src/species/SpeciesRegistry'
 import { SeededRandom } from '../../src/random/SeededRandom'
 import { deriveStreamWords } from '../../src/random/streams'
@@ -43,6 +45,7 @@ export function organismFor(
     heading: 0,
     age: 0,
     energy: 50,
+    health: maxHealthOf(genome, config),
     parentIds: [],
     birthTick: 0,
     reproductionCooldownRemaining: 0,
@@ -94,7 +97,12 @@ export function makeReproduction(
   index: SpatialHash<OrganismState>,
   ids: IdGenerator,
   events: EventLog,
-  options: { genomeIdStart?: number; seed?: number; species?: SpeciesTracker } = {}
+  options: {
+    genomeIdStart?: number
+    seed?: number
+    species?: SpeciesTracker
+    ecology?: EcologyModel
+  } = {}
 ): ReproductionFixture {
   const lineage = new LineageStore()
   for (const organism of organisms.values()) {
@@ -119,7 +127,8 @@ export function makeReproduction(
     lineage,
     new SeededRandom(deriveStreamWords(seed, 'reproduction')),
     events,
-    options.species
+    options.species,
+    options.ecology
   )
   return { system, lineage }
 }

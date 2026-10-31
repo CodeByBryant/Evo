@@ -7,6 +7,8 @@ export interface ResourceState {
   y: number
   /** Energy remaining in the resource; starts at `config.resources.energyValue`. */
   remaining: number
+  /** Index into the resource kinds (0 when kinds are off). */
+  readonly kind: number
 }
 
 /** Holds the active resources. Same ascending-id-order contract as `OrganismStore`. */

@@ -21,7 +21,7 @@ Normative spec for the simulation engine (`@evo/simulation`). Anything an indepe
 A single master seed yields independent named streams. The stream names form a fixed, ordered constant:
 
 ```text
-world, genetics, reproduction, environment, learning, events
+world, genetics, reproduction, environment, learning, events, terrain
 ```
 
 Nothing may iterate a stream registry by object key; code always uses this array or a named field. Adding a draw in one stream never changes another.
@@ -146,7 +146,7 @@ Introduced in Phase 4 when organisms started carrying genomes. Sections 1-3, 5 a
 | 4     | ids       | `nextEntityId` (u32), then `nextGenomeId` (u32)                                                                                                                                                                                                                                                                                                                                                                            |
 | 6     | organisms | count (u32), then per organism in ascending id: every version 2 field, then the genome: `genomeId` (u32); `parentGenomeIds` as count (u32) then each id (u32); every scalar gene in the fixed `GENE_SPECS` order (f64 each; integers and booleans are written as their numeric value); the brain architecture `inputSize`, `hiddenSize`, `memorySize`, `outputSize` (u32 each); the weight count (u32); every weight (f64) |
 
-#### Version 4 (current, Phase 5+)
+#### Version 4 (Phase 5; superseded by version 5 in Phase 6)
 
 Introduced in Phase 5 when organisms started carrying a runtime `BrainState` (ADR 0007). Everything in version 3 is unchanged except that the brain architecture in section 6 now has the derived input size 23 and output size 5 and the weight count includes the value-head block (314 by default). Section 6 appends, after the weights of each organism's genome (never inserted):
 
@@ -155,6 +155,20 @@ Introduced in Phase 5 when organisms started carrying a runtime `BrainState` (AD
 | 6     | organisms | brain present flag (u8); when present: `memory`, `learned`, `eligibility`, `prevHidden`, `prevAction` (each: count u32, then each value f64); `prevValue`, reward `feeding`, `reproduction`, `energyCost`, `total`, `rewardBaseline`, `timeSinceFood`, `energyAtDecision` (f64 each); `decisions` (u32); `rewardTotal` (f64); `updates` (u32); `weightChange` (f64) |
 
 The inspection caches `lastObservation` and `lastOutput` are not hashed: nothing reads them to decide a later tick. Under `learning.controller: 'reflex'` the present flag is 0 and the `learning` stream never advances; under `'brain'` it advances by exactly five normals per organism per tick. The stream's state words are hashed in section 5 (it has been one of the named streams since version 1).
+
+#### Version 5 (current, Phase 6+)
+
+Introduced in Phase 6 with health, resource kinds, hazards and the larger observation (ADR 0009). The header carries the new version, so **every** hash differs from version 4 even for a world whose behavior is unchanged; behavior equivalence is shown by comparing snapshots, events and records against the previous commit instead (docs/ecology/ecology.md). Everything in version 4 is unchanged except: the stream list in section 5 now has seven names (`terrain` is appended last, so its four state words and spare follow `events`), and the brain architecture input size is 33 (weight count 394 by default). New fields are appended, never inserted:
+
+| Order | Section    | Appended (in this order)                                                                                                                                                                                                                                                          |
+| ----- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 6     | organisms  | after the organism's brain state: `health` (f64). Inside the brain state: reward `damage` and `exploration` (f64 each, between `energyCost` and `total`), and after `weightChange` the 64 bytes of the `visited` novelty grid (u8 each)                                           |
+| 7     | resources  | after each resource's `remaining`: `kind` (u8)                                                                                                                                                                                                                                    |
+| 8     | metrics    | after `energyWasted`: `deathsByDamage` (u32), `damageTaken` (f64)                                                                                                                                                                                                                 |
+| 11    | hazards    | after `eventsEmitted`: the hazard count (u32), the next hazard id (u32), then per hazard in ascending id: `id` (u32), kind (u8: 0 damage area, 1 storm), `x`, `y`, `radius`, `damagePerSecond` (f64 each), an expiry-present flag (u8) and `expiresAtTick` (f64, `0` when absent) |
+| 12    | remainders | the resource spawn remainder and the storm remainder (f64 each). Both were already simulation state (they decide future spawns); version 4 and earlier did not hash the first, which only mattered for resuming from a save                                                       |
+
+The region map is generated once from the `terrain` stream and never changes, the seasons are a pure function of the clock, and the `MigrationTracker` is a derived record, so none of them is hashed (the `terrain` stream's state is). The `SpeciesRegistry` (ADR 0008) is likewise derived and unhashed.
 
 The `LineageStore` and `HistoryStore` are derived records of what happened, not simulation state, and are **not** hashed (they cannot influence any later tick). The `genetics` stream's four state words are already hashed in section 5 because it has been one of the named streams since version 1.
 
@@ -186,8 +200,9 @@ These are computed from the spec above with a reference script and must be repro
 | 12345      | `world`       | `addaf902` | `b5db87a8 d0a8d56a ef5000d3 ceee5ea3` | `d6c1d151 1ab681a1 faa57b3a 9683ec97 7716721f` |
 | 12345      | `environment` | `6f3eec1b` | `492c4d1e 8dc897d6 de2ce6ed f409a79d` | `21585272 994942d2 e732875e 8f0ba0d6 de7d2e4a` |
 | 4294967295 | `events`      | `db27b2e6` | `22508baa 02d8d2a4 f08f4592 4f1fdf14` | `0e836a3f a003b648 9386b468 a8d03560 10ea8822` |
+| 0          | `terrain`     | `1422fca8` | `408be392 28a2f4a9 ffc296b7 c78f641a` | `5280de0d 32e2d253 e744779f e579bdc2 947655ee` |
 
-`s` for every stream at seed `12345`: `world addaf902`, `genetics 7414af4a`, `reproduction 69d29d14`, `environment 6f3eec1b`, `learning f025d548`, `events ba7b610b`.
+`s` for every stream at seed `12345`: `world addaf902`, `genetics 7414af4a`, `reproduction 69d29d14`, `environment 6f3eec1b`, `learning f025d548`, `events ba7b610b`, `terrain c1662d8f`.
 
 **`float()`**, seed `12345`, stream `world`, first three: `0.8388949193384299, 0.979087543397773, 0.4651862415849056`.
 
@@ -198,9 +213,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(4)`                                            | `f2fa3ef3e09bd7cd148f1d40fe1050d4` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `aad2e07ebe18e29609c0f0edf521ba87` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `aad2e07ebe18e29609c0f0edf521ba87` |
+| header only: `"EVOH"`, `writeUint32(5)`                                            | `6aaa5fb5c2783e3fda99e31ec2a6d1ee` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `e3fef3c99039366808f5456325b9750f` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `e3fef3c99039366808f5456325b9750f` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 

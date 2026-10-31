@@ -11,6 +11,8 @@ export interface OrganismState {
   heading: number
   age: number
   energy: number
+  /** Health in `[0, maxHealth]`; stays at maximum when health is disabled (docs/ecology/ecology.md). */
+  health: number
   readonly parentIds: readonly EntityId[]
   /** Immutable. Every trait a system reads comes from here, not from global config. */
   readonly genome: Genome

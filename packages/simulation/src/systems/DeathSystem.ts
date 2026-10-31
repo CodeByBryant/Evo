@@ -3,6 +3,8 @@ import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import type { HistoryStore } from '../history/HistoryStore'
 import type { LineageStore } from '../lineage/LineageStore'
+import { NO_MIGRATION } from '../ecology/MigrationTracker'
+import type { MigrationRecorder } from '../ecology/MigrationTracker'
 import { NO_SPECIES } from '../species/SpeciesRegistry'
 import type { SpeciesTracker } from '../species/SpeciesRegistry'
 
@@ -19,7 +21,8 @@ export class DeathSystem {
     private readonly events: EventLog,
     private readonly history: HistoryStore,
     private readonly lineage: LineageStore,
-    private readonly species: SpeciesTracker = NO_SPECIES
+    private readonly species: SpeciesTracker = NO_SPECIES,
+    private readonly migration: MigrationRecorder = NO_MIGRATION
   ) {}
 
   update(tick: number): void {
@@ -27,6 +30,8 @@ export class DeathSystem {
       let cause: DeathCause | null = null
       if (organism.energy <= 0) {
         cause = 'starvation'
+      } else if (organism.health <= 0) {
+        cause = 'damage'
       } else if (organism.age >= organism.genome.physical.maxAge) {
         cause = 'age'
       }
@@ -44,6 +49,7 @@ export class DeathSystem {
         birthTick: organism.birthTick,
         deathTick: tick,
         deathCause: cause,
+        migration: this.migration.finish(organism.id),
         brain: organism.brain
           ? {
               rewardTotal: organism.brain.rewardTotal,

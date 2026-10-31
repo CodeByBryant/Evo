@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { World } from '../src/index'
 import { genomeToVector } from '../src/genetics/GenomeFactory'
+import { withoutEcology } from './support/ecology'
 
 /** The world wiring of genomes (docs/decisions/0006); Phase 3 behavior is pinned in world.test.ts. */
 describe('founders carry genomes', () => {
@@ -32,7 +33,7 @@ describe('founders carry genomes', () => {
     }
     const brains = new Set(genomes.map((g) => g.brain.weights.join(',')))
     expect(brains.size).toBe(5)
-    expect(genomes[0]?.brain.weights).toHaveLength(314)
+    expect(genomes[0]?.brain.weights).toHaveLength(394)
   })
 
   it('records the founder genome on its birth event', () => {
@@ -190,11 +191,11 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
   it('reproduces Phase 3 Scenario A exactly when mutation is off', () => {
     const world = World.create({
       seed: 1,
-      config: {
+      config: withoutEcology({
         organisms: { initialCount: 10 },
         genetics: { mutationRateScale: 0 },
         learning: { controller: 'reflex' }
-      },
+      }),
       validateEveryTicks: 100
     })
     world.run(5000)

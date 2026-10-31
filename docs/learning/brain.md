@@ -6,7 +6,7 @@ Design rationale is in [ADR 0007](../decisions/0007-learning-and-the-brain.md). 
 
 Each tick, for each organism, in ascending id:
 
-1. **Observe**: build a 23-number `Observation` from the organism's body and what perception found.
+1. **Observe**: build a 33-number `Observation` from the organism's body and what perception found.
 2. **Learn** from the previous tick: using the reward stored last tick, nudge the learnable weights.
 3. **Decide**: run the network, add exploration noise, produce a 5-number `Action`.
 4. The action is translated to an intent; movement, interaction, metabolism, reproduction and death run as usual.
@@ -16,7 +16,7 @@ Memory is the network's own recurrence, not an input. `learning.controller: 'ref
 
 ## Observation
 
-`OBSERVATION_SIZE = 23`. The order is part of the contract (`OBSERVATION_LABELS` in `@evo/contracts`); changing it is a hash-schema change and a golden regeneration. "Body frame" means rotated by the organism's heading.
+`OBSERVATION_SIZE = 33` (23 until Phase 6, which appended ten values, see below). The order is part of the contract (`OBSERVATION_LABELS` in `@evo/contracts`); changing it is a hash-schema change and a golden regeneration. "Body frame" means rotated by the organism's heading.
 
 | #     | Label                      | Value                                                                         | Range    |
 | ----- | -------------------------- | ----------------------------------------------------------------------------- | -------- |
@@ -33,12 +33,20 @@ Memory is the network's own recurrence, not an input. `learning.controller: 'ref
 | 16    | `timeSinceFood`            | seconds since this organism last ate / `learning.foodHorizon`, clamped        | [0, 1]   |
 | 17    | `previousReward`           | last tick's total reward, clamped                                             | [-1, 1]  |
 | 18-22 | `previousAction*`          | the five action values chosen last tick                                       | [-1, 1]  |
+| 23    | `ownHealth`                | health / maximum health (1 when health is off)                                | [0, 1]   |
+| 24    | `hazardPresent`            | 1 when a hazard's edge is within the sensor range                             | {0, 1}   |
+| 25-26 | `hazardBearingCos/Sin`     | direction to the centre of the nearest hazard (by edge), body frame           | [-1, 1]  |
+| 27    | `hazardProximity`          | 1 inside the hazard, falling to 0 at the sensor range from its edge           | [0, 1]   |
+| 28    | `foodKind`                 | the perceived food's kind index / (kinds - 1); 0 when none or one kind        | [0, 1]   |
+| 29-30 | `seasonCos`, `seasonSin`   | the year phase as a unit vector (0, 0 when seasons are off)                   | [-1, 1]  |
+| 31    | `regionTemperature`        | region plus season temperature (0 when both are off)                          | [-1, 1]  |
+| 32    | `regionMovementScale`      | region times season movement multiplier (1 when both are off)                 | (0, 1]   |
 
-`ownHealth` (roadmap 5.2) is omitted: there is no health until Phase 6. Ties in "nearest" follow the engine-wide rule `(distance squared, id)`. The peer is found only in brain mode, so the reflex controller costs nothing extra.
+Slots 23-32 were **appended** in Phase 6 (ADR 0009) so no existing slot moved and the innate prior, which addresses slots by number, is unchanged. With a feature off its slots carry their neutral value (health 1, movement 1, the rest 0), a constant the network can use as a bias. The hazard and the food kind are found by `PerceptionSystem` in brain mode only. Ties in "nearest" follow the engine-wide rule `(distance squared, id)`. The peer is found only in brain mode, so the reflex controller costs nothing extra.
 
 ## Network
 
-Sizes: input `I = 23`, hidden `H` (default 8), memory `M` (default 4), output `O = 5`. `softsign(x) = x / (1 + |x|)`: bounded in (-1, 1), smooth, and needs only `+`, `/`, `abs` (the determinism policy bans platform `exp` and `tanh`).
+Sizes: input `I = 33`, hidden `H` (default 8), memory `M` (default 4), output `O = 5`. `softsign(x) = x / (1 + |x|)`: bounded in (-1, 1), smooth, and needs only `+`, `/`, `abs` (the determinism policy bans platform `exp` and `tanh`).
 
 ```text
 h      = softsign(W_ih x + W_mh m + b_h)       // hidden, from observation and previous memory
@@ -51,11 +59,11 @@ Sums accumulate in a fixed row-major order so results are bit-identical across p
 
 ### Weight blocks
 
-The genome's flat `weights` vector is eight consecutive blocks. Block 8 is new in Phase 5; blocks 1-7 are unchanged apart from the larger input size.
+The genome's flat `weights` vector is eight consecutive blocks. Block 8 is new in Phase 5; blocks 1-7 are unchanged apart from the larger input size (which grew again in Phase 6).
 
 | #   | Block            | Shape          | Default length | Learnable                         |
 | --- | ---------------- | -------------- | -------------- | --------------------------------- |
-| 1   | `inputToHidden`  | H x I          | 184            | no (evolution only)               |
+| 1   | `inputToHidden`  | H x I          | 264            | no (evolution only)               |
 | 2   | `memoryToHidden` | H x M          | 32             | no                                |
 | 3   | `hiddenBias`     | H              | 8              | no                                |
 | 4   | `hiddenToMemory` | M x H          | 32             | no                                |
@@ -64,7 +72,7 @@ The genome's flat `weights` vector is eight consecutive blocks. Block 8 is new i
 | 7   | `outputBias`     | O              | 5              | **yes** (actor)                   |
 | 8   | `hiddenToValue`  | H, then 1 bias | 9              | **yes** (critic; Hebbian ignores) |
 
-Default total: **314** weights (was 249 in Phase 4). Because the hidden layer and memory are fixed during a life, `h` depends only on genome weights, the observation and memory; learning changes only how `h` is read out.
+Default total: **394** weights (314 in Phase 5, 249 in Phase 4). Because the hidden layer and memory are fixed during a life, `h` depends only on genome weights, the observation and memory; learning changes only how `h` is read out.
 
 ## Action
 
@@ -101,9 +109,11 @@ Computed in `brain.settle` from the events and energy change of the tick that ju
 | `feeding`      | energy gained from `resource-consumed` / effective `maxEnergy`                                         | `feeding`                         |
 | `reproduction` | 1 when the organism took part in a successful `reproduction-attempted` (initiator or partner)          | `reproduction`                    |
 | `energyCost`   | metabolic cost paid this tick / effective `maxEnergy` (exact: energy delta - gain + reproduction cost) | `energyCost` (subtracted)         |
-| `total`        | `feeding*wf + reproduction*wr - energyCost*wc`, clamped to [-1, 1]                                     |                                   |
+| `damage`       | health lost this tick / maximum health, times `1 - riskTolerance` (the gene)                           | `damage` (subtracted)             |
+| `exploration`  | `noveltyPreference` (the gene) the first time this life the organism enters a cell of an 8 x 8 grid    | `exploration`                     |
+| `total`        | `feeding*wf + reproduction*wr + exploration*we - energyCost*wc - damage*wd`, clamped to [-1, 1]        |                                   |
 
-`survival`, `exploration` and `damage` are intentionally absent (ADR 0007). Everything the learner sees is derived from this, so `World.brainOf(id)` can show the same breakdown a human would.
+`survival` is intentionally absent (ADR 0007): rewarding survival rewards hiding. `damage` and `exploration` arrived in Phase 6 (ADR 0009) and are what give the `riskTolerance` and `noveltyPreference` genes a meaning. The organism's starting cell counts as visited, so the exploration reward is for entering new ground, and it is bounded (at most 64 per life). Health damage does not touch energy, so it never shows up in `energyCost`; the energy spent healing does. Everything the learner sees is derived from this, so `World.brainOf(id)` can show the same breakdown a human would.
 
 ## Learning
 
@@ -155,9 +165,9 @@ With `genetics.brain.innatePrior` (default true) a founder's weights are a hand-
 
 ## What is deliberately not here
 
-- `noveltyPreference` and `riskTolerance` are inherited, mutated and compared but read by nothing: there is no novelty signal and there are no hazards. They exist so Phase 6 can use them without a genome change.
+- (Phase 6 made `noveltyPreference` and `riskTolerance` live: they scale the exploration reward and the damage penalty, see Reward.)
 - No gradient through the hidden layer or memory: those evolve.
-- No `ownHealth`, no `survival` reward, no per-tick cost for memory.
+- No `survival` reward, no per-tick cost for memory. (`ownHealth` arrived in Phase 6 as observation slot 23.)
 
 ## Measured behavior (Phase 5)
 

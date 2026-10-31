@@ -9,6 +9,7 @@ export class MetricsCollector {
   private organismsBorn = 0
   private deathsByStarvation = 0
   private deathsByAge = 0
+  private deathsByDamage = 0
   private resourcesSpawned = 0
   private resourcesConsumed = 0
   private reproductionAttempts = 0
@@ -16,6 +17,7 @@ export class MetricsCollector {
   private reproductionFailures = 0
   private energyConsumed = 0
   private energyWasted = 0
+  private damageTaken = 0
   private extinctTick: number | null = null
 
   /** Folds one tick's events into the running counters. */
@@ -34,8 +36,10 @@ export class MetricsCollector {
               this.deathsByAge += 1
               break
             case 'damage':
+              this.deathsByDamage += 1
+              break
             case 'environment':
-              // Not produced by the Phase 2 engine; no counters exist for them yet.
+              // Never produced: heat and storms are damage (docs/ecology/ecology.md).
               break
           }
           break
@@ -52,8 +56,14 @@ export class MetricsCollector {
           if (event.succeeded) this.reproductionSuccesses += 1
           else this.reproductionFailures += 1
           break
+        case 'organism-damaged':
+          this.damageTaken += event.amount
+          break
         case 'organism-moved':
         case 'energy-changed':
+        case 'season-changed':
+        case 'hazard-spawned':
+        case 'hazard-expired':
           break
       }
     }
@@ -80,13 +90,15 @@ export class MetricsCollector {
       organismsBorn: this.organismsBorn,
       deathsByStarvation: this.deathsByStarvation,
       deathsByAge: this.deathsByAge,
+      deathsByDamage: this.deathsByDamage,
       resourcesSpawned: this.resourcesSpawned,
       resourcesConsumed: this.resourcesConsumed,
       reproductionAttempts: this.reproductionAttempts,
       reproductionSuccesses: this.reproductionSuccesses,
       reproductionFailures: this.reproductionFailures,
       energyConsumed: this.energyConsumed,
-      energyWasted: this.energyWasted
+      energyWasted: this.energyWasted,
+      damageTaken: this.damageTaken
     }
   }
 }

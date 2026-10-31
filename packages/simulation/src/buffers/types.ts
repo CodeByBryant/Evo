@@ -12,6 +12,8 @@ export interface PerceivedResource {
   readonly resourceId: EntityId
   readonly position: Readonly<Vec2>
   readonly distanceSquared: number
+  /** Index into the resource kinds (0 when kinds are off). */
+  readonly kind: number
 }
 
 /** Organism id -> its nearest perceived resource, or `null` when none is in range. */
@@ -47,3 +49,21 @@ export interface OrganismIntent {
 
 /** Organism id -> its intent for this tick. */
 export type IntentBuffer = Map<EntityId, OrganismIntent>
+
+/** What `PerceptionSystem` found for one organism: the hazard whose edge is nearest within sensor range. */
+export interface PerceivedHazard {
+  readonly hazardId: number
+  readonly position: Readonly<Vec2>
+  readonly radius: number
+  /** Squared distance to the hazard's centre. */
+  readonly distanceSquared: number
+}
+
+/** Organism id -> its nearest perceived hazard, or `null`. Filled only under the brain controller. */
+export type HazardBuffer = Map<EntityId, PerceivedHazard | null>
+
+/** Organism id -> health damage from the resource it ate this tick (`InteractionSystem` writes, `HealthSystem` reads). */
+export type DamageBuffer = Map<EntityId, number>
+
+/** Organism id -> energy spent healing this tick (`HealthSystem` writes, `MetabolismSystem` charges). */
+export type RegenBuffer = Map<EntityId, number>
