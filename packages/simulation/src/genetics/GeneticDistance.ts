@@ -1,4 +1,4 @@
-import type { Genome } from '@evo/contracts'
+import type { Genome, SpeciesDistanceWeights } from '@evo/contracts'
 import { shortestDelta } from './geneMath'
 import type { GeneSpec } from './GeneSpecs'
 import { genomeToVector, sameArchitecture } from './GenomeFactory'
@@ -80,4 +80,34 @@ export function genomeDistance(
   const learning = groupDistance('learning')
   const total = (physical + sensory + metabolic + behavioral + reproduction + brain + learning) / 7
   return { total, physical, sensory, metabolic, behavioral, reproduction, brain, learning }
+}
+
+/**
+ * Combines the seven group distances with `weights`, normalized by their sum, into one number in
+ * `[0, 1]` (roadmap 6.1). The weights are config (`species.distanceWeights`). A weight of zero
+ * ignores that group entirely; all-zero weights are rejected by config validation, and give `0`
+ * here so the function stays total.
+ */
+export function weightedDistance(
+  distance: GenomeDistance,
+  weights: SpeciesDistanceWeights
+): number {
+  const sum =
+    weights.physical +
+    weights.sensory +
+    weights.metabolic +
+    weights.behavioral +
+    weights.reproduction +
+    weights.learning +
+    weights.brain
+  if (sum <= 0) return 0
+  const weighted =
+    distance.physical * weights.physical +
+    distance.sensory * weights.sensory +
+    distance.metabolic * weights.metabolic +
+    distance.behavioral * weights.behavioral +
+    distance.reproduction * weights.reproduction +
+    distance.learning * weights.learning +
+    distance.brain * weights.brain
+  return weighted / sum
 }

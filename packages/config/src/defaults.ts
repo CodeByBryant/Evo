@@ -92,6 +92,22 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     baselineRate: 0.01,
     valueRateScale: 1,
     foodHorizon: 30
+  },
+  species: {
+    enabled: true,
+    threshold: 0.15,
+    distanceWeights: {
+      physical: 0.2,
+      sensory: 0.2,
+      metabolic: 0.2,
+      behavioral: 0.1,
+      reproduction: 0.05,
+      learning: 0.05,
+      brain: 0.3
+    },
+    sampleInterval: 500,
+    maxHistorySamples: 1000,
+    reproductiveIsolation: false
   }
 } satisfies WorldConfig)
 

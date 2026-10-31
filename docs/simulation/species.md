@@ -64,7 +64,7 @@ With `species.reproductiveIsolation: true`, `ReproductionSystem` only considers 
 
 ## Configuration
 
-See [configuration.md](configuration.md#species). `species.enabled: false` disables the registry entirely (no species ids; queries return empty results).
+See [configuration.md](configuration.md). `species.enabled: false` disables the registry entirely (no species ids; queries return empty results).
 
 ## Determinism and hashing
 

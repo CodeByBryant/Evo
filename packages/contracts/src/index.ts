@@ -41,6 +41,14 @@ export type {
   BrainTelemetry,
   BrainSnapshot
 } from './learning'
+export type {
+  SpeciesId,
+  SpeciesDistanceWeights,
+  PopulationSample,
+  SpeciesRecord,
+  SpeciesConfig,
+  SpeciesConfigOverrides
+} from './species'
 export { MAX_SEED } from './world'
 export type {
   DeathCause,
