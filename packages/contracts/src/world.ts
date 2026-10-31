@@ -1,6 +1,7 @@
 import type { GeneticsConfig, GeneticsConfigOverrides } from './genome'
 import type { LearningConfig, LearningConfigOverrides } from './learning'
 import type { Rect } from './math'
+import type { SpeciesConfig, SpeciesConfigOverrides } from './species'
 
 /** Largest valid world seed (seeds are unsigned 32-bit integers). */
 export const MAX_SEED = 4_294_967_295
@@ -119,6 +120,7 @@ export interface WorldConfig {
   history: HistoryConfig
   genetics: GeneticsConfig
   learning: LearningConfig
+  species: SpeciesConfig
 }
 
 /** A partial configuration merged onto the defaults. */
@@ -133,6 +135,7 @@ export interface WorldConfigOverrides {
   history?: Partial<HistoryConfig>
   genetics?: GeneticsConfigOverrides
   learning?: LearningConfigOverrides
+  species?: SpeciesConfigOverrides
 }
 
 export interface WorldOptions {

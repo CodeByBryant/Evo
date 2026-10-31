@@ -25,8 +25,24 @@ describe('MetricsCollector', () => {
   it('tallies every countable event type', () => {
     const metrics = new MetricsCollector()
     const events: WorldEvent[] = [
-      { type: 'organism-born', tick: 0, organismId: 1, genomeId: 1, parentIds: [], position: pos },
-      { type: 'organism-born', tick: 0, organismId: 2, genomeId: 2, parentIds: [], position: pos },
+      {
+        type: 'organism-born',
+        tick: 0,
+        organismId: 1,
+        genomeId: 1,
+        parentIds: [],
+        speciesId: null,
+        position: pos
+      },
+      {
+        type: 'organism-born',
+        tick: 0,
+        organismId: 2,
+        genomeId: 2,
+        parentIds: [],
+        speciesId: null,
+        position: pos
+      },
       { type: 'organism-died', tick: 1, organismId: 1, cause: 'starvation', position: pos },
       { type: 'organism-died', tick: 1, organismId: 2, cause: 'age', position: pos },
       { type: 'resource-spawned', tick: 0, resourceId: 1, position: pos },
@@ -77,10 +93,26 @@ describe('MetricsCollector', () => {
   it('accumulates across multiple calls', () => {
     const metrics = new MetricsCollector()
     metrics.recordEvents([
-      { type: 'organism-born', tick: 0, organismId: 1, genomeId: 1, parentIds: [], position: pos }
+      {
+        type: 'organism-born',
+        tick: 0,
+        organismId: 1,
+        genomeId: 1,
+        parentIds: [],
+        speciesId: null,
+        position: pos
+      }
     ])
     metrics.recordEvents([
-      { type: 'organism-born', tick: 1, organismId: 2, genomeId: 2, parentIds: [], position: pos }
+      {
+        type: 'organism-born',
+        tick: 1,
+        organismId: 2,
+        genomeId: 2,
+        parentIds: [],
+        speciesId: null,
+        position: pos
+      }
     ])
     expect(metrics.snapshot().organismsBorn).toBe(2)
   })

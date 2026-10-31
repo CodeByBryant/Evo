@@ -3,6 +3,8 @@ import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import type { HistoryStore } from '../history/HistoryStore'
 import type { LineageStore } from '../lineage/LineageStore'
+import { NO_SPECIES } from '../species/SpeciesRegistry'
+import type { SpeciesTracker } from '../species/SpeciesRegistry'
 
 /**
  * Removes organisms that starved (`energy <= 0`) or died of old age (`age >=` its own `maxAge` gene), in
@@ -16,7 +18,8 @@ export class DeathSystem {
     private readonly organisms: OrganismStore,
     private readonly events: EventLog,
     private readonly history: HistoryStore,
-    private readonly lineage: LineageStore
+    private readonly lineage: LineageStore,
+    private readonly species: SpeciesTracker = NO_SPECIES
   ) {}
 
   update(tick: number): void {
@@ -31,10 +34,13 @@ export class DeathSystem {
 
       this.organisms.remove(organism.id)
       this.lineage.markDeath(organism.id)
+      const speciesId = this.species.speciesOf(organism.id) ?? null
+      this.species.release(organism.id, tick)
       this.history.append({
         id: organism.id,
         genomeId: organism.genome.id,
         parentIds: organism.parentIds,
+        speciesId,
         birthTick: organism.birthTick,
         deathTick: tick,
         deathCause: cause,

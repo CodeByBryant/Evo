@@ -2,6 +2,7 @@ import type { EntityId } from './entity'
 import type { GenomeId } from './genome'
 import type { DeathCause } from './world'
 import type { Vec2 } from './math'
+import type { SpeciesId } from './species'
 
 interface BaseEvent {
   /** Tick at which the event occurred (initial population events use tick 0). */
@@ -14,6 +15,8 @@ export interface OrganismBornEvent extends BaseEvent {
   readonly genomeId: GenomeId
   /** Empty for founders. */
   readonly parentIds: readonly EntityId[]
+  /** The species the organism was assigned to, or `null` when species are disabled. */
+  readonly speciesId: SpeciesId | null
   readonly position: Readonly<Vec2>
 }
 

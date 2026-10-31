@@ -823,6 +823,7 @@ describe('DeathSystem', () => {
         id: 1,
         genomeId: 1,
         parentIds: [7, 9],
+        speciesId: null,
         birthTick: 3,
         deathTick: 20,
         deathCause: 'starvation',

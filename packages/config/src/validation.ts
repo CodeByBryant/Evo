@@ -12,6 +12,7 @@ import {
 import type { PlainObject } from './checks'
 import { checkGenetics } from './genetics'
 import { checkLearning, checkRegion } from './learning'
+import { checkSpecies } from './species'
 
 const ROOT_KEYS = [
   'timestep',
@@ -23,7 +24,8 @@ const ROOT_KEYS = [
   'reproduction',
   'history',
   'genetics',
-  'learning'
+  'learning',
+  'species'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height']
 const ORGANISM_KEYS = [
@@ -280,6 +282,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
 
   checkGenetics(value, errors)
   checkLearning(value, errors)
+  checkSpecies(value, errors)
 
   return { ok: errors.length === 0, errors }
 }
@@ -331,6 +334,20 @@ function mergeLearning(base: object, override: unknown): unknown {
   }
 }
 
+/** Merges the species section: `distanceWeights` merges field by field. */
+function mergeSpecies(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  return {
+    ...base,
+    ...override,
+    distanceWeights: mergeSection(
+      defaults['distanceWeights'] as object,
+      override['distanceWeights']
+    )
+  }
+}
+
 /** Merges one section, keeping non-object overrides so validation can report them. */
 function mergeSection(base: object, override: unknown): unknown {
   if (override === undefined) return { ...base }
@@ -356,7 +373,8 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     reproduction: mergeSection(base.reproduction, given['reproduction']),
     history: mergeSection(base.history, given['history']),
     genetics: mergeGenetics(base.genetics, given['genetics']),
-    learning: mergeLearning(base.learning, given['learning'])
+    learning: mergeLearning(base.learning, given['learning']),
+    species: mergeSpecies(base.species, given['species'])
   }
   const result = validateWorldConfig(merged)
   if (!result.ok) throw new ConfigValidationError(result.errors)

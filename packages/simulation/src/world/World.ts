@@ -34,6 +34,8 @@ import type { BrainLayout } from '../learning/BrainLayout'
 import { createBrainState, writeBrainState } from '../learning/BrainState'
 import { MetricsCollector } from '../metrics/MetricsCollector'
 import { RandomStreams, STREAM_NAMES } from '../random/streams'
+import { SpeciesRegistry } from '../species/SpeciesRegistry'
+import type { SpeciesQueries } from '../species/SpeciesRegistry'
 import { StateHasher } from '../serialization/hash'
 import { SpatialHash } from '../spatial/SpatialHash'
 import { BrainSystem } from '../systems/BrainSystem'
@@ -76,6 +78,7 @@ export class World {
   private readonly organismIndex: SpatialHash<OrganismState>
   private readonly historyStore: HistoryStore
   private readonly lineageStore: LineageStore
+  private readonly speciesRegistry: SpeciesRegistry
   private readonly geneSpecs: GeneSpec[]
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
@@ -130,6 +133,11 @@ export class World {
     )
     this.historyStore = new HistoryStore(this.config.history.maxHistoricalOrganisms)
     this.lineageStore = new LineageStore()
+    this.speciesRegistry = new SpeciesRegistry(
+      this.config.species,
+      this.geneSpecs,
+      this.config.genetics.brain.initialWeightStd
+    )
 
     this.environmentSystem = new EnvironmentSystem(
       this.config,
@@ -187,19 +195,22 @@ export class World {
       this.randomStreams.get('genetics'),
       this.lineageStore,
       this.randomStreams.get('reproduction'),
-      this.events
+      this.events,
+      this.speciesRegistry
     )
     this.deathSystem = new DeathSystem(
       this.organisms,
       this.events,
       this.historyStore,
-      this.lineageStore
+      this.lineageStore,
+      this.speciesRegistry
     )
 
     this.events.beginTick()
     this.spawnInitialPopulation()
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, 0)
+    this.speciesRegistry.observe(0)
   }
 
   /** Equivalent to `new World(options)`. */
@@ -250,12 +261,19 @@ export class World {
         organismId: id,
         tick: 0
       })
+      const speciesId = this.speciesRegistry.assign({
+        organismId: id,
+        genome,
+        parentOrganismId: null,
+        tick: 0
+      })
       this.events.record({
         type: 'organism-born',
         tick: 0,
         organismId: id,
         genomeId: genome.id,
         parentIds: [],
+        speciesId,
         position: { x, y }
       })
     }
@@ -267,6 +285,14 @@ export class World {
    */
   get lineage(): LineageQueries {
     return this.lineageStore
+  }
+
+  /**
+   * Species by genetic distance, including extinct ones (docs/simulation/species.md). Read-only; a
+   * derived record, not part of the state hash.
+   */
+  get species(): SpeciesQueries {
+    return this.speciesRegistry
   }
 
   /**
@@ -336,6 +362,7 @@ export class World {
 
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, tick)
+    this.speciesRegistry.observe(tick)
 
     if (this.validateEveryTicks !== undefined && tick % this.validateEveryTicks === 0) {
       const result = this.validate()
@@ -365,7 +392,8 @@ export class World {
       nextEntityId: this.ids.nextId,
       nextGenomeId: this.genomeIds.nextId,
       geneSpecs: this.geneSpecs,
-      lineage: this.lineageStore
+      lineage: this.lineageStore,
+      species: this.speciesRegistry
     })
   }
 
@@ -384,6 +412,7 @@ export class World {
         id: organism.id,
         genomeId: organism.genome.id,
         parentIds: organism.parentIds,
+        speciesId: this.speciesRegistry.speciesOf(organism.id) ?? null,
         position: { x: organism.x, y: organism.y },
         velocity: { x: organism.vx, y: organism.vy },
         heading: organism.heading,
