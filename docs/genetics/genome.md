@@ -114,7 +114,7 @@ Because each block is cut strictly inside, every block of every child contains w
 
 ## Comparison
 
-`genomeDistance(a, b)` returns `{ total, physical, sensory, metabolic, behavioral, reproduction, brain, learning }`, each in `[0, 1]`. Scalar genes: `|a - b| / (max - min)`, circular genes: shortest arc / 0.5, group distance: mean over the group's genes. Brain: RMS weight difference / `(2 * initialWeightStd)`, clamped to 1. `total` is the unweighted mean of the seven groups. Symmetric; `0` for identical genomes.
+`genomeDistance(a, b)` returns `{ total, physical, sensory, metabolic, behavioral, reproduction, brain, learning }`, each in `[0, 1]`. Scalar genes: `|a - b| / (max - min)`, circular genes: shortest arc / 0.5, group distance: mean over the group's genes. Brain: RMS weight difference / `(2 * initialWeightStd)`, clamped to 1. `total` is the unweighted mean of the seven groups; `weightedDistance(distance, weights)` combines the seven group distances with configurable weights (used for speciation, see [species](../simulation/species.md)). Symmetric; `0` for identical genomes.
 
 ## Learning inheritance
 
