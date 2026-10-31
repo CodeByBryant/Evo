@@ -12,6 +12,7 @@ import {
 import type { PlainObject } from './checks'
 import { checkGenetics } from './genetics'
 import { checkLearning, checkRegion } from './learning'
+import { checkEcology } from './ecology'
 import { checkSpecies } from './species'
 
 const ROOT_KEYS = [
@@ -25,7 +26,8 @@ const ROOT_KEYS = [
   'history',
   'genetics',
   'learning',
-  'species'
+  'species',
+  'ecology'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height']
 const ORGANISM_KEYS = [
@@ -283,6 +285,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   checkGenetics(value, errors)
   checkLearning(value, errors)
   checkSpecies(value, errors)
+  checkEcology(value, errors)
 
   return { ok: errors.length === 0, errors }
 }
@@ -348,6 +351,52 @@ function mergeSpecies(base: object, override: unknown): unknown {
   }
 }
 
+/**
+ * Merges the ecology section: each feature merges field by field; `regions.types` and
+ * `seasons.seasons` merge per name; `resourceKinds.kinds` is replaced whole.
+ */
+function mergeEcology(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, Record<string, unknown>>
+  const merged: Record<string, unknown> = { ...base, ...override }
+  for (const key of ['health', 'hazards', 'resourceKinds', 'migration']) {
+    merged[key] = mergeSection(defaults[key] as object, override[key])
+  }
+  const regions = override['regions']
+  merged['regions'] =
+    isObject(regions) && isObject(regions['types'])
+      ? {
+          ...(mergeSection(defaults['regions'] as object, regions) as object),
+          types: mergeNamed(
+            defaults['regions']!['types'] as Record<string, object>,
+            regions['types']
+          )
+        }
+      : mergeSection(defaults['regions'] as object, regions)
+  const seasons = override['seasons']
+  merged['seasons'] =
+    isObject(seasons) && isObject(seasons['seasons'])
+      ? {
+          ...(mergeSection(defaults['seasons'] as object, seasons) as object),
+          seasons: mergeNamed(
+            defaults['seasons']!['seasons'] as Record<string, object>,
+            seasons['seasons']
+          )
+        }
+      : mergeSection(defaults['seasons'] as object, seasons)
+  return merged
+}
+
+/** Merges a table of named sections, keeping unknown names so validation can report them. */
+function mergeNamed(base: Record<string, object>, override: Record<string, unknown>): unknown {
+  const result: Record<string, unknown> = { ...base }
+  for (const name of [...Object.keys(base), ...Object.keys(override)]) {
+    result[name] =
+      name in base ? mergeSection(base[name] as object, override[name]) : override[name]
+  }
+  return result
+}
+
 /** Merges one section, keeping non-object overrides so validation can report them. */
 function mergeSection(base: object, override: unknown): unknown {
   if (override === undefined) return { ...base }
@@ -374,7 +423,8 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     history: mergeSection(base.history, given['history']),
     genetics: mergeGenetics(base.genetics, given['genetics']),
     learning: mergeLearning(base.learning, given['learning']),
-    species: mergeSpecies(base.species, given['species'])
+    species: mergeSpecies(base.species, given['species']),
+    ecology: mergeEcology(base.ecology, given['ecology'])
   }
   const result = validateWorldConfig(merged)
   if (!result.ok) throw new ConfigValidationError(result.errors)

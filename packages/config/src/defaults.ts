@@ -108,6 +108,156 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     sampleInterval: 500,
     maxHistorySamples: 1000,
     reproductiveIsolation: false
+  },
+  ecology: {
+    health: {
+      enabled: false,
+      maxHealth: 100,
+      regenRate: 2,
+      regenEnergyCost: 0.5,
+      regenMinEnergyFraction: 0.5
+    },
+    regions: {
+      enabled: false,
+      seedCount: 12,
+      gridSize: 25,
+      temperatureTolerance: 0.3,
+      temperatureCost: 2,
+      types: {
+        meadow: {
+          movementScale: 1,
+          visibility: 1,
+          temperature: 0,
+          hazardExposure: 0,
+          reproductionScale: 1
+        },
+        forest: {
+          movementScale: 0.8,
+          visibility: 0.7,
+          temperature: -0.1,
+          hazardExposure: 0,
+          reproductionScale: 1.1
+        },
+        wetland: {
+          movementScale: 0.7,
+          visibility: 0.9,
+          temperature: 0.1,
+          hazardExposure: 0,
+          reproductionScale: 1.2
+        },
+        desert: {
+          movementScale: 0.9,
+          visibility: 1,
+          temperature: 0.7,
+          hazardExposure: 0.3,
+          reproductionScale: 0.7
+        },
+        cave: {
+          movementScale: 0.8,
+          visibility: 0.5,
+          temperature: -0.3,
+          hazardExposure: 0.1,
+          reproductionScale: 0.9
+        },
+        volcanic: {
+          movementScale: 0.9,
+          visibility: 0.8,
+          temperature: 0.9,
+          hazardExposure: 1,
+          reproductionScale: 0.5
+        }
+      }
+    },
+    seasons: {
+      enabled: false,
+      seasonLength: 200,
+      seasons: {
+        spring: {
+          regeneration: 1.2,
+          movementScale: 1,
+          hazardIntensity: 0.8,
+          reproductionScale: 1.2,
+          temperature: 0,
+          visibility: 1
+        },
+        summer: {
+          regeneration: 1,
+          movementScale: 1,
+          hazardIntensity: 1,
+          reproductionScale: 1,
+          temperature: 0.2,
+          visibility: 1
+        },
+        autumn: {
+          regeneration: 1.4,
+          movementScale: 1,
+          hazardIntensity: 1,
+          reproductionScale: 0.9,
+          temperature: -0.1,
+          visibility: 0.9
+        },
+        winter: {
+          regeneration: 0.4,
+          movementScale: 0.8,
+          hazardIntensity: 1.3,
+          reproductionScale: 0.5,
+          temperature: -0.5,
+          visibility: 0.7
+        }
+      }
+    },
+    hazards: {
+      enabled: false,
+      areaCount: 4,
+      areaRadius: 30,
+      areaDamage: 20,
+      stormRate: 0.005,
+      stormRadius: 40,
+      stormDuration: 40,
+      stormDamage: 8
+    },
+    resourceKinds: {
+      enabled: false,
+      kinds: [
+        {
+          name: 'grass',
+          energyScale: 0.8,
+          radiusScale: 1,
+          spawnWeight: 5,
+          detectability: 0.8,
+          toxicity: 0,
+          regions: ['meadow', 'forest', 'wetland', 'desert']
+        },
+        {
+          name: 'fruit',
+          energyScale: 2,
+          radiusScale: 1,
+          spawnWeight: 1.5,
+          detectability: 1,
+          toxicity: 0,
+          regions: ['forest', 'wetland']
+        },
+        {
+          name: 'fungus',
+          energyScale: 1.8,
+          radiusScale: 1,
+          spawnWeight: 1.5,
+          detectability: 0.6,
+          toxicity: 10,
+          regions: ['cave', 'wetland', 'forest']
+        },
+        {
+          name: 'nectar',
+          energyScale: 1.4,
+          radiusScale: 1,
+          spawnWeight: 1.5,
+          detectability: 1,
+          toxicity: 0,
+          regions: ['meadow', 'wetland']
+        }
+      ]
+    },
+    migration: { enabled: false, dwellTime: 20 }
   }
 } satisfies WorldConfig)
 

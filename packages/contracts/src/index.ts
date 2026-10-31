@@ -41,6 +41,25 @@ export type {
   BrainTelemetry,
   BrainSnapshot
 } from './learning'
+export { REGION_TYPES, SEASONS } from './ecology'
+export type {
+  RegionType,
+  Season,
+  HazardKind,
+  HealthConfig,
+  RegionTypeConfig,
+  RegionsConfig,
+  SeasonConfig,
+  SeasonsConfig,
+  HazardsConfig,
+  ResourceKindConfig,
+  ResourceKindsConfig,
+  MigrationConfig,
+  EcologyConfig,
+  EcologyConfigOverrides,
+  HazardSnapshot,
+  MigrationSummary
+} from './ecology'
 export type {
   SpeciesId,
   SpeciesDistanceWeights,
