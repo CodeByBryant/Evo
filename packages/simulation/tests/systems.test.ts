@@ -244,7 +244,9 @@ describe('MovementSystem', () => {
     const config = resolveWorldConfig({ organisms: { maxTurnRate: 1, maxSpeed: 0 }, timestep: 0.5 })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { heading: 0 }))
-    const intentBuffer: IntentBuffer = new Map([[1, { turn: 10, thrust: 0 }]])
+    const intentBuffer: IntentBuffer = new Map([
+      [1, { turn: 10, thrust: 0, strafe: 0, interact: true }]
+    ])
     const events = new EventLog(10)
     events.beginTick()
 
@@ -257,7 +259,9 @@ describe('MovementSystem', () => {
     const config = resolveWorldConfig({ organisms: { maxSpeed: 10, maxTurnRate: 100 } })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { heading: 0, age: 100 }))
-    const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 0.5 }]])
+    const intentBuffer: IntentBuffer = new Map([
+      [1, { turn: 0, thrust: 0.5, strafe: 0, interact: true }]
+    ])
     const events = new EventLog(10)
     events.beginTick()
 
@@ -274,7 +278,9 @@ describe('MovementSystem', () => {
     })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { heading: 0, age: 1 }))
-    const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 1 }]])
+    const intentBuffer: IntentBuffer = new Map([
+      [1, { turn: 0, thrust: 1, strafe: 0, interact: true }]
+    ])
     const events = new EventLog(10)
     events.beginTick()
 
@@ -287,7 +293,9 @@ describe('MovementSystem', () => {
     const config = resolveWorldConfig({ organisms: { maxTurnRate: 1 }, timestep: 0.5 })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { heading: 0 }))
-    const intentBuffer: IntentBuffer = new Map([[1, { turn: -10, thrust: 0 }]])
+    const intentBuffer: IntentBuffer = new Map([
+      [1, { turn: -10, thrust: 0, strafe: 0, interact: true }]
+    ])
     const events = new EventLog(10)
     events.beginTick()
 
@@ -304,7 +312,9 @@ describe('MovementSystem', () => {
     })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { x: 90, y: 5, heading: 0 }))
-    const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 1 }]])
+    const intentBuffer: IntentBuffer = new Map([
+      [1, { turn: 0, thrust: 1, strafe: 0, interact: true }]
+    ])
     const events = new EventLog(10)
     events.beginTick()
 
@@ -331,7 +341,9 @@ describe('MovementSystem', () => {
     ] as const) {
       const organisms = new OrganismStore()
       organisms.add(organism(config, 1))
-      const intentBuffer: IntentBuffer = new Map([[1, { turn: 0, thrust: 1 }]])
+      const intentBuffer: IntentBuffer = new Map([
+        [1, { turn: 0, thrust: 1, strafe: 0, interact: true }]
+      ])
       const events = new EventLog(10)
       events.beginTick()
       new MovementSystem(config, organisms, intentBuffer, events).update(1)
@@ -459,7 +471,13 @@ describe('InteractionSystem', () => {
 describe('MetabolismSystem', () => {
   it('charges basalCost + movementCost * speed^2, scaled by timestep', () => {
     const config = resolveWorldConfig({
-      organisms: { basalCost: 1, movementCost: 0.1, turningCost: 0, sensorCost: 0 },
+      organisms: {
+        basalCost: 1,
+        movementCost: 0.1,
+        turningCost: 0,
+        sensorCost: 0,
+        learningCost: 0
+      },
       timestep: 2
     })
     const organisms = new OrganismStore()
@@ -482,7 +500,8 @@ describe('MetabolismSystem', () => {
         basalCost: 1,
         movementCost: 0,
         turningCost: 0.2,
-        sensorCost: 0.3
+        sensorCost: 0.3,
+        learningCost: 0
       },
       timestep: 1
     })
@@ -504,6 +523,7 @@ describe('MetabolismSystem', () => {
         movementCost: 0,
         turningCost: 0,
         sensorCost: 0,
+        learningCost: 0,
         maturityAge: 90,
         juvenileMetabolicScale: 0.5
       },
@@ -805,7 +825,8 @@ describe('DeathSystem', () => {
         parentIds: [7, 9],
         birthTick: 3,
         deathTick: 20,
-        deathCause: 'starvation'
+        deathCause: 'starvation',
+        brain: null
       }
     ])
   })

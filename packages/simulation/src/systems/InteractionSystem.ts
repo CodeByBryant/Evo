@@ -1,4 +1,5 @@
 import type { EntityId, WorldConfig } from '@evo/contracts'
+import type { IntentBuffer } from '../buffers/types'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EventLog } from '../events/EventLog'
@@ -21,7 +22,9 @@ export class InteractionSystem {
     private readonly organisms: OrganismStore,
     private readonly resources: ResourceStore,
     private readonly resourceIndex: SpatialHash<ResourceState>,
-    private readonly events: EventLog
+    private readonly events: EventLog,
+    /** Absent means every organism interacts (the reflex controller always does). */
+    private readonly intents?: IntentBuffer
   ) {
     this.emitVerbose = config.history.eventDetail === 'verbose'
   }
@@ -32,6 +35,7 @@ export class InteractionSystem {
     const resourceRadius = this.config.resources.radius
 
     for (const organism of this.organisms.values()) {
+      if (this.intents && this.intents.get(organism.id)?.interact === false) continue
       const stage = lifeStageFor(organism.age, organism.genome.physical)
       const sizeScale = stage === 'juvenile' ? juvenileSizeScale : 1
       const captureRadius = organism.genome.physical.radius * sizeScale + resourceRadius

@@ -75,5 +75,33 @@ describe('SpatialHash', () => {
       expect(index.nearest({ x: 0, y: 0 }, 100)?.item.id).toBe(2)
       expect(index.nearest({ x: 0, y: 0 }, 0.5)).toBeNull()
     })
+
+    it('breaks distance ties by the lower id', () => {
+      const index = new SpatialHash<Point>(10, (p) => p)
+      index.rebuild([point(7, 2, 0), point(3, -2, 0), point(5, 0, 2)])
+      expect(index.nearest({ x: 0, y: 0 }, 10)?.item.id).toBe(3)
+    })
+
+    it('skips the excluded id', () => {
+      const index = new SpatialHash<Point>(10, (p) => p)
+      index.rebuild([point(1, 0, 0), point(2, 4, 0), point(3, 1, 0)])
+      expect(index.nearest({ x: 0, y: 0 }, 10, 1)?.item.id).toBe(3)
+      expect(index.nearest({ x: 0, y: 0 }, 0.5, 1)).toBeNull()
+    })
+
+    it('agrees with the first element of queryRadius on a scattered set', () => {
+      const index = new SpatialHash<Point>(13, (p) => p)
+      const points: Point[] = []
+      for (let i = 1; i <= 200; i++) points.push(point(i, (i * 37) % 101, (i * 53) % 97))
+      index.rebuild(points)
+      for (let i = 0; i < 100; i++) {
+        const center = { x: (i * 7) % 100, y: (i * 11) % 90 }
+        const radius = 5 + (i % 40)
+        const first = index.queryRadius(center, radius)[0]
+        const near = index.nearest(center, radius)
+        expect(near?.item.id).toBe(first?.item.id)
+        expect(near?.distanceSquared).toBe(first?.distanceSquared)
+      }
+    })
   })
 })

@@ -53,7 +53,10 @@ export interface BrainGenome {
   readonly weights: readonly number[]
 }
 
-/** Carried genes: inherited and mutated now, first read by the learning system in Phase 5. */
+/**
+ * Learning genes. All but `riskTolerance` and `noveltyPreference` are read by the brain
+ * (docs/learning/brain.md); those two are carried, inherited and compared but read by nothing.
+ */
 export interface LearningGenes {
   readonly learningRate: number
   readonly discountFactor: number
@@ -179,11 +182,15 @@ export interface LearningInheritanceConfig {
   fraction: number
 }
 
+/**
+ * The input and output sizes are not configurable: they come from `OBSERVATION_SIZE` and
+ * `ACTION_SIZE` (docs/learning/brain.md).
+ */
 export interface BrainConfig {
-  inputSize: number
   hiddenSize: number
   memorySize: number
-  outputSize: number
+  /** Founders start from the hand-wired forager template plus noise instead of random weights. */
+  innatePrior: boolean
   /** Standard deviation of the Gaussian that draws each founder weight. */
   initialWeightStd: number
   /** Probability in `[0, 1]` that one weight mutates in a birth. */

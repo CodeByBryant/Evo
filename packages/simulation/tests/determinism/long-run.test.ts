@@ -111,10 +111,15 @@ describe('100,000-tick runs', () => {
   })
 
   it('sustains a bounded population over 50,000 ticks (roadmap: sustained population)', () => {
-    // Default config, no overrides: population must neither collapse nor run away toward
-    // maxPopulation over a long run - this is what "the engine can sustain a population for a
-    // long simulated period" (roadmap Phase 3 exit criteria) means in practice.
-    const world = World.create({ seed: 1, validateEveryTicks: 1000 })
+    // Population must neither collapse nor run away toward maxPopulation over a long run - this
+    // is what "the engine can sustain a population for a long simulated period" (roadmap Phase 3
+    // exit criteria) means in practice. This is the Phase 3/4 evidence, so it runs the reflex
+    // controller; the brain controller's measured bands are in brain-long-run.test.ts.
+    const world = World.create({
+      seed: 1,
+      config: { learning: { controller: 'reflex' } },
+      validateEveryTicks: 1000
+    })
     const samples: number[] = []
     for (let i = 0; i < 50; i++) {
       world.run(1000)
@@ -198,20 +203,23 @@ describe('100,000-tick runs', () => {
       seed: 5,
       config: {
         organisms: { initialCount: 15 },
-        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 }
+        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
+        // Reflex controller: this pin is about the Phase 4 forager. It moved from 11,901 only
+        // because the larger genome draws more founder weights from the genetics stream.
+        learning: { controller: 'reflex' }
       },
       validateEveryTicks: 1000
     })
 
     world.run(20_000)
     expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(11_901)
+    expect(world.snapshot().population.extinctionTick).toBe(18_482)
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
 
     world.run(80_000)
 
     expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(11_901)
+    expect(world.snapshot().population.extinctionTick).toBe(18_482)
     expect(world.snapshot().organisms).toEqual([])
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })

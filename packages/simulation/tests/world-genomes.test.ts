@@ -32,7 +32,7 @@ describe('founders carry genomes', () => {
     }
     const brains = new Set(genomes.map((g) => g.brain.weights.join(',')))
     expect(brains.size).toBe(5)
-    expect(genomes[0]?.brain.weights).toHaveLength(249)
+    expect(genomes[0]?.brain.weights).toHaveLength(314)
   })
 
   it('records the founder genome on its birth event', () => {
@@ -190,7 +190,11 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
   it('reproduces Phase 3 Scenario A exactly when mutation is off', () => {
     const world = World.create({
       seed: 1,
-      config: { organisms: { initialCount: 10 }, genetics: { mutationRateScale: 0 } },
+      config: {
+        organisms: { initialCount: 10 },
+        genetics: { mutationRateScale: 0 },
+        learning: { controller: 'reflex' }
+      },
       validateEveryTicks: 100
     })
     world.run(5000)

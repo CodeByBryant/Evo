@@ -22,8 +22,16 @@ export class EnvironmentSystem {
 
   private spawnOne(tick: number): void {
     const id = this.ids.allocate()
-    const x = this.random.float() * this.config.environment.width
-    const y = this.random.float() * this.config.environment.height
+    // With no region the whole world is used and the draws are exactly Phase 4's.
+    const { region } = this.config.resources
+    const area = region ?? {
+      x: 0,
+      y: 0,
+      width: this.config.environment.width,
+      height: this.config.environment.height
+    }
+    const x = area.x + this.random.float() * area.width
+    const y = area.y + this.random.float() * area.height
     const resource: ResourceState = { id, x, y, remaining: this.config.resources.energyValue }
     this.resources.add(resource)
     this.events.record({ type: 'resource-spawned', tick, resourceId: id, position: { x, y } })

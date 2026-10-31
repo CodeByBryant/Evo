@@ -102,10 +102,12 @@ describe('contracts', () => {
       parentIds: [1, 2],
       birthTick: 100,
       deathTick: 200,
-      deathCause: 'starvation'
+      deathCause: 'starvation',
+      brain: { rewardTotal: 1.5, updates: 12, weightChange: 0.25 }
     }
     expect(record.parentIds).toEqual([1, 2])
     expect(record.genomeId).toBe(9)
+    expect(record.brain?.updates).toBe(12)
   })
 
   it('OrganismSnapshot has no generation counter, embedded genome, or health/alive field', () => {
@@ -126,5 +128,16 @@ describe('contracts', () => {
     for (const forbidden of ['generation', 'genome', 'health', 'alive']) {
       expect(keys).not.toContain(forbidden)
     }
+  })
+})
+
+describe('learning contracts', () => {
+  it('fixes the observation and action sizes and labels them one to one', async () => {
+    const { ACTION_LABELS, ACTION_SIZE, OBSERVATION_LABELS, OBSERVATION_SIZE } =
+      await import('../src/index')
+    expect(OBSERVATION_SIZE).toBe(23)
+    expect(ACTION_SIZE).toBe(5)
+    expect(OBSERVATION_LABELS).toHaveLength(OBSERVATION_SIZE)
+    expect(ACTION_LABELS).toEqual(['thrust', 'turn', 'strafe', 'interact', 'explore'])
   })
 })

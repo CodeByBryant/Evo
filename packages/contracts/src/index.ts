@@ -28,6 +28,19 @@ export type {
   GeneticsConfigOverrides,
   LineageRecord
 } from './genome'
+export { OBSERVATION_SIZE, ACTION_SIZE, OBSERVATION_LABELS, ACTION_LABELS } from './learning'
+export type {
+  Observation,
+  Action,
+  RewardBreakdown,
+  LearningController,
+  LearningAlgorithmName,
+  RewardWeights,
+  LearningConfig,
+  LearningConfigOverrides,
+  BrainTelemetry,
+  BrainSnapshot
+} from './learning'
 export { MAX_SEED } from './world'
 export type {
   DeathCause,

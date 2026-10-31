@@ -3,6 +3,8 @@ import type { OrganismState } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
 import type { GeneSpec } from '../genetics/GeneSpecs'
 import { architectureOf } from '../genetics/GenomeFactory'
+import { brainLayoutOf } from '../learning/BrainLayout'
+import { brainStateProblems } from '../learning/BrainState'
 import { validateGenome } from '../genetics/GenomeValidation'
 import type { LineageQueries } from '../lineage/LineageStore'
 
@@ -105,6 +107,8 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
     lineage
   } = context
   const seenGenomeIds = new Set<number>()
+  const brainLayout = brainLayoutOf(architectureOf(config.genetics.brain))
+  const expectBrains = config.learning.controller === 'brain'
   const width = config.environment.width
   const height = config.environment.height
 
@@ -133,6 +137,16 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
       )
     }
     seenGenomeIds.add(organism.genome.id)
+
+    if (!expectBrains && organism.brain !== null) {
+      errors.push(`organism ${organism.id}: has a brain state but the controller is 'reflex'`)
+    } else if (expectBrains && organism.brain === null) {
+      errors.push(`organism ${organism.id}: has no brain state but the controller is 'brain'`)
+    } else if (organism.brain !== null) {
+      for (const problem of brainStateProblems(organism.brain, brainLayout)) {
+        errors.push(`organism ${organism.id}: brain: ${problem}`)
+      }
+    }
 
     const record = lineage.record(organism.genome.id)
     if (!record) {

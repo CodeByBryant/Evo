@@ -5,7 +5,9 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     include: ['tests/determinism/**/*.test.ts'],
-    // Several tests run more than one 100k-tick simulation; the default 5s budget is too tight.
-    testTimeout: 60_000
+    // Several tests run more than one 100k-tick simulation, and the brain controller costs about
+    // three times the reflex controller per tick (docs/learning/brain.md); the default 5s budget
+    // is far too tight.
+    testTimeout: 180_000
   }
 })

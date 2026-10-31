@@ -1,4 +1,5 @@
 import type { EntityId, Genome } from '@evo/contracts'
+import type { BrainState } from '../learning/BrainState'
 
 /** Live, mutable organism state. Systems mutate these fields directly through `values()`. */
 export interface OrganismState {
@@ -16,6 +17,11 @@ export interface OrganismState {
   readonly birthTick: number
   reproductionCooldownRemaining: number
   lastTurnMagnitude: number
+  /**
+   * Runtime brain state: present for every organism under the `'brain'` controller and `null`
+   * under `'reflex'`. The genome stays immutable; learning moves the overlay in here.
+   */
+  brain: BrainState | null
 }
 
 /**

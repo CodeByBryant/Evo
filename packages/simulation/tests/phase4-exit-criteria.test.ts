@@ -32,7 +32,10 @@ interface Audit {
 }
 
 function auditBirths(ticks: number, seed = 1): Audit {
-  const world = World.create({ seed })
+  const world = World.create({
+    seed,
+    config: { genetics: { brain: { innatePrior: false } }, learning: { controller: 'reflex' } }
+  })
   const living = (): Map<number, Genome> => {
     const genomes = new Map<number, Genome>()
     for (const organism of world.snapshot().organisms) {

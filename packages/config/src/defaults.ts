@@ -34,6 +34,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     movementCost: 0.005,
     turningCost: 0.05,
     sensorCost: 0.1,
+    learningCost: 0.02,
     hue: 0.55,
     maxAge: 600,
     maturityAge: 90,
@@ -47,7 +48,8 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     maxCount: 200,
     spawnRate: 2,
     energyValue: 30,
-    radius: 3
+    radius: 3,
+    region: null
   },
   reproduction: {
     minEnergy: 60,
@@ -62,10 +64,9 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     mutationStrengthScale: 1,
     blendAlpha: 0.25,
     brain: {
-      inputSize: 16,
       hiddenSize: 8,
       memorySize: 4,
-      outputSize: 5,
+      innatePrior: true,
       initialWeightStd: 0.3,
       weightMutationRate: 0.05,
       weightMutationStd: 0.1
@@ -81,6 +82,16 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     },
     learningInheritance: { mode: 'partial', fraction: 0.15 },
     genes: {}
+  },
+  learning: {
+    controller: 'brain',
+    enabled: true,
+    algorithm: 'actorCritic',
+    rewardWeights: { feeding: 1, reproduction: 0.5, energyCost: 5 },
+    weightLimit: 4,
+    baselineRate: 0.01,
+    valueRateScale: 1,
+    foodHorizon: 30
   }
 } satisfies WorldConfig)
 

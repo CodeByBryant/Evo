@@ -6,12 +6,13 @@ import { clamp, wrapAngle } from '../math/scalar'
 import { cos, sin } from '../math/trig'
 import { lifeStageFor } from '../organisms/lifeStage'
 
-const NO_INTENT: OrganismIntent = { turn: 0, thrust: 0 }
+const NO_INTENT: OrganismIntent = { turn: 0, thrust: 0, strafe: 0, interact: false }
 
 /**
  * Applies each organism's intent: turns it (bounded by `maxTurnRate`), sets its speed (bounded by
- * the organism's `maxSpeed` gene, scaled down for juveniles), and moves it, clamped to the world rectangle. Velocity
- * is always derived from heading and speed, never set independently. Also records the turn
+ * the organism's `maxSpeed` gene, scaled down for juveniles), adds any lateral `strafe` velocity, and moves it,
+ * clamped to the world rectangle. Velocity is always derived from heading, speed and strafe, never set
+ * independently. Also records the turn
  * actually applied as `lastTurnMagnitude`, which `MetabolismSystem` reads afterward.
  */
 export class MovementSystem {
@@ -42,8 +43,17 @@ export class MovementSystem {
       const scaledMaxSpeed =
         stage === 'juvenile' ? genes.maxSpeed * juvenileSpeedScale : genes.maxSpeed
       const speed = clamp(intent.thrust, 0, 1) * scaledMaxSpeed
-      const vx = cos(heading) * speed
-      const vy = sin(heading) * speed
+      let vx = cos(heading) * speed
+      let vy = sin(heading) * speed
+      const lateral = clamp(intent.strafe, -1, 1) * scaledMaxSpeed
+      if (lateral !== 0) {
+        // Strafing adds velocity across the heading (positive is to the left); the combined
+        // speed is limited to the organism's own top speed so strafing is never a free boost.
+        const total = Math.sqrt(speed * speed + lateral * lateral)
+        const limit = total > scaledMaxSpeed ? scaledMaxSpeed / total : 1
+        vx = (cos(heading) * speed - sin(heading) * lateral) * limit
+        vy = (sin(heading) * speed + cos(heading) * lateral) * limit
+      }
       const fromX = organism.x
       const fromY = organism.y
       const toX = clamp(organism.x + vx * dt, 0, width)

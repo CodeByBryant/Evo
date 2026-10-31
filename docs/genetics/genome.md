@@ -26,13 +26,13 @@ Founders start at the **baseline** (the existing `organisms.*` / `reproduction.*
 | `reproduction.offspringInvestment` | float            | 12.5 (`reproduction.offspringInvestment`) | 6 - 25        | 0.1  | 0.05 | Reproduction (energy given to the child)                     |
 | `reproduction.cooldown`            | float            | 30 (`reproduction.cooldown`)              | 15 - 60       | 0.1  | 0.05 | Reproduction                                                 |
 | `reproduction.searchRadius`        | float            | 50 (`reproduction.searchRadius`)          | 25 - 100      | 0.1  | 0.05 | Reproduction (partner search)                                |
-| `learning.learningRate`            | float (relative) | 0.05 (`genetics.learning`)                | 0.001 - 0.5   | 0.1  | 0.05 | carried (Phase 5)                                            |
-| `learning.discountFactor`          | float            | 0.95 (`genetics.learning`)                | 0 - 1         | 0.1  | 0.05 | carried                                                      |
-| `learning.eligibilityTraceDecay`   | float            | 0.9 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | carried                                                      |
-| `learning.explorationRate`         | float            | 0.1 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | carried                                                      |
+| `learning.learningRate`            | float (relative) | 0.05 (`genetics.learning`)                | 0.001 - 0.5   | 0.1  | 0.05 | Brain (learning step size, learning cost)                    |
+| `learning.discountFactor`          | float            | 0.95 (`genetics.learning`)                | 0 - 1         | 0.1  | 0.05 | Brain (TD discount, trace decay)                             |
+| `learning.eligibilityTraceDecay`   | float            | 0.9 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (eligibility traces)                                   |
+| `learning.explorationRate`         | float            | 0.1 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (exploration noise)                                    |
 | `learning.riskTolerance`           | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | carried                                                      |
-| `learning.noveltyPreference`       | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | carried                                                      |
-| `learning.persistence`             | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | carried                                                      |
+| `learning.noveltyPreference`       | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | carried (no novelty signal yet)                              |
+| `learning.persistence`             | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (exploration annealing)                                |
 
 The ordering `maturityAge < senescenceAge < maxAge` is enforced by the operators: `senescenceAge` is declared `orderedAfter` `maturityAge`, and `maxAge` after `senescenceAge`, and mutation, recombination and repair raise such a gene's lower bound above the earlier gene (by a 1e-6 margin) even when the later gene itself did not mutate. Config validation requires each ordered gene's range maximum to exceed the earlier gene's, so there is always room. The default ranges happen not to overlap, but nothing relies on that.
 
@@ -58,21 +58,22 @@ At the baseline genome each quantity equals its Phase 3 value, which is what let
 
 ## Brain genome
 
-`brain = { architecture: { inputSize, hiddenSize, memorySize, outputSize }, weights: number[] }`. Every organism in a world has the same architecture (set by `genetics.brain`), so weight vectors are always compatible; topology does not evolve (roadmap 4.2). The defaults `16 / 8 / 4 / 5` are placeholders that Phase 5 owns: it will set the real observation size. Output size 5 matches the roadmap's `Action` (thrust, turn, strafe, interact, explore).
+`brain = { architecture: { inputSize, hiddenSize, memorySize, outputSize }, weights: number[] }`. Every organism in a world has the same architecture (set by `genetics.brain`), so weight vectors are always compatible; topology does not evolve (roadmap 4.2). Since Phase 5 `inputSize` (23) and `outputSize` (5) are not config: they are derived from the `OBSERVATION_SIZE` and `ACTION_SIZE` contract constants, and `hiddenSize` / `memorySize` (default 8 / 4) stay configurable. See [docs/learning/brain.md](../learning/brain.md).
 
-`weights` is one flat vector made of seven consecutive **blocks**. The layout is stable and documented; reordering it is a hash-schema change.
+`weights` is one flat vector made of eight consecutive **blocks** (the eighth, the critic's value head, was added in Phase 5). The layout is stable and documented; reordering it is a hash-schema change.
 
 | #   | Block            | Shape (rows x cols) | Default length |
 | --- | ---------------- | ------------------- | -------------- |
-| 1   | `inputToHidden`  | hidden x input      | 128            |
+| 1   | `inputToHidden`  | hidden x input      | 184            |
 | 2   | `memoryToHidden` | hidden x memory     | 32             |
 | 3   | `hiddenBias`     | hidden              | 8              |
 | 4   | `hiddenToMemory` | memory x hidden     | 32             |
 | 5   | `memoryBias`     | memory              | 4              |
 | 6   | `hiddenToOutput` | output x hidden     | 40             |
 | 7   | `outputBias`     | output              | 5              |
+| 8   | `hiddenToValue`  | hidden, then 1 bias | 9              |
 
-Default total: 249 weights. Crossover operates per block (see below). No Phase 4 code interprets these numbers beyond their block boundaries.
+Default total: 314 weights (249 in Phase 4, before the 23-input brain and the value head). Crossover operates per block (see below). Phase 5 interprets blocks 6-8 as the learnable ones; learning changes a per-organism overlay, never the genome.
 
 ## Operators
 
@@ -153,7 +154,8 @@ genetics: {
   mutationStrengthScale: 1,    // multiplies every std; 0 disables mutation
   blendAlpha: 0.25,
   brain: {
-    inputSize: 16, hiddenSize: 8, memorySize: 4, outputSize: 5,
+    hiddenSize: 8, memorySize: 4,   // inputSize and outputSize are derived from the contract constants
+    innatePrior: true,              // Phase 5: founders start from a hand-wired forager template plus noise
     initialWeightStd: 0.3, weightMutationRate: 0.05, weightMutationStd: 0.1
   },
   learning: { learningRate: 0.05, discountFactor: 0.95, eligibilityTraceDecay: 0.9,

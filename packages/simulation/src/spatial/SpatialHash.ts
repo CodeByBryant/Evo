@@ -83,9 +83,44 @@ export class SpatialHash<T extends HasId> {
     return hits
   }
 
-  /** The single nearest item within `radius`, or `null` if none. Convenience over `queryRadius`. */
-  nearest(center: Readonly<Vec2>, radius: number): SpatialHit<T> | null {
-    const hits = this.queryRadius(center, radius)
-    return hits.length > 0 ? (hits[0] as SpatialHit<T>) : null
+  /**
+   * The single nearest item within `radius`, or `null` if none; ties go to the lower id, exactly
+   * as the first element of `queryRadius`. Skips the item with id `excludeId`, if given. Scans
+   * for the minimum instead of sorting every hit, since this runs once per organism per tick.
+   */
+  nearest(center: Readonly<Vec2>, radius: number, excludeId?: number): SpatialHit<T> | null {
+    if (!Number.isFinite(radius) || radius < 0) {
+      throw new RangeError('radius must be a finite number greater than or equal to zero')
+    }
+    const radiusSquared = radius * radius
+    const minCx = Math.floor((center.x - radius) / this.cellSize)
+    const maxCx = Math.floor((center.x + radius) / this.cellSize)
+    const minCy = Math.floor((center.y - radius) / this.cellSize)
+    const maxCy = Math.floor((center.y + radius) / this.cellSize)
+    let best: T | null = null
+    let bestDistanceSquared = 0
+    for (let cx = minCx; cx <= maxCx; cx++) {
+      for (let cy = minCy; cy <= maxCy; cy++) {
+        const bucket = this.buckets.get(`${cx}:${cy}`)
+        if (!bucket) continue
+        for (const item of bucket) {
+          if (item.id === excludeId) continue
+          const position = this.getPosition(item)
+          const dx = position.x - center.x
+          const dy = position.y - center.y
+          const distanceSquared = dx * dx + dy * dy
+          if (distanceSquared > radiusSquared) continue
+          if (
+            best === null ||
+            distanceSquared < bestDistanceSquared ||
+            (distanceSquared === bestDistanceSquared && item.id < best.id)
+          ) {
+            best = item
+            bestDistanceSquared = distanceSquared
+          }
+        }
+      }
+    }
+    return best === null ? null : { item: best, distanceSquared: bestDistanceSquared }
   }
 }

@@ -1,24 +1,11 @@
-import { GENE_DEFINITIONS } from '@evo/contracts'
+import { ACTION_SIZE, GENE_DEFINITIONS, OBSERVATION_SIZE } from '@evo/contracts'
 import type { BrainArchitecture, BrainConfig, Genome, GenomeId } from '@evo/contracts'
 import type { RandomSource } from '../random/RandomSource'
+import { brainBlockLengths } from '../learning/BrainLayout'
+import { innatePriorWeights } from '../learning/InnatePrior'
 import type { GeneSpec } from './GeneSpecs'
 
-/**
- * The brain weight blocks, in storage order (docs/genetics/genome.md). Changing this order or
- * layout changes what every stored weight means, so it is a hash-schema change.
- */
-export function brainBlockLengths(architecture: BrainArchitecture): number[] {
-  const { inputSize, hiddenSize, memorySize, outputSize } = architecture
-  return [
-    hiddenSize * inputSize, // inputToHidden
-    hiddenSize * memorySize, // memoryToHidden
-    hiddenSize, // hiddenBias
-    memorySize * hiddenSize, // hiddenToMemory
-    memorySize, // memoryBias
-    outputSize * hiddenSize, // hiddenToOutput
-    outputSize // outputBias
-  ]
-}
+export { brainBlockLengths }
 
 export function brainWeightCount(architecture: BrainArchitecture): number {
   let total = 0
@@ -35,14 +22,24 @@ export function sameArchitecture(a: BrainArchitecture, b: BrainArchitecture): bo
   )
 }
 
-export function architectureOf(brain: BrainConfig | BrainArchitecture): BrainArchitecture {
+/**
+ * The brain architecture for a world: hidden and memory widths from config, input and output
+ * sizes from the `OBSERVATION_SIZE` and `ACTION_SIZE` constants. The single place the shape is
+ * derived, so config and code can never disagree about it.
+ */
+export function architectureOf(
+  brain: Pick<BrainConfig, 'hiddenSize' | 'memorySize'>
+): BrainArchitecture {
   return {
-    inputSize: brain.inputSize,
+    inputSize: OBSERVATION_SIZE,
     hiddenSize: brain.hiddenSize,
     memorySize: brain.memorySize,
-    outputSize: brain.outputSize
+    outputSize: ACTION_SIZE
   }
 }
+
+/** Founder noise around the innate prior, as a fraction of `initialWeightStd`. */
+const INNATE_NOISE_SCALE = 0.1
 
 type GroupedGenes = Record<string, Record<string, number>>
 
@@ -105,8 +102,10 @@ function freezeGenome(genome: Genome): Genome {
 
 /**
  * A founder: every scalar gene at its baseline and brain weights drawn from the supplied stream
- * (Gaussian, one draw per weight in storage order). Founders are identical except for their
- * brains; variation in the other genes enters only at births.
+ * (Gaussian, one draw per weight in storage order, whether or not the innate prior is used so the
+ * draw count never depends on the setting). With `innatePrior` the draw is a small noise added to
+ * the hand-wired forager template; otherwise it is the weight itself. Founders are identical
+ * except for their brains; variation in the other genes enters only at births.
  */
 export function createFounderGenome(
   id: GenomeId,
@@ -117,7 +116,14 @@ export function createFounderGenome(
   const architecture = architectureOf(brain)
   const count = brainWeightCount(architecture)
   const weights: number[] = []
-  for (let i = 0; i < count; i++) weights.push(random.normal(0, brain.initialWeightStd))
+  if (brain.innatePrior) {
+    const template = innatePriorWeights(architecture)
+    const noiseStd = brain.initialWeightStd * INNATE_NOISE_SCALE
+    for (let i = 0; i < count; i++)
+      weights.push((template[i] as number) + random.normal(0, noiseStd))
+  } else {
+    for (let i = 0; i < count; i++) weights.push(random.normal(0, brain.initialWeightStd))
+  }
   return genomeFromParts({
     id,
     parentIds: [],

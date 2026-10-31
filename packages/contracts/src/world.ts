@@ -1,4 +1,6 @@
 import type { GeneticsConfig, GeneticsConfigOverrides } from './genome'
+import type { LearningConfig, LearningConfigOverrides } from './learning'
+import type { Rect } from './math'
 
 /** Largest valid world seed (seeds are unsigned 32-bit integers). */
 export const MAX_SEED = 4_294_967_295
@@ -41,6 +43,11 @@ export interface OrganismConfig {
   turningCost: number
   /** Flat energy lost per second for maintaining senses. */
   sensorCost: number
+  /**
+   * Energy lost per second for learning at the baseline learning rate; scaled by the organism's
+   * `learningRate` gene, and charged only while learning is enabled under the brain controller.
+   */
+  learningCost: number
   /** Founder baseline hue in turns, `[0, 1)` (cosmetic; the `hue` gene's starting value). */
   hue: number
   /** Age in seconds at which an organism dies of old age. */
@@ -67,6 +74,8 @@ export interface ResourceConfig {
   energyValue: number
   /** Resource radius in world units. */
   radius: number
+  /** Where resources spawn: a rectangle inside the world, or `null` for the whole world. */
+  region: Rect | null
 }
 
 /**
@@ -109,6 +118,7 @@ export interface WorldConfig {
   reproduction: ReproductionConfig
   history: HistoryConfig
   genetics: GeneticsConfig
+  learning: LearningConfig
 }
 
 /** A partial configuration merged onto the defaults. */
@@ -122,6 +132,7 @@ export interface WorldConfigOverrides {
   reproduction?: Partial<ReproductionConfig>
   history?: Partial<HistoryConfig>
   genetics?: GeneticsConfigOverrides
+  learning?: LearningConfigOverrides
 }
 
 export interface WorldOptions {

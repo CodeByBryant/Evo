@@ -14,10 +14,9 @@ const GENETICS_KEYS = [
   'genes'
 ]
 const BRAIN_KEYS = [
-  'inputSize',
   'hiddenSize',
   'memorySize',
-  'outputSize',
+  'innatePrior',
   'initialWeightStd',
   'weightMutationRate',
   'weightMutationStd'
@@ -257,8 +256,22 @@ export function checkGenetics(root: PlainObject, errors: string[]): void {
 
   const brain = checkSection(genetics, 'brain', BRAIN_KEYS, errors, 'genetics.brain')
   if (brain) {
-    for (const key of ['inputSize', 'hiddenSize', 'memorySize', 'outputSize']) {
+    if (brain['innatePrior'] === undefined) errors.push('genetics.brain.innatePrior is required')
+    else if (typeof brain['innatePrior'] !== 'boolean') {
+      errors.push('genetics.brain.innatePrior must be a boolean')
+    }
+    for (const key of ['hiddenSize', 'memorySize']) {
       checkNumber(brain, key, `genetics.brain.${key}`, { integer: true, positive: true }, errors)
+    }
+    // The hand-wired forager template needs five hidden units (simulation/learning/InnatePrior).
+    if (
+      brain['innatePrior'] === true &&
+      typeof brain['hiddenSize'] === 'number' &&
+      brain['hiddenSize'] < 5
+    ) {
+      errors.push(
+        'genetics.brain.hiddenSize must be at least 5 when genetics.brain.innatePrior is true'
+      )
     }
     checkNumber(
       brain,

@@ -137,7 +137,7 @@ Sections 1-5 and 9-10 are unchanged from version 1. Sections 6 and 8 append new 
 | 6     | organisms | count (u32), then per organism in ascending id: `id` (u32), `x`, `y`, `vx`, `vy`, `heading`, `age`, `energy`, `birthTick`, `lastTurnMagnitude`, `reproductionCooldownRemaining` (all f64), then `parentIds` (`writeUint32(count)` then each id as u32) |
 | 8     | metrics   | `organismsBorn`, `deathsByStarvation`, `deathsByAge`, `resourcesSpawned`, `resourcesConsumed`, `reproductionAttempts`, `reproductionSuccesses`, `reproductionFailures` (u32 each), `energyConsumed`, `energyWasted` (f64 each)                         |
 
-#### Version 3 (current, Phase 4+)
+#### Version 3 (Phase 4; superseded by version 4 in Phase 5)
 
 Introduced in Phase 4 when organisms started carrying genomes. Sections 1-3, 5 and 7-10 are unchanged from version 2. Sections 4 and 6 append new fields at the end (never inserted or reordered), per ADR 0006:
 
@@ -145,6 +145,16 @@ Introduced in Phase 4 when organisms started carrying genomes. Sections 1-3, 5 a
 | ----- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 4     | ids       | `nextEntityId` (u32), then `nextGenomeId` (u32)                                                                                                                                                                                                                                                                                                                                                                            |
 | 6     | organisms | count (u32), then per organism in ascending id: every version 2 field, then the genome: `genomeId` (u32); `parentGenomeIds` as count (u32) then each id (u32); every scalar gene in the fixed `GENE_SPECS` order (f64 each; integers and booleans are written as their numeric value); the brain architecture `inputSize`, `hiddenSize`, `memorySize`, `outputSize` (u32 each); the weight count (u32); every weight (f64) |
+
+#### Version 4 (current, Phase 5+)
+
+Introduced in Phase 5 when organisms started carrying a runtime `BrainState` (ADR 0007). Everything in version 3 is unchanged except that the brain architecture in section 6 now has the derived input size 23 and output size 5 and the weight count includes the value-head block (314 by default). Section 6 appends, after the weights of each organism's genome (never inserted):
+
+| Order | Section   | Appended per organism (in this order)                                                                                                                                                                                                                                                                                                                               |
+| ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 6     | organisms | brain present flag (u8); when present: `memory`, `learned`, `eligibility`, `prevHidden`, `prevAction` (each: count u32, then each value f64); `prevValue`, reward `feeding`, `reproduction`, `energyCost`, `total`, `rewardBaseline`, `timeSinceFood`, `energyAtDecision` (f64 each); `decisions` (u32); `rewardTotal` (f64); `updates` (u32); `weightChange` (f64) |
+
+The inspection caches `lastObservation` and `lastOutput` are not hashed: nothing reads them to decide a later tick. Under `learning.controller: 'reflex'` the present flag is 0 and the `learning` stream never advances; under `'brain'` it advances by exactly five normals per organism per tick. The stream's state words are hashed in section 5 (it has been one of the named streams since version 1).
 
 The `LineageStore` and `HistoryStore` are derived records of what happened, not simulation state, and are **not** hashed (they cannot influence any later tick). The `genetics` stream's four state words are already hashed in section 5 because it has been one of the named streams since version 1.
 
@@ -188,9 +198,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(3)`                                            | `6df37fdcc239ba2c992d1d705f53c393` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `486214610a2227258a0e30943b304938` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `486214610a2227258a0e30943b304938` |
+| header only: `"EVOH"`, `writeUint32(4)`                                            | `f2fa3ef3e09bd7cd148f1d40fe1050d4` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `aad2e07ebe18e29609c0f0edf521ba87` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `aad2e07ebe18e29609c0f0edf521ba87` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 

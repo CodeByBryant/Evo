@@ -1,6 +1,7 @@
 import type { EntityId } from './entity'
 import type { GenomeId } from './genome'
 import type { Vec2 } from './math'
+import type { BrainTelemetry } from './learning'
 import type { DeathCause } from './world'
 import type { LifeStage } from './organism'
 
@@ -29,6 +30,8 @@ export interface HistoricalOrganismRecord {
   readonly birthTick: number
   readonly deathTick: number
   readonly deathCause: DeathCause
+  /** What the organism's brain did over its life; `null` under the reflex controller. */
+  readonly brain: BrainTelemetry | null
 }
 
 export interface ResourceSnapshot {

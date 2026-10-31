@@ -11,6 +11,7 @@ import {
 } from './checks'
 import type { PlainObject } from './checks'
 import { checkGenetics } from './genetics'
+import { checkLearning, checkRegion } from './learning'
 
 const ROOT_KEYS = [
   'timestep',
@@ -21,7 +22,8 @@ const ROOT_KEYS = [
   'resources',
   'reproduction',
   'history',
-  'genetics'
+  'genetics',
+  'learning'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height']
 const ORGANISM_KEYS = [
@@ -37,6 +39,7 @@ const ORGANISM_KEYS = [
   'movementCost',
   'turningCost',
   'sensorCost',
+  'learningCost',
   'hue',
   'maxAge',
   'maturityAge',
@@ -45,7 +48,7 @@ const ORGANISM_KEYS = [
   'juvenileSpeedScale',
   'juvenileMetabolicScale'
 ]
-const RESOURCE_KEYS = ['initialCount', 'maxCount', 'spawnRate', 'energyValue', 'radius']
+const RESOURCE_KEYS = ['initialCount', 'maxCount', 'spawnRate', 'energyValue', 'radius', 'region']
 const REPRODUCTION_KEYS = [
   'minEnergy',
   'offspringInvestment',
@@ -131,6 +134,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
     checkNumber(organisms, 'movementCost', 'organisms.movementCost', { nonnegative: true }, errors)
     checkNumber(organisms, 'turningCost', 'organisms.turningCost', { nonnegative: true }, errors)
     checkNumber(organisms, 'sensorCost', 'organisms.sensorCost', { nonnegative: true }, errors)
+    checkNumber(organisms, 'learningCost', 'organisms.learningCost', { nonnegative: true }, errors)
     const maxAge = checkNumber(organisms, 'maxAge', 'organisms.maxAge', { positive: true }, errors)
     const maturityAge = checkNumber(
       organisms,
@@ -193,6 +197,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
     checkNumber(resources, 'energyValue', 'resources.energyValue', { positive: true }, errors)
     const radius = checkNumber(resources, 'radius', 'resources.radius', { positive: true }, errors)
 
+    checkRegion(resources, width, height, errors)
     if (initialCount !== undefined && maxCount !== undefined && initialCount > maxCount) {
       errors.push('resources.initialCount must not exceed resources.maxCount')
     }
@@ -274,6 +279,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   }
 
   checkGenetics(value, errors)
+  checkLearning(value, errors)
 
   return { ok: errors.length === 0, errors }
 }
@@ -314,6 +320,17 @@ function mergeGenetics(base: object, override: unknown): unknown {
   }
 }
 
+/** Merges the learning section: `rewardWeights` merges field by field. */
+function mergeLearning(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  return {
+    ...base,
+    ...override,
+    rewardWeights: mergeSection(defaults['rewardWeights'] as object, override['rewardWeights'])
+  }
+}
+
 /** Merges one section, keeping non-object overrides so validation can report them. */
 function mergeSection(base: object, override: unknown): unknown {
   if (override === undefined) return { ...base }
@@ -338,7 +355,8 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     resources: mergeSection(base.resources, given['resources']),
     reproduction: mergeSection(base.reproduction, given['reproduction']),
     history: mergeSection(base.history, given['history']),
-    genetics: mergeGenetics(base.genetics, given['genetics'])
+    genetics: mergeGenetics(base.genetics, given['genetics']),
+    learning: mergeLearning(base.learning, given['learning'])
   }
   const result = validateWorldConfig(merged)
   if (!result.ok) throw new ConfigValidationError(result.errors)

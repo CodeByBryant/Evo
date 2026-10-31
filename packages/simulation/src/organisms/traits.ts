@@ -29,6 +29,19 @@ export function sensorCostOf(genome: Genome, config: WorldConfig): number {
   return config.organisms.sensorCost * (genome.sensory.sensorRadius / config.organisms.sensorRadius)
 }
 
+/**
+ * Energy per second for learning: the world's `learningCost` scaled by the organism's
+ * `learningRate` gene relative to the founder baseline, so a faster learner pays more. Zero
+ * unless the brain controller is active with learning enabled (docs/learning/brain.md).
+ */
+export function learningCostOf(genome: Genome, config: WorldConfig): number {
+  if (config.learning.controller !== 'brain' || !config.learning.enabled) return 0
+  return (
+    config.organisms.learningCost *
+    (genome.learning.learningRate / config.genetics.learning.learningRate)
+  )
+}
+
 /** What a parent pays for a successful reproduction: its investment plus the transfer overhead. */
 export function reproductionCostOf(genome: Genome, config: WorldConfig): number {
   return genome.reproduction.offspringInvestment * (1 + config.reproduction.overheadFraction)

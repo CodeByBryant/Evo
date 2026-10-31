@@ -46,6 +46,7 @@ export function organismFor(
     birthTick: 0,
     reproductionCooldownRemaining: 0,
     lastTurnMagnitude: 0,
+    brain: null,
     ...overrides
   }
 }

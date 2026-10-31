@@ -122,7 +122,7 @@ describe('genetics validation', () => {
   })
 
   it('validates the brain section', () => {
-    for (const key of ['inputSize', 'hiddenSize', 'memorySize', 'outputSize'] as const) {
+    for (const key of ['hiddenSize', 'memorySize'] as const) {
       expect(errorsFor((c) => (c.genetics.brain[key] = 0))).toContain(
         `genetics.brain.${key} must be an integer greater than zero`
       )
@@ -280,7 +280,7 @@ describe('genetics merging', () => {
     expect(config.genetics.mutationRateScale).toBe(2)
     expect(config.genetics.mutationStrengthScale).toBe(1)
     expect(config.genetics.brain.hiddenSize).toBe(12)
-    expect(config.genetics.brain.inputSize).toBe(16)
+    expect(config.genetics.brain.memorySize).toBe(4)
     expect(config.genetics.learning.explorationRate).toBe(0.3)
     expect(config.genetics.learning.persistence).toBe(0.5)
     expect(config.genetics.learningInheritance).toEqual({ mode: 'lamarckian', fraction: 0.15 })
@@ -301,8 +301,8 @@ describe('genetics merging', () => {
   })
 
   it('throws listing a genetics problem found after merging', () => {
-    expect(() => resolveWorldConfig({ genetics: { brain: { inputSize: 0 } } })).toThrow(
-      /genetics.brain.inputSize must be an integer greater than zero/
+    expect(() => resolveWorldConfig({ genetics: { brain: { memorySize: 0 } } })).toThrow(
+      /genetics.brain.memorySize must be an integer greater than zero/
     )
   })
 })

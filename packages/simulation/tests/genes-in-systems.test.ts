@@ -38,9 +38,10 @@ const stream = (name: Parameters<typeof deriveStreamWords>[1]) =>
 
 describe('MovementSystem reads physical genes', () => {
   function runMovement(organism: OrganismState, intent: { turn: number; thrust: number }) {
+    const full = { ...intent, strafe: 0, interact: true }
     const organisms = new OrganismStore()
     organisms.add(organism)
-    const intents: IntentBuffer = new Map([[organism.id, intent]])
+    const intents: IntentBuffer = new Map([[organism.id, full]])
     const events = new EventLog(10)
     events.beginTick()
     new MovementSystem(config, organisms, intents, events).update(1)
@@ -115,7 +116,13 @@ describe('DecisionSystem reads the wanderJitter gene', () => {
 
 describe('MetabolismSystem reads cost genes and derives size-linked costs', () => {
   const costless = resolveWorldConfig({
-    organisms: { movementCost: 0, turningCost: 0, sensorCost: 0, juvenileMetabolicScale: 1 }
+    organisms: {
+      movementCost: 0,
+      turningCost: 0,
+      sensorCost: 0,
+      learningCost: 0,
+      juvenileMetabolicScale: 1
+    }
   })
 
   function energyAfter(organism: OrganismState, c = costless): number {
@@ -146,7 +153,13 @@ describe('MetabolismSystem reads cost genes and derives size-linked costs', () =
 
   it('charges more to run a longer sensor', () => {
     const sensing = resolveWorldConfig({
-      organisms: { basalCost: 0, movementCost: 0, turningCost: 0, juvenileMetabolicScale: 1 }
+      organisms: {
+        basalCost: 0,
+        movementCost: 0,
+        turningCost: 0,
+        learningCost: 0,
+        juvenileMetabolicScale: 1
+      }
     })
     const near = withGenes(organismFor(sensing, 1, { age: MATURE, energy: 100 }), {
       'sensory.sensorRadius': 30
@@ -159,7 +172,7 @@ describe('MetabolismSystem reads cost genes and derives size-linked costs', () =
 
   it('charges the movementCost and turningCost genes against realized speed and turn', () => {
     const moving = resolveWorldConfig({
-      organisms: { basalCost: 0, sensorCost: 0, juvenileMetabolicScale: 1 }
+      organisms: { basalCost: 0, sensorCost: 0, learningCost: 0, juvenileMetabolicScale: 1 }
     })
     const base = organismFor(moving, 1, { age: MATURE, energy: 100, vx: 10, vy: 0 })
     const costly = withGenes(base, { 'metabolic.movementCost': 0.008 })

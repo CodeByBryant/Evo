@@ -169,7 +169,7 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
   it('some organisms find food, some starve, and the world stays valid throughout', () => {
     const world = World.create({
       seed: 1,
-      config: { organisms: { initialCount: 10 } },
+      config: { organisms: { initialCount: 10 }, learning: { controller: 'reflex' } },
       validateEveryTicks: 100
     })
 
@@ -177,11 +177,13 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     const snapshot = world.snapshot()
 
     // Pinned exact values: this scenario is fully deterministic for this seed/config/duration.
-    // (Heritable mutation is on by default; with it off this scenario gives Phase 3's original
-    // 26 active / 47 born / 21 starved - see world-genomes.test.ts.)
-    expect(snapshot.population.active).toBe(25)
-    expect(snapshot.metrics.organismsBorn).toBe(39)
-    expect(snapshot.metrics.deathsByStarvation).toBe(14)
+    // (Scenario A runs the reflex controller. Heritable mutation is on by default; with it off
+    // this scenario gives Phase 3's original 26 active / 47 born / 21 starved - see
+    // world-genomes.test.ts. The pins below moved in Phase 5 only because the larger genome
+    // draws more founder weights from the `genetics` stream, which shifts later mutations.)
+    expect(snapshot.population.active).toBe(29)
+    expect(snapshot.metrics.organismsBorn).toBe(49)
+    expect(snapshot.metrics.deathsByStarvation).toBe(20)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 
@@ -217,7 +219,8 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
       seed: 1,
       config: {
         organisms: { initialCount: 10 },
-        resources: { initialCount: 0, spawnRate: 0 }
+        resources: { initialCount: 0, spawnRate: 0 },
+        learning: { controller: 'reflex' }
       },
       validateEveryTicks: 100
     })
