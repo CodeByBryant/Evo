@@ -11,13 +11,8 @@ import { createBrainState } from '../learning/BrainState'
 import type { BrainState } from '../learning/BrainState'
 import { clamp, TWO_PI, wrapAngle } from '../math/scalar'
 import type { LineageStore } from '../lineage/LineageStore'
-import { lifeStageFor } from '../organisms/lifeStage'
-import {
-  maxEnergyOf,
-  maxHealthOf,
-  reproductionCostOf,
-  reproductionThresholdOf
-} from '../organisms/traits'
+import { ReproductionReadiness } from '../organisms/reproductionReadiness'
+import { maxEnergyOf, maxHealthOf } from '../organisms/traits'
 import type { RandomSource } from '../random/RandomSource'
 import type { SeededRandom } from '../random/SeededRandom'
 import type { EcologyModel } from '../ecology/EcologyModel'
@@ -44,9 +39,7 @@ import type { SpatialHash } from '../spatial/SpatialHash'
  */
 export class ReproductionSystem {
   private readonly layout: BrainLayout
-  /** Whether regions or seasons scale the reproduction threshold and cost. */
-  private readonly terrainScales: boolean
-  private currentTick = 0
+  private readonly readiness: ReproductionReadiness
 
   constructor(
     private readonly config: WorldConfig,
@@ -59,9 +52,9 @@ export class ReproductionSystem {
     private readonly random: SeededRandom,
     private readonly events: EventLog,
     private readonly species: SpeciesTracker = NO_SPECIES,
-    private readonly ecology: EcologyModel | null = null
+    ecology: EcologyModel | null = null
   ) {
-    this.terrainScales = ecology !== null && (ecology.regionsOn || ecology.seasonsOn)
+    this.readiness = new ReproductionReadiness(config, ecology)
     this.layout = brainLayoutOf(architectureOf(config.genetics.brain))
   }
 
@@ -89,26 +82,6 @@ export class ReproductionSystem {
     })
   }
 
-  /**
-   * Energy this organism needs to attempt reproduction here and now: its own `minEnergy` gene, but
-   * never less than the cost it would pay here. The region and season scale divides only the cost,
-   * so the threshold can never exceed what the cost allows and reproduction stays possible
-   * (docs/ecology/ecology.md); with no scaling this is exactly `reproductionThresholdOf`.
-   */
-  private thresholdFor(organism: OrganismState): number {
-    if (!this.terrainScales) return reproductionThresholdOf(organism.genome, this.config)
-    return Math.max(organism.genome.reproduction.minEnergy, this.costFor(organism))
-  }
-
-  /** Energy this organism pays for a successful reproduction here and now. */
-  private costFor(organism: OrganismState): number {
-    const base = reproductionCostOf(organism.genome, this.config)
-    return this.terrainScales
-      ? base /
-          (this.ecology as EcologyModel).reproductionScale(organism.x, organism.y, this.currentTick)
-      : base
-  }
-
   /** With `species.reproductiveIsolation`, only members of one species mate. */
   private sameSpecies(a: OrganismState, b: OrganismState): boolean {
     if (!this.config.species.enabled || !this.config.species.reproductiveIsolation) return true
@@ -116,7 +89,6 @@ export class ReproductionSystem {
   }
 
   update(tick: number): void {
-    this.currentTick = tick
     const dt = this.config.timestep
     const { width, height } = this.config.environment
 
@@ -131,9 +103,7 @@ export class ReproductionSystem {
     const pairedIds = new Set<EntityId>()
     for (const organism of initiators) {
       const genome = organism.genome
-      if (lifeStageFor(organism.age, genome.physical) === 'juvenile') continue
-      if (organism.reproductionCooldownRemaining > 0) continue
-      if (organism.energy < this.thresholdFor(organism)) continue
+      if (!this.readiness.isReady(organism, tick)) continue
       if (pairedIds.has(organism.id)) continue
 
       if (this.organisms.size >= this.config.maxPopulation) {
@@ -158,9 +128,7 @@ export class ReproductionSystem {
           hit.item.id !== organism.id &&
           this.sameSpecies(organism, hit.item) &&
           !pairedIds.has(hit.item.id) &&
-          lifeStageFor(hit.item.age, hit.item.genome.physical) !== 'juvenile' &&
-          hit.item.reproductionCooldownRemaining <= 0 &&
-          hit.item.energy >= this.thresholdFor(hit.item)
+          this.readiness.isReady(hit.item, tick)
       )
       if (!partnerHit) {
         this.events.record({
@@ -178,8 +146,8 @@ export class ReproductionSystem {
       const partner = partnerHit.item
       pairedIds.add(organism.id)
       pairedIds.add(partner.id)
-      organism.energy -= this.costFor(organism)
-      partner.energy -= this.costFor(partner)
+      organism.energy -= this.readiness.costFor(organism, tick)
+      partner.energy -= this.readiness.costFor(partner, tick)
       organism.reproductionCooldownRemaining = genome.reproduction.cooldown
       partner.reproductionCooldownRemaining = partner.genome.reproduction.cooldown
 
