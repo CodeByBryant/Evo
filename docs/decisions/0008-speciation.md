@@ -51,6 +51,6 @@ Each species keeps `memberCount`, `createdAtTick`, `lastSeenTick`, `extinctAtTic
 ## Consequences
 
 - Species counts and ancestry are queryable at any time, including for extinct species.
-- A bad `threshold` either collapses everything into one species or fragments the population; the default is set by measurement (see `docs/simulation/species.md`) and guarded by tests that bound the species count.
+- A bad `threshold` either collapses everything into one species or fragments the population; the default (0.06) is set by measurement (see `docs/simulation/species.md`) and guarded by tests that bound the species count.
 - Founders differ only in their brain weights (Phase 4), so early species structure is driven by brain distance until body genes diverge.
 - Cost: one distance computation per active species per birth. Births are rare relative to ticks, and the active species count stays small by construction (tested).

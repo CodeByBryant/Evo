@@ -69,3 +69,22 @@ See [configuration.md](configuration.md). `species.enabled: false` disables the 
 ## Determinism and hashing
 
 The registry is not hashed and uses no RNG; it cannot change any existing golden hash. `tests/species/` asserts that chunked and stepped runs produce identical registries (a digest of every species record), since the hash would not catch a difference.
+
+## Measured behavior (Phase 6A)
+
+The default `species.threshold` is **0.06**. It was chosen by measurement, not by taste: one 30,000-tick run per seed was fed to several registries at once (one per threshold), with the default configuration and the default weights.
+
+| Quantity (default config, seeds 1-4)                 | Value                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------ |
+| Mean weighted distance between two founders          | 0.019 (founders differ only in brain)                  |
+| Child to mother distance, median / p90 / p99 / max   | 0.034 / 0.05 / 0.06 / 0.083                            |
+| Species created in 30,000 ticks at threshold 0.04    | about 100 (a new species every birth or two: too fine) |
+| Species created at threshold 0.06 (alive at the end) | 9-20 (4-9): splits and extinctions                     |
+| Species created at threshold 0.08 and above          | 1-2: the whole population stays one species            |
+
+Two consequences worth knowing:
+
+- Founders are close (0.019), so a default world always starts as **one species**. Species appear as body and brain genes drift, because a species is a ball around its founding genome and a lineage eventually walks out of it.
+- The change from "one species" to "many" is steep around 0.06-0.08, because the per-birth step (about 0.034) is comparable to the threshold. With 3x the mutation rate and 2x the strength the same thresholds give 4-10 times as many species, so mutation settings and `threshold` should be tuned together.
+
+The tests in `tests/species/exit-criteria.test.ts` bound these quantities with margin (3-80 species created in 30,000 ticks, at most 20 alive at once).

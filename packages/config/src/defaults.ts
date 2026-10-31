@@ -95,7 +95,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   },
   species: {
     enabled: true,
-    threshold: 0.15,
+    threshold: 0.06,
     distanceWeights: {
       physical: 0.2,
       sensory: 0.2,

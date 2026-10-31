@@ -13,7 +13,7 @@ const baselineGene = (spec: { min: number; max: number }): number => (spec.min +
 const genome = (id: number, weight: number): Genome => genomeWith(f, id, baselineGene, weight)
 
 function registry(overrides: Partial<SpeciesConfig> = {}): SpeciesRegistry {
-  return new SpeciesRegistry({ ...f.config.species, ...overrides }, f.specs, std)
+  return new SpeciesRegistry({ ...f.config.species, threshold: 0.15, ...overrides }, f.specs, std)
 }
 
 describe('weightedDistance', () => {
