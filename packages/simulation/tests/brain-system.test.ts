@@ -180,7 +180,8 @@ describe('BrainSystem', () => {
     perception.set(1, {
       resourceId: 9,
       position: { x: 100, y: 120 },
-      distanceSquared: 400
+      distanceSquared: 400,
+      kind: 0
     })
     system.decide()
     const intent = intents.get(1)!
@@ -213,6 +214,7 @@ describe('BrainSystem', () => {
       tick: 1,
       organismId: 1,
       resourceId: 5,
+      kind: 0,
       amount: 30,
       energyGained: 30,
       energyWasted: 0,
@@ -268,6 +270,7 @@ describe('BrainSystem', () => {
       tick: 1,
       organismId: 1,
       resourceId: 5,
+      kind: 0,
       amount: 30,
       energyGained: 30,
       energyWasted: 0,
@@ -343,7 +346,7 @@ describe('strafe and interact', () => {
       const organisms = new OrganismStore()
       organisms.add(organismFor(config, 1, { x: 10, y: 10, energy: 50, age: 100 }))
       const resources = new ResourceStore()
-      resources.add({ id: 2, x: 10, y: 10, remaining: 30 })
+      resources.add({ id: 2, x: 10, y: 10, remaining: 30, kind: 0 })
       const index = new SpatialHash<ResourceState>(60, (r) => r)
       index.rebuild(resources.values())
       const intents: IntentBuffer = new Map([[1, { turn: 0, thrust: 0, strafe: 0, interact }]])
@@ -459,7 +462,7 @@ describe('children and learning inheritance', () => {
 
   it('does not alter the non-learnable weights, whatever the mode', () => {
     const { child, layout, parentTails } = birth('lamarckian')
-    expect(child.genome.brain.weights.slice(0, layout.learnOffset)).toHaveLength(260)
+    expect(child.genome.brain.weights.slice(0, layout.learnOffset)).toHaveLength(340)
     expect(parentTails[0]).toHaveLength(54)
   })
 })

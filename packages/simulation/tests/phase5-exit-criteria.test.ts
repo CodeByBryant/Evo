@@ -103,7 +103,9 @@ describe('Phase 5 exit criteria', () => {
     expect(brain.memory).toHaveLength(4)
     expect(brain.output).toHaveLength(ACTION_SIZE)
     expect(Object.keys(brain.reward).sort()).toEqual([
+      'damage',
       'energyCost',
+      'exploration',
       'feeding',
       'reproduction',
       'total'

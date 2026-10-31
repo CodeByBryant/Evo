@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { EventLog } from '../src/events/EventLog'
 
 const spawned = (tick: number, resourceId: number) =>
-  ({ type: 'resource-spawned', tick, resourceId, position: { x: 0, y: 0 } }) as const
+  ({ type: 'resource-spawned', tick, resourceId, kind: 0, position: { x: 0, y: 0 } }) as const
 
 describe('EventLog', () => {
   it('rejects a negative or non-integer capacity', () => {

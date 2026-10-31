@@ -60,11 +60,11 @@ describe('contracts and layout', () => {
     })
   })
 
-  it('lays out eight blocks totalling 314 weights, learnable ones last', () => {
-    expect(brainBlockLengths(architecture)).toEqual([184, 32, 8, 32, 4, 40, 5, 9])
-    expect(brainWeightCount(architecture)).toBe(314)
-    expect(layout.total).toBe(314)
-    expect(layout.learnOffset).toBe(260)
+  it('lays out eight blocks totalling 394 weights, learnable ones last', () => {
+    expect(brainBlockLengths(architecture)).toEqual([264, 32, 8, 32, 4, 40, 5, 9])
+    expect(brainWeightCount(architecture)).toBe(394)
+    expect(layout.total).toBe(394)
+    expect(layout.learnOffset).toBe(340)
     expect(layout.learnLength).toBe(54)
     expect(layout.actorLength).toBe(45)
     expect(layout.hiddenToValue.offset + layout.hiddenToValue.length).toBe(layout.total)
@@ -154,7 +154,7 @@ describe('exploration and reward', () => {
   })
 
   it('splits reward into its terms and clamps the total', () => {
-    const weights = { feeding: 1, reproduction: 0.5, energyCost: 5 }
+    const weights = { feeding: 1, reproduction: 0.5, energyCost: 5, damage: 0, exploration: 0 }
     const r = computeReward(
       { energyGained: 30, reproduced: true, energyCost: 0.05, capacity: 100 },
       weights
@@ -224,8 +224,8 @@ describe('innate prior', () => {
       { ...config.genetics.brain, innatePrior: false },
       stream()
     )
-    expect(prior.brain.weights).toHaveLength(314)
-    expect(plain.brain.weights).toHaveLength(314)
+    expect(prior.brain.weights).toHaveLength(394)
+    expect(plain.brain.weights).toHaveLength(394)
     const worst = Math.max(
       ...prior.brain.weights.map((w, i) => Math.abs(w - (weights[i] as number)))
     )

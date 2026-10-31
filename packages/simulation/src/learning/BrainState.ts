@@ -3,6 +3,10 @@ import { ACTION_SIZE } from '@evo/contracts'
 import type { StateHasher } from '../serialization/hash'
 import type { BrainLayout } from './BrainLayout'
 
+/** Cells of the coarse novelty grid (8 x 8 over the world). */
+export const VISITED_GRID = 8
+export const VISITED_CELLS = VISITED_GRID * VISITED_GRID
+
 /** The mutable reward record of the most recently settled tick. */
 export type MutableReward = { -readonly [K in keyof RewardBreakdown]: number }
 
@@ -35,6 +39,8 @@ export interface BrainState {
   energyAtDecision: number
   /** Number of decisions made; zero means there is no previous transition to learn from. */
   decisions: number
+  /** Coarse world cells (8 x 8) this organism has entered; the novelty reward fires on first entry. */
+  visited: Uint8Array
   /** Lifetime telemetry. */
   rewardTotal: number
   updates: number
@@ -57,11 +63,12 @@ export function createBrainState(genome: Genome, layout: BrainLayout, energy: nu
     prevHidden: new Array<number>(layout.architecture.hiddenSize).fill(0),
     prevAction: new Array<number>(ACTION_SIZE).fill(0),
     prevValue: 0,
-    reward: { feeding: 0, reproduction: 0, energyCost: 0, total: 0 },
+    reward: { feeding: 0, reproduction: 0, energyCost: 0, damage: 0, exploration: 0, total: 0 },
     rewardBaseline: 0,
     timeSinceFood: 0,
     energyAtDecision: energy,
     decisions: 0,
+    visited: new Uint8Array(VISITED_CELLS),
     rewardTotal: 0,
     updates: 0,
     weightChange: 0,
@@ -90,6 +97,8 @@ export function writeBrainState(hasher: StateHasher, brain: BrainState | null): 
     .writeFloat64(brain.reward.feeding)
     .writeFloat64(brain.reward.reproduction)
     .writeFloat64(brain.reward.energyCost)
+    .writeFloat64(brain.reward.damage)
+    .writeFloat64(brain.reward.exploration)
     .writeFloat64(brain.reward.total)
     .writeFloat64(brain.rewardBaseline)
     .writeFloat64(brain.timeSinceFood)
@@ -98,6 +107,7 @@ export function writeBrainState(hasher: StateHasher, brain: BrainState | null): 
     .writeFloat64(brain.rewardTotal)
     .writeUint32(brain.updates)
     .writeFloat64(brain.weightChange)
+  for (const cell of brain.visited) hasher.writeUint8(cell)
 }
 
 /** Names every non-finite value in a brain state; empty when the state is sound. */
@@ -119,11 +129,16 @@ export function brainStateProblems(brain: BrainState, layout: BrainLayout): stri
   check('eligibility', brain.eligibility, layout.actorLength)
   check('prevHidden', brain.prevHidden, layout.architecture.hiddenSize)
   check('prevAction', brain.prevAction, ACTION_SIZE)
+  if (brain.visited.length !== VISITED_CELLS) {
+    problems.push(`visited has length ${brain.visited.length}, expected ${VISITED_CELLS}`)
+  }
   check('scalars', [
     brain.prevValue,
     brain.reward.feeding,
     brain.reward.reproduction,
     brain.reward.energyCost,
+    brain.reward.damage,
+    brain.reward.exploration,
     brain.reward.total,
     brain.rewardBaseline,
     brain.timeSinceFood,

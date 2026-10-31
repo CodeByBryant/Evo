@@ -90,6 +90,11 @@ export type {
   OrganismMovedEvent,
   EnergyChangedEvent,
   ReproductionAttemptedEvent,
+  OrganismDamagedEvent,
+  DamageSource,
+  SeasonChangedEvent,
+  HazardSpawnedEvent,
+  HazardExpiredEvent,
   ReproductionFailureReason,
   WorldEvent,
   WorldEventType

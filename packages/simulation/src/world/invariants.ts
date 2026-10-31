@@ -1,4 +1,5 @@
 import type { MetricsSnapshot, ValidationResult, WorldConfig } from '@evo/contracts'
+import type { HazardState } from '../ecology/HazardStore'
 import type { OrganismState } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
 import type { GeneSpec } from '../genetics/GeneSpecs'
@@ -6,6 +7,7 @@ import { architectureOf } from '../genetics/GenomeFactory'
 import { brainLayoutOf } from '../learning/BrainLayout'
 import { brainStateProblems } from '../learning/BrainState'
 import { validateGenome } from '../genetics/GenomeValidation'
+import { maxHealthOf } from '../organisms/traits'
 import type { LineageQueries } from '../lineage/LineageStore'
 
 export interface InvariantContext {
@@ -25,6 +27,8 @@ export interface InvariantContext {
   readonly lineage: LineageQueries
   /** Every living organism must have an active species and the counts must agree. */
   readonly species: { problems(livingOrganismIds: readonly number[]): string[] }
+  /** Every active hazard must be finite and positive-sized. */
+  readonly hazards: readonly HazardState[]
 }
 
 function checkFinite(label: string, field: string, value: number, errors: string[]): void {
@@ -37,6 +41,7 @@ function checkOrganism(
   height: number,
   tick: number,
   nextEntityId: number,
+  maxHealth: number,
   errors: string[]
 ): void {
   const label = `organism ${organism.id}`
@@ -47,6 +52,7 @@ function checkOrganism(
   checkFinite(label, 'heading', organism.heading, errors)
   checkFinite(label, 'age', organism.age, errors)
   checkFinite(label, 'energy', organism.energy, errors)
+  checkFinite(label, 'health', organism.health, errors)
   checkFinite(
     label,
     'reproductionCooldownRemaining',
@@ -55,6 +61,10 @@ function checkOrganism(
   )
   if (organism.age < 0) errors.push(`${label}: age is negative`)
   if (organism.energy < 0) errors.push(`${label}: energy is negative`)
+  if (organism.health <= 0) errors.push(`${label}: health is not positive`)
+  if (organism.health > maxHealth * (1 + 1e-9)) {
+    errors.push(`${label}: health (${organism.health}) exceeds its maximum (${maxHealth})`)
+  }
   if (organism.reproductionCooldownRemaining < 0) {
     errors.push(`${label}: reproductionCooldownRemaining is negative`)
   }
@@ -124,7 +134,15 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
       errors.push(`organisms are not in strictly ascending id order at organism ${organism.id}`)
     }
     previousOrganismId = organism.id
-    checkOrganism(organism, width, height, tick, nextEntityId, errors)
+    checkOrganism(
+      organism,
+      width,
+      height,
+      tick,
+      nextEntityId,
+      maxHealthOf(organism.genome, config),
+      errors
+    )
 
     const genomeResult = validateGenome(organism.genome, geneSpecs, {
       brain: architectureOf(config.genetics.brain),
@@ -188,6 +206,9 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
   checkFinite('metrics', 'resourcesConsumed', metrics.resourcesConsumed, errors)
   checkFinite('metrics', 'energyConsumed', metrics.energyConsumed, errors)
   checkFinite('metrics', 'energyWasted', metrics.energyWasted, errors)
+  checkFinite('metrics', 'damageTaken', metrics.damageTaken, errors)
+  if (metrics.damageTaken < 0) errors.push('metrics.damageTaken is negative')
+  if (metrics.deathsByDamage < 0) errors.push('metrics.deathsByDamage is negative')
   if (metrics.organismsBorn < 0) errors.push('metrics.organismsBorn is negative')
   if (metrics.deathsByStarvation < 0) errors.push('metrics.deathsByStarvation is negative')
   if (metrics.deathsByAge < 0) errors.push('metrics.deathsByAge is negative')
@@ -197,6 +218,19 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
   if (metrics.energyWasted < 0) errors.push('metrics.energyWasted is negative')
 
   errors.push(...context.species.problems(organisms.map((organism) => organism.id)))
+
+  for (const hazard of context.hazards) {
+    const label = `hazard ${hazard.id}`
+    checkFinite(label, 'x', hazard.x, errors)
+    checkFinite(label, 'y', hazard.y, errors)
+    checkFinite(label, 'radius', hazard.radius, errors)
+    checkFinite(label, 'damagePerSecond', hazard.damagePerSecond, errors)
+    if (hazard.radius <= 0) errors.push(`${label}: radius is not positive`)
+    if (hazard.damagePerSecond < 0) errors.push(`${label}: damagePerSecond is negative`)
+    if (hazard.expiresAtTick !== null && hazard.expiresAtTick <= tick) {
+      errors.push(`${label}: expired at tick ${hazard.expiresAtTick} but still active`)
+    }
+  }
 
   return { ok: errors.length === 0, errors }
 }

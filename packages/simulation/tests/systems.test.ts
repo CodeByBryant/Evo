@@ -30,6 +30,7 @@ const resource = (id: number, overrides: Partial<ResourceState> = {}): ResourceS
   x: 0,
   y: 0,
   remaining: 30,
+  kind: 0,
   ...overrides
 })
 
@@ -162,7 +163,7 @@ describe('DecisionSystem', () => {
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { x: 0, y: 0, heading: 0 }))
     const perceptionBuffer: PerceptionBuffer = new Map([
-      [1, { resourceId: 1, position: { x: 10, y: 0 }, distanceSquared: 100 }]
+      [1, { resourceId: 1, position: { x: 10, y: 0 }, distanceSquared: 100, kind: 0 }]
     ])
     const intentBuffer: IntentBuffer = new Map()
 
@@ -184,7 +185,7 @@ describe('DecisionSystem', () => {
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { x: 0, y: 0, heading: 0 }))
     const perceptionBuffer: PerceptionBuffer = new Map([
-      [1, { resourceId: 1, position: { x: 0, y: 10 }, distanceSquared: 100 }]
+      [1, { resourceId: 1, position: { x: 0, y: 10 }, distanceSquared: 100, kind: 0 }]
     ])
     const intentBuffer: IntentBuffer = new Map()
 
@@ -824,6 +825,7 @@ describe('DeathSystem', () => {
         genomeId: 1,
         parentIds: [7, 9],
         speciesId: null,
+        migration: null,
         birthTick: 3,
         deathTick: 20,
         deathCause: 'starvation',

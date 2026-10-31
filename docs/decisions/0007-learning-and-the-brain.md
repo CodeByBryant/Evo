@@ -26,7 +26,7 @@ The mechanism, formulas and weight layout are specified in [docs/learning/brain.
 
 ### A recurrent network with an activation that needs no `exp`
 
-The determinism policy bans platform `exp`/`tanh`. The activation is **softsign**, `x / (1 + |x|)`, using only `+`, `/` and `abs`. The network is recurrent: a `memory` vector is fed back into the hidden layer and rewritten each tick, which is what gives the brain memory (roadmap 5.1). The critic's value head is an **8th weight block** present in every genome regardless of the learning algorithm, so a genome's shape never depends on which algorithm is running and ablations compare like for like. The default weight count becomes 314 (input 23, hidden 8, memory 4, output 5).
+The determinism policy bans platform `exp`/`tanh`. The activation is **softsign**, `x / (1 + |x|)`, using only `+`, `/` and `abs`. The network is recurrent: a `memory` vector is fed back into the hidden layer and rewritten each tick, which is what gives the brain memory (roadmap 5.1). The critic's value head is an **8th weight block** present in every genome regardless of the learning algorithm, so a genome's shape never depends on which algorithm is running and ablations compare like for like. The default weight count becomes 314 (input 23, hidden 8, memory 4, output 5). Phase 6 (ADR 0009) appended ten observation slots, making the input 33 and the default weight count 394.
 
 ### Learning changes a runtime overlay, never the genome
 

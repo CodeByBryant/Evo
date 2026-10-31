@@ -15,7 +15,7 @@ const LEARNING_KEYS = [
   'valueRateScale',
   'foodHorizon'
 ]
-const REWARD_WEIGHT_KEYS = ['feeding', 'reproduction', 'energyCost']
+const REWARD_WEIGHT_KEYS = ['feeding', 'reproduction', 'energyCost', 'damage', 'exploration']
 const REGION_KEYS = ['x', 'y', 'width', 'height']
 
 /** Validates the top-level `learning` section of a complete configuration. */

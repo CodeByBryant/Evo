@@ -88,7 +88,7 @@ describe('PerceptionSystem reads the sensorRadius gene', () => {
     const organisms = new OrganismStore()
     organisms.add(withGenes(mature(1), { 'sensory.sensorRadius': 30 }))
     organisms.add(withGenes(mature(2), { 'sensory.sensorRadius': 100 }))
-    const resource: ResourceState = { id: 3, x: 50, y: 0, remaining: 30 }
+    const resource: ResourceState = { id: 3, x: 50, y: 0, remaining: 30, kind: 0 }
     const index = new SpatialHash<ResourceState>(120, (r) => r)
     index.rebuild([resource])
     const buffer: PerceptionBuffer = new Map()
@@ -200,7 +200,7 @@ describe('InteractionSystem reads the radius gene and derives capacity from it',
     const organisms = new OrganismStore()
     organisms.add(organism)
     const resources = new ResourceStore()
-    resources.add({ id: 9, x: resourceX, y: 0, remaining: 30 })
+    resources.add({ id: 9, x: resourceX, y: 0, remaining: 30, kind: 0 })
     const index = new SpatialHash<ResourceState>(60, (r) => r)
     index.rebuild(resources.values())
     const events = new EventLog(10)

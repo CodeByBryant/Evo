@@ -4,19 +4,34 @@ import type {
   BrainSnapshot,
   EntityId,
   Genome,
+  HazardSnapshot,
   HistoricalOrganismRecord,
+  MigrationSummary,
+  RegionType,
   ValidationResult,
   WorldConfig,
   WorldOptions,
   WorldSnapshot
 } from '@evo/contracts'
-import type { IntentBuffer, PeerBuffer, PerceptionBuffer } from '../buffers/types'
+import type {
+  DamageBuffer,
+  HazardBuffer,
+  IntentBuffer,
+  PeerBuffer,
+  PerceptionBuffer,
+  RegenBuffer
+} from '../buffers/types'
 import type { ClockState } from '../clock/SimulationClock'
 import { SimulationClock } from '../clock/SimulationClock'
+import { EcologyModel } from '../ecology/EcologyModel'
+import { HazardStore } from '../ecology/HazardStore'
+import { MigrationTracker } from '../ecology/MigrationTracker'
+import { RegionMap } from '../ecology/RegionMap'
 import { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { maxHealthOf } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
@@ -42,6 +57,8 @@ import { BrainSystem } from '../systems/BrainSystem'
 import { DeathSystem } from '../systems/DeathSystem'
 import { DecisionSystem } from '../systems/DecisionSystem'
 import { EnvironmentSystem } from '../systems/EnvironmentSystem'
+import { HealthSystem } from '../systems/HealthSystem'
+import { MigrationSystem } from '../systems/MigrationSystem'
 import { InteractionSystem } from '../systems/InteractionSystem'
 import { MetabolismSystem } from '../systems/MetabolismSystem'
 import { MovementSystem } from '../systems/MovementSystem'
@@ -79,11 +96,18 @@ export class World {
   private readonly historyStore: HistoryStore
   private readonly lineageStore: LineageStore
   private readonly speciesRegistry: SpeciesRegistry
+  private readonly regionMap: RegionMap | null
+  private readonly ecology: EcologyModel
+  private readonly hazardStore: HazardStore
+  private readonly migrationTracker: MigrationTracker
   private readonly geneSpecs: GeneSpec[]
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
   private readonly peerBuffer: PeerBuffer = new Map()
   private readonly intentBuffer: IntentBuffer = new Map()
+  private readonly hazardBuffer: HazardBuffer = new Map()
+  private readonly damageBuffer: DamageBuffer = new Map()
+  private readonly regenBuffer: RegenBuffer = new Map()
   private readonly brainLayout: BrainLayout
 
   private readonly environmentSystem: EnvironmentSystem
@@ -93,6 +117,8 @@ export class World {
   private readonly movementSystem: MovementSystem
   private readonly interactionSystem: InteractionSystem
   private readonly metabolismSystem: MetabolismSystem
+  private readonly healthSystem: HealthSystem
+  private readonly migrationSystem: MigrationSystem
   private readonly reproductionSystem: ReproductionSystem
   private readonly deathSystem: DeathSystem
 
@@ -139,21 +165,39 @@ export class World {
       this.config.genetics.brain.initialWeightStd
     )
 
+    // The terrain is drawn once, from its own stream, and only when regions are on.
+    const { regions } = this.config.ecology
+    this.regionMap = regions.enabled
+      ? RegionMap.generate(
+          regions,
+          this.config.environment.width,
+          this.config.environment.height,
+          this.randomStreams.get('terrain')
+        )
+      : null
+    this.ecology = new EcologyModel(this.config, this.regionMap)
+    this.hazardStore = new HazardStore()
+    this.migrationTracker = new MigrationTracker(this.config.ecology.migration.dwellTime)
+    const brainControlled = this.config.learning.controller === 'brain'
+
     this.environmentSystem = new EnvironmentSystem(
       this.config,
       this.resources,
       this.ids,
       this.randomStreams.get('environment'),
-      this.events
+      this.events,
+      this.ecology,
+      this.hazardStore,
+      this.randomStreams.get('events')
     )
     this.brainLayout = brainLayoutOf(architectureOf(this.config.genetics.brain))
     this.perceptionSystem = new PerceptionSystem(
       this.organisms,
       this.resourceIndex,
       this.perceptionBuffer,
-      this.config.learning.controller === 'brain'
-        ? { organismIndex: this.organismIndex, buffer: this.peerBuffer }
-        : undefined
+      brainControlled ? { organismIndex: this.organismIndex, buffer: this.peerBuffer } : undefined,
+      this.ecology,
+      brainControlled ? { hazards: this.hazardStore, buffer: this.hazardBuffer } : undefined
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
@@ -169,13 +213,22 @@ export class World {
       this.peerBuffer,
       this.intentBuffer,
       this.events,
-      this.randomStreams.get('learning')
+      this.randomStreams.get('learning'),
+      this.ecology,
+      this.hazardBuffer
     )
     this.movementSystem = new MovementSystem(
       this.config,
       this.organisms,
       this.intentBuffer,
-      this.events
+      this.events,
+      this.ecology
+    )
+    this.migrationSystem = new MigrationSystem(
+      this.config,
+      this.organisms,
+      this.ecology,
+      this.migrationTracker
     )
     this.interactionSystem = new InteractionSystem(
       this.config,
@@ -183,9 +236,26 @@ export class World {
       this.resources,
       this.resourceIndex,
       this.events,
-      this.intentBuffer
+      this.intentBuffer,
+      this.ecology,
+      this.damageBuffer
     )
-    this.metabolismSystem = new MetabolismSystem(this.config, this.organisms, this.events)
+    this.healthSystem = new HealthSystem(
+      this.config,
+      this.organisms,
+      this.hazardStore,
+      this.damageBuffer,
+      this.regenBuffer,
+      this.events,
+      this.ecology
+    )
+    this.metabolismSystem = new MetabolismSystem(
+      this.config,
+      this.organisms,
+      this.events,
+      this.ecology,
+      this.regenBuffer
+    )
     this.reproductionSystem = new ReproductionSystem(
       this.config,
       this.organisms,
@@ -196,17 +266,20 @@ export class World {
       this.lineageStore,
       this.randomStreams.get('reproduction'),
       this.events,
-      this.speciesRegistry
+      this.speciesRegistry,
+      this.ecology
     )
     this.deathSystem = new DeathSystem(
       this.organisms,
       this.events,
       this.historyStore,
       this.lineageStore,
-      this.speciesRegistry
+      this.speciesRegistry,
+      this.migrationTracker
     )
 
     this.events.beginTick()
+    this.environmentSystem.placeStaticHazards(0, this.randomStreams.get('terrain'))
     this.spawnInitialPopulation()
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, 0)
@@ -245,6 +318,7 @@ export class World {
         heading,
         age: 0,
         energy: this.config.organisms.initialEnergy,
+        health: maxHealthOf(genome, this.config),
         parentIds: [],
         birthTick: 0,
         reproductionCooldownRemaining: 0,
@@ -293,6 +367,37 @@ export class World {
    */
   get species(): SpeciesQueries {
     return this.speciesRegistry
+  }
+
+  /** The active hazards (damage areas and storms), ascending id. Deep-copied. */
+  private hazardSnapshots(): HazardSnapshot[] {
+    return this.hazardStore.values().map((hazard) => ({
+      id: hazard.id,
+      kind: hazard.kind,
+      position: { x: hazard.x, y: hazard.y },
+      radius: hazard.radius,
+      damagePerSecond: hazard.damagePerSecond,
+      expiresAtTick: hazard.expiresAtTick
+    }))
+  }
+
+  /** The region type at a position, or `null` when regions are off. */
+  regionTypeAt(x: number, y: number): RegionType | null {
+    return this.ecology.regionTypeAt(x, y)
+  }
+
+  /** The region instance (a Voronoi point index) at a position, or `-1` when regions are off. */
+  regionIndexAt(x: number, y: number): number {
+    return this.ecology.regionIndexAt(x, y)
+  }
+
+  /**
+   * How a living organism has moved between regions (docs/ecology/ecology.md); `undefined` when
+   * it is not alive, migration is off, or it has not been observed yet. A derived record, not
+   * part of the state hash.
+   */
+  migrationOf(organismId: EntityId): MigrationSummary | undefined {
+    return this.migrationTracker.summary(organismId)
   }
 
   /**
@@ -350,15 +455,17 @@ export class World {
     this.environmentSystem.update(tick)
     this.resourceIndex.rebuild(this.resources.values())
     this.organismIndex.rebuild(this.organisms.values())
-    this.perceptionSystem.update()
-    if (this.config.learning.controller === 'brain') this.brainSystem.decide()
+    this.perceptionSystem.update(tick)
+    if (this.config.learning.controller === 'brain') this.brainSystem.decide(tick)
     else this.decisionSystem.update()
     this.movementSystem.update(tick)
+    this.migrationSystem.update()
     this.interactionSystem.update(tick)
+    this.healthSystem.update(tick)
     this.metabolismSystem.update(tick)
     this.reproductionSystem.update(tick)
     this.deathSystem.update(tick)
-    if (this.config.learning.controller === 'brain') this.brainSystem.settle()
+    if (this.config.learning.controller === 'brain') this.brainSystem.settle(tick)
 
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, tick)
@@ -393,7 +500,8 @@ export class World {
       nextGenomeId: this.genomeIds.nextId,
       geneSpecs: this.geneSpecs,
       lineage: this.lineageStore,
-      species: this.speciesRegistry
+      species: this.speciesRegistry,
+      hazards: this.hazardStore.values()
     })
   }
 
@@ -419,16 +527,19 @@ export class World {
         radius: organism.genome.physical.radius,
         age: organism.age,
         energy: organism.energy,
+        health: organism.health,
         lifeStage: lifeStageFor(organism.age, this.config.organisms),
         reproductionCooldownRemaining: organism.reproductionCooldownRemaining
       })),
       resources: this.resources.values().map((resource) => ({
         id: resource.id,
         position: { x: resource.x, y: resource.y },
-        radius: this.config.resources.radius,
-        energyValue: this.config.resources.energyValue,
-        remaining: resource.remaining
+        radius: this.ecology.kind(resource.kind).radius,
+        energyValue: this.ecology.kind(resource.kind).energy,
+        remaining: resource.remaining,
+        kind: resource.kind
       })),
+      hazards: this.hazardSnapshots(),
       metrics: this.metricsCollector.snapshot()
     }
   }
@@ -501,6 +612,7 @@ export class World {
         .writeUint32(weights.length)
       for (const weight of weights) hasher.writeFloat64(weight)
       writeBrainState(hasher, organism.brain)
+      hasher.writeFloat64(organism.health)
     }
 
     const resources = this.resources.values()
@@ -511,6 +623,7 @@ export class World {
         .writeFloat64(resource.x)
         .writeFloat64(resource.y)
         .writeFloat64(resource.remaining)
+        .writeUint8(resource.kind)
     }
 
     const metrics = this.metricsCollector.snapshot()
@@ -525,10 +638,30 @@ export class World {
       .writeUint32(metrics.reproductionFailures)
       .writeFloat64(metrics.energyConsumed)
       .writeFloat64(metrics.energyWasted)
+      .writeUint32(metrics.deathsByDamage)
+      .writeFloat64(metrics.damageTaken)
 
     const extinctionTick = this.metricsCollector.extinctionTick
     hasher.writeBoolean(extinctionTick !== null).writeFloat64(extinctionTick ?? 0)
     hasher.writeFloat64(this.events.emittedCount)
+
+    // Schema v5 tail: the hazards, their id counter and the two spawn remainders (docs/simulation/determinism.md).
+    const hazards = this.hazardStore.values()
+    hasher.writeUint32(hazards.length).writeUint32(this.hazardStore.nextId)
+    for (const hazard of hazards) {
+      hasher
+        .writeUint32(hazard.id)
+        .writeUint8(hazard.kind === 'damage-area' ? 0 : 1)
+        .writeFloat64(hazard.x)
+        .writeFloat64(hazard.y)
+        .writeFloat64(hazard.radius)
+        .writeFloat64(hazard.damagePerSecond)
+        .writeBoolean(hazard.expiresAtTick !== null)
+        .writeFloat64(hazard.expiresAtTick ?? 0)
+    }
+    hasher
+      .writeFloat64(this.environmentSystem.spawnRemainder)
+      .writeFloat64(this.environmentSystem.stormRemainder)
 
     return hasher.digest()
   }

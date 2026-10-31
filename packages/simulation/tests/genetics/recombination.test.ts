@@ -185,7 +185,7 @@ describe('crossoverWeights', () => {
     const a = founder(f, 0, 1).brain.weights
     const b = founder(f, 1, 2).brain.weights
     const child = crossoverWeights(a, b, lengths, geneticsStream(1))
-    expect(child).toHaveLength(314)
+    expect(child).toHaveLength(394)
     expect(child.every((value, i) => value === a[i] || value === b[i])).toBe(true)
   })
 })

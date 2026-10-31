@@ -54,3 +54,8 @@ export function reproductionCostOf(genome: Genome, config: WorldConfig): number 
 export function reproductionThresholdOf(genome: Genome, config: WorldConfig): number {
   return Math.max(genome.reproduction.minEnergy, reproductionCostOf(genome, config))
 }
+
+/** Health capacity: `ecology.health.maxHealth` scaled by the body-size factor (bigger bodies are sturdier). */
+export function maxHealthOf(genome: Genome, config: WorldConfig): number {
+  return config.ecology.health.maxHealth * sizeFactor(genome, config)
+}

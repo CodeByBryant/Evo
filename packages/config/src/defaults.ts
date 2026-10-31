@@ -87,7 +87,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     controller: 'brain',
     enabled: true,
     algorithm: 'actorCritic',
-    rewardWeights: { feeding: 1, reproduction: 0.5, energyCost: 5 },
+    rewardWeights: { feeding: 1, reproduction: 0.5, energyCost: 5, damage: 0, exploration: 0 },
     weightLimit: 4,
     baselineRate: 0.01,
     valueRateScale: 1,

@@ -19,13 +19,15 @@ const zeroMetrics: MetricsSnapshot = {
   organismsBorn: 0,
   deathsByStarvation: 0,
   deathsByAge: 0,
+  deathsByDamage: 0,
   resourcesSpawned: 0,
   resourcesConsumed: 0,
   reproductionAttempts: 0,
   reproductionSuccesses: 0,
   reproductionFailures: 0,
   energyConsumed: 0,
-  energyWasted: 0
+  energyWasted: 0,
+  damageTaken: 0
 }
 
 const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismState =>
@@ -36,6 +38,7 @@ const resource = (id: number, overrides: Partial<ResourceState> = {}): ResourceS
   x: 10,
   y: 10,
   remaining: 30,
+  kind: 0,
   ...overrides
 })
 
@@ -67,7 +70,8 @@ const baseContext = (overrides: Partial<InvariantContext> = {}): InvariantContex
   geneSpecs: buildGeneSpecs(DEFAULT_WORLD_CONFIG),
   ...overrides,
   lineage: overrides.lineage ?? lineageFor(overrides.organisms ?? []),
-  species: overrides.species ?? { problems: () => [] }
+  species: overrides.species ?? { problems: () => [] },
+  hazards: overrides.hazards ?? []
 })
 
 describe('checkInvariants', () => {
@@ -339,5 +343,56 @@ describe('genome invariants', () => {
     store.markDeath(2)
     store.register({ genomeId: 3, parentGenomeIds: [1, 2], organismId: 3, tick: 5 })
     expect(checkInvariants(baseContext({ organisms: [child], lineage: store })).ok).toBe(true)
+  })
+})
+
+describe('checkInvariants: health, hazards and the novelty grid (Phase 6)', () => {
+  it('catches non-finite health (NaN and Infinity)', () => {
+    for (const bad of [Number.NaN, Infinity, -Infinity]) {
+      const result = checkInvariants(baseContext({ organisms: [organism(1, { health: bad })] }))
+      expect(result.ok).toBe(false)
+      expect(result.errors.some((e) => e.includes('health') && e.includes('not finite'))).toBe(true)
+    }
+  })
+
+  it('catches a living organism with no health, and health above its maximum', () => {
+    const dead = checkInvariants(baseContext({ organisms: [organism(1, { health: 0 })] }))
+    expect(dead.errors).toContain('organism 1: health is not positive')
+    const max = organism(1).health
+    const over = checkInvariants(baseContext({ organisms: [organism(1, { health: max + 1 })] }))
+    expect(over.errors.some((e) => e.includes('exceeds its maximum'))).toBe(true)
+    expect(checkInvariants(baseContext({ organisms: [organism(1, { health: max })] })).ok).toBe(
+      true
+    )
+  })
+
+  const hazard = {
+    id: 0,
+    kind: 'storm' as const,
+    x: 10,
+    y: 10,
+    radius: 5,
+    damagePerSecond: 2,
+    expiresAtTick: 200
+  }
+
+  it('accepts a sound hazard and reports broken ones', () => {
+    expect(checkInvariants(baseContext({ hazards: [hazard] })).ok).toBe(true)
+    const errors = (h: Partial<typeof hazard>): readonly string[] =>
+      checkInvariants(baseContext({ hazards: [{ ...hazard, ...h }] })).errors
+    expect(errors({ x: Number.NaN })).toContain('hazard 0: x is not finite (NaN)')
+    expect(errors({ radius: 0 })).toContain('hazard 0: radius is not positive')
+    expect(errors({ damagePerSecond: -1 })).toContain('hazard 0: damagePerSecond is negative')
+    // the clock is at tick 100; a hazard that should have expired is a stale one
+    expect(errors({ expiresAtTick: 100 })).toContain(
+      'hazard 0: expired at tick 100 but still active'
+    )
+  })
+
+  it('catches negative damage metrics', () => {
+    const metrics = { ...zeroMetrics, damageTaken: -1, deathsByDamage: -1 }
+    const errors = checkInvariants(baseContext({ metrics })).errors
+    expect(errors).toContain('metrics.damageTaken is negative')
+    expect(errors).toContain('metrics.deathsByDamage is negative')
   })
 })

@@ -1,6 +1,7 @@
 import { ACTION_SIZE } from '@evo/contracts'
 import type { EntityId, WorldConfig } from '@evo/contracts'
-import type { IntentBuffer, PeerBuffer, PerceptionBuffer } from '../buffers/types'
+import type { HazardBuffer, IntentBuffer, PeerBuffer, PerceptionBuffer } from '../buffers/types'
+import type { EcologyModel } from '../ecology/EcologyModel'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { architectureOf } from '../genetics/GenomeFactory'
@@ -9,10 +10,13 @@ import type { BrainLayout } from '../learning/BrainLayout'
 import { createLearner } from '../learning/LearningAlgorithm'
 import type { LearningAlgorithm, LearningParams } from '../learning/LearningAlgorithm'
 import { buildObservation } from '../learning/ObservationBuilder'
-import type { Sighting } from '../learning/ObservationBuilder'
+import type { HazardSighting, Sighting } from '../learning/ObservationBuilder'
+import { VISITED_GRID } from '../learning/BrainState'
+import { TWO_PI } from '../math/scalar'
+import { cos, sin } from '../math/trig'
 import { computeReward } from '../learning/RewardModel'
 import { lifeStageFor } from '../organisms/lifeStage'
-import { maxEnergyOf, reproductionCostOf } from '../organisms/traits'
+import { maxEnergyOf, maxHealthOf, reproductionCostOf } from '../organisms/traits'
 import type { SeededRandom } from '../random/SeededRandom'
 
 const THRUST = 0
@@ -46,7 +50,9 @@ export class BrainSystem {
     private readonly peerBuffer: PeerBuffer,
     private readonly intentBuffer: IntentBuffer,
     private readonly events: EventLog,
-    private readonly random: SeededRandom
+    private readonly random: SeededRandom,
+    private readonly ecology: EcologyModel | null = null,
+    private readonly hazardBuffer?: HazardBuffer
   ) {
     this.layout = brainLayoutOf(architectureOf(config.genetics.brain))
     this.learner = createLearner(config.learning.algorithm)
@@ -67,7 +73,21 @@ export class BrainSystem {
     }
   }
 
-  decide(): void {
+  /** The coarse novelty-grid cell an organism stands in. */
+  private cellOf(organism: OrganismState): number {
+    const { width, height } = this.config.environment
+    const column = Math.min(
+      VISITED_GRID - 1,
+      Math.max(0, Math.floor((organism.x / width) * VISITED_GRID))
+    )
+    const row = Math.min(
+      VISITED_GRID - 1,
+      Math.max(0, Math.floor((organism.y / height) * VISITED_GRID))
+    )
+    return row * VISITED_GRID + column
+  }
+
+  decide(tick = 0): void {
     this.intentBuffer.clear()
     const dt = this.config.timestep
     const { width, height } = this.config.environment
@@ -94,6 +114,21 @@ export class BrainSystem {
             }
           : null
 
+      const hazardTarget = this.hazardBuffer?.get(organism.id)
+      const hazard: HazardSighting | null = hazardTarget
+        ? {
+            dx: hazardTarget.position.x - organism.x,
+            dy: hazardTarget.position.y - organism.y,
+            distanceSquared: hazardTarget.distanceSquared,
+            radius: hazardTarget.radius
+          }
+        : null
+      const eco = this.ecology
+      const kindSpan = eco !== null && eco.kindCount > 1 ? eco.kindCount - 1 : 0
+      const phase = eco !== null && eco.seasonsOn ? TWO_PI * eco.yearPhase(tick) : 0
+      // Mark the starting cell as seen: the novelty reward is for *entering* new ground.
+      if (brain.decisions === 0) brain.visited[this.cellOf(organism)] = 1
+
       const observation = buildObservation({
         energy: capacity > 0 ? organism.energy / capacity : 0,
         age: organism.age / genome.physical.maxAge,
@@ -110,7 +145,14 @@ export class BrainSystem {
         peer: sight(peer),
         timeSinceFood: brain.timeSinceFood / foodHorizon,
         previousReward: brain.reward.total,
-        previousAction: brain.prevAction
+        previousAction: brain.prevAction,
+        health: organism.health / maxHealthOf(genome, this.config),
+        hazard,
+        foodKind: food && kindSpan > 0 ? food.kind / kindSpan : 0,
+        seasonCos: eco !== null && eco.seasonsOn ? cos(phase) : 0,
+        seasonSin: eco !== null && eco.seasonsOn ? sin(phase) : 0,
+        temperature: eco !== null ? eco.temperature(organism.x, organism.y, tick) : 0,
+        movementScale: eco !== null ? eco.movementScale(organism.x, organism.y, tick) : 1
       })
 
       const action = this.learner.decide(
@@ -138,13 +180,16 @@ export class BrainSystem {
     }
   }
 
-  settle(): void {
+  settle(tick = 0): void {
     const dt = this.config.timestep
+    const damaged = new Map<EntityId, number>()
     const gained = new Map<EntityId, number>()
     const reproduced = new Set<EntityId>()
     for (const event of this.events.eventsThisTick()) {
       if (event.type === 'resource-consumed') {
         gained.set(event.organismId, (gained.get(event.organismId) ?? 0) + event.energyGained)
+      } else if (event.type === 'organism-damaged') {
+        damaged.set(event.organismId, (damaged.get(event.organismId) ?? 0) + event.amount)
       } else if (event.type === 'reproduction-attempted' && event.succeeded) {
         reproduced.add(event.organismId)
         if (event.partnerId !== null) reproduced.add(event.partnerId)
@@ -157,23 +202,39 @@ export class BrainSystem {
       if (brain === null || brain.decisions === 0) continue
       const energyGained = gained.get(organism.id) ?? 0
       const reproducedNow = reproduced.has(organism.id)
-      const reproductionPaid = reproducedNow ? reproductionCostOf(organism.genome, this.config) : 0
+      const eco = this.ecology
+      const reproductionScale =
+        eco !== null && (eco.regionsOn || eco.seasonsOn)
+          ? eco.reproductionScale(organism.x, organism.y, tick)
+          : 1
+      const reproductionPaid = reproducedNow
+        ? reproductionCostOf(organism.genome, this.config) / reproductionScale
+        : 0
       // energy now = energy at decision + gained - metabolic cost - reproduction paid
       const metabolicCost =
         energyGained - reproductionPaid - (organism.energy - brain.energyAtDecision)
       const { capacity } = this.scales(organism)
+      const cell = this.cellOf(organism)
+      const novel = brain.visited[cell] === 0
+      brain.visited[cell] = 1
       const reward = computeReward(
         {
           energyGained,
           reproduced: reproducedNow,
           energyCost: metabolicCost,
-          capacity
+          capacity,
+          damage: (damaged.get(organism.id) ?? 0) / maxHealthOf(organism.genome, this.config),
+          riskTolerance: organism.genome.learning.riskTolerance,
+          novel,
+          noveltyPreference: organism.genome.learning.noveltyPreference
         },
         this.config.learning.rewardWeights
       )
       brain.reward.feeding = reward.feeding
       brain.reward.reproduction = reward.reproduction
       brain.reward.energyCost = reward.energyCost
+      brain.reward.damage = reward.damage
+      brain.reward.exploration = reward.exploration
       brain.reward.total = reward.total
       brain.rewardTotal += reward.total
       brain.timeSinceFood = energyGained > 0 ? 0 : brain.timeSinceFood + dt

@@ -58,7 +58,7 @@ At the baseline genome each quantity equals its Phase 3 value, which is what let
 
 ## Brain genome
 
-`brain = { architecture: { inputSize, hiddenSize, memorySize, outputSize }, weights: number[] }`. Every organism in a world has the same architecture (set by `genetics.brain`), so weight vectors are always compatible; topology does not evolve (roadmap 4.2). Since Phase 5 `inputSize` (23) and `outputSize` (5) are not config: they are derived from the `OBSERVATION_SIZE` and `ACTION_SIZE` contract constants, and `hiddenSize` / `memorySize` (default 8 / 4) stay configurable. See [docs/learning/brain.md](../learning/brain.md).
+`brain = { architecture: { inputSize, hiddenSize, memorySize, outputSize }, weights: number[] }`. Every organism in a world has the same architecture (set by `genetics.brain`), so weight vectors are always compatible; topology does not evolve (roadmap 4.2). Since Phase 5 `inputSize` (33 since Phase 6) and `outputSize` (5) are not config: they are derived from the `OBSERVATION_SIZE` and `ACTION_SIZE` contract constants, and `hiddenSize` / `memorySize` (default 8 / 4) stay configurable. See [docs/learning/brain.md](../learning/brain.md).
 
 `weights` is one flat vector made of eight consecutive **blocks** (the eighth, the critic's value head, was added in Phase 5). The layout is stable and documented; reordering it is a hash-schema change.
 
@@ -73,7 +73,7 @@ At the baseline genome each quantity equals its Phase 3 value, which is what let
 | 7   | `outputBias`     | output              | 5              |
 | 8   | `hiddenToValue`  | hidden, then 1 bias | 9              |
 
-Default total: 314 weights (249 in Phase 4, before the 23-input brain and the value head). Crossover operates per block (see below). Phase 5 interprets blocks 6-8 as the learnable ones; learning changes a per-organism overlay, never the genome.
+Default total: 394 weights (314 in Phase 5 with 23 inputs, 249 in Phase 4, before the brain and the value head). Crossover operates per block (see below). Phase 5 interprets blocks 6-8 as the learnable ones; learning changes a per-organism overlay, never the genome.
 
 ## Operators
 

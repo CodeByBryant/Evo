@@ -32,13 +32,13 @@ const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismS
   organismFor(DEFAULT_WORLD_CONFIG, id, overrides)
 
 describe('OrganismState shape', () => {
-  it('has no generation counter or health/alive field, and keeps its identity in the genome (roadmap: no generations)', () => {
+  it('has no generation counter or alive flag, and keeps its identity in the genome (roadmap: no generations)', () => {
     // Reproduction is local and continuous, not generational; a `generation` field would imply
-    // discrete cohorts that don't exist here, the same way `health`/`alive` would
-    // imply mechanics no system implements yet (docs/decisions/0005). A separate `genomeId` would
+    // discrete cohorts that don't exist here, and an `alive` flag would duplicate membership in
+    // the store (docs/decisions/0005). Health arrived in Phase 6 (ADR 0009). A separate `genomeId` would
     // duplicate the identity the genome already carries (docs/decisions/0006).
     const keys = Object.keys(organism(1))
-    for (const forbidden of ['generation', 'genomeId', 'health', 'alive']) {
+    for (const forbidden of ['generation', 'genomeId', 'alive']) {
       expect(keys).not.toContain(forbidden)
     }
   })
@@ -112,6 +112,7 @@ const resource = (id: number, overrides: Partial<ResourceState> = {}): ResourceS
   x: 0,
   y: 0,
   remaining: 30,
+  kind: 0,
   ...overrides
 })
 
