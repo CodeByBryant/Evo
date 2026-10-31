@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { World, buildGeneSpecs, genomeToVector } from '../../src/index'
+import { withoutEcology } from '../support/ecology'
 
 /**
  * The roadmap's first-milestone check, at full scale: a seeded world can run 100,000 ticks
@@ -117,7 +118,7 @@ describe('100,000-tick runs', () => {
     // controller; the brain controller's measured bands are in brain-long-run.test.ts.
     const world = World.create({
       seed: 1,
-      config: { learning: { controller: 'reflex' } },
+      config: withoutEcology({ learning: { controller: 'reflex' } }),
       validateEveryTicks: 1000
     })
     const samples: number[] = []
@@ -174,10 +175,11 @@ describe('100,000-tick runs', () => {
   it('extinction, once reached, is never reversed across a long remaining run', () => {
     const world = World.create({
       seed: 1,
-      config: {
+      // The Phase 5 world: slower terrain lowers movement cost, which changes how long starvation takes.
+      config: withoutEcology({
         organisms: { initialCount: 10 },
         resources: { initialCount: 0, spawnRate: 0 }
-      },
+      }),
       validateEveryTicks: 1000
     })
     world.run(1000)
@@ -201,13 +203,13 @@ describe('100,000-tick runs', () => {
     // reproduction having worked earlier gives it nothing to revive from once organisms=0.
     const world = World.create({
       seed: 5,
-      config: {
+      config: withoutEcology({
         organisms: { initialCount: 15 },
         resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
-        // Reflex controller: this pin is about the Phase 4 forager. It moved from 11,901 only
-        // because the larger genome draws more founder weights from the genetics stream.
+        // Reflex controller, ecology off: this pin is about the Phase 4 forager. It moved from
+        // 11,901 only because the larger genome draws more founder weights from the genetics stream.
         learning: { controller: 'reflex' }
-      },
+      }),
       validateEveryTicks: 1000
     })
 

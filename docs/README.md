@@ -9,6 +9,13 @@ Welcome to the Evo documentation! This guide will help you understand how to use
 - [User Guide](./user-guide.md) - How to use the simulation
 - [Development](./development.md) - Contributing and development setup
 
+## The simulation engine (the rebuild)
+
+- [Determinism policy](./simulation/determinism.md), [update order](./simulation/update-order.md) and [configuration](./simulation/configuration.md)
+- [Genetics](./genetics/genome.md), [the brain and learning](./learning/brain.md)
+- [Species](./simulation/species.md) and [ecology: health, resource kinds, regions, seasons, hazards, migration](./ecology/ecology.md)
+- [Architecture decisions](./decisions/) (ADR 0001-0009)
+
 ## Quick Links
 
 - **Web Demo**: [Play Evo Online](https://codebybryant.github.io/Evo/)
