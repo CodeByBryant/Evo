@@ -146,7 +146,7 @@ describe('brain controller in a running world', () => {
     const internals = world as unknown as { organisms: OrganismStore }
     internals.organisms.values()[0]!.brain = null
     expect(world.validate().errors.join('\n')).toMatch(/has no brain state/)
-    const reflex = World.create({ seed: 2 })
+    const reflex = World.create({ seed: 2, config: { learning: { controller: 'reflex' } } })
     const organism = (reflex as unknown as { organisms: OrganismStore }).organisms.values()[0]!
     const donor = World.create({ seed: 2, config: BRAIN })
     organism.brain = (donor as unknown as { organisms: OrganismStore }).organisms.values()[0]!.brain
@@ -370,7 +370,9 @@ describe('learningCost', () => {
   }
 
   it('is charged only under the brain controller with learning enabled', () => {
-    const reflex = drain(resolveWorldConfig({ organisms: { learningCost: 1 } }))
+    const reflex = drain(
+      resolveWorldConfig({ learning: { controller: 'reflex' }, organisms: { learningCost: 1 } })
+    )
     const brain = drain(resolveWorldConfig({ ...BRAIN, organisms: { learningCost: 1 } }))
     const frozen = drain(
       resolveWorldConfig({
@@ -387,7 +389,9 @@ describe('learningCost', () => {
     const config = resolveWorldConfig({ ...BRAIN, organisms: { learningCost: 1 } })
     const base = drain(config)
     const doubled = drain(config, 2 * config.genetics.learning.learningRate)
-    const none = drain(resolveWorldConfig({ organisms: { learningCost: 1 } }))
+    const none = drain(
+      resolveWorldConfig({ learning: { controller: 'reflex' }, organisms: { learningCost: 1 } })
+    )
     expect(doubled - none).toBeCloseTo(2 * (base - none), 12)
   })
 })

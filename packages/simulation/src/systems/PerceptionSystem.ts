@@ -41,9 +41,11 @@ export class PerceptionSystem {
           : null
       )
       if (this.peers) {
-        const peer = this.peers.organismIndex
-          .queryRadius({ x: organism.x, y: organism.y }, organism.genome.sensory.sensorRadius)
-          .find((hit) => hit.item.id !== organism.id)
+        const peer = this.peers.organismIndex.nearest(
+          { x: organism.x, y: organism.y },
+          organism.genome.sensory.sensorRadius,
+          organism.id
+        )
         this.peers.buffer.set(
           organism.id,
           peer

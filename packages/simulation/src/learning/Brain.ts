@@ -22,7 +22,7 @@ export interface HiddenPass {
  */
 export function forwardHidden(
   layout: BrainLayout,
-  weights: readonly number[],
+  weights: ArrayLike<number>,
   observation: readonly number[],
   memory: readonly number[]
 ): HiddenPass {

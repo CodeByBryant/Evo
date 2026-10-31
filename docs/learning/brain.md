@@ -112,11 +112,11 @@ Let `eta` be the organism's `learningRate` gene, `gamma` its `discountFactor`, `
 **Eligibility** (per learnable actor weight, updated at decision time):
 
 ```text
-e_oj <- gamma * lambda * e_oj + noise_o * h_j        // hiddenToOutput
-e_o  <- gamma * lambda * e_o  + noise_o              // outputBias
+e_oj <- gamma * lambda * e_oj + n_o * h_j        // hiddenToOutput
+e_o  <- gamma * lambda * e_o  + n_o              // outputBias
 ```
 
-A weight is eligible to the extent that the noise pushed an output in a direction while its input was active: if reward then follows, that push is reinforced.
+Here `n_o` is the standardized draw (the unit normal, before it is scaled by `sigma_o`), or 0 when `sigma_o` is 0, so the size of a learning step does not shrink with the size of the exploration. A weight is eligible to the extent that the noise pushed an output in a direction while its input was active: if reward then follows, that push is reinforced.
 
 **Update** (next tick, after the transition `(prev observation, taken action, reward, new observation)` is known):
 
@@ -124,12 +124,12 @@ A weight is eligible to the extent that the noise pushed an output in a directio
 W_actor <- clamp(W_actor + eta * delta * e, -weightLimit, +weightLimit)
 ```
 
-| Algorithm     | `delta`                                                                    | Also trains                                                                |
-| ------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `hebbian`     | `reward - baseline`, then `baseline += baselineRate * (reward - baseline)` | -                                                                          |
-| `actorCritic` | `reward + gamma * V(new) - V(prev)` (TD error)                             | value head: `W_hv += eta * valueRateScale * delta * h_prev`, bias likewise |
+| Algorithm     | `delta`                                                                    | Also trains                                                                                     |
+| ------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `hebbian`     | `reward - baseline`, then `baseline += baselineRate * (reward - baseline)` | -                                                                                               |
+| `actorCritic` | `reward + gamma * V(new) - V(prev)` (TD error)                             | value head: `W_hv += eta * valueRateScale * delta * h_prev / (1 + sum h_prev^2)`, bias likewise |
 
-The weight clamp, the bounded activations and the bounded reward keep every quantity finite; `World.validate()` asserts finiteness of all `BrainState` fields.
+`delta` is clamped to `[-1, 1]` (a reward is at most 1, so a larger TD error means the value estimate is badly off and one step must not wreck a brain), and the critic's step is divided by the squared norm of its features plus the bias, so a large hidden activation can never push it past the stable range (normalized least mean squares). Both were found necessary by experiment: without them a learning rate of 0.5 destroyed the organisms within a few hundred ticks. The weight clamp, the bounded activations and the bounded reward keep every quantity finite; `World.validate()` asserts finiteness of all `BrainState` fields.
 
 **Cost.** While learning is enabled under the brain controller, metabolism adds `organisms.learningCost * (learningRate / baseline)` per second, so a higher learning rate has a price (ADR 0007).
 
@@ -151,10 +151,25 @@ With `genetics.brain.innatePrior` (default true) a founder's weights are a hand-
 
 ## Telemetry and inspection
 
-`BrainState` keeps lifetime counters: total reward, number of updates, summed absolute weight change, a coarse histogram of each output, and the share of taken action attributable to noise. `World.brainOf(organismId)` returns the latest observation, hidden activations, memory, action (clean and taken), value estimate and `RewardBreakdown`, so activations and rewards are inspectable without touching internals. Final telemetry is copied onto the historical record when an organism dies.
+`BrainState` keeps three lifetime counters: total reward, number of updates, and summed absolute weight change. `World.brainOf(organismId)` returns the latest observation, hidden activations, memory, network output and action taken, value estimate and `RewardBreakdown`, so activations and rewards are inspectable without touching internals. Final telemetry is copied onto the historical record when an organism dies.
 
 ## What is deliberately not here
 
 - `noveltyPreference` and `riskTolerance` are inherited, mutated and compared but read by nothing: there is no novelty signal and there are no hazards. They exist so Phase 6 can use them without a genome change.
 - No gradient through the hidden layer or memory: those evolve.
 - No `ownHealth`, no `survival` reward, no per-tick cost for memory.
+
+## Measured behavior (Phase 5)
+
+These are the numbers the tests enforce, measured on this code and not hoped for.
+
+| Question                                              | Result                                                                                                                                                                                                                                                                                                     | Where checked                              |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Does each learner learn at all?                       | On a toy steering task both improve (mean gain above 0.05 over five seeds, at least four of them positive) and neither moves with learning off                                                                                                                                                             | `tests/learning/toy-task.test.ts`          |
+| Does the innate prior forage like the reflex forager? | One organism, 200 static food items, 1,500 ticks: the brain eats at least 70% of what the reflex forager eats (about 84% when first measured) and a primed brain eats more than twice what a random brain does (a random brain managed about 4%)                                                           | `tests/learning/foraging.test.ts`          |
+| Does the ecology stay alive under the brain?          | 50,000 ticks on four seeds: never extinct, population mean between 15 and 40, never below 5 or above 60 (first measured: mean 20-32, minimum 9, maximum 47; Phase 4 reflex: mean about 27)                                                                                                                 | `tests/determinism/brain-long-run.test.ts` |
+| Does learning improve a real life?                    | Modestly. With the `interact` output started just below threshold, learning raised it in most of 12 lives and Hebbian learners ate more over a life than the same organism with learning off (about 65 to 98 items in a 16-life sample, 11 of 16 lives better); actor-critic raised the output more slowly | `tests/learning/scenario-d.test.ts`        |
+| Can the modes be told apart?                          | Every algorithm and inheritance mode gives a different history; a Lamarckian child's learnable weights equal its parents' learned weights, a Baldwinian child's do not                                                                                                                                     | `tests/learning/ablation.test.ts`          |
+| What does it cost?                                    | The brain controller is about three times as slow per tick as the reflex controller (roughly 28 s against 8 s per 100,000 ticks on the development machine; reflex mode itself got about twice as fast in Phase 5 from a cheaper nearest-neighbour search)                                                 | `vitest.determinism.config.ts` timeout     |
+
+Two honest limits. Learning during one life moves weights only a little (a few hundredths of a unit per meal at the default learning rate, against weights of order 1), so most of what a lineage gains by Phase 5 comes from evolution, with within-life learning a modest refinement; the learning rate is a gene, so selection may raise it, at the price of `learningCost`. And credit assignment across more than a few ticks is weak: the eligibility trace has a half-life of about five ticks at the default genes, so rewards that arrive long after the action that earned them (steering toward food seen 30 ticks away) are learned much more slowly than immediate ones.

@@ -219,7 +219,8 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
       seed: 1,
       config: {
         organisms: { initialCount: 10 },
-        resources: { initialCount: 0, spawnRate: 0 }
+        resources: { initialCount: 0, spawnRate: 0 },
+        learning: { controller: 'reflex' }
       },
       validateEveryTicks: 100
     })

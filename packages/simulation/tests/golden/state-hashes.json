@@ -1,13 +1,13 @@
 {
   "hashSchemaVersion": 4,
-  "engineVersion": "0.6.0",
+  "engineVersion": "0.7.0",
   "entries": [
     {
       "name": "default-1k",
       "seed": 12345,
       "config": {},
       "steps": 1000,
-      "expectedHash": "91c64b48aa9ef7172803c401586a9218"
+      "expectedHash": "a0e836f6fcb7428bd595d4760b1d0e1d"
     },
     {
       "name": "scenario-a-foraging-5k",
@@ -18,7 +18,7 @@
         }
       },
       "steps": 5000,
-      "expectedHash": "0570adb9e90589a6fc30e72cc3df287f"
+      "expectedHash": "b0afb70834b94baaf24726a0992f104c"
     },
     {
       "name": "scenario-b-extinction-20k",
@@ -33,7 +33,7 @@
         }
       },
       "steps": 20000,
-      "expectedHash": "4284f01c4a9a4d9047f060fef33ae4d5"
+      "expectedHash": "6bf45c33b3cf8621e2a3befa7c09fb55"
     },
     {
       "name": "verbose-events-200",
@@ -45,7 +45,7 @@
         }
       },
       "steps": 200,
-      "expectedHash": "0704c9db20f4d609ecac67feef73f1b0"
+      "expectedHash": "1cadd5512497d2a0f97c9edec55cba2a"
     },
     {
       "name": "zero-population-100",
@@ -66,7 +66,105 @@
       "seed": 999,
       "config": {},
       "steps": 100000,
+      "expectedHash": "99f8311296874919e2d7c82e18a206be"
+    },
+    {
+      "name": "reflex-default-1k",
+      "seed": 12345,
+      "config": {
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 1000,
+      "expectedHash": "91c64b48aa9ef7172803c401586a9218"
+    },
+    {
+      "name": "reflex-scenario-a-5k",
+      "seed": 1,
+      "config": {
+        "organisms": {
+          "initialCount": 10
+        },
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 5000,
+      "expectedHash": "0570adb9e90589a6fc30e72cc3df287f"
+    },
+    {
+      "name": "reflex-scenario-b-20k",
+      "seed": 1,
+      "config": {
+        "organisms": {
+          "initialCount": 10
+        },
+        "resources": {
+          "initialCount": 0,
+          "spawnRate": 0
+        },
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 20000,
+      "expectedHash": "4284f01c4a9a4d9047f060fef33ae4d5"
+    },
+    {
+      "name": "reflex-long-run-100k",
+      "seed": 999,
+      "config": {
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 100000,
       "expectedHash": "93ded58d67dc386cec9d536e4acfbdcc"
+    },
+    {
+      "name": "brain-hebbian-5k",
+      "seed": 1,
+      "config": {
+        "organisms": {
+          "initialCount": 10
+        },
+        "learning": {
+          "algorithm": "hebbian"
+        }
+      },
+      "steps": 5000,
+      "expectedHash": "9246795608a24a2286f2489c8ac17cec"
+    },
+    {
+      "name": "brain-learning-off-5k",
+      "seed": 1,
+      "config": {
+        "organisms": {
+          "initialCount": 10
+        },
+        "learning": {
+          "enabled": false
+        }
+      },
+      "steps": 5000,
+      "expectedHash": "2e27d42371adce99852cede9b0b2b54b"
+    },
+    {
+      "name": "brain-random-prior-off-5k",
+      "seed": 2,
+      "config": {
+        "organisms": {
+          "initialCount": 10
+        },
+        "genetics": {
+          "brain": {
+            "innatePrior": false
+          }
+        }
+      },
+      "steps": 5000,
+      "expectedHash": "677f48ef1232ba78c703b1e6ee0eb8a5"
     }
   ]
 }

@@ -84,11 +84,11 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     genes: {}
   },
   learning: {
-    controller: 'reflex',
+    controller: 'brain',
     enabled: true,
     algorithm: 'actorCritic',
     rewardWeights: { feeding: 1, reproduction: 0.5, energyCost: 5 },
-    weightLimit: 3,
+    weightLimit: 4,
     baselineRate: 0.01,
     valueRateScale: 1,
     foodHorizon: 30

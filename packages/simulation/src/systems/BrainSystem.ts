@@ -116,7 +116,7 @@ export class BrainSystem {
       const action = this.learner.decide(
         {
           layout: this.layout,
-          weights: genome.brain.weights,
+          weights: brain.head,
           genes: genome.learning,
           params: this.params,
           observation,

@@ -111,10 +111,15 @@ describe('100,000-tick runs', () => {
   })
 
   it('sustains a bounded population over 50,000 ticks (roadmap: sustained population)', () => {
-    // Default config, no overrides: population must neither collapse nor run away toward
-    // maxPopulation over a long run - this is what "the engine can sustain a population for a
-    // long simulated period" (roadmap Phase 3 exit criteria) means in practice.
-    const world = World.create({ seed: 1, validateEveryTicks: 1000 })
+    // Population must neither collapse nor run away toward maxPopulation over a long run - this
+    // is what "the engine can sustain a population for a long simulated period" (roadmap Phase 3
+    // exit criteria) means in practice. This is the Phase 3/4 evidence, so it runs the reflex
+    // controller; the brain controller's measured bands are in brain-long-run.test.ts.
+    const world = World.create({
+      seed: 1,
+      config: { learning: { controller: 'reflex' } },
+      validateEveryTicks: 1000
+    })
     const samples: number[] = []
     for (let i = 0; i < 50; i++) {
       world.run(1000)

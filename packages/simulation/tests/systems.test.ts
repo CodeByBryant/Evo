@@ -471,7 +471,13 @@ describe('InteractionSystem', () => {
 describe('MetabolismSystem', () => {
   it('charges basalCost + movementCost * speed^2, scaled by timestep', () => {
     const config = resolveWorldConfig({
-      organisms: { basalCost: 1, movementCost: 0.1, turningCost: 0, sensorCost: 0 },
+      organisms: {
+        basalCost: 1,
+        movementCost: 0.1,
+        turningCost: 0,
+        sensorCost: 0,
+        learningCost: 0
+      },
       timestep: 2
     })
     const organisms = new OrganismStore()
@@ -494,7 +500,8 @@ describe('MetabolismSystem', () => {
         basalCost: 1,
         movementCost: 0,
         turningCost: 0.2,
-        sensorCost: 0.3
+        sensorCost: 0.3,
+        learningCost: 0
       },
       timestep: 1
     })
@@ -516,6 +523,7 @@ describe('MetabolismSystem', () => {
         movementCost: 0,
         turningCost: 0,
         sensorCost: 0,
+        learningCost: 0,
         maturityAge: 90,
         juvenileMetabolicScale: 0.5
       },
@@ -817,7 +825,8 @@ describe('DeathSystem', () => {
         parentIds: [7, 9],
         birthTick: 3,
         deathTick: 20,
-        deathCause: 'starvation'
+        deathCause: 'starvation',
+        brain: null
       }
     ])
   })

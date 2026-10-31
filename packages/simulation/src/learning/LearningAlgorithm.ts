@@ -6,6 +6,12 @@ import type { BrainLayout } from './BrainLayout'
 import type { BrainState } from './BrainState'
 import { explorationSigma } from './Exploration'
 
+/**
+ * The learning signal is clamped to this magnitude: a reward is at most 1, so a larger TD error
+ * means the value estimate is badly off, and one such step must not be allowed to wreck a brain.
+ */
+const MAX_SIGNAL = 1
+
 /** Index of the `explore` output in an action. */
 const EXPLORE = 4
 
@@ -20,8 +26,8 @@ export interface LearningParams {
 
 export interface DecideContext {
   readonly layout: BrainLayout
-  /** The genome's weights; only blocks 1-5 are read (the rest live in `brain.learned`). */
-  readonly weights: readonly number[]
+  /** The fixed weights (blocks 1-5); the learnable rest live in `brain.learned`. */
+  readonly weights: ArrayLike<number>
   readonly genes: LearningGenes
   readonly params: LearningParams
   readonly observation: Observation
@@ -77,10 +83,14 @@ abstract class ThreeFactorLearner implements LearningAlgorithm {
     const { hiddenSize } = layout.architecture
     const biasBase = ACTION_SIZE * hiddenSize
     for (let o = 0; o < ACTION_SIZE; o++) {
-      const noise = sigma * (ctx.noise[o] as number)
-      action[o] = clamp((output[o] as number) + noise, -1, 1)
+      const draw = ctx.noise[o] as number
+      action[o] = clamp((output[o] as number) + sigma * draw, -1, 1)
       if (ctx.learningEnabled) {
-        // Eligibility: how strongly this weight pushed the output the way the noise did.
+        // Eligibility: how strongly this weight pushed the output the way the noise did. The
+        // trace holds the standardized draw, not the scaled noise, so the size of a learning
+        // step does not shrink with the size of the exploration. With no exploration there is
+        // no noise to correlate with reward, so nothing becomes eligible.
+        const noise = sigma > 0 ? draw : 0
         const row = o * hiddenSize
         for (let h = 0; h < hiddenSize; h++) {
           brain.eligibility[row + h] =
@@ -125,7 +135,7 @@ export class HebbianLearner extends ThreeFactorLearner {
     const reward = brain.reward.total
     const delta = reward - brain.rewardBaseline
     brain.rewardBaseline += ctx.params.baselineRate * delta
-    return delta
+    return clamp(delta, -MAX_SIGNAL, MAX_SIGNAL)
   }
 }
 
@@ -136,11 +146,22 @@ export class ActorCriticLearner extends ThreeFactorLearner {
   protected signal(ctx: DecideContext, brain: BrainState, value: number): number {
     const { layout, genes, params } = ctx
     const reward = brain.reward.total
-    const delta = reward + genes.discountFactor * value - brain.prevValue
-    // Semi-gradient TD(0) on the value head, using the previous decision's features.
-    const step = genes.learningRate * params.valueRateScale * delta
+    const delta = clamp(
+      reward + genes.discountFactor * value - brain.prevValue,
+      -MAX_SIGNAL,
+      MAX_SIGNAL
+    )
+    // Semi-gradient TD(0) on the value head, using the previous decision's features, with the
+    // step normalized by the feature norm (plus the bias feature) so that a large hidden
+    // activation can never push the step past the stable range.
     const base = layout.actorLength
     const { hiddenSize } = layout.architecture
+    let norm = 1
+    for (let h = 0; h < hiddenSize; h++) {
+      const feature = brain.prevHidden[h] as number
+      norm += feature * feature
+    }
+    const step = (genes.learningRate * params.valueRateScale * delta) / norm
     for (let h = 0; h <= hiddenSize; h++) {
       const feature = h < hiddenSize ? (brain.prevHidden[h] as number) : 1
       const before = brain.learned[base + h] as number

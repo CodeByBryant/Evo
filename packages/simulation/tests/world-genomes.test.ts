@@ -190,7 +190,11 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
   it('reproduces Phase 3 Scenario A exactly when mutation is off', () => {
     const world = World.create({
       seed: 1,
-      config: { organisms: { initialCount: 10 }, genetics: { mutationRateScale: 0 } },
+      config: {
+        organisms: { initialCount: 10 },
+        genetics: { mutationRateScale: 0 },
+        learning: { controller: 'reflex' }
+      },
       validateEveryTicks: 100
     })
     world.run(5000)

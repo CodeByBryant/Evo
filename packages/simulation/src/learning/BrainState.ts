@@ -39,6 +39,11 @@ export interface BrainState {
   rewardTotal: number
   updates: number
   weightChange: number
+  /**
+   * Not hashed: a plain copy of the genome's fixed weights (blocks 1-5). The genome's own array
+   * is frozen, and reading frozen arrays in the hot loop is several times slower in V8.
+   */
+  head: Float64Array
   /** Inspection only, not hashed: the latest observation and the network output before noise. */
   lastObservation: number[]
   lastOutput: number[]
@@ -60,6 +65,7 @@ export function createBrainState(genome: Genome, layout: BrainLayout, energy: nu
     rewardTotal: 0,
     updates: 0,
     weightChange: 0,
+    head: Float64Array.from(genome.brain.weights.slice(0, layout.learnOffset)),
     lastObservation: [],
     lastOutput: []
   }

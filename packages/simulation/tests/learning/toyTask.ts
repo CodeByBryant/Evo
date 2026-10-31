@@ -21,7 +21,7 @@ import { cos, sin } from '../../src/math/trig'
  * learned from at the next decision, exactly as `BrainSystem` does.
  */
 const GENES: LearningGenes = {
-  learningRate: 0.3,
+  learningRate: 0.1,
   discountFactor: 0.9,
   eligibilityTraceDecay: 0.5,
   explorationRate: 0.4,

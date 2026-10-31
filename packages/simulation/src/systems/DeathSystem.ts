@@ -37,7 +37,14 @@ export class DeathSystem {
         parentIds: organism.parentIds,
         birthTick: organism.birthTick,
         deathTick: tick,
-        deathCause: cause
+        deathCause: cause,
+        brain: organism.brain
+          ? {
+              rewardTotal: organism.brain.rewardTotal,
+              updates: organism.brain.updates,
+              weightChange: organism.brain.weightChange
+            }
+          : null
       })
       this.events.record({
         type: 'organism-died',

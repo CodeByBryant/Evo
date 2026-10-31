@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_WORLD_CONFIG } from '@evo/config'
+import { DEFAULT_WORLD_CONFIG as DEFAULTS } from '@evo/config'
 import type { MetricsSnapshot } from '@evo/contracts'
 import { buildGeneSpecs } from '../src/genetics/GeneSpecs'
 import { LineageStore } from '../src/lineage/LineageStore'
@@ -8,6 +8,12 @@ import type { InvariantContext } from '../src/world/invariants'
 import type { OrganismState } from '../src/entities/OrganismStore'
 import { organismFor, withGenes } from './support/organism'
 import type { ResourceState } from '../src/entities/ResourceStore'
+
+/** These tests build organisms without brains, so they run the reflex controller. */
+const DEFAULT_WORLD_CONFIG = {
+  ...DEFAULTS,
+  learning: { ...DEFAULTS.learning, controller: 'reflex' as const }
+}
 
 const zeroMetrics: MetricsSnapshot = {
   organismsBorn: 0,

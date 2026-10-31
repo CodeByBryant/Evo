@@ -30,13 +30,13 @@ The determinism policy bans platform `exp`/`tanh`. The activation is **softsign*
 
 ### Learning changes a runtime overlay, never the genome
 
-Genomes stay immutable (ADR 0006). Each organism has a `BrainState`: its memory, an `learned` overlay holding the current values of the learnable block (actor output weights and biases, plus the value head), eligibility traces, the previous observation/action/value, a pending reward, a running reward baseline and lifetime telemetry. The genome holds the starting values; the overlay is what learning moves. `BrainState` is simulation state and is hashed (**hash schema v4**), appended after the genome.
+Genomes stay immutable (ADR 0006). Each organism has a `BrainState`: its memory, an `learned` overlay holding the current values of the learnable block (actor output weights and biases, plus the value head), eligibility traces, the previous hidden activations, action and value estimate, the reward settled last tick, a running reward baseline and lifetime telemetry. The genome holds the starting values; the overlay is what learning moves. `BrainState` is simulation state and is hashed (**hash schema v4**), appended after the genome.
 
 Only the output layer and value head learn. This keeps the update a local, inspectable three-factor rule rather than full backpropagation, matches the "reward-modulated Hebbian" the roadmap names, and bounds the cost of a tick. The hidden layer and recurrence are shaped by evolution, which is the point of having both.
 
 ### Two learners, one interface
 
-`LearningAlgorithm { decide(observation, brain): Action; learn(prev, action, reward, next, brain): void }`. Both learners share one actor update, `learned += eta * delta * eligibility`, clamped to `+-learning.weightLimit`, with an eligibility trace that correlates exploration noise with hidden activity (node perturbation). They differ only in `delta`:
+`LearningAlgorithm { decide(context, brain): Action }` (roadmap 5.5): `decide` observes, learns from the previous transition, and acts, so the learning step is part of the algorithm's own contract rather than a separate call that could be skipped or reordered. Both learners share one actor update, `learned += eta * delta * eligibility`, clamped to `+-learning.weightLimit`, with an eligibility trace that correlates exploration noise with hidden activity (node perturbation). They differ only in `delta`:
 
 - **Reward-modulated Hebbian:** `delta = reward - runningBaseline`.
 - **Actor-critic:** `delta = reward + gamma * V(next) - V(prev)` (the TD error), which also trains the value head.
@@ -55,7 +55,7 @@ Reward is computed at the end of the tick from that tick's events and energy cha
 ... perception -> brain.decide -> movement -> interaction -> metabolism -> reproduction -> death -> brain.settle -> metrics
 ```
 
-`brain.decide` observes, learns from last tick's reward, and writes the intent. `brain.settle` computes this tick's reward. With `learning.controller: 'reflex'` the old `DecisionSystem` runs and both brain stages are skipped. The `learning` RNG stream (reserved since Phase 1) draws exactly five normals per organism per tick in ascending id, **always**, so draw counts never depend on settings.
+`brain.decide` observes, learns from last tick's reward, and writes the intent. `brain.settle` computes this tick's reward. With `learning.controller: 'reflex'` the old `DecisionSystem` runs and both brain stages are skipped. Under the brain controller the `learning` RNG stream (reserved since Phase 1) draws exactly five normals per organism per tick in ascending id, **always**, so draw counts never depend on the learning settings; under `reflex` it is never drawn from.
 
 ### Capability is not free, again
 
@@ -79,7 +79,7 @@ At reproduction each parent's effective weights are `inheritedBrainWeights(genom
 
 ## Consequences
 
-- Hash schema bumps to **v4** and goldens are regenerated; the behavior-preserving integration is proven by all recorded Phase 4 digests matching under `controller: 'reflex'` before the default switches to `'brain'`.
+- Hash schema bumps to **v4** and goldens are regenerated; the behavior-preserving integration was proven before the default switched to `'brain'`: with `controller: 'reflex'` and mutation off, 21 scenarios (snapshots every 250 ticks, the full event log and the historical records) hashed identically against a pristine Phase 4 worktree. Mutation-on pins moved only because the larger genome draws more founder weights from the `genetics` stream. Permanent reflex-mode golden entries keep that path protected.
 - Switching the default controller is a deliberate behavior change; its gates are stated up front: reflex mode still reproduces Phase 4, the innate-prior brain forages within a stated band of the reflex controller, and the population stays in its stability band on several seeds. If a gate fails, the prior and exploration defaults are tuned, not the gate.
 - Per-tick cost rises (five normal draws and a roughly 300-multiply forward pass per organism); it is measured and reported.
 - Phase 6 inherits a place to put a `health` observation and a `damage` reward term.
