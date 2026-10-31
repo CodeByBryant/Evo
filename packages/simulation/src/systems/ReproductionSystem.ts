@@ -89,13 +89,15 @@ export class ReproductionSystem {
     })
   }
 
-  /** Energy this organism needs to attempt reproduction here and now (docs/ecology/ecology.md). */
+  /**
+   * Energy this organism needs to attempt reproduction here and now: its own `minEnergy` gene, but
+   * never less than the cost it would pay here. The region and season scale divides only the cost,
+   * so the threshold can never exceed what the cost allows and reproduction stays possible
+   * (docs/ecology/ecology.md); with no scaling this is exactly `reproductionThresholdOf`.
+   */
   private thresholdFor(organism: OrganismState): number {
-    const base = reproductionThresholdOf(organism.genome, this.config)
-    return this.terrainScales
-      ? base /
-          (this.ecology as EcologyModel).reproductionScale(organism.x, organism.y, this.currentTick)
-      : base
+    if (!this.terrainScales) return reproductionThresholdOf(organism.genome, this.config)
+    return Math.max(organism.genome.reproduction.minEnergy, this.costFor(organism))
   }
 
   /** Energy this organism pays for a successful reproduction here and now. */

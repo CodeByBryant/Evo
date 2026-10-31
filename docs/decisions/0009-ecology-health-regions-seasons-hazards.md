@@ -15,7 +15,7 @@ Owner decisions taken before this ADR:
 
 ## Decision
 
-Every feature has an `enabled` switch under a new top-level `ecology` config section. With a switch off the feature draws no randomness, consumes no energy and changes nothing; with all of them off the world behaves exactly as it did in Phase 5. That is the permanent regression (reflex controller, mutation off, all features off), proven against the previous commit by an equivalence harness.
+Every feature has an `enabled` switch under a new top-level `ecology` config section, **all on by default** (tuned by measurement, see docs/ecology/ecology.md). With a switch off the feature draws no randomness, consumes no energy and changes nothing; with all of them off the world behaves exactly as it did in Phase 5. That is the permanent regression (reflex controller, mutation off, all features off), proven against the previous commit by an equivalence harness.
 
 ### Health and damage
 
@@ -34,7 +34,7 @@ Every feature has an `enabled` switch under a new top-level `ecology` config sec
 
 ### Regions
 
-A `RegionMap` is built once at creation from the new `terrain` random stream: `seedCount` points, each with a random region type, and every cell of a `gridSize x gridSize` lookup grid belongs to its nearest point (a Voronoi diagram; ties go to the lower point index). It is static, so it is not hashed. The six types (meadow, forest, wetland, desert, cave, volcanic) differ in `movementScale` (a top-speed multiplier), `visibility` (a sensor-radius multiplier), `temperature`, `hazardExposure` (a damage multiplier), `reproductionScale` and the resources they grow.
+A `RegionMap` is built once at creation from the new `terrain` random stream: `seedCount` points, each with a random region type, and every cell of a `gridSize x gridSize` lookup grid belongs to its nearest point (a Voronoi diagram; ties go to the lower point index). It is static, so it is not hashed. The six types (meadow, forest, wetland, desert, cave, volcanic) differ in `movementScale` (a top-speed multiplier), `visibility` (a sensor-radius multiplier), `temperature`, `hazardExposure` (a damage multiplier), `reproductionScale` (a divisor of the reproduction cost; the threshold stays `max(minEnergy, cost)`) and the resources they grow.
 
 ### Seasons
 

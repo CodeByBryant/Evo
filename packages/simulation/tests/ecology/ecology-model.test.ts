@@ -8,11 +8,12 @@ import { RegionMap } from '../../src/ecology/RegionMap'
 import { SeasonModel } from '../../src/ecology/SeasonModel'
 import { SeededRandom } from '../../src/random/SeededRandom'
 import { deriveStreamWords } from '../../src/random/streams'
+import { withoutEcology } from '../support/ecology'
 
 const terrain = (seed: number): SeededRandom => new SeededRandom(deriveStreamWords(seed, 'terrain'))
 
 function model(overrides: WorldConfigOverrides = {}, seed = 1): EcologyModel {
-  const config = resolveWorldConfig(overrides)
+  const config = resolveWorldConfig(withoutEcology(overrides))
   const map = config.ecology.regions.enabled
     ? RegionMap.generate(
         config.ecology.regions,
@@ -166,6 +167,7 @@ describe('EcologyModel with everything off', () => {
 })
 
 describe('EcologyModel with features on', () => {
+  const cfg = resolveWorldConfig()
   const on = model({
     ecology: {
       regions: { enabled: true },
@@ -173,9 +175,10 @@ describe('EcologyModel with features on', () => {
       resourceKinds: { enabled: true }
     }
   })
+  const seasons = cfg.ecology.seasons.seasons
+  const kinds = cfg.ecology.resourceKinds.kinds
 
   it('combines region and season multipliers', () => {
-    const config = resolveWorldConfig()
     // find a position in each region type
     const seen = new Map<string, [number, number]>()
     for (let x = 5; x < 500; x += 10)
@@ -185,82 +188,97 @@ describe('EcologyModel with features on', () => {
       }
     expect(seen.size).toBeGreaterThan(1)
     for (const [type, [x, y]] of seen) {
-      const region = config.ecology.regions.types[type as keyof typeof config.ecology.regions.types]
-      expect(on.movementScale(x, y, 0)).toBeCloseTo(region.movementScale * 1, 12) // spring
-      expect(on.movementScale(x, y, 6000)).toBeCloseTo(region.movementScale * 0.8, 12) // winter
-      expect(on.visibilityScale(x, y, 6000)).toBeCloseTo(region.visibility * 0.7, 12)
+      const region = cfg.ecology.regions.types[type as keyof typeof cfg.ecology.regions.types]
+      expect(on.movementScale(x, y, 0)).toBeCloseTo(
+        region.movementScale * seasons.spring.movementScale,
+        12
+      )
+      expect(on.movementScale(x, y, 6000)).toBeCloseTo(
+        region.movementScale * seasons.winter.movementScale,
+        12
+      )
+      expect(on.visibilityScale(x, y, 6000)).toBeCloseTo(
+        region.visibility * seasons.winter.visibility,
+        12
+      )
       expect(on.hazardExposure(x, y)).toBe(region.hazardExposure)
-      expect(on.reproductionScale(x, y, 6000)).toBeCloseTo(region.reproductionScale * 0.5, 12)
+      expect(on.reproductionScale(x, y, 6000)).toBeCloseTo(
+        region.reproductionScale * seasons.winter.reproductionScale,
+        12
+      )
     }
   })
 
   it('clamps temperature to [-1, 1] and charges only outside the tolerance', () => {
+    const { temperatureTolerance, temperatureCost } = cfg.ecology.regions
     for (let x = 5; x < 500; x += 25)
       for (let y = 5; y < 500; y += 25) {
         for (const tick of [0, 2000, 4000, 6000]) {
           const t = on.temperature(x, y, tick)
           expect(t).toBeGreaterThanOrEqual(-1)
           expect(t).toBeLessThanOrEqual(1)
-          const excess = Math.max(0, Math.abs(t) - 0.3)
-          expect(on.environmentalCost(x, y, tick)).toBeCloseTo(2 * excess * excess, 12)
+          const excess = Math.max(0, Math.abs(t) - temperatureTolerance)
+          expect(on.environmentalCost(x, y, tick)).toBeCloseTo(
+            temperatureCost * excess * excess,
+            12
+          )
         }
       }
   })
 
   it('scales regeneration and hazard intensity by season', () => {
-    expect(on.regenerationScale(0)).toBe(1.2)
-    expect(on.regenerationScale(6000)).toBe(0.4)
-    expect(on.hazardIntensity(6000)).toBe(1.3)
+    expect(on.regenerationScale(0)).toBe(seasons.spring.regeneration)
+    expect(on.regenerationScale(6000)).toBe(seasons.winter.regeneration)
+    expect(on.hazardIntensity(6000)).toBe(seasons.winter.hazardIntensity)
     expect(on.seasonAt(4000)).toBe('autumn')
   })
 
   it('derives kind properties from the baseline', () => {
-    const config = resolveWorldConfig()
-    expect(on.kindCount).toBe(4)
-    expect(on.kind(1).energy).toBe(config.resources.energyValue * 2)
-    expect(on.kind(2).toxicity).toBe(10)
+    expect(on.kindCount).toBe(kinds.length)
+    expect(on.kind(1).energy).toBe(cfg.resources.energyValue * (kinds[1]?.energyScale as number))
+    expect(on.kind(2).toxicity).toBe(kinds[2]?.toxicity)
   })
 
   it('chooses kinds in proportion to spawn weight', () => {
-    // weights 5, 1.5, 1.5, 1.5 -> total 9.5
+    const weights = kinds.map((k) => k.spawnWeight)
+    const total = weights.reduce((a, b) => a + b, 0)
+    const edges: number[] = []
+    weights.reduce((sum, w) => (edges.push((sum + w) / total), sum + w), 0)
     expect(on.chooseKind(0)).toBe(0)
-    expect(on.chooseKind(4.99 / 9.5)).toBe(0)
-    expect(on.chooseKind(5.01 / 9.5)).toBe(1)
-    expect(on.chooseKind(6.6 / 9.5)).toBe(2)
-    expect(on.chooseKind(8.1 / 9.5)).toBe(3)
-    expect(on.chooseKind(0.9999999)).toBe(3)
-    const counts = [0, 0, 0, 0]
+    for (let i = 0; i < kinds.length; i++) {
+      const lower = i === 0 ? 0 : (edges[i - 1] as number)
+      const upper = edges[i] as number
+      expect(on.chooseKind(lower + (upper - lower) * 0.5)).toBe(i)
+    }
+    expect(on.chooseKind(0.9999999)).toBe(kinds.length - 1)
+    const counts = kinds.map(() => 0)
     const rnd = terrain(9)
     for (let i = 0; i < 20_000; i++) counts[on.chooseKind(rnd.float())]! += 1
-    expect(counts[0]! / 20_000).toBeGreaterThan(0.5)
-    expect(counts[0]! / 20_000).toBeLessThan(0.55)
+    kinds.forEach((_, i) => {
+      expect(counts[i]! / 20_000).toBeCloseTo((weights[i] as number) / total, 1)
+    })
   })
 
   it('never chooses a zero-weight kind', () => {
-    const kinds = resolveWorldConfig().ecology.resourceKinds.kinds.map((k, i) => ({
-      ...k,
-      spawnWeight: i === 2 ? 0 : 1
-    }))
-    const m = model({ ecology: { resourceKinds: { enabled: true, kinds } } })
+    const zeroed = kinds.map((k, i) => ({ ...k, spawnWeight: i === 2 ? 0 : 1 }))
+    const m = model({ ecology: { resourceKinds: { enabled: true, kinds: zeroed } } })
     for (let u = 0; u < 1; u += 0.001) expect(m.chooseKind(u)).not.toBe(2)
   })
 
   it('restricts kinds to their regions and lets empty region lists grow anywhere', () => {
-    let fungusOnly = 0
+    let restricted = 0
     let anywhere = 0
+    const fungus = kinds[2]?.regions ?? []
     for (let x = 5; x < 500; x += 10)
       for (let y = 5; y < 500; y += 10) {
         const type = on.regionTypeAt(x, y)!
-        expect(on.kindGrowsAt(2, x, y)).toBe(['cave', 'wetland', 'forest'].includes(type))
-        if (on.kindGrowsAt(2, x, y)) fungusOnly += 1
+        expect(on.kindGrowsAt(2, x, y)).toBe(fungus.includes(type))
+        if (on.kindGrowsAt(2, x, y)) restricted += 1
         if (on.kindGrowsAt(0, x, y)) anywhere += 1
       }
-    expect(fungusOnly).toBeGreaterThan(0)
+    expect(restricted).toBeGreaterThan(0)
     expect(anywhere).toBeGreaterThan(0)
-    const open = resolveWorldConfig().ecology.resourceKinds.kinds.map((k) => ({
-      ...k,
-      regions: [] as never[]
-    }))
+    const open = kinds.map((k) => ({ ...k, regions: [] as never[] }))
     const everywhere = model({
       ecology: { regions: { enabled: true }, resourceKinds: { enabled: true, kinds: open } }
     })

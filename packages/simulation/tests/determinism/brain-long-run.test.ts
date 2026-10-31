@@ -8,6 +8,10 @@ import { World } from '../../src/index'
  * four seeds the population (sampled every 1,000 ticks after a 10,000-tick burn-in) never went
  * extinct, ranged 9-47 and averaged 20-32, against a Phase 4 reflex average of about 27. The
  * assertions are deliberately looser than that sample (mean 15-40, never below 5 or above 60).
+ *
+ * Since Phase 6 the default world also has the ecology on (regions, seasons, hazards, resource
+ * kinds, health). The same band holds for seeds 1-4: means 24-35, minimum 12, maximum 51 when the
+ * ecology defaults were set, with the defaults tuned to keep it (docs/ecology/ecology.md).
  */
 const SEEDS = [1, 2, 3, 4]
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ConfigValidationError } from '@evo/config'
 import { ENGINE_VERSION, World } from '../src/index'
+import { withoutEcology } from './support/ecology'
 
 describe('World.create', () => {
   it('exposes an engine version', () => {
@@ -45,7 +46,7 @@ describe('World.create', () => {
   it('creates exactly the configured initial population, within bounds, in ascending id order', () => {
     const world = World.create({
       seed: 1,
-      config: { organisms: { initialCount: 7 }, resources: { initialCount: 13 } }
+      config: withoutEcology({ organisms: { initialCount: 7 }, resources: { initialCount: 13 } })
     })
     const snapshot = world.snapshot()
     expect(snapshot.organisms).toHaveLength(7)
@@ -169,7 +170,10 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
   it('some organisms find food, some starve, and the world stays valid throughout', () => {
     const world = World.create({
       seed: 1,
-      config: { organisms: { initialCount: 10 }, learning: { controller: 'reflex' } },
+      config: withoutEcology({
+        organisms: { initialCount: 10 },
+        learning: { controller: 'reflex' }
+      }),
       validateEveryTicks: 100
     })
 
@@ -218,11 +222,11 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
   it('the population goes fully extinct and never silently recovers', () => {
     const world = World.create({
       seed: 1,
-      config: {
+      config: withoutEcology({
         organisms: { initialCount: 10 },
         resources: { initialCount: 0, spawnRate: 0 },
         learning: { controller: 'reflex' }
-      },
+      }),
       validateEveryTicks: 100
     })
 

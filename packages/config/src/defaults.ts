@@ -87,7 +87,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     controller: 'brain',
     enabled: true,
     algorithm: 'actorCritic',
-    rewardWeights: { feeding: 1, reproduction: 0.5, energyCost: 5, damage: 0, exploration: 0 },
+    rewardWeights: { feeding: 1, reproduction: 0.5, energyCost: 5, damage: 4, exploration: 0.05 },
     weightLimit: 4,
     baselineRate: 0.01,
     valueRateScale: 1,
@@ -111,18 +111,18 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   },
   ecology: {
     health: {
-      enabled: false,
+      enabled: true,
       maxHealth: 100,
       regenRate: 2,
       regenEnergyCost: 0.5,
       regenMinEnergyFraction: 0.5
     },
     regions: {
-      enabled: false,
-      seedCount: 12,
+      enabled: true,
+      seedCount: 30,
       gridSize: 25,
-      temperatureTolerance: 0.3,
-      temperatureCost: 2,
+      temperatureTolerance: 0.2,
+      temperatureCost: 0.4,
       types: {
         meadow: {
           movementScale: 1,
@@ -132,51 +132,51 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
           reproductionScale: 1
         },
         forest: {
-          movementScale: 0.8,
-          visibility: 0.7,
+          movementScale: 0.9,
+          visibility: 0.9,
           temperature: -0.1,
           hazardExposure: 0,
           reproductionScale: 1.1
         },
         wetland: {
-          movementScale: 0.7,
-          visibility: 0.9,
+          movementScale: 0.85,
+          visibility: 0.95,
           temperature: 0.1,
           hazardExposure: 0,
           reproductionScale: 1.2
         },
         desert: {
-          movementScale: 0.9,
+          movementScale: 0.95,
           visibility: 1,
-          temperature: 0.7,
-          hazardExposure: 0.3,
-          reproductionScale: 0.7
+          temperature: 0.5,
+          hazardExposure: 0.2,
+          reproductionScale: 0.8
         },
         cave: {
-          movementScale: 0.8,
-          visibility: 0.5,
+          movementScale: 0.9,
+          visibility: 0.8,
           temperature: -0.3,
           hazardExposure: 0.1,
           reproductionScale: 0.9
         },
         volcanic: {
           movementScale: 0.9,
-          visibility: 0.8,
-          temperature: 0.9,
+          visibility: 0.9,
+          temperature: 0.6,
           hazardExposure: 1,
-          reproductionScale: 0.5
+          reproductionScale: 0.6
         }
       }
     },
     seasons: {
-      enabled: false,
+      enabled: true,
       seasonLength: 200,
       seasons: {
         spring: {
-          regeneration: 1.2,
+          regeneration: 1.05,
           movementScale: 1,
-          hazardIntensity: 0.8,
-          reproductionScale: 1.2,
+          hazardIntensity: 0.9,
+          reproductionScale: 1.1,
           temperature: 0,
           visibility: 1
         },
@@ -185,52 +185,52 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
           movementScale: 1,
           hazardIntensity: 1,
           reproductionScale: 1,
-          temperature: 0.2,
+          temperature: 0.1,
           visibility: 1
         },
         autumn: {
-          regeneration: 1.4,
+          regeneration: 1.05,
           movementScale: 1,
           hazardIntensity: 1,
-          reproductionScale: 0.9,
-          temperature: -0.1,
-          visibility: 0.9
+          reproductionScale: 0.95,
+          temperature: -0.05,
+          visibility: 1
         },
         winter: {
-          regeneration: 0.4,
-          movementScale: 0.8,
-          hazardIntensity: 1.3,
-          reproductionScale: 0.5,
-          temperature: -0.5,
-          visibility: 0.7
+          regeneration: 0.95,
+          movementScale: 0.97,
+          hazardIntensity: 1.1,
+          reproductionScale: 0.9,
+          temperature: -0.15,
+          visibility: 0.97
         }
       }
     },
     hazards: {
-      enabled: false,
-      areaCount: 4,
-      areaRadius: 30,
-      areaDamage: 20,
-      stormRate: 0.005,
-      stormRadius: 40,
-      stormDuration: 40,
-      stormDamage: 8
+      enabled: true,
+      areaCount: 2,
+      areaRadius: 25,
+      areaDamage: 12,
+      stormRate: 0.002,
+      stormRadius: 35,
+      stormDuration: 30,
+      stormDamage: 6
     },
     resourceKinds: {
-      enabled: false,
+      enabled: true,
       kinds: [
         {
           name: 'grass',
-          energyScale: 0.8,
+          energyScale: 1,
           radiusScale: 1,
           spawnWeight: 5,
-          detectability: 0.8,
+          detectability: 1,
           toxicity: 0,
           regions: ['meadow', 'forest', 'wetland', 'desert']
         },
         {
           name: 'fruit',
-          energyScale: 2,
+          energyScale: 1.85,
           radiusScale: 1,
           spawnWeight: 1.5,
           detectability: 1,
@@ -239,25 +239,28 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
         },
         {
           name: 'fungus',
-          energyScale: 1.8,
+          energyScale: 2,
           radiusScale: 1,
           spawnWeight: 1.5,
-          detectability: 0.6,
-          toxicity: 10,
-          regions: ['cave', 'wetland', 'forest']
+          detectability: 0.85,
+          toxicity: 6,
+          regions: ['cave', 'wetland', 'forest', 'volcanic']
         },
         {
           name: 'nectar',
-          energyScale: 1.4,
+          energyScale: 1.425,
           radiusScale: 1,
           spawnWeight: 1.5,
           detectability: 1,
           toxicity: 0,
-          regions: ['meadow', 'wetland']
+          regions: ['meadow', 'wetland', 'desert']
         }
       ]
     },
-    migration: { enabled: false, dwellTime: 20 }
+    migration: {
+      enabled: true,
+      dwellTime: 20
+    }
   }
 } satisfies WorldConfig)
 

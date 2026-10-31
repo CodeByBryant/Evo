@@ -7,7 +7,7 @@
       "seed": 12345,
       "config": {},
       "steps": 1000,
-      "expectedHash": "c7d7e44cfe8ccfbe07540faa7fe790e3"
+      "expectedHash": "aeff3b6b7f3c84804bf04c03270bd00e"
     },
     {
       "name": "scenario-a-foraging-5k",
@@ -15,6 +15,32 @@
       "config": {
         "organisms": {
           "initialCount": 10
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 5000,
@@ -30,6 +56,32 @@
         "resources": {
           "initialCount": 0,
           "spawnRate": 0
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 20000,
@@ -42,6 +94,32 @@
         "history": {
           "eventDetail": "verbose",
           "maxEvents": 100000
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 200,
@@ -56,6 +134,32 @@
         },
         "resources": {
           "initialCount": 0
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 100,
@@ -66,14 +170,38 @@
       "seed": 999,
       "config": {},
       "steps": 100000,
-      "expectedHash": "2fa2977cdfc387204086971462791a99"
+      "expectedHash": "7809120dc65864881d6a9c2fdab14f2b"
     },
     {
       "name": "reflex-default-1k",
       "seed": 12345,
       "config": {
         "learning": {
-          "controller": "reflex"
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 1000,
@@ -87,7 +215,31 @@
           "initialCount": 10
         },
         "learning": {
-          "controller": "reflex"
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 5000,
@@ -105,7 +257,31 @@
           "spawnRate": 0
         },
         "learning": {
-          "controller": "reflex"
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 20000,
@@ -116,7 +292,31 @@
       "seed": 999,
       "config": {
         "learning": {
-          "controller": "reflex"
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 100000,
@@ -130,7 +330,31 @@
           "initialCount": 10
         },
         "learning": {
-          "algorithm": "hebbian"
+          "algorithm": "hebbian",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 5000,
@@ -144,7 +368,31 @@
           "initialCount": 10
         },
         "learning": {
-          "enabled": false
+          "enabled": false,
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
         }
       },
       "steps": 5000,
@@ -161,10 +409,75 @@
           "brain": {
             "innatePrior": false
           }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         }
       },
       "steps": 5000,
       "expectedHash": "61536fa102e1c742073d10b24804387e"
+    },
+    {
+      "name": "ecology-default-12k",
+      "seed": 7,
+      "config": {},
+      "steps": 12000,
+      "expectedHash": "2cb5212a6dfccc4e8aad47703aa4c510"
+    },
+    {
+      "name": "ecology-reflex-8k",
+      "seed": 3,
+      "config": {
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 8000,
+      "expectedHash": "28db9fb75a73e0ad84cb6b57ccc8fc1d"
+    },
+    {
+      "name": "ecology-lethal-hazards-3k",
+      "seed": 5,
+      "config": {
+        "organisms": {
+          "initialCount": 40
+        },
+        "ecology": {
+          "health": {
+            "maxHealth": 8
+          },
+          "hazards": {
+            "areaCount": 10,
+            "areaRadius": 120,
+            "areaDamage": 40
+          }
+        }
+      },
+      "steps": 3000,
+      "expectedHash": "55f407e1a7cebb887a38a187120f65e9"
     }
   ]
 }

@@ -27,7 +27,7 @@ The full gene list, default ranges and mutation parameters are in [docs/genetics
 | `metabolic`    | `basalCost`, `movementCost`, `turningCost`                                                                                        | Metabolism                                                         |
 | `behavioral`   | `wanderJitter`                                                                                                                    | Decision                                                           |
 | `reproduction` | `minEnergy`, `offspringInvestment`, `cooldown`, `searchRadius`                                                                    | Reproduction                                                       |
-| `brain`        | architecture `{inputSize, hiddenSize, memorySize, outputSize}` plus a flat `weights` vector                                       | carried (Phase 5)                                                  |
+| `brain`        | architecture `{inputSize, hiddenSize, memorySize, outputSize}` plus a flat `weights` vector                                       | live since Phase 5 (risk and novelty since Phase 6)                |
 | `learning`     | `learningRate`, `discountFactor`, `eligibilityTraceDecay`, `explorationRate`, `riskTolerance`, `noveltyPreference`, `persistence` | carried (Phase 5)                                                  |
 
 The roadmap (3.4) makes the life-stage ages genome-controlled; Phase 3 had to place them in `OrganismConfig` because no genome existed. They move into `physical` here. The juvenile multipliers (`juvenileSizeScale`, `juvenileSpeedScale`, `juvenileMetabolicScale`) describe what a juvenile _is_, not a per-organism trait, and stay world-level config.

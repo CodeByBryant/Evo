@@ -29,6 +29,7 @@ import { MigrationSystem } from '../../src/systems/MigrationSystem'
 import { MovementSystem } from '../../src/systems/MovementSystem'
 import { PerceptionSystem } from '../../src/systems/PerceptionSystem'
 import { maxHealthOf } from '../../src/organisms/traits'
+import { withoutEcology } from '../support/ecology'
 import { makeReproduction, organismFor, idsFrom } from '../support/organism'
 
 type EcologyOverrides = NonNullable<WorldConfigOverrides['ecology']>
@@ -38,7 +39,13 @@ const stream = (seed: number, name: Parameters<typeof deriveStreamWords>[1]): Se
 
 /** A reflex-controller world config with some ecology features switched on. */
 const config = (ecology: EcologyOverrides = {}, extra: WorldConfigOverrides = {}): WorldConfig =>
-  resolveWorldConfig({ learning: { controller: 'reflex' }, ...extra, ecology })
+  resolveWorldConfig(
+    withoutEcology({
+      ...extra,
+      learning: { controller: 'reflex', ...(extra.learning ?? {}) },
+      ecology
+    })
+  )
 
 /** The first seed whose one-region map is of the given type: a world of a single region type. */
 function seedForRegion(type: RegionType): number {
@@ -352,8 +359,10 @@ describe('HealthSystem', () => {
     const { system, hazards } = health(cfg, modelFor(cfg, 'desert'), [o])
     hazards.add(storm)
     const max = o.health
-    system.update(6000) // winter: intensity 1.3; desert exposure 0.3
-    expect(max - o.health).toBeCloseTo(10 * 0.3 * 1.3 * 0.1, 12)
+    system.update(6000) // winter
+    const exposure = cfg.ecology.regions.types.desert.hazardExposure
+    const intensity = cfg.ecology.seasons.seasons.winter.hazardIntensity
+    expect(max - o.health).toBeCloseTo(10 * exposure * intensity * 0.1, 12)
   })
 
   it('applies toxin damage, and reports both sources together', () => {
@@ -595,12 +604,17 @@ describe('PerceptionSystem with the ecology', () => {
   it('shrinks the range with the region and season visibility', () => {
     const cfg = config(oneRegion({ seasons: { enabled: true } }))
     const radius = organismFor(cfg, 1).genome.sensory.sensorRadius
-    const eco = modelFor(cfg, 'cave') // visibility 0.5
-    const target = resource(1, { x: 100 + radius * 0.8, y: 100 })
-    expect(perceive(cfg, eco, [target], 0)).toBeNull()
+    const cave = cfg.ecology.regions.types.cave.visibility
+    const winter = cfg.ecology.seasons.seasons.winter.visibility
+    // a target just inside the meadow-in-spring range but outside the cave's and winter's
+    const reach = Math.max(cave, winter)
+    const target = resource(1, { x: 100 + radius * (reach + (1 - reach) / 2), y: 100 })
+    expect(cave).toBeLessThan(1)
+    expect(winter).toBeLessThan(1)
+    expect(perceive(cfg, modelFor(cfg, 'cave'), [target], 0)).toBeNull()
     const meadow = modelFor(cfg, 'meadow')
     expect(perceive(cfg, meadow, [target], 0)).not.toBeNull()
-    expect(perceive(cfg, meadow, [target], 6000)).toBeNull() // winter visibility 0.7
+    expect(perceive(cfg, meadow, [target], 6000)).toBeNull()
   })
 
   it('is identical to the plain nearest scan when every feature is off', () => {
@@ -678,8 +692,10 @@ describe('MovementSystem, MetabolismSystem and ReproductionSystem with the ecolo
     }
     const flat = run('meadow', 0)
     expect(flat).toBeCloseTo(cfg.organisms.maxSpeed * cfg.timestep, 9)
-    expect(run('desert', 0)).toBeCloseTo(flat * 0.9, 9)
-    expect(run('desert', 6000)).toBeCloseTo(flat * 0.9 * 0.8, 9)
+    const desert = cfg.ecology.regions.types.desert.movementScale
+    const winter = cfg.ecology.seasons.seasons.winter.movementScale
+    expect(run('desert', 0)).toBeCloseTo(flat * desert, 9)
+    expect(run('desert', 6000)).toBeCloseTo(flat * desert * winter, 9)
   })
 
   it('charges environmental cost outside the comfortable temperature and the healing energy', () => {
@@ -695,38 +711,61 @@ describe('MovementSystem, MetabolismSystem and ReproductionSystem with the ecolo
       return o.energy
     }
     const comfortable = energyAfter('meadow')
-    // volcanic temperature 0.9: excess 0.6, cost 2 * 0.36 per second
-    expect(comfortable - energyAfter('volcanic')).toBeCloseTo(2 * 0.6 * 0.6 * cfg.timestep, 12)
+    const { temperatureTolerance, temperatureCost } = cfg.ecology.regions
+    const excess = cfg.ecology.regions.types.volcanic.temperature - temperatureTolerance
+    expect(excess).toBeGreaterThan(0)
+    // spring has no temperature offset, so the cost is the quadratic charge on the excess
+    expect(comfortable - energyAfter('volcanic')).toBeCloseTo(
+      temperatureCost * excess * excess * cfg.timestep,
+      12
+    )
     expect(energyAfter('meadow', 0.3)).toBeCloseTo(comfortable - 0.3, 12)
   })
 
-  it('divides the reproduction threshold by the region scale, and gives the child full health', () => {
+  it('divides the reproduction cost by the region scale, and gives the child full health', () => {
     const cfg = config(oneRegion())
-    const attempt = (type: RegionType) => {
+    const attempt = (type: RegionType, conf: WorldConfig = cfg) => {
       const organisms = new OrganismStore()
-      organisms.add(organismFor(cfg, 1, { x: 10, y: 10, age: 100, energy: 100 }))
-      organisms.add(organismFor(cfg, 2, { x: 11, y: 10, age: 100, energy: 100 }))
+      organisms.add(organismFor(conf, 1, { x: 10, y: 10, age: 100, energy: 100 }))
+      organisms.add(organismFor(conf, 2, { x: 11, y: 10, age: 100, energy: 100 }))
       const index = new SpatialHash<OrganismState>(50, (o) => o)
       index.rebuild(organisms.values())
       const events = new EventLog(20)
       events.beginTick()
-      const { system } = makeReproduction(cfg, organisms, index, idsFrom(3), events, {
-        ecology: modelFor(cfg, type)
+      const { system } = makeReproduction(conf, organisms, index, idsFrom(3), events, {
+        ecology: modelFor(conf, type)
       })
       system.update(1)
       return { organisms, events }
     }
-    // meadow scale 1: threshold 60 < 100, so they mate. volcanic scale 0.5: threshold 120 > 100.
+    const cost = cfg.reproduction.offspringInvestment * (1 + cfg.reproduction.overheadFraction)
+    const scale = (type: RegionType): number => cfg.ecology.regions.types[type].reproductionScale
+
     const meadow = attempt('meadow')
     expect(meadow.organisms.size).toBe(3)
     const child = meadow.organisms.get(3) as OrganismState
     expect(child.health).toBe(maxHealthOf(child.genome, cfg))
+    expect(meadow.organisms.get(1)?.energy).toBeCloseTo(100 - cost / scale('meadow'), 12)
+
+    // a harsher region makes reproduction costlier but, below the energy cap, still possible
     const volcanic = attempt('volcanic')
-    expect(volcanic.organisms.size).toBe(2)
-    expect(volcanic.events.eventsThisTick()).toEqual([])
-    // forest scale 1.1 lowers the cost: each parent pays 20 / 1.1
-    const forest = attempt('forest')
-    expect(forest.organisms.get(1)?.energy).toBeCloseTo(100 - 20 / 1.1, 12)
+    expect(scale('volcanic')).toBeLessThan(1)
+    expect(volcanic.organisms.size).toBe(3)
+    expect(volcanic.organisms.get(1)?.energy).toBeCloseTo(100 - cost / scale('volcanic'), 12)
+    // a more fertile one makes it cheaper
+    const wetland = attempt('wetland')
+    expect(wetland.organisms.get(1)?.energy).toBeCloseTo(100 - cost / scale('wetland'), 12)
+    expect(wetland.organisms.get(1)?.energy).toBeGreaterThan(
+      meadow.organisms.get(1)?.energy as number
+    )
+
+    // a scale so small the cost exceeds the organism's energy blocks it silently
+    const barren = config(
+      oneRegion({ regions: { types: { volcanic: { reproductionScale: 0.1 } } } })
+    )
+    const blocked = attempt('volcanic', barren)
+    expect(blocked.organisms.size).toBe(2)
+    expect(blocked.events.eventsThisTick()).toEqual([])
   })
 })
 

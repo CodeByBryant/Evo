@@ -32,7 +32,7 @@ export interface RegionTypeConfig {
   temperature: number
   /** Multiplies hazard damage, `>= 0`. */
   hazardExposure: number
-  /** Divides the reproduction threshold and cost, `> 0`; higher is easier. */
+  /** Divides the reproduction cost, `> 0`; higher is cheaper. */
   reproductionScale: number
 }
 
@@ -56,7 +56,7 @@ export interface SeasonConfig {
   movementScale: number
   /** Multiplies hazard damage and the storm rate, `>= 0`. */
   hazardIntensity: number
-  /** Divides the reproduction threshold and cost, `> 0`. */
+  /** Divides the reproduction cost, `> 0`. */
   reproductionScale: number
   /** Added to the region's temperature. */
   temperature: number

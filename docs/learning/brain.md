@@ -165,9 +165,9 @@ With `genetics.brain.innatePrior` (default true) a founder's weights are a hand-
 
 ## What is deliberately not here
 
-- `noveltyPreference` and `riskTolerance` are inherited, mutated and compared but read by nothing: there is no novelty signal and there are no hazards. They exist so Phase 6 can use them without a genome change.
+- (Phase 6 made `noveltyPreference` and `riskTolerance` live: they scale the exploration reward and the damage penalty, see Reward.)
 - No gradient through the hidden layer or memory: those evolve.
-- No `ownHealth`, no `survival` reward, no per-tick cost for memory.
+- No `survival` reward, no per-tick cost for memory. (`ownHealth` arrived in Phase 6 as observation slot 23.)
 
 ## Measured behavior (Phase 5)
 

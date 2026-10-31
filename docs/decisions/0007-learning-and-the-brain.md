@@ -41,7 +41,7 @@ Only the output layer and value head learn. This keeps the update a local, inspe
 - **Reward-modulated Hebbian:** `delta = reward - runningBaseline`.
 - **Actor-critic:** `delta = reward + gamma * V(next) - V(prev)` (the TD error), which also trains the value head.
 
-Live genes: `learningRate`, `discountFactor`, `eligibilityTraceDecay`, `explorationRate`, `persistence` (how much exploration is kept as an organism ages, roadmap 5.6). `noveltyPreference` and `riskTolerance` stay **carried but unread**: there is no novelty reward and there are no hazards yet, and the docs say so plainly rather than inventing a meaning.
+Live genes: `learningRate`, `discountFactor`, `eligibilityTraceDecay`, `explorationRate`, `persistence` (how much exploration is kept as an organism ages, roadmap 5.6). `noveltyPreference` and `riskTolerance` stayed **carried but unread** in Phase 5: there was no novelty reward and there were no hazards, and the docs said so plainly rather than inventing a meaning. Phase 6 (ADR 0009) gave them one: `riskTolerance` scales the damage penalty and `noveltyPreference` the exploration reward.
 
 `learning.enabled: false` freezes the overlay but keeps exploration noise, so toggling it isolates the effect of learning from the effect of acting noisily.
 

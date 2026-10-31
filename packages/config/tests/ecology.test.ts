@@ -75,7 +75,7 @@ describe('ecology config', () => {
         ecology: { regions: { types: { cave: { visibility: 0.1 } } } }
       })
       config.ecology.regions.types.cave.visibility = 0.9
-      expect(DEFAULT_WORLD_CONFIG.ecology.regions.types.cave.visibility).toBe(0.5)
+      expect(DEFAULT_WORLD_CONFIG.ecology.regions.types.cave.visibility).toBe(0.8)
     })
   })
 

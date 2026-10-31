@@ -4,6 +4,7 @@ import type { WorldConfigOverrides } from '@evo/contracts'
 import { SeededRandom } from '../../src/random/SeededRandom'
 import { deriveStreamWords } from '../../src/random/streams'
 import { World } from '../../src/world/World'
+import { withoutEcology } from '../support/ecology'
 
 const ALL_ON: WorldConfigOverrides = {
   organisms: { initialCount: 25 },
@@ -91,7 +92,7 @@ describe('a world with every ecology feature on', () => {
 
   it('differs from the same world with the ecology off', () => {
     const on = make(6)
-    const off = make(6, { organisms: { initialCount: 25 } })
+    const off = make(6, withoutEcology({ organisms: { initialCount: 25 } }))
     on.run(1000)
     off.run(1000)
     expect(on.stateHash()).not.toBe(off.stateHash())
@@ -118,7 +119,10 @@ describe('a world with every ecology feature on', () => {
 
 describe('the off switches', () => {
   it('draw nothing from the terrain or events streams, and spawn no hazards', () => {
-    const world = World.create({ seed: 8, config: { organisms: { initialCount: 15 } } })
+    const world = World.create({
+      seed: 8,
+      config: withoutEcology({ organisms: { initialCount: 15 } })
+    })
     world.run(800)
     const internals = world as unknown as { randomStreams: { get(n: string): SeededRandom } }
     expect(JSON.stringify(internals.randomStreams.get('terrain').getState())).toBe(
@@ -137,7 +141,7 @@ describe('the off switches', () => {
   })
 
   it('leave every organism at full health and every resource at kind 0', () => {
-    const world = World.create({ seed: 9 })
+    const world = World.create({ seed: 9, config: withoutEcology() })
     world.run(500)
     const snapshot = world.snapshot()
     expect(new Set(snapshot.resources.map((r) => r.kind))).toEqual(new Set([0]))
