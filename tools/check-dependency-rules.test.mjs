@@ -56,6 +56,44 @@ test('source imports are checked too', () => {
   assert.equal(checkImports('simulation', files).length, 2)
 })
 
+test('pixi.js is only for the renderer, react only for ui, web and desktop', () => {
+  const ok = checkManifests([
+    pkg('renderer', { '@evo/contracts': 'workspace:*', 'pixi.js': '^8.0.0' }),
+    pkg('ui', { '@evo/contracts': 'workspace:*' }),
+    pkg('web', { react: '^19.0.0', 'react-dom': '^19.0.0' })
+  ])
+  assert.deepEqual(ok, [])
+
+  const bad = checkManifests([
+    pkg('web', { 'pixi.js': '^8.0.0' }),
+    pkg('ui', { 'pixi.js': '^8.0.0' }),
+    pkg('renderer', { react: '^19.0.0' }),
+    pkg('config', { 'react-dom': '^19.0.0' }),
+    pkg('contracts', { '@types/react': '^19.0.0' })
+  ])
+  assert.equal(bad.length, 5)
+  assert.match(bad[0], /PixiJS belongs in @evo\/renderer/)
+  assert.match(bad[2], /React belongs in/)
+})
+
+test('imports of pixi.js and react are checked outside their owners', () => {
+  const pixi = [{ path: 'a.ts', text: "import { Sprite } from 'pixi.js'" }]
+  const dynamicPixi = [{ path: 'a.ts', text: "const m = await import('pixi.js/extras')" }]
+  const react = [{ path: 'b.tsx', text: "import { useState } from 'react'" }]
+  assert.deepEqual(checkImports('renderer', pixi), [])
+  assert.deepEqual(checkImports('ui', react), [])
+  assert.deepEqual(checkImports('web', react), [])
+  assert.equal(checkImports('ui', pixi).length, 1)
+  assert.equal(checkImports('web', pixi).length, 1)
+  assert.equal(checkImports('web', dynamicPixi).length, 1)
+  assert.equal(checkImports('renderer', react).length, 1)
+  assert.equal(checkImports('config', react).length, 1)
+  assert.equal(checkImports('contracts', pixi).length, 1)
+  // the simulation keeps its own rule and is reported once, not twice
+  assert.equal(checkImports('simulation', pixi).length, 1)
+  assert.equal(checkImports('simulation', react).length, 1)
+})
+
 const SYS = 'packages/simulation/src/systems'
 
 test('systems may not import sibling systems', () => {

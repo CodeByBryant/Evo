@@ -191,3 +191,31 @@ jobs:
 
       - name: Build web app
         run: npm run build:web
+
+  pages:
+    name: Pages artifact
+    runs-on: ubuntu-latest
+    # Not required to merge. The deploy workflow only runs on main, so this builds the same artifact
+    # on every pull request and checks that it is deployable (relative URLs, nothing missing).
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the web app
+        run: pnpm --filter @evo/web build
+
+      - name: Check the artifact
+        run: node tools/check-pages-artifact.mjs apps/web/dist

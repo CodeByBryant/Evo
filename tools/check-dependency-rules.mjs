@@ -37,6 +37,27 @@ export const SIMULATION_FORBIDDEN = [
   /^pixi\.js($|\/)/
 ]
 
+/**
+ * External packages that only some workspace packages may use (ADR 0011): drawing lives in the
+ * renderer and the component library in the UI, so the simulation, contracts, config and the
+ * other packages cannot grow a hidden dependency on either. The simulation has its own, stricter
+ * list above.
+ */
+export const EXTERNAL_OWNERS = [
+  { pattern: /^pixi\.js($|\/)/, owners: ['renderer'], what: 'PixiJS belongs in @evo/renderer' },
+  {
+    pattern: /^(react|react-dom)($|\/)|^@types\/(react|react-dom)$/,
+    owners: ['ui', 'web', 'desktop'],
+    what: 'React belongs in @evo/ui, @evo/web and @evo/desktop'
+  }
+]
+
+const externalOwnerError = (short, spec) => {
+  if (short === 'simulation') return null
+  const rule = EXTERNAL_OWNERS.find((r) => r.pattern.test(spec))
+  return rule && !rule.owners.includes(short) ? rule.what : null
+}
+
 const SCOPE = '@evo/'
 const DEP_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']
 const SOURCE_EXT = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/
@@ -65,6 +86,9 @@ export function checkManifests(packages) {
           }
         } else if (short === 'simulation' && SIMULATION_FORBIDDEN.some((re) => re.test(dep))) {
           errors.push(`${pkg.name}: the simulation engine must not depend on "${dep}" (${field})`)
+        } else {
+          const why = externalOwnerError(short, dep)
+          if (why) errors.push(`${pkg.name}: must not depend on "${dep}" (${field}): ${why}`)
         }
       }
     }
@@ -86,6 +110,9 @@ export function checkImports(shortName, files) {
         }
       } else if (shortName === 'simulation' && SIMULATION_FORBIDDEN.some((re) => re.test(spec))) {
         errors.push(`${path}: the simulation engine must not import "${spec}"`)
+      } else {
+        const why = externalOwnerError(shortName, spec)
+        if (why) errors.push(`${path}: @evo/${shortName} must not import "${spec}": ${why}`)
       }
     }
   }
