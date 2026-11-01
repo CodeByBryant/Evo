@@ -158,3 +158,28 @@ describe('learning contracts', () => {
     expect(ACTION_LABELS).toEqual(['thrust', 'turn', 'strafe', 'interact', 'explore'])
   })
 })
+
+describe('render and view contracts', () => {
+  it('lists the render layers in drawing order and enables the useful ones by default', async () => {
+    const { RENDER_LAYERS, DEFAULT_RENDER_LAYERS } = await import('../src/index')
+    expect(RENDER_LAYERS).toEqual([
+      'grid',
+      'terrain',
+      'hazards',
+      'resources',
+      'shadows',
+      'organisms',
+      'trails',
+      'selection',
+      'debug'
+    ])
+    expect(Object.keys(DEFAULT_RENDER_LAYERS)).toEqual([...RENDER_LAYERS])
+    expect(DEFAULT_RENDER_LAYERS.organisms).toBe(true)
+    expect(DEFAULT_RENDER_LAYERS.debug).toBe(false)
+  })
+
+  it('offers the documented speeds', async () => {
+    const { SPEED_SETTINGS } = await import('../src/index')
+    expect(SPEED_SETTINGS).toEqual([1, 5, 25, 100, 'max'])
+  })
+})

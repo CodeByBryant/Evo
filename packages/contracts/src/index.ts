@@ -58,7 +58,8 @@ export type {
   EcologyConfig,
   EcologyConfigOverrides,
   HazardSnapshot,
-  MigrationSummary
+  MigrationSummary,
+  TerrainSnapshot
 } from './ecology'
 export type {
   SpeciesId,
@@ -107,3 +108,27 @@ export type {
   HistoricalOrganismRecord,
   WorldSnapshot
 } from './snapshots'
+export { RENDER_LAYERS, DEFAULT_RENDER_LAYERS } from './render'
+export type {
+  RenderOrganism,
+  RenderResource,
+  RenderHazard,
+  RenderEffect,
+  RenderSnapshot,
+  RenderLayerName,
+  RenderLayers
+} from './render'
+export { SPEED_SETTINGS } from './view'
+export type {
+  SpeedSetting,
+  RunStatus,
+  PresetOption,
+  PopulationPoint,
+  SpeciesRow,
+  GeneRow,
+  LabelledValue,
+  InspectorBrain,
+  InspectorView,
+  ViewState,
+  SimulationControls
+} from './view'
