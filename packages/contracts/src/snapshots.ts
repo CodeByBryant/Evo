@@ -20,9 +20,15 @@ export interface OrganismSnapshot {
   readonly heading: number
   readonly radius: number
   readonly age: number
+  /** The age at which the organism dies of old age. */
+  readonly maxAge: number
   readonly energy: number
+  /** Energy capacity of this organism's body. */
+  readonly maxEnergy: number
   /** Current health; equals the maximum when health is disabled. */
   readonly health: number
+  /** Health capacity of this organism's body. */
+  readonly maxHealth: number
   readonly lifeStage: LifeStage
   readonly reproductionCooldownRemaining: number
 }

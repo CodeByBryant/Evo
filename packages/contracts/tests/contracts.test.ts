@@ -136,8 +136,11 @@ describe('contracts', () => {
       heading: 0,
       radius: 5,
       age: 0,
+      maxAge: 600,
       energy: 50,
+      maxEnergy: 100,
       health: 100,
+      maxHealth: 100,
       lifeStage: 'mature',
       reproductionCooldownRemaining: 0
     }

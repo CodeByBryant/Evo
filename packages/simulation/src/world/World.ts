@@ -8,6 +8,8 @@ import type {
   HistoricalOrganismRecord,
   MigrationSummary,
   RegionType,
+  Season,
+  TerrainSnapshot,
   ValidationResult,
   WorldConfig,
   WorldOptions,
@@ -33,7 +35,7 @@ import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { ReproductionReadiness } from '../organisms/reproductionReadiness'
-import { maxHealthOf } from '../organisms/traits'
+import { maxEnergyOf, maxHealthOf } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
@@ -397,6 +399,19 @@ export class World {
     }))
   }
 
+  /**
+   * The static region map for drawing, or `null` when regions are off. A copy; the map never
+   * changes during a run, so a presentation layer reads it once. Not part of the state hash.
+   */
+  terrain(): TerrainSnapshot | null {
+    return this.regionMap === null ? null : this.regionMap.toSnapshot()
+  }
+
+  /** The current season, or `null` when seasons are off. */
+  get season(): Season | null {
+    return this.ecology.seasonAt(this.clockImpl.tick)
+  }
+
   /** The region type at a position, or `null` when regions are off. */
   regionTypeAt(x: number, y: number): RegionType | null {
     return this.ecology.regionTypeAt(x, y)
@@ -542,8 +557,11 @@ export class World {
         heading: organism.heading,
         radius: organism.genome.physical.radius,
         age: organism.age,
+        maxAge: organism.genome.physical.maxAge,
         energy: organism.energy,
+        maxEnergy: maxEnergyOf(organism.genome, this.config),
         health: organism.health,
+        maxHealth: maxHealthOf(organism.genome, this.config),
         lifeStage: lifeStageFor(organism.age, this.config.organisms),
         reproductionCooldownRemaining: organism.reproductionCooldownRemaining
       })),
