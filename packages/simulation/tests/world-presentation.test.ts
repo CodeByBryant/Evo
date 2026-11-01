@@ -41,7 +41,7 @@ describe('World.terrain()', () => {
     const terrain = world.terrain()
     if (terrain === null) throw new Error('regions are on by default')
     ;(terrain.cells as number[]).fill(0)
-    ;(terrain.regions as { type: string }[]).forEach((region) => (region.type = 'cave'))
+    ;(terrain.regions as unknown as { type: string }[]).forEach((region) => (region.type = 'cave'))
     expect(world.stateHash()).toBe(before)
     const again = world.terrain()
     expect(again?.cells).not.toEqual(terrain.cells)
