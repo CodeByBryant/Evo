@@ -6,11 +6,11 @@ const GOLDEN_ANGLE = 137.50776405003785
 /** Hue in degrees `[0, 360)` for a species; stable across runs, and `null` (no species) is a neutral hue. */
 export function speciesHue(id: SpeciesId | null): number {
   if (id === null) return 210
-  return (((id * GOLDEN_ANGLE + 20) % 360) + 360) % 360
+  return (((id * GOLDEN_ANGLE + 195) % 360) + 360) % 360
 }
 
 /** `#rrggbb` for a hue, with saturation and lightness chosen to read on a dark background. */
-export function hslToHex(hue: number, saturation = 0.72, lightness = 0.58): string {
+export function hslToHex(hue: number, saturation = 0.78, lightness = 0.62): string {
   const c = (1 - Math.abs(2 * lightness - 1)) * saturation
   const h = (((hue % 360) + 360) % 360) / 60
   const x = c * (1 - Math.abs((h % 2) - 1))

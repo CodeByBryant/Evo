@@ -41,7 +41,7 @@ export function ControlPanel({
         <button
           type="button"
           className="evo-button evo-primary"
-          onClick={controls.toggle}
+          onClick={() => controls.toggle()}
           disabled={extinct}
           aria-keyshortcuts="Space"
         >
@@ -56,7 +56,7 @@ export function ControlPanel({
         >
           Step
         </button>
-        <button type="button" className="evo-button" onClick={controls.reset}>
+        <button type="button" className="evo-button" onClick={() => controls.reset()}>
           Reset
         </button>
         <button type="button" className="evo-button" onClick={() => controls.newWorld()}>
@@ -145,13 +145,13 @@ export function LayerPanel({
     <section className="evo-panel" aria-labelledby="evo-layers-title">
       <h2 id="evo-layers-title">View</h2>
       <div className="evo-row">
-        <button type="button" className="evo-button" onClick={controls.fitWorld}>
+        <button type="button" className="evo-button" onClick={() => controls.fitWorld()}>
           Fit
         </button>
         <button
           type="button"
           className="evo-button"
-          onClick={controls.focusSelected}
+          onClick={() => controls.focusSelected()}
           disabled={view.selectedId === null}
         >
           Focus
@@ -160,7 +160,7 @@ export function LayerPanel({
           type="button"
           className="evo-button"
           aria-pressed={view.following}
-          onClick={controls.toggleFollow}
+          onClick={() => controls.toggleFollow()}
           disabled={view.selectedId === null && !view.following}
         >
           Follow

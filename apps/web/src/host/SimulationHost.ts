@@ -104,6 +104,8 @@ export class SimulationHost implements SimulationControls {
   private latestWorld!: WorldSnapshot
   private latestFrame!: RenderSnapshot
   private effects: RenderEffect[] = []
+  /** When each organism last showed a damage marker, so one is not drawn every tick it stays in a hazard. */
+  private lastDamageMarker = new Map<EntityId, number>()
   private history: PopulationPoint[] = []
   private sampleEvery = 50
   private lastSampledTick = -Infinity
@@ -146,6 +148,21 @@ export class SimulationHost implements SimulationControls {
       options.preset !== undefined && this.findPreset(options.preset)
         ? options.preset
         : DEFAULT_PRESET
+    // The interface hands these out as plain callbacks (`onClick={controls.toggle}`), so they must
+    // not depend on how they are called.
+    this.start = this.start.bind(this)
+    this.pause = this.pause.bind(this)
+    this.toggle = this.toggle.bind(this)
+    this.step = this.step.bind(this)
+    this.reset = this.reset.bind(this)
+    this.newWorld = this.newWorld.bind(this)
+    this.setSpeed = this.setSpeed.bind(this)
+    this.setPreset = this.setPreset.bind(this)
+    this.select = this.select.bind(this)
+    this.setLayer = this.setLayer.bind(this)
+    this.focusSelected = this.focusSelected.bind(this)
+    this.toggleFollow = this.toggleFollow.bind(this)
+    this.fitWorld = this.fitWorld.bind(this)
     this.createWorld(options.seed ?? this.env.randomSeed(), preset)
     if (options.autoStart ?? true) this.start()
   }
@@ -314,6 +331,7 @@ export class SimulationHost implements SimulationControls {
     this.following = false
     this.viewport?.setFollow(false)
     this.effects = []
+    this.lastDamageMarker = new Map()
     this.history = []
     this.sampleEvery = 50
     this.lastSampledTick = -Infinity
@@ -395,15 +413,24 @@ export class SimulationHost implements SimulationControls {
           tick: event.tick
         })
       } else if (event.type === 'organism-damaged') {
-        this.effects.push({
-          kind: 'damage',
-          x: event.position.x,
-          y: event.position.y,
-          tick: event.tick
-        })
+        const last = this.lastDamageMarker.get(event.organismId)
+        if (last === undefined || event.tick - last >= EFFECT_TICKS) {
+          this.lastDamageMarker.set(event.organismId, event.tick)
+          this.effects.push({
+            kind: 'damage',
+            x: event.position.x,
+            y: event.position.y,
+            tick: event.tick
+          })
+        }
       }
     }
     const horizon = this.world.clock.tick - EFFECT_TICKS
+    if (this.lastDamageMarker.size > 1000) {
+      for (const [id, tick] of this.lastDamageMarker) {
+        if (tick < horizon) this.lastDamageMarker.delete(id)
+      }
+    }
     if (this.effects.length > MAX_EFFECTS || (this.effects[0] && this.effects[0].tick < horizon)) {
       this.effects = this.effects.filter((e) => e.tick >= horizon).slice(-MAX_EFFECTS)
     }

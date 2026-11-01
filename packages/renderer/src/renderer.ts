@@ -11,8 +11,10 @@ export interface RendererCallbacks {
 export interface RendererStats {
   /** Frames drawn since mount. */
   readonly frames: number
-  /** Milliseconds the last `render` call took (building the scene, not GPU time). */
+  /** Milliseconds the last `render` call took in total, including handing the frame to the GPU. */
   readonly lastFrameMs: number
+  /** Milliseconds the last scene update took (positions, tints, pools): the CPU cost of a frame. */
+  readonly lastSceneMs: number
   readonly organisms: number
   readonly resources: number
 }

@@ -1,15 +1,19 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { World } from '@evo/simulation'
+import '@evo/ui/styles.css'
+import './styles.css'
+import { App } from './App'
+import { createBrowserHost } from './host/browserHost'
 
-const world = new World({ seed: 0 })
+// One host for the life of the page. It is created outside React so that StrictMode's double
+// rendering and effect replays can never create a second world.
+const host = createBrowserHost()
+
 const root = document.getElementById('root')
-
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <h1>Evo</h1>
-      <p>Simulation kernel not implemented yet (seed {world.seed}).</p>
+      <App host={host} />
     </StrictMode>
   )
 }

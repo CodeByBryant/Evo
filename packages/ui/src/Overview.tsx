@@ -147,7 +147,7 @@ export function ExtinctionBanner({
         >
           New world
         </button>
-        <button type="button" className="evo-button" onClick={controls.reset}>
+        <button type="button" className="evo-button" onClick={() => controls.reset()}>
           Replay this seed
         </button>
       </div>

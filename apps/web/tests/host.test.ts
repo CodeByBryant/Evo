@@ -337,6 +337,30 @@ describe('SimulationHost: controls and the viewport', () => {
     expect(calls).toEqual(['fit', 'focus', 'follow:true'])
   })
 
+  it('works when its controls are used as detached callbacks, as the interface does', () => {
+    const { env, host: h } = host()
+    const { toggle, step, reset, setSpeed, newWorld, select, setLayer, fitWorld } = h
+    env.runUntil(() => h.getViewState().tick >= 30)
+    toggle()
+    expect(h.getViewState().status).toBe('paused')
+    const before = h.getViewState().tick
+    step()
+    expect(h.getViewState().tick).toBe(before + 1)
+    setSpeed(100)
+    setLayer('grid', false)
+    expect(h.getViewState().speed).toBe(100)
+    expect(h.getViewState().layers.grid).toBe(false)
+    select(h.getFrame().organisms[0]?.id ?? null)
+    expect(h.getViewState().selectedId).not.toBeNull()
+    fitWorld()
+    reset()
+    expect(h.getViewState().tick).toBe(0)
+    newWorld(9)
+    expect(h.getViewState().seed).toBe(9)
+    toggle()
+    expect(h.getViewState().status).toBe('paused')
+  })
+
   it('stops its loop when disposed', () => {
     const { env, host: h } = host()
     h.dispose()

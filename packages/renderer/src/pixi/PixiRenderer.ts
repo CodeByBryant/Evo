@@ -62,6 +62,7 @@ export class PixiRenderer implements Renderer {
 
   private frameCount = 0
   private lastMs = 0
+  private lastSceneMs = 0
   private organismCount = 0
   private resourceCount = 0
 
@@ -69,6 +70,7 @@ export class PixiRenderer implements Renderer {
     return {
       frames: this.frameCount,
       lastFrameMs: this.lastMs,
+      lastSceneMs: this.lastSceneMs,
       organisms: this.organismCount,
       resources: this.resourceCount
     }
@@ -149,7 +151,9 @@ export class PixiRenderer implements Renderer {
     const started = performance.now()
     if (frame !== this.drawnFrame || this.sceneDirty) {
       if (this.layers.trails) this.trails.record(frame.organisms)
+      const sceneStarted = performance.now()
       this.updateScene(frame)
+      this.lastSceneMs = performance.now() - sceneStarted
       this.drawnFrame = frame
       this.sceneDirty = false
     }
@@ -421,7 +425,7 @@ export class PixiRenderer implements Renderer {
       body.rotation = o.rotation
       body.scale.set(scale)
       body.tint = this.numberOf(o.speciesColor)
-      body.alpha = (0.4 + 0.6 * o.energyRatio) * (o.lifeStage === 'senescent' ? 0.8 : 1)
+      body.alpha = (0.68 + 0.32 * o.energyRatio) * (o.lifeStage === 'senescent' ? 0.85 : 1)
     }
 
     this.drawHazards(frame)
