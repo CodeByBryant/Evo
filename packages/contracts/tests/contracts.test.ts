@@ -136,8 +136,11 @@ describe('contracts', () => {
       heading: 0,
       radius: 5,
       age: 0,
+      maxAge: 600,
       energy: 50,
+      maxEnergy: 100,
       health: 100,
+      maxHealth: 100,
       lifeStage: 'mature',
       reproductionCooldownRemaining: 0
     }
@@ -152,9 +155,34 @@ describe('learning contracts', () => {
   it('fixes the observation and action sizes and labels them one to one', async () => {
     const { ACTION_LABELS, ACTION_SIZE, OBSERVATION_LABELS, OBSERVATION_SIZE } =
       await import('../src/index')
-    expect(OBSERVATION_SIZE).toBe(33)
+    expect(OBSERVATION_SIZE).toBe(37)
     expect(ACTION_SIZE).toBe(5)
     expect(OBSERVATION_LABELS).toHaveLength(OBSERVATION_SIZE)
     expect(ACTION_LABELS).toEqual(['thrust', 'turn', 'strafe', 'interact', 'explore'])
+  })
+})
+
+describe('render and view contracts', () => {
+  it('lists the render layers in drawing order and enables the useful ones by default', async () => {
+    const { RENDER_LAYERS, DEFAULT_RENDER_LAYERS } = await import('../src/index')
+    expect(RENDER_LAYERS).toEqual([
+      'grid',
+      'terrain',
+      'hazards',
+      'resources',
+      'shadows',
+      'organisms',
+      'trails',
+      'selection',
+      'debug'
+    ])
+    expect(Object.keys(DEFAULT_RENDER_LAYERS)).toEqual([...RENDER_LAYERS])
+    expect(DEFAULT_RENDER_LAYERS.organisms).toBe(true)
+    expect(DEFAULT_RENDER_LAYERS.debug).toBe(false)
+  })
+
+  it('offers the documented speeds', async () => {
+    const { SPEED_SETTINGS } = await import('../src/index')
+    expect(SPEED_SETTINGS).toEqual([1, 5, 25, 100, 'max'])
   })
 })

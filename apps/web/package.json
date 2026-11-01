@@ -4,12 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@evo/config": "workspace:*",
+    "@evo/contracts": "workspace:*",
     "@evo/renderer": "workspace:*",
     "@evo/simulation": "workspace:*",
     "@evo/ui": "workspace:*",

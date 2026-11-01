@@ -1,6 +1,12 @@
 import { ACTION_SIZE } from '@evo/contracts'
 import type { EntityId, WorldConfig } from '@evo/contracts'
-import type { HazardBuffer, IntentBuffer, PeerBuffer, PerceptionBuffer } from '../buffers/types'
+import type {
+  HazardBuffer,
+  IntentBuffer,
+  MateBuffer,
+  PeerBuffer,
+  PerceptionBuffer
+} from '../buffers/types'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
@@ -52,7 +58,8 @@ export class BrainSystem {
     private readonly events: EventLog,
     private readonly random: SeededRandom,
     private readonly ecology: EcologyModel | null = null,
-    private readonly hazardBuffer?: HazardBuffer
+    private readonly hazardBuffer?: HazardBuffer,
+    private readonly mateBuffer?: MateBuffer
   ) {
     this.layout = brainLayoutOf(architectureOf(config.genetics.brain))
     this.learner = createLearner(config.learning.algorithm)
@@ -114,6 +121,7 @@ export class BrainSystem {
             }
           : null
 
+      const mate = this.mateBuffer?.get(organism.id)
       const hazardTarget = this.hazardBuffer?.get(organism.id)
       const hazard: HazardSighting | null = hazardTarget
         ? {
@@ -143,6 +151,7 @@ export class BrainSystem {
         worldHeight: height,
         food: sight(food),
         peer: sight(peer),
+        mate: sight(mate),
         timeSinceFood: brain.timeSinceFood / foodHorizon,
         previousReward: brain.reward.total,
         previousAction: brain.prevAction,

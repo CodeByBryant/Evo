@@ -183,12 +183,12 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     // Pinned exact values: this scenario is fully deterministic for this seed/config/duration.
     // (Scenario A runs the reflex controller. Heritable mutation is on by default; with it off
     // this scenario gives Phase 3's original 26 active / 47 born / 21 starved - see
-    // world-genomes.test.ts. The pins below moved in Phases 5 and 6 only because the larger
+    // world-genomes.test.ts. The pins below moved in Phases 5, 6 and 7 only because the larger
     // genome draws more founder weights from the `genetics` stream, which shifts later mutations;
-    // with mutation off the result is still 26/47/21 after the Phase 6 genome growth.)
-    expect(snapshot.population.active).toBe(20)
-    expect(snapshot.metrics.organismsBorn).toBe(41)
-    expect(snapshot.metrics.deathsByStarvation).toBe(21)
+    // with mutation off the result is still 26/47/21 after the Phase 6 and 7 genome growth.)
+    expect(snapshot.population.active).toBe(25)
+    expect(snapshot.metrics.organismsBorn).toBe(44)
+    expect(snapshot.metrics.deathsByStarvation).toBe(19)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 

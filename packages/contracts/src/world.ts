@@ -95,6 +95,11 @@ export interface ReproductionConfig {
   cooldown: number
   /** Distance within which a partner is sought. */
   searchRadius: number
+  /**
+   * Distance at which an organism that is ready to reproduce can sense other ready organisms (a
+   * mating signal, longer than the sensor radius; brain controller only, ADR 0010).
+   */
+  mateSenseRadius: number
 }
 
 export interface HistoryConfig {

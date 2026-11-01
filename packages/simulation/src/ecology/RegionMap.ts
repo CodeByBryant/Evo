@@ -1,5 +1,5 @@
 import { REGION_TYPES } from '@evo/contracts'
-import type { RegionType, RegionsConfig } from '@evo/contracts'
+import type { RegionType, RegionsConfig, TerrainSnapshot } from '@evo/contracts'
 import type { RandomSource } from '../random/RandomSource'
 
 export interface RegionPoint {
@@ -20,9 +20,9 @@ export class RegionMap {
 
   private constructor(
     readonly points: readonly RegionPoint[],
-    private readonly gridSize: number,
-    private readonly width: number,
-    private readonly height: number
+    readonly gridSize: number,
+    readonly width: number,
+    readonly height: number
   ) {
     this.cells = new Uint16Array(gridSize * gridSize)
     for (let row = 0; row < gridSize; row++) {
@@ -78,6 +78,17 @@ export class RegionMap {
 
   typeAt(x: number, y: number): RegionType {
     return this.typeOf(this.indexAt(x, y))
+  }
+
+  /** A copy of the map for drawing (`World.terrain()`): the cell lookup and the regions. */
+  toSnapshot(): TerrainSnapshot {
+    return {
+      width: this.width,
+      height: this.height,
+      gridSize: this.gridSize,
+      cells: Array.from(this.cells),
+      regions: this.points.map((point) => ({ x: point.x, y: point.y, type: point.type }))
+    }
   }
 
   /** How many of the grid's cells are of each type, in `REGION_TYPES` order (for tests and reports). */

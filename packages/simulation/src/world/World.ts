@@ -8,6 +8,8 @@ import type {
   HistoricalOrganismRecord,
   MigrationSummary,
   RegionType,
+  Season,
+  TerrainSnapshot,
   ValidationResult,
   WorldConfig,
   WorldOptions,
@@ -16,6 +18,7 @@ import type {
 import type {
   DamageBuffer,
   HazardBuffer,
+  MateBuffer,
   IntentBuffer,
   PeerBuffer,
   PerceptionBuffer,
@@ -31,7 +34,8 @@ import { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
 import { lifeStageFor } from '../organisms/lifeStage'
-import { maxHealthOf } from '../organisms/traits'
+import { ReproductionReadiness } from '../organisms/reproductionReadiness'
+import { maxEnergyOf, maxHealthOf } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
@@ -106,6 +110,7 @@ export class World {
   private readonly peerBuffer: PeerBuffer = new Map()
   private readonly intentBuffer: IntentBuffer = new Map()
   private readonly hazardBuffer: HazardBuffer = new Map()
+  private readonly mateBuffer: MateBuffer = new Map()
   private readonly damageBuffer: DamageBuffer = new Map()
   private readonly regenBuffer: RegenBuffer = new Map()
   private readonly brainLayout: BrainLayout
@@ -197,7 +202,19 @@ export class World {
       this.perceptionBuffer,
       brainControlled ? { organismIndex: this.organismIndex, buffer: this.peerBuffer } : undefined,
       this.ecology,
-      brainControlled ? { hazards: this.hazardStore, buffer: this.hazardBuffer } : undefined
+      brainControlled ? { hazards: this.hazardStore, buffer: this.hazardBuffer } : undefined,
+      brainControlled
+        ? {
+            organismIndex: this.organismIndex,
+            buffer: this.mateBuffer,
+            radius: this.config.reproduction.mateSenseRadius,
+            readiness: new ReproductionReadiness(this.config, this.ecology),
+            compatible: (a, b) =>
+              !this.config.species.enabled ||
+              !this.config.species.reproductiveIsolation ||
+              this.speciesRegistry.speciesOf(a.id) === this.speciesRegistry.speciesOf(b.id)
+          }
+        : undefined
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
@@ -215,7 +232,8 @@ export class World {
       this.events,
       this.randomStreams.get('learning'),
       this.ecology,
-      this.hazardBuffer
+      this.hazardBuffer,
+      this.mateBuffer
     )
     this.movementSystem = new MovementSystem(
       this.config,
@@ -381,6 +399,19 @@ export class World {
     }))
   }
 
+  /**
+   * The static region map for drawing, or `null` when regions are off. A copy; the map never
+   * changes during a run, so a presentation layer reads it once. Not part of the state hash.
+   */
+  terrain(): TerrainSnapshot | null {
+    return this.regionMap === null ? null : this.regionMap.toSnapshot()
+  }
+
+  /** The current season, or `null` when seasons are off. */
+  get season(): Season | null {
+    return this.ecology.seasonAt(this.clockImpl.tick)
+  }
+
   /** The region type at a position, or `null` when regions are off. */
   regionTypeAt(x: number, y: number): RegionType | null {
     return this.ecology.regionTypeAt(x, y)
@@ -526,8 +557,11 @@ export class World {
         heading: organism.heading,
         radius: organism.genome.physical.radius,
         age: organism.age,
+        maxAge: organism.genome.physical.maxAge,
         energy: organism.energy,
+        maxEnergy: maxEnergyOf(organism.genome, this.config),
         health: organism.health,
+        maxHealth: maxHealthOf(organism.genome, this.config),
         lifeStage: lifeStageFor(organism.age, this.config.organisms),
         reproductionCooldownRemaining: organism.reproductionCooldownRemaining
       })),

@@ -28,6 +28,8 @@ export function withoutEcology(config: WorldConfigOverrides = {}): WorldConfigOv
   }
   return {
     ...config,
+    // The Phase 5 food supply: the default spawn rate was lowered when mate seeking arrived (ADR 0010).
+    resources: { spawnRate: 2, ...(config.resources ?? {}) },
     ecology,
     learning: {
       ...(config.learning ?? {}),

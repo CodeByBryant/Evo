@@ -164,3 +164,18 @@ export interface MigrationSummary {
   /** `true` once it stayed in another region for `migration.dwellTime`. */
   readonly migrated: boolean
 }
+
+/**
+ * The static region map for drawing (`World.terrain()`): which region each cell of a
+ * `gridSize x gridSize` lookup belongs to. Static for the life of a world, so a presentation layer
+ * reads it once.
+ */
+export interface TerrainSnapshot {
+  readonly width: number
+  readonly height: number
+  readonly gridSize: number
+  /** Region (Voronoi point) index per cell, row-major from the top-left, `gridSize * gridSize` long. */
+  readonly cells: readonly number[]
+  /** The regions, indexed by the values in `cells`. */
+  readonly regions: readonly { readonly x: number; readonly y: number; readonly type: RegionType }[]
+}

@@ -46,7 +46,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   resources: {
     initialCount: 100,
     maxCount: 200,
-    spawnRate: 2,
+    spawnRate: 1.6,
     energyValue: 30,
     radius: 3,
     region: null
@@ -56,7 +56,8 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     offspringInvestment: 12.5,
     overheadFraction: 0.6,
     cooldown: 30,
-    searchRadius: 50
+    searchRadius: 50,
+    mateSenseRadius: 250
   },
   history: { maxEvents: 10_000, eventDetail: 'essential', maxHistoricalOrganisms: 10_000 },
   genetics: {

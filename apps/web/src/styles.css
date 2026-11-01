@@ -1,0 +1,128 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--evo-bg, #0a101d);
+  color: var(--evo-text, #dbe4ff);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.app-sidebar {
+  width: 320px;
+  flex: none;
+  overflow: auto;
+  padding: 12px;
+  background: var(--evo-bg);
+  border-right: 1px solid var(--evo-line);
+}
+.app-sidebar[hidden] {
+  display: none;
+}
+
+.app-help {
+  font-size: 0.75rem;
+  color: var(--evo-muted);
+  margin: 0 0 12px;
+}
+
+.app-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.viewport-error {
+  margin: 24px;
+  padding: 16px;
+  max-width: 420px;
+  background: var(--evo-panel);
+  border: 1px solid var(--evo-bad);
+  border-radius: var(--evo-radius);
+}
+
+.app-panels-toggle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.app-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.app-overlay > * {
+  pointer-events: auto;
+}
+
+.app-inspector {
+  width: 340px;
+  flex: none;
+  display: flex;
+  padding: 10px 10px 10px 0;
+  min-height: 0;
+  background: var(--evo-bg);
+}
+.app-inspector > .evo-inspector {
+  flex: 1;
+}
+
+/* Phones and narrow windows: the panels stack under the viewport and the inspector becomes a sheet. */
+@media (max-width: 800px) {
+  .app-body {
+    flex-direction: column-reverse;
+  }
+  .app-sidebar {
+    width: auto;
+    max-height: 42vh;
+    border-right: 0;
+    border-top: 1px solid var(--evo-line);
+  }
+  .app-stage {
+    min-height: 40vh;
+  }
+  .app-inspector {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 55vh;
+    padding: 8px;
+    z-index: 5;
+    background: transparent;
+  }
+  .evo-facts {
+    gap: 2px 10px;
+  }
+}

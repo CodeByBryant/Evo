@@ -131,6 +131,12 @@ describe('validateWorldConfig', () => {
     expect(errorsFor((c) => (c.reproduction.searchRadius = 0))).toContain(
       'reproduction.searchRadius must be greater than zero'
     )
+    expect(errorsFor((c) => (c.reproduction.mateSenseRadius = 0))).toContain(
+      'reproduction.mateSenseRadius must be greater than zero'
+    )
+    expect(
+      errorsFor((c) => delete (c.reproduction as Partial<typeof c.reproduction>).mateSenseRadius)
+    ).toContain('reproduction.mateSenseRadius is required')
   })
 
   it('validates history.maxHistoricalOrganisms', () => {

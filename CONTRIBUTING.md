@@ -1,6 +1,6 @@
-# Contributing to EvoSquares
+# Contributing to Evo
 
-Thank you for considering contributing to **EvoSquares**! We welcome all kinds of contributions, including bug reports, feature requests, documentation updates, and code contributions.
+Thank you for considering contributing to **Evo**! We welcome all kinds of contributions, including bug reports, feature requests, documentation updates, and code contributions.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ Thank you for considering contributing to **EvoSquares**! We welcome all kinds o
    Clone your fork to your local development environment:
 
    ```bash
-   git clone https://github.com/your-username/EvoSquares.git
+   git clone https://github.com/your-username/Evo.git
    ```
 
 3. **Set Up the Environment**:  
@@ -105,4 +105,4 @@ This project adheres to the [GitHub Community Guidelines](https://docs.github.co
 ---
 
 Thank you for your contributions and support!  
-Let’s make EvoSquares better together. 🎉
+Let’s make Evo better together. 🎉

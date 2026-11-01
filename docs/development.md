@@ -15,16 +15,22 @@ Evo is being rebuilt as a pnpm workspace around a headless simulation engine (se
 
 Run from the repository root:
 
-| Command          | Description                                                         |
-| ---------------- | ------------------------------------------------------------------- |
-| `pnpm install`   | Install all workspace dependencies                                  |
-| `pnpm check`     | Typecheck, lint (including dependency rules), and test              |
-| `pnpm build`     | Compile-check every package and build the web app                   |
-| `pnpm typecheck` | TypeScript checks for every package                                 |
-| `pnpm lint`      | Dependency-rule check plus ESLint                                   |
-| `pnpm test`      | Tool tests plus every package's Vitest suite                        |
-| `pnpm format`    | Format with Prettier (`pnpm format:check` verifies without writing) |
-| `pnpm lint:deps` | Only the workspace dependency-rule check                            |
+| Command                      | Description                                                         |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `pnpm install`               | Install all workspace dependencies                                  |
+| `pnpm check`                 | Typecheck, lint (including dependency rules), and test              |
+| `pnpm build`                 | Compile-check every package and build the web app                   |
+| `pnpm typecheck`             | TypeScript checks for every package                                 |
+| `pnpm lint`                  | Dependency-rule check plus ESLint                                   |
+| `pnpm test`                  | Tool tests plus every package's Vitest suite                        |
+| `pnpm format`                | Format with Prettier (`pnpm format:check` verifies without writing) |
+| `pnpm lint:deps`             | Only the workspace dependency-rule check                            |
+| `pnpm test:determinism`      | The slow suite: 100,000-tick runs and pinned state hashes           |
+| `pnpm --filter @evo/web dev` | The web app with hot reload (`preview` serves a build)              |
+
+### The web app
+
+`pnpm --filter @evo/web dev` starts the application; `pnpm --filter @evo/web build` produces `apps/web/dist`, which is what GitHub Pages serves (see [the web application](architecture/web-app.md)). Open it with `?debug` in the address to expose `window.__evo` (the host and renderer) for experiments; real-browser checks are run with Playwright against `vite preview`.
 
 ### Layout and rules
 
@@ -288,11 +294,14 @@ export const MyComponent: React.FC<MyComponentProps> = ({ value }) => {
 ### Web Release
 
 ```bash
-npm run build:web
-# Output in ./dist/
+pnpm --filter @evo/web build
+node tools/check-pages-artifact.mjs apps/web/dist
+# Output in apps/web/dist; pushed to main, it is deployed by .github/workflows/deploy-web.yml
 ```
 
-### Desktop Release
+### Desktop Release (archived prototype)
+
+The desktop installers are still built from the archived prototype. Run these from `legacy/prototype`:
 
 ```bash
 # All platforms

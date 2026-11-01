@@ -9,6 +9,12 @@ export const INNATE_PRIOR_MIN_HIDDEN = 5
 const FOOD_PRESENT = 8
 const FOOD_BEARING_COS = 9
 const FOOD_BEARING_SIN = 10
+// The nearest eligible partner, seen only while the organism is itself ready (ADR 0010).
+const MATE_PRESENT = 33
+const MATE_BEARING_COS = 34
+const MATE_BEARING_SIN = 35
+const MATE_STEER = 3
+const MATE_THRUST = 20
 
 // Output indices.
 const THRUST = 0
@@ -48,6 +54,15 @@ export function innatePriorWeights(architecture: BrainArchitecture): number[] {
     input(steering, FOOD_BEARING_COS, -0.25)
   }
   for (const presence of [2, 3, 4]) input(presence, FOOD_PRESENT, 20)
+  // Mate seeking (ADR 0010): the same two steering units also turn toward an eligible partner,
+  // and the first presence unit drives thrust. The mate slots are zero unless this organism is
+  // itself ready and a ready partner is in range, so these terms never pull a forager off food.
+  for (const steering of [0, 1]) {
+    input(steering, MATE_BEARING_SIN, MATE_STEER)
+    input(steering, MATE_PRESENT, MATE_STEER * 0.05)
+    input(steering, MATE_BEARING_COS, -MATE_STEER * 0.05)
+  }
+  input(2, MATE_PRESENT, MATE_THRUST)
 
   const output = (out: number, hidden: number, value: number): void => {
     weights[layout.hiddenToOutput.offset + out * hiddenSize + hidden] = value

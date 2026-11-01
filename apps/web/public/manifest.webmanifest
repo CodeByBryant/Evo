@@ -1,0 +1,14 @@
+{
+  "name": "Evo",
+  "short_name": "Evo",
+  "description": "A deterministic artificial-life simulation: evolving organisms with brains, species and ecosystems.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#0a101d",
+  "background_color": "#0a101d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,447 @@
+/* Evo interface components. Colors are tokens on :root so the whole set can be re-themed in one place. */
+:root {
+  --evo-bg: #0a101d;
+  --evo-panel: #111a2e;
+  --evo-panel-2: #172340;
+  --evo-line: #243253;
+  --evo-text: #dbe4ff;
+  --evo-muted: #94a6cc;
+  --evo-accent: #2f5bd8;
+  --evo-accent-text: #ffffff;
+  --evo-focus: #9db7ff;
+  --evo-good: #6fe3a1;
+  --evo-warn: #ffc15c;
+  --evo-bad: #ff7a7a;
+  --evo-radius: 8px;
+}
+
+.evo-panel {
+  background: var(--evo-panel);
+  border: 1px solid var(--evo-line);
+  border-radius: var(--evo-radius);
+  padding: 12px;
+  margin: 0 0 12px;
+}
+
+.evo-panel h2,
+.evo-inspector h2 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--evo-muted);
+}
+
+.evo-inspector h3 {
+  margin: 12px 0 4px;
+  font-size: 0.85rem;
+  color: var(--evo-muted);
+}
+
+.evo-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.evo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+
+.evo-hint {
+  color: var(--evo-muted);
+  font-size: 0.78rem;
+}
+
+.evo-capitalize {
+  text-transform: capitalize;
+}
+
+/* controls */
+.evo-button {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--evo-text);
+  background: var(--evo-panel-2);
+  border: 1px solid var(--evo-line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-height: 34px;
+  cursor: pointer;
+}
+.evo-button:hover:not(:disabled) {
+  border-color: var(--evo-focus);
+}
+.evo-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.evo-button[aria-pressed='true'] {
+  background: var(--evo-accent);
+  color: var(--evo-accent-text);
+  border-color: var(--evo-accent);
+}
+.evo-primary {
+  background: var(--evo-accent);
+  color: var(--evo-accent-text);
+  border-color: var(--evo-accent);
+  font-weight: 600;
+}
+.evo-icon {
+  width: 34px;
+  padding: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.evo-segments {
+  display: flex;
+  gap: 4px;
+}
+.evo-segment {
+  flex: 1;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--evo-text);
+  background: var(--evo-panel-2);
+  border: 1px solid var(--evo-line);
+  border-radius: 6px;
+  padding: 6px 4px;
+  min-height: 34px;
+  cursor: pointer;
+}
+.evo-segment[aria-pressed='true'] {
+  background: var(--evo-accent);
+  border-color: var(--evo-accent);
+  color: var(--evo-accent-text);
+}
+
+.evo-input {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--evo-text);
+  background: var(--evo-bg);
+  border: 1px solid var(--evo-line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-height: 34px;
+  min-width: 0;
+  flex: 1;
+}
+.evo-input[aria-invalid='true'] {
+  border-color: var(--evo-bad);
+}
+
+:is(
+  .evo-button,
+  .evo-segment,
+  .evo-input,
+  .evo-tab,
+  summary,
+  input[type='checkbox']
+):focus-visible {
+  outline: 2px solid var(--evo-focus);
+  outline-offset: 2px;
+}
+
+.evo-checks {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  font-size: 0.85rem;
+}
+.evo-checks label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+}
+
+/* top bar */
+.evo-topbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 8px 14px;
+  background: rgb(10 16 29 / 0.82);
+  border-bottom: 1px solid var(--evo-line);
+  backdrop-filter: blur(6px);
+}
+.evo-brand {
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+.evo-status {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--evo-line);
+}
+.evo-status-running {
+  color: var(--evo-good);
+  border-color: var(--evo-good);
+}
+.evo-status-paused {
+  color: var(--evo-warn);
+  border-color: var(--evo-warn);
+}
+.evo-status-extinct {
+  color: var(--evo-bad);
+  border-color: var(--evo-bad);
+}
+.evo-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  font-size: 0.85rem;
+}
+.evo-facts div {
+  display: flex;
+  gap: 6px;
+}
+.evo-facts dt {
+  color: var(--evo-muted);
+}
+.evo-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* stats */
+.evo-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.evo-stats-compact {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 10px;
+}
+.evo-stats dt {
+  font-size: 0.72rem;
+  color: var(--evo-muted);
+}
+.evo-stats dd {
+  margin: 2px 0 0;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.evo-chart {
+  margin: 8px 0 0;
+}
+.evo-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--evo-bg);
+  border-radius: 6px;
+}
+.evo-chart figcaption {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--evo-muted);
+}
+.evo-chart-axis {
+  stroke: var(--evo-line);
+  stroke-width: 1;
+}
+.evo-chart-line {
+  stroke: var(--evo-good);
+  stroke-width: 1.6;
+}
+.evo-sparkline {
+  width: 64px;
+  height: 18px;
+}
+
+/* species */
+.evo-species {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow: auto;
+}
+.evo-species li {
+  display: grid;
+  grid-template-columns: 14px 1fr 64px 3.2em;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.evo-species-selected {
+  background: var(--evo-panel-2);
+}
+.evo-species-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.evo-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+/* extinction */
+.evo-banner {
+  background: var(--evo-panel);
+  border: 1px solid var(--evo-bad);
+  border-radius: var(--evo-radius);
+  padding: 16px;
+  max-width: 420px;
+}
+.evo-banner h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  color: var(--evo-bad);
+}
+.evo-banner p {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+}
+
+/* inspector */
+.evo-inspector {
+  background: var(--evo-panel);
+  border: 1px solid var(--evo-line);
+  border-radius: var(--evo-radius);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100%;
+}
+.evo-inspector-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+.evo-inspector-head h2 {
+  flex: 1;
+  margin: 0;
+}
+.evo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 8px 8px 0;
+  border-bottom: 1px solid var(--evo-line);
+}
+.evo-tab {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--evo-muted);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.evo-tab[aria-selected='true'] {
+  color: var(--evo-text);
+  border-bottom-color: var(--evo-focus);
+}
+.evo-tab-panel {
+  padding: 10px 12px 14px;
+  overflow: auto;
+  min-height: 0;
+}
+.evo-tab-panel details {
+  margin-bottom: 6px;
+}
+.evo-tab-panel summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
+.evo-meter {
+  margin-bottom: 8px;
+}
+.evo-meter-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--evo-muted);
+}
+.evo-meter-track {
+  height: 8px;
+  background: var(--evo-bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.evo-meter-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+.evo-tone-energy {
+  background: var(--evo-warn);
+}
+.evo-tone-health {
+  background: var(--evo-good);
+}
+.evo-tone-age {
+  background: #8aa4ff;
+}
+
+.evo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.evo-table th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--evo-muted);
+  padding: 2px 6px 2px 0;
+}
+.evo-table td {
+  padding: 2px 0;
+}
+.evo-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  width: 4.5em;
+}
+.evo-signal {
+  display: block;
+  width: 56px;
+  height: 6px;
+  margin-left: 8px;
+  background: var(--evo-bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.evo-signal span {
+  display: block;
+  height: 100%;
+}
+.evo-signal-pos {
+  background: var(--evo-good);
+}
+.evo-signal-neg {
+  background: var(--evo-bad);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -58,7 +58,8 @@ const REPRODUCTION_KEYS = [
   'offspringInvestment',
   'overheadFraction',
   'cooldown',
-  'searchRadius'
+  'searchRadius',
+  'mateSenseRadius'
 ]
 const HISTORY_KEYS = ['maxEvents', 'eventDetail', 'maxHistoricalOrganisms']
 
@@ -240,6 +241,13 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       reproduction,
       'searchRadius',
       'reproduction.searchRadius',
+      { positive: true },
+      errors
+    )
+    checkNumber(
+      reproduction,
+      'mateSenseRadius',
+      'reproduction.mateSenseRadius',
       { positive: true },
       errors
     )

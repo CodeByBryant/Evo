@@ -9,8 +9,13 @@ import { World } from '../../src/index'
  * set (50,000 ticks, sampled every 1,000 after a 10,000-tick burn-in): means 23.8-41, minimum 13,
  * maximum 62. The bounds below are looser than that. Across 32 seeds one world went extinct, so
  * the property tested here is "these worlds persist", not "every world must".
+ *
+ * Phase 7 (ADR 0010, mate seeking) added seeds 33-40, held out from the tuning that set the
+ * mating-signal range and the food supply. Measured then: means 25.9-41.3, minimum 15, maximum 57.
+ * Across 128 seeds one world went extinct, so these are a guard against regressions of the
+ * mate-seeking benefit (the baseline lost 2 of 64), not a proof that no world can.
  */
-const SEEDS = [5, 6, 7, 8]
+const SEEDS = [5, 6, 7, 8, 33, 34, 35, 36, 37, 38, 39, 40]
 
 describe('the default ecology keeps held-out worlds alive', () => {
   it.each(SEEDS)(
