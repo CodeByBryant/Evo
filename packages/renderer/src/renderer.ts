@@ -3,6 +3,8 @@ import type { EntityId, RenderLayers, RenderSnapshot, TerrainSnapshot } from '@e
 export interface RendererCallbacks {
   /** The user clicked an organism, or empty space (`null`). */
   onSelect(id: EntityId | null): void
+  /** Following stopped because the user dragged the view. */
+  onFollowChange?(follow: boolean): void
 }
 
 /** Counters the debug overlay and the performance checks read. */
