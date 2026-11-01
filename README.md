@@ -2,273 +2,100 @@
 
 # 🧬 Evo
 
-**Experience the emergence of complex behaviors from simple rules, just like nature intended.**
+**A deterministic artificial-life simulation. Organisms with genomes, brains and species, in an ecosystem that is the same every time you run it.**
 
-[![CI](https://github.com/CodeByBryant/Evo/actions/workflows/ci.yml/badge.svg)](https://github.com/CodeByBryant/Evo/actions/workflows/ci.yml)
+[![Quality](https://github.com/CodeByBryant/Evo/actions/workflows/quality.yml/badge.svg)](https://github.com/CodeByBryant/Evo/actions/workflows/quality.yml)
 [![Deploy](https://github.com/CodeByBryant/Evo/actions/workflows/deploy-web.yml/badge.svg)](https://github.com/CodeByBryant/Evo/actions/workflows/deploy-web.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 
-[**🎮 Play Online**](https://codebybryant.github.io/Evo/) • [**📥 Download**](https://github.com/CodeByBryant/Evo/releases) • [**📖 Documentation**](./docs/README.md)
+[**🎮 Play Online**](https://codebybryant.github.io/Evo/) • [**📖 Documentation**](./docs/README.md) • [**🗺️ Architecture decisions**](./docs/decisions/)
 
 </div>
 
 ---
 
-## 🌟 About Evo
+## What it is
 
-> **Evo** is an advanced neural network-based evolutionary sandbox where AI agents evolve through natural selection.
+Evo runs a small world of organisms that eat, age, mate, evolve and die. Everything that happens is a pure function of the **seed** and the **configuration**: the same seed gives the same world on any machine, tick for tick, which is checked by hashing the whole simulation state against pinned values in CI.
 
-Agents navigate an **infinite 2D world**, sense their environment using raycasting, and make decisions through neural networks that evolve over generations. Watch species emerge, compete for resources, and evolve complex behaviors in real-time!
+- **Genomes.** Every organism carries a genome (body, senses, metabolism, behaviour, reproduction, learning, and the weights of a small neural network). Children are made by recombination and mutation of two parents.
+- **Brains that learn.** Each organism senses its surroundings and chooses what to do with a small recurrent network. It learns during its life with reward-driven updates, and what it learns can be passed on or not (Baldwinian, partial or Lamarckian inheritance).
+- **Species.** Species are defined by genetic distance, can split, and stay queryable after they go extinct.
+- **An ecosystem.** Several kinds of food, regions with different terrain, seasons, hazards and storms, health and damage, and migration between regions.
+- **Mate seeking.** Organisms that are ready to reproduce can sense each other over a mating signal, which keeps small populations from drifting apart.
 
-```typescript
-const evo = {
-  type: 'Neural Evolution Sandbox',
-  features: ['Genetic Algorithms', 'Neural Networks', 'Infinite World', 'Species Tracking'],
-  inspiration: ['Cell Lab', 'Thrive', 'The Life Engine', 'Bionic Chaos Evolution'],
-  goal: 'Watch AI evolve complex behaviors from simple rules 🧬'
-}
-```
+The engine is headless. The browser app is a viewer and controller on top of it: it never changes the simulation except through the same start, pause, reset and seed controls a person has.
 
----
+## Try it
 
-## 🚀 Quick Start
+**[codebybryant.github.io/Evo](https://codebybryant.github.io/Evo/)** runs the simulation in your browser. Nothing is installed or uploaded.
 
-<div align="center">
+| What                | How                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| Start, pause, step  | Buttons, or `Space` and `.`                                                          |
+| Speed               | `1×` is real time (10 ticks a second); `Max` runs as fast as the frame budget allows |
+| Look around         | Drag to pan, mouse wheel or pinch to zoom, `0` to fit the world                      |
+| Inspect an organism | Click it: energy, health, genome, what its brain senses and chooses, lineage, region |
+| Follow it           | `F`, or `Z` to focus once                                                            |
+| Share a world       | The address keeps the seed and preset (`#seed=7&preset=balanced`); send the link     |
+| Presets             | Balanced, Lush, Harsh, Rapid evolution, and Classic (no regions, seasons or hazards) |
 
-### Play Online (No Installation Required)
+Worlds can end. If every organism dies, the app says so and offers a new world or a replay of the same seed.
 
-[![Play Now](https://img.shields.io/badge/🎮_Play_Evo_Now-Launch_in_Browser-blueviolet?style=for-the-badge)](https://codebybryant.github.io/Evo/)
+## Develop
 
-</div>
-
-### 📥 Download Desktop App
-
-<div align="center">
-
-|                                                Platform                                                |                                   Download                                   |
-| :----------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white) |   [📥 Download .exe](https://github.com/CodeByBryant/Evo/releases/latest)    |
-|    ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)    |   [📥 Download .dmg](https://github.com/CodeByBryant/Evo/releases/latest)    |
-|    ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)    | [📥 Download .AppImage](https://github.com/CodeByBryant/Evo/releases/latest) |
-
-</div>
-
----
-
-## ✨ Features
-
-<table>
-<tr>
-<td width="50%">
-
-### 🧬 Evolution & Genetics
-
-- **Full Genetic Algorithm**: Reproduction, crossover, mutation, and natural selection
-- **Generational Evolution**: Watch populations evolve over hundreds of generations
-- **DNA Visualization**: Beautiful animated double helix showing agent genomes
-- **Species Tracking**: Automatic species identification with color coding
-- **Configurable Evolution**: Adjust mutation rates, selection pressure, and more
-
-</td>
-<td width="50%">
-
-### 🧠 Advanced Neural Networks
-
-- **Multi-Layer Perceptron**: Configurable architecture with modern activation functions
-- **Crossover Reproduction**: Genetic combination from two parents
-- **Adaptive Mutation**: Gaussian and uniform mutation strategies
-- **Weight Initialization**: Xavier and He initialization methods
-- **Activation Functions**: Swish, ELU, Leaky ReLU, Tanh
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🌍 Infinite World
-
-- **Infinite Scrollable Map**: Pan and zoom through an endless 2D world
-- **Camera Controls**: Middle/Right mouse to pan, scroll to zoom
-- **Smooth Navigation**: Explore the ecosystem from different perspectives
-- **Dynamic Grid**: Visual grid that adapts to zoom level
-
-</td>
-<td width="50%">
-
-### 📊 Evolution Tracking
-
-- **Real-Time Charts**: Population and fitness graphs over generations
-- **Live Statistics**: Generation, species count, avg/max fitness
-- **Performance Metrics**: FPS counter and simulation status
-- **Historical Data**: Track evolution progress over 50+ generations
-
-</td>
-</tr>
-</table>
-
----
-
-## 💻 Tech Stack
-
-<div align="center">
-
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Electron](https://img.shields.io/badge/Electron-47848F?style=for-the-badge&logo=electron&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-
-</div>
-
----
-
-## 🎮 Controls
-
-<div align="center">
-
-|      Action      |                 Control                 |
-| :--------------: | :-------------------------------------: |
-| **Select Agent** |               Left Click                |
-|  **Pan Camera**  | Middle Mouse / Right Mouse / Ctrl+Click |
-|     **Zoom**     |               Mouse Wheel               |
-|   **Deselect**   |            Click Empty Space            |
-
-</div>
-
-### Simulation Controls
-
-- **Start/Pause**: Toggle simulation execution
-- **Reset**: Start fresh with new random population
-- **Speed Slider**: Adjust simulation speed (0.1x - 3.0x)
-
-### Evolution Settings
-
-- **Generation Time**: How long each generation lasts
-- **Selection Rate**: Percentage of top performers that survive
-- **Mutation Rate**: Probability of genetic mutations
-- **Population Size**: Target number of agents
-
----
-
-## 🧬 How Evolution Works
-
-```mermaid
-graph LR
-    A[🌱 Birth] --> B[🏃 Life]
-    B --> C{Energy?}
-    C -->|High| D[🔄 Reproduce]
-    C -->|Low| E[💀 Death]
-    D --> F[🧬 Crossover & Mutation]
-    F --> A
-    E --> G[📊 Selection]
-    G --> A
-```
-
-### The Evolution Cycle
-
-1. **🌱 Life Cycle** - Agents consume food, expend energy, and age
-2. **🔄 Reproduction** - Fit agents reproduce through crossover and mutation
-3. **📊 Natural Selection** - Top performers survive, weak are eliminated
-4. **🌈 Speciation** - Species naturally emerge with unique colors
-
----
-
-## 🛠️ Development
-
-> **Note:** the current app is the archived v0.1 prototype and lives in `legacy/prototype`. The repository is being rebuilt as a workspace around a headless simulation engine (see `docs/decisions/`). Run all commands below from `legacy/prototype`.
-
-### Prerequisites
-
-- Node.js (v18 or later)
-- npm or yarn
-
-### Installation
+Requirements: Node.js 22 or later and [pnpm](https://pnpm.io/) 10.
 
 ```bash
-# Clone the repository
 git clone https://github.com/CodeByBryant/Evo.git
-cd Evo/legacy/prototype
-
-# Install dependencies
-npm install
-
-# Start web development server
-npm run dev:web
-
-# (Optional) Run as Electron desktop app
-npm run dev
+cd Evo
+pnpm install
+pnpm --filter @evo/web dev     # the web app, with hot reload
 ```
 
-### Available Scripts
+The repository is a pnpm workspace:
+
+| Package                              | What it is                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
+| `packages/contracts`                 | Types and constants shared by everything (no logic)                                 |
+| `packages/config`                    | Defaults, validation and presets                                                    |
+| `packages/simulation`                | The deterministic engine; no DOM, no React, no randomness except the seeded streams |
+| `packages/renderer`                  | PixiJS drawing, camera, picking and gestures                                        |
+| `packages/ui`                        | React components for the controls and inspector                                     |
+| `apps/web`                           | The application: the host that owns the world, plus the page                        |
+| `apps/desktop`, `apps/simulator-cli` | Placeholders for the desktop shell and a command-line runner                        |
+
+Dependencies between packages are enforced, not just documented: `pnpm lint` fails if the engine imports React, if the renderer imports the engine, and so on.
 
 ```bash
-# Web
-npm run dev:web      # Start Vite dev server
-npm run build:web    # Build for production
-
-# Desktop
-npm run dev          # Start Electron app
-npm run build:win    # Build for Windows
-npm run build:mac    # Build for macOS
-npm run build:linux  # Build for Linux
-
-# Code Quality
-npm run lint         # Lint code
-npm run format       # Format with Prettier
-npm run typecheck    # TypeScript checking
+pnpm check             # typecheck, lint (with dependency rules) and tests
+pnpm build             # build every package, including the web app
+pnpm test:determinism  # the slow suite: 100,000-tick runs and pinned state hashes
+pnpm format            # Prettier
 ```
 
----
+See [docs/development.md](./docs/development.md) and [docs/architecture/web-app.md](./docs/architecture/web-app.md).
 
-## 🔮 What Makes Evo Special
+## Deployment
 
-<div align="center">
+Every push to `main` builds `apps/web` and publishes it to GitHub Pages ([`deploy-web.yml`](./.github/workflows/deploy-web.yml)). Pull requests build the same artifact and check that it can be served from a sub-path (relative URLs, nothing missing) before it can reach `main`.
 
-|         Feature          |                        Description                        |
-| :----------------------: | :-------------------------------------------------------: |
-|  🌍 **Infinite World**   | Unlike bounded simulations, agents exist in endless space |
-|   🔬 **Real Genetics**   |     True crossover and mutation, not simplified rules     |
-| 🌈 **Species Emergence** |      Natural speciation without manual intervention       |
-|    ⚡ **Performance**    |               Handles 100+ agents at 60 FPS               |
+## The archived prototype
 
-</div>
+The original v0.1 app (a generational neural-network sandbox) is kept in [`legacy/prototype`](./legacy/prototype) so nothing is lost. It is no longer deployed and is not part of the new engine. Its desktop installers are still what the [Releases](https://github.com/CodeByBryant/Evo/releases) page offers; a desktop build of the new app is future work.
 
----
+## Contributing
 
-## 🤝 Contributing
+Bug reports, ideas and pull requests are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-Contributions are welcome! Feel free to:
+## License
 
-- 🐛 Report bugs via GitHub Issues
-- 💡 Submit feature requests
-- 🔧 Create pull requests with improvements
-- 🧬 Share your evolved populations
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.
-
----
+MIT. See [LICENSE](./LICENSE).
 
 <div align="center">
 
-## 👨‍💻 Author
-
-Developed with ❤️ by **Bryant Ejorh** ([@CodeByBryant](https://github.com/CodeByBryant))
-
-[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=google-chrome&logoColor=white)](https://codebybryant.github.io/Portfolio/)
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/CodeByBryant)
-
----
-
-### 💭 "_Watch evolution in action! Experience the emergence of complex behaviors from simple rules._"
-
-### ⭐ Star this repo if you find it interesting!
-
-**Made with ❤️ and lots of ☕**
+Developed by **Bryant Ejorh** ([@CodeByBryant](https://github.com/CodeByBryant)) · [Portfolio](https://codebybryant.github.io/Portfolio/)
 
 </div>

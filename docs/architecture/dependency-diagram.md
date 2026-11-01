@@ -50,6 +50,8 @@ graph TD
 
 The simulation package must never depend on or import React, Vite, Electron, PixiJS, the DOM, Canvas, or `localStorage`.
 
+Two external libraries are also owned by package (ADR 0011): **PixiJS** (`pixi.js`) may only be used in `renderer`, and **React** (`react`, `react-dom` and their types) only in `ui`, `web` and `desktop`. A `package.json` dependency or an import anywhere else fails `pnpm lint`.
+
 ## Enforcement
 
 | Mechanism                          | Where                                                            | Catches                                                                                                                            |
@@ -57,6 +59,7 @@ The simulation package must never depend on or import React, Vite, Electron, Pix
 | `tools/check-dependency-rules.mjs` | `pnpm lint` (CI: Lint)                                           | Disallowed `@evo/*` dependencies in any `package.json`, disallowed `@evo/*` imports in source, forbidden externals in `simulation` |
 | TypeScript config                  | `packages/simulation/tsconfig.json` (`lib: ES2022`, `types: []`) | DOM, Node, and `localStorage` references fail `pnpm typecheck`                                                                     |
 | ESLint                             | `eslint.config.js`, `packages/simulation/src/**`                 | `Math.random`, `Date.now`, `new Date()`, `performance.now`, browser globals, UI/bundler imports, `any`, `console`                  |
+| External ownership                 | `tools/check-dependency-rules.mjs` (`EXTERNAL_OWNERS`)           | `pixi.js` outside `renderer`; `react` or `react-dom` outside `ui`, `web` and `desktop`                                             |
 | Tests                              | `tools/check-dependency-rules.test.mjs`                          | Regressions in the checker itself                                                                                                  |
 
 To change an allowed edge, update `ALLOWED` in the checker and this document in the same PR, and record the reason in an ADR if it affects the simulation boundary.

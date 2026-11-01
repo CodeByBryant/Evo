@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
