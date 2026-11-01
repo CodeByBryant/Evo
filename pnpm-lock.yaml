@@ -51,6 +51,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@evo/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@evo/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@evo/renderer':
         specifier: workspace:*
         version: link:../../packages/renderer

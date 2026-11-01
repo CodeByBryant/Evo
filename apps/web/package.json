@@ -10,6 +10,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@evo/config": "workspace:*",
+    "@evo/contracts": "workspace:*",
     "@evo/renderer": "workspace:*",
     "@evo/simulation": "workspace:*",
     "@evo/ui": "workspace:*",

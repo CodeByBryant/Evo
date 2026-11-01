@@ -113,9 +113,11 @@ export interface ViewState {
   readonly metrics: MetricsSnapshot
   /** Sampled population over the run, oldest first. */
   readonly populationHistory: readonly PopulationPoint[]
-  /** Living species first (largest first), then extinct ones. */
+  /** Living species, largest first. */
   readonly species: readonly SpeciesRow[]
   readonly activeSpecies: number
+  /** Species that have gone extinct so far (their rows are not sent). */
+  readonly extinctSpecies: number
   readonly layers: RenderLayers
   readonly following: boolean
   readonly selected: InspectorView | null
