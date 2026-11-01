@@ -849,9 +849,9 @@ describe('the brain inputs and reward terms', () => {
     previousAction: [0, 0, 0, 0, 0]
   }
 
-  it('has thirty-three labelled slots in the documented order', () => {
-    expect(OBSERVATION_SIZE).toBe(33)
-    expect(OBSERVATION_LABELS.slice(23)).toEqual([
+  it('has thirty-seven labelled slots in the documented order', () => {
+    expect(OBSERVATION_SIZE).toBe(37)
+    expect(OBSERVATION_LABELS.slice(23, 33)).toEqual([
       'ownHealth',
       'hazardPresent',
       'hazardBearingCos',
@@ -863,12 +863,19 @@ describe('the brain inputs and reward terms', () => {
       'regionTemperature',
       'regionMovementScale'
     ])
+    expect(OBSERVATION_LABELS.slice(33)).toEqual([
+      'matePresent',
+      'mateBearingCos',
+      'mateBearingSin',
+      'mateProximity'
+    ])
   })
 
   it('appends neutral values by default and leaves the first 23 slots untouched', () => {
     const plain = buildObservation(base)
-    expect(plain).toHaveLength(33)
-    expect(plain.slice(23)).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+    expect(plain).toHaveLength(37)
+    expect(plain.slice(23, 33)).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+    expect(plain.slice(33)).toEqual([0, 0, 0, 0])
     const rich = buildObservation({
       ...base,
       health: 0.4,
@@ -879,7 +886,7 @@ describe('the brain inputs and reward terms', () => {
       movementScale: 0.8
     })
     expect(rich.slice(0, 23)).toEqual(plain.slice(0, 23))
-    expect(rich.slice(23)).toEqual([0.4, 0, 0, 0, 0, 0.5, -1, 0.25, -0.5, 0.8])
+    expect(rich.slice(23, 33)).toEqual([0.4, 0, 0, 0, 0, 0.5, -1, 0.25, -0.5, 0.8])
   })
 
   it('encodes a hazard ahead, inside it, and beside it in the body frame', () => {
@@ -911,7 +918,23 @@ describe('the brain inputs and reward terms', () => {
       temperature: 9,
       movementScale: 9
     })
-    expect(wild.slice(23)).toEqual([1, 0, 0, 0, 0, 1, 1, -1, 1, 1])
+    expect(wild.slice(23, 33)).toEqual([1, 0, 0, 0, 0, 1, 1, -1, 1, 1])
+  })
+
+  it('encodes an eligible partner like any other sighting, and zeros without one', () => {
+    const none = buildObservation(base)
+    expect(none.slice(33)).toEqual([0, 0, 0, 0])
+    const ahead = buildObservation({ ...base, mate: { dx: 40, dy: 0, distanceSquared: 1600 } })
+    expect(ahead.slice(33)).toEqual([1, 1, 0, 1 - 40 / 60])
+    const left = buildObservation({ ...base, mate: { dx: 0, dy: 30, distanceSquared: 900 } })
+    expect(left[33]).toBe(1)
+    expect(left[34]).toBeCloseTo(0, 12)
+    expect(left[35]).toBeCloseTo(1, 12)
+    // a partner beyond the sensor radius (the mating signal is longer-ranged) has no proximity
+    const far = buildObservation({ ...base, mate: { dx: 200, dy: 0, distanceSquared: 40000 } })
+    expect(far.slice(33)).toEqual([1, 1, 0, 0])
+    // the first 33 slots are unaffected by a mate
+    expect(ahead.slice(0, 33)).toEqual(none.slice(0, 33))
   })
 
   it('subtracts damage scaled by the weight and by one minus riskTolerance', () => {

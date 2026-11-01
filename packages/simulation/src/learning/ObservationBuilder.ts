@@ -43,6 +43,8 @@ export interface ObservationInput {
   readonly temperature?: number
   /** Region times season movement multiplier (default 1). */
   readonly movementScale?: number
+  /** The nearest eligible partner, seen only while the organism is itself ready (default none). */
+  readonly mate?: Sighting | null
 }
 
 /** A hazard sensed: the vector to its centre and its radius. */
@@ -101,7 +103,7 @@ function writeHazard(
 }
 
 /**
- * Builds the 33-number observation in the fixed order of `OBSERVATION_LABELS`
+ * Builds the 37-number observation in the fixed order of `OBSERVATION_LABELS`
  * (docs/learning/brain.md). Pure; every value is bounded to `[-1, 1]`.
  */
 export function buildObservation(input: ObservationInput): Observation {
@@ -132,6 +134,7 @@ export function buildObservation(input: ObservationInput): Observation {
     clamp(input.temperature ?? 0, -1, 1),
     clamp(input.movementScale ?? 1, 0, 1)
   )
+  writeSighting(out, input.mate ?? null, cosHeading, sinHeading, input.sensorRadius)
   if (out.length !== OBSERVATION_SIZE) {
     throw new Error(`observation has ${out.length} values, expected ${OBSERVATION_SIZE}`)
   }

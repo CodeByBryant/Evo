@@ -16,6 +16,7 @@ import type {
 import type {
   DamageBuffer,
   HazardBuffer,
+  MateBuffer,
   IntentBuffer,
   PeerBuffer,
   PerceptionBuffer,
@@ -31,6 +32,7 @@ import { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { ReproductionReadiness } from '../organisms/reproductionReadiness'
 import { maxHealthOf } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
@@ -106,6 +108,7 @@ export class World {
   private readonly peerBuffer: PeerBuffer = new Map()
   private readonly intentBuffer: IntentBuffer = new Map()
   private readonly hazardBuffer: HazardBuffer = new Map()
+  private readonly mateBuffer: MateBuffer = new Map()
   private readonly damageBuffer: DamageBuffer = new Map()
   private readonly regenBuffer: RegenBuffer = new Map()
   private readonly brainLayout: BrainLayout
@@ -197,7 +200,19 @@ export class World {
       this.perceptionBuffer,
       brainControlled ? { organismIndex: this.organismIndex, buffer: this.peerBuffer } : undefined,
       this.ecology,
-      brainControlled ? { hazards: this.hazardStore, buffer: this.hazardBuffer } : undefined
+      brainControlled ? { hazards: this.hazardStore, buffer: this.hazardBuffer } : undefined,
+      brainControlled
+        ? {
+            organismIndex: this.organismIndex,
+            buffer: this.mateBuffer,
+            radius: this.config.reproduction.mateSenseRadius,
+            readiness: new ReproductionReadiness(this.config, this.ecology),
+            compatible: (a, b) =>
+              !this.config.species.enabled ||
+              !this.config.species.reproductiveIsolation ||
+              this.speciesRegistry.speciesOf(a.id) === this.speciesRegistry.speciesOf(b.id)
+          }
+        : undefined
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
@@ -215,7 +230,8 @@ export class World {
       this.events,
       this.randomStreams.get('learning'),
       this.ecology,
-      this.hazardBuffer
+      this.hazardBuffer,
+      this.mateBuffer
     )
     this.movementSystem = new MovementSystem(
       this.config,

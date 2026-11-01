@@ -82,7 +82,7 @@ describe('validateGenome', () => {
   it('rejects a brain whose weight count does not match its architecture', () => {
     const short = withGenes(valid, {}, valid.brain.weights.slice(1))
     expect(validateGenome(short, f.specs, context(valid)).errors).toContain(
-      'brain has 393 weights but its architecture needs 394'
+      'brain has 425 weights but its architecture needs 426'
     )
   })
 

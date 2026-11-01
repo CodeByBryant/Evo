@@ -60,11 +60,11 @@ describe('contracts and layout', () => {
     })
   })
 
-  it('lays out eight blocks totalling 394 weights, learnable ones last', () => {
-    expect(brainBlockLengths(architecture)).toEqual([264, 32, 8, 32, 4, 40, 5, 9])
-    expect(brainWeightCount(architecture)).toBe(394)
-    expect(layout.total).toBe(394)
-    expect(layout.learnOffset).toBe(340)
+  it('lays out eight blocks totalling 426 weights, learnable ones last', () => {
+    expect(brainBlockLengths(architecture)).toEqual([296, 32, 8, 32, 4, 40, 5, 9])
+    expect(brainWeightCount(architecture)).toBe(426)
+    expect(layout.total).toBe(426)
+    expect(layout.learnOffset).toBe(372)
     expect(layout.learnLength).toBe(54)
     expect(layout.actorLength).toBe(45)
     expect(layout.hiddenToValue.offset + layout.hiddenToValue.length).toBe(layout.total)
@@ -224,8 +224,8 @@ describe('innate prior', () => {
       { ...config.genetics.brain, innatePrior: false },
       stream()
     )
-    expect(prior.brain.weights).toHaveLength(394)
-    expect(plain.brain.weights).toHaveLength(394)
+    expect(prior.brain.weights).toHaveLength(426)
+    expect(plain.brain.weights).toHaveLength(426)
     const worst = Math.max(
       ...prior.brain.weights.map((w, i) => Math.abs(w - (weights[i] as number)))
     )

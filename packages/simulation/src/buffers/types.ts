@@ -59,6 +59,12 @@ export interface PerceivedHazard {
   readonly distanceSquared: number
 }
 
+/**
+ * Organism id -> the nearest eligible partner it can see, or `null`. An organism has an entry only
+ * while it is itself ready to reproduce (ADR 0010). Filled only under the brain controller.
+ */
+export type MateBuffer = Map<EntityId, PerceivedPeer | null>
+
 /** Organism id -> its nearest perceived hazard, or `null`. Filled only under the brain controller. */
 export type HazardBuffer = Map<EntityId, PerceivedHazard | null>
 

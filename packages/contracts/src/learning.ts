@@ -5,7 +5,7 @@ import type { EntityId } from './entity'
  * the network shape can never disagree with what the observation builder produces
  * (docs/learning/brain.md).
  */
-export const OBSERVATION_SIZE = 33
+export const OBSERVATION_SIZE = 37
 
 /** Number of values in an `Action`; the brain's output size is derived from this constant. */
 export const ACTION_SIZE = 5
@@ -52,7 +52,11 @@ export const OBSERVATION_LABELS: readonly string[] = [
   'seasonCos',
   'seasonSin',
   'regionTemperature',
-  'regionMovementScale'
+  'regionMovementScale',
+  'matePresent',
+  'mateBearingCos',
+  'mateBearingSin',
+  'mateProximity'
 ]
 
 export const ACTION_LABELS: readonly string[] = ['thrust', 'turn', 'strafe', 'interact', 'explore']

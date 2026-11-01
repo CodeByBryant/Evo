@@ -462,7 +462,7 @@ describe('children and learning inheritance', () => {
 
   it('does not alter the non-learnable weights, whatever the mode', () => {
     const { child, layout, parentTails } = birth('lamarckian')
-    expect(child.genome.brain.weights.slice(0, layout.learnOffset)).toHaveLength(340)
+    expect(child.genome.brain.weights.slice(0, layout.learnOffset)).toHaveLength(372)
     expect(parentTails[0]).toHaveLength(54)
   })
 })
