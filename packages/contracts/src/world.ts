@@ -15,11 +15,50 @@ export type ExtinctionPolicy = 'stop' | 'allow-immigration' | 'seed-bank' | 'san
 /** `essential` records births, deaths, spawns and consumption; `verbose` adds per-tick movement and energy events. */
 export type EventDetail = 'essential' | 'verbose'
 
+/** `field`: one bounded rectangle. `clusters`: an unbounded world of circular clusters with void between them (ADR 0014). */
+export type EnvironmentLayout = 'field' | 'clusters'
+
+/** The cluster layout (ADR 0014); read only when `environment.layout` is `clusters`. */
+export interface ClusterConfig {
+  /** Number of clusters, placed on a regular polygon around the origin. */
+  count: number
+  /** Radius of each circular cluster. */
+  radius: number
+  /** Distance between the centres of neighbouring clusters (at least twice the radius). */
+  spacing: number
+  /** Founder species per cluster. */
+  speciesPerCluster: number
+  /** Founders of each species. */
+  organismsPerSpecies: number
+  /** Biome patches inside each cluster. */
+  patches: number
+  /** Multiplier on top speed in the void. */
+  voidSpeedScale: number
+  /** Multiplier on sensor range in the void. */
+  voidVisibility: number
+  /** The mating signal reaches at most this far, which must be less than the void width. */
+  mateSignalCap: number
+  /** Founder gene offset between clusters, as a fraction of each gene's range. */
+  clusterSpread: number
+  /** Founder gene offset between the species of one cluster, as a fraction of each gene's range. */
+  speciesSpread: number
+}
+
 export interface EnvironmentConfig {
-  /** World width in world units. */
+  /**
+   * World width in world units. For the cluster layout this is only the reference area that
+   * resource counts and populations are tuned for (it is not a boundary).
+   */
   width: number
-  /** World height in world units. */
+  /** World height in world units (see `width`). */
   height: number
+  layout: EnvironmentLayout
+  clusters: ClusterConfig
+}
+
+/** Environment overrides: `clusters` merges field by field. */
+export type EnvironmentConfigOverrides = Partial<Omit<EnvironmentConfig, 'clusters'>> & {
+  clusters?: Partial<ClusterConfig>
 }
 
 export interface OrganismConfig {
@@ -137,7 +176,7 @@ export interface WorldConfigOverrides {
   timestep?: number
   maxPopulation?: number
   extinctionPolicy?: ExtinctionPolicy
-  environment?: Partial<EnvironmentConfig>
+  environment?: EnvironmentConfigOverrides
   organisms?: Partial<OrganismConfig>
   resources?: Partial<ResourceConfig>
   reproduction?: Partial<ReproductionConfig>
