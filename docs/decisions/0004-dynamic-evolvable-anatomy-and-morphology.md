@@ -1,8 +1,8 @@
 # 0004: Dynamic evolvable anatomy and morphology
 
-Status: **Accepted as a long-term direction — not scheduled to a phase, not implemented**
+Status: **Accepted. Implementation started 2026-11-02 under [ADR 0012](0012-anatomy.md)** (the concrete design for the first stages; this document remains the vision and records where 0012 deviates). Originally written as a deferred long-term direction.
 
-Target: Phase 8+, likely realized as a phase beyond the current Phase 0–10 roadmap in `.dev/roadmap.md` (after continuous ecology (Phase 3), genetics (Phase 4), learning (Phase 5), speciation (Phase 6), and persistence/experiment infrastructure (Phase 8) are stable). Current implementation: none. **Do not implement any part of this during Phases 2–7.**
+Target: Phase 8+, likely realized as a phase beyond the current Phase 0–10 roadmap in `.dev/roadmap.md` (after continuous ecology (Phase 3), genetics (Phase 4), learning (Phase 5), speciation (Phase 6), and persistence/experiment infrastructure (Phase 8) are stable). Current implementation: see ADR 0012. (The original instruction not to implement any of this during Phases 2–7 applied to those phases; the owner started this work after Phase 7.)
 
 This ADR records the design owner's future-architecture specification for the record, so it survives between now and whenever the prerequisite phases are done. It is written in the same spirit as the reserved-but-unimplemented pieces already in the engine (the no-op `ReproductionSystem`, the defined-but-unemitted `ReproductionAttemptedEvent`): naming the destination now costs nothing and keeps later phases from re-deriving it from scratch.
 
