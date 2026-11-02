@@ -145,6 +145,7 @@ export {
 } from './anatomy'
 export type {
   Anatomy,
+  AnatomyView,
   AnatomyConfig,
   AnatomyConfigOverrides,
   AnatomyMutationConfig,

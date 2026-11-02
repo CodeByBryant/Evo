@@ -1,7 +1,9 @@
 import { resolveWorldConfig, validateSeed } from '@evo/config'
 import { ACTION_SIZE, OBSERVATION_SIZE } from '@evo/contracts'
 import type {
+  AnatomyView,
   BrainSnapshot,
+  Capabilities,
   EntityId,
   Genome,
   HazardSnapshot,
@@ -35,10 +37,12 @@ import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { ReproductionReadiness } from '../organisms/reproductionReadiness'
-import { maxEnergyOf, maxHealthOf } from '../organisms/traits'
+import { maxEnergyOf, maxHealthOf, sizeFactor } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
+import { capabilitiesOf, viewOf } from '../development/capabilities'
+import { developAnatomy } from '../development/develop'
 import { buildBodySpecs, founderBodyVector } from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
@@ -108,6 +112,7 @@ export class World {
   private readonly geneSpecs: GeneSpec[]
   private readonly bodySpecs: GeneSpec[]
   private readonly founderBody: number[]
+  private readonly founderCapabilities: Capabilities
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
   private readonly peerBuffer: PeerBuffer = new Map()
@@ -187,6 +192,12 @@ export class World {
         )
       : null
     this.ecology = new EcologyModel(this.config, this.regionMap)
+    this.founderCapabilities = capabilitiesOf(
+      developAnatomy(this.founderBody, this.config.anatomy),
+      this.config.anatomy,
+      1,
+      Math.max(1, this.ecology.kindCount)
+    )
     this.hazardStore = new HazardStore()
     this.migrationTracker = new MigrationTracker(this.config.ecology.migration.dwellTime)
     const brainControlled = this.config.learning.controller === 'brain'
@@ -448,6 +459,24 @@ export class World {
    */
   genomeOf(organismId: EntityId): Genome | undefined {
     return this.organisms.get(organismId)?.genome
+  }
+
+  /**
+   * An active organism's body (ADR 0012): the anatomy grown from its genes, its capabilities, and
+   * them relative to the founder body. Computed on demand from the genome (development is a pure
+   * function), so it is always consistent with it; `undefined` if there is no such organism. A
+   * derived view, not part of the state hash.
+   */
+  anatomyOf(organismId: EntityId): AnatomyView | undefined {
+    const organism = this.organisms.get(organismId)
+    if (organism === undefined) return undefined
+    return viewOf(
+      developAnatomy(organism.genome.body.genes, this.config.anatomy),
+      this.founderCapabilities,
+      this.config.anatomy,
+      sizeFactor(organism.genome, this.config),
+      Math.max(1, this.ecology.kindCount)
+    )
   }
 
   /**

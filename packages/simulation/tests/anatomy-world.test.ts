@@ -3,6 +3,7 @@ import { BODY_GENE_COUNT, slotGeneIndex } from '@evo/contracts'
 import type { WorldConfigOverrides } from '@evo/contracts'
 import { World } from '../src/index'
 import { founderBodyVector } from '../src/genetics/BodyGenes'
+import { developAnatomy } from '../src/development/develop'
 import { genomeToVector } from '../src/genetics/GenomeFactory'
 import { SeededRandom } from '../src/random/SeededRandom'
 import { deriveStreamWords } from '../src/random/streams'
@@ -132,5 +133,56 @@ describe('invariants', () => {
     const result = world.validate()
     expect(result.ok).toBe(false)
     expect(result.errors.join('\n')).toContain('body.slot1.size')
+  })
+})
+
+describe('World.anatomyOf', () => {
+  it('is undefined for an organism that does not exist', () => {
+    const world = World.create({ seed: SEED })
+    expect(world.anatomyOf(987654321)).toBeUndefined()
+  })
+
+  it('gives every founder exactly the founder factors, matching its own genes', () => {
+    const world = World.create({ seed: SEED })
+    for (const o of world.snapshot().organisms) {
+      const view = world.anatomyOf(o.id)
+      const genome = world.genomeOf(o.id)
+      if (!view || !genome) throw new Error('expected a view')
+      expect(view.factors.speed).toBe(1)
+      expect(view.factors.turn).toBe(1)
+      expect(view.factors.senseRange).toBe(1)
+      expect(view.factors.upkeepDelta).toBe(0)
+      expect(view.anatomy).toEqual(developAnatomy(genome.body.genes, world.config.anatomy))
+      expect(view.anatomy.parts).toHaveLength(7)
+    }
+  })
+
+  it('shows evolved bodies that differ from the founder, all with finite capabilities', () => {
+    const world = World.create({ seed: SEED, config: on() })
+    world.run(4000)
+    const views = world.snapshot().organisms.map((o) => world.anatomyOf(o.id))
+    expect(views.length).toBeGreaterThan(0)
+    let differing = 0
+    for (const view of views) {
+      if (!view) throw new Error('expected a view')
+      for (const value of Object.values(view.factors).flat())
+        expect(Number.isFinite(value)).toBe(true)
+      if (
+        view.factors.speed !== 1 ||
+        view.factors.senseRange !== 1 ||
+        view.anatomy.parts.length !== 7
+      ) {
+        differing++
+      }
+    }
+    expect(differing).toBeGreaterThan(0)
+  })
+
+  it('is a read: it does not change the state hash', () => {
+    const world = World.create({ seed: SEED, config: on() })
+    world.run(500)
+    const before = world.stateHash()
+    for (const o of world.snapshot().organisms) world.anatomyOf(o.id)
+    expect(world.stateHash()).toBe(before)
   })
 })

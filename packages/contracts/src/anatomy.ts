@@ -192,8 +192,10 @@ export interface CapabilityFactors {
   readonly foodDetection: readonly number[]
   readonly reach: number
   readonly digestion: number
-  readonly toxinTolerance: number
+  /** Multiplier on toxin damage taken (below 1 for a body that tolerates more than the founder). */
+  readonly toxinDamage: number
   readonly energyCapacity: number
+  /** Multiplier on hazard damage taken (below 1 for a body with more armor than the founder). */
   readonly damageTaken: number
   readonly temperatureTolerance: number
   readonly regeneration: number
@@ -264,4 +266,11 @@ export interface AnatomyConfigOverrides {
   parts?: { [K in PartType]?: Partial<PartConfig> }
   founder?: FounderPart[]
   founderLook?: Partial<BodyLook>
+}
+
+/** What `World.anatomyOf` hands out: the developed body, its raw capabilities, and them relative to the founder. */
+export interface AnatomyView {
+  readonly anatomy: Anatomy
+  readonly capabilities: Capabilities
+  readonly factors: CapabilityFactors
 }
