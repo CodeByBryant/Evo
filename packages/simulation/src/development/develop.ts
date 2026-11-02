@@ -7,6 +7,7 @@ import {
 } from '@evo/contracts'
 import type { Anatomy, AnatomyConfig, AnatomyPart, PartDefinition } from '@evo/contracts'
 import { cos, sin } from '../math/trig'
+import { developOutline } from './outline'
 
 /** The part of a definition table the resolver needs; generic over the type names so tests can use their own. */
 export interface DependencyRule {
@@ -110,8 +111,8 @@ export function developAnatomy(
     parts: admitted.map((part, index) => ({ ...part, functional: functional[index] === true })),
     undeveloped,
     sizeUsed,
+    outline: developOutline(body),
     look: {
-      shape: body[visualGeneIndex('shape')] as number,
       pattern: body[visualGeneIndex('pattern')] as number,
       accentHue: body[visualGeneIndex('accentHue')] as number
     }

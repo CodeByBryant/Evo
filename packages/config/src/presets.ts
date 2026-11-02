@@ -44,6 +44,13 @@ export const PRESETS: readonly WorldPreset[] = [
     overrides: { genetics: { mutationRateScale: 3, mutationStrengthScale: 1.5 } }
   },
   {
+    name: 'creatures',
+    label: 'Evolving bodies',
+    description:
+      'Bodies evolve: the number of points, their length and spread. Size and spikiness change what a creature eats and burns.',
+    overrides: { anatomy: { enabled: true } }
+  },
+  {
     name: 'classic',
     label: 'Classic',
     description: 'One kind of food on an even field: no regions, seasons, hazards or health.',

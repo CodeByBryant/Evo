@@ -1,6 +1,6 @@
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import { DEFAULT_RENDER_LAYERS, REGION_TYPES } from '@evo/contracts'
-import type { RenderLayers, RenderSnapshot, TerrainSnapshot } from '@evo/contracts'
+import type { RenderLayers, RenderOrganism, RenderSnapshot, TerrainSnapshot } from '@evo/contracts'
 import { Camera } from '../camera'
 import { REGION_COLORS, hexToNumber, resourceColor } from '../colors'
 import { GestureTracker } from '../gestures'
@@ -18,6 +18,14 @@ const FIELD = 0x0e1524
 const EFFECT_COLORS = { birth: 0x7dffb0, death: 0xff6b6b, damage: 0xffb347 } as const
 
 type PoolHost = { container: Container; pool: Sprite[] }
+
+/** One creature's drawn body: its shape never changes, so it is built once and only moved afterwards. */
+interface BodyDrawing {
+  readonly graphics: Graphics
+  /** What the picture depends on besides the outline; a change rebuilds it. */
+  key: string
+  seen: number
+}
 
 /**
  * The Pixi implementation of `Renderer` (docs/decisions/0011). It owns the canvas, a camera, the
@@ -55,9 +63,11 @@ export class PixiRenderer implements Renderer {
   private resources: PoolHost = { container: new Container(), pool: [] }
   private shadows: PoolHost = { container: new Container(), pool: [] }
   private bodies: PoolHost = { container: new Container(), pool: [] }
+  private readonly bodyDrawings = new Map<number, BodyDrawing>()
+  /** Counts scene updates, so a creature missing from the latest one can be recognized. */
+  private sceneStamp = 0
   private debugText: Text | null = null
   private dotTexture: Texture | null = null
-  private bodyTexture: Texture | null = null
   private readonly colorCache = new Map<string, number>()
 
   private frameCount = 0
@@ -98,7 +108,6 @@ export class PixiRenderer implements Renderer {
     app.canvas.style.touchAction = 'none'
 
     this.dotTexture = this.makeDotTexture(app)
-    this.bodyTexture = this.makeBodyTexture(app)
 
     this.terrainSprite.visible = false
     this.world.addChild(
@@ -358,17 +367,6 @@ export class PixiRenderer implements Renderer {
     return app.renderer.generateTexture(g)
   }
 
-  private makeBodyTexture(app: Application): Texture {
-    // A white disc with a dark wedge at the front so the heading is visible; tinting recolors the
-    // disc and leaves the wedge dark.
-    const g = new Graphics()
-      .circle(32, 32, 32)
-      .fill(0xffffff)
-      .poly([40, 18, 62, 32, 40, 46])
-      .fill({ color: 0x000000, alpha: 0.5 })
-    return app.renderer.generateTexture(g)
-  }
-
   private numberOf(hex: string): number {
     let value = this.colorCache.get(hex)
     if (value === undefined) {
@@ -394,7 +392,88 @@ export class PixiRenderer implements Renderer {
     for (let i = 0; i < host.pool.length; i++) (host.pool[i] as Sprite).visible = i < count
   }
 
+  /** The graphics of a creature, built the first time it is seen and again only if its colors change. */
+  private bodyOf(o: RenderOrganism): Graphics {
+    const key = `${o.speciesColor}|${o.accentColor}|${o.pattern}`
+    let drawing = this.bodyDrawings.get(o.id)
+    if (drawing === undefined) {
+      const graphics = new Graphics()
+      this.bodies.container.addChild(graphics)
+      drawing = { graphics, key: '', seen: 0 }
+      this.bodyDrawings.set(o.id, drawing)
+    }
+    drawing.seen = this.sceneStamp
+    if (drawing.key !== key) {
+      drawing.key = key
+      this.paintBody(drawing.graphics, o)
+    }
+    return drawing.graphics
+  }
+
+  /**
+   * Traces the outline as a smooth closed curve through its points (Catmull-Rom segments turned
+   * into Beziers), so a body of `n` points reads as a soft creature and not as a polygon.
+   */
+  private traceBody(g: Graphics, points: readonly number[], scale: number): void {
+    const n = points.length / 2
+    const at = (i: number, axis: 0 | 1): number =>
+      (points[(((i % n) + n) % n) * 2 + axis] as number) * scale
+    g.moveTo(at(0, 0), at(0, 1))
+    for (let i = 0; i < n; i++) {
+      g.bezierCurveTo(
+        at(i, 0) + (at(i + 1, 0) - at(i - 1, 0)) / 6,
+        at(i, 1) + (at(i + 1, 1) - at(i - 1, 1)) / 6,
+        at(i + 1, 0) - (at(i + 2, 0) - at(i, 0)) / 6,
+        at(i + 1, 1) - (at(i + 2, 1) - at(i, 1)) / 6,
+        at(i + 1, 0),
+        at(i + 1, 1)
+      )
+    }
+    g.closePath()
+  }
+
+  /** Draws the soft body, a highlight edge, the pattern in the accent color, and two eyes at the front. */
+  private paintBody(g: Graphics, o: RenderOrganism): void {
+    const accent = this.numberOf(o.accentColor)
+    const r = o.radius
+    g.clear()
+    this.traceBody(g, o.outline, 1)
+    g.fill({ color: this.numberOf(o.speciesColor) })
+    if (o.pattern === 1) {
+      this.traceBody(g, o.outline, 0.55)
+      g.fill({ color: accent, alpha: 0.85 })
+    } else if (o.pattern === 2) {
+      for (let i = 0; i + 1 < o.outline.length; i += 2) {
+        g.circle(
+          (o.outline[i] as number) * 0.78,
+          (o.outline[i + 1] as number) * 0.78,
+          r * 0.13
+        ).fill({
+          color: accent
+        })
+      }
+    } else if (o.pattern === 3) {
+      g.circle(-r * 0.2, 0, r * 0.34).fill({ color: accent, alpha: 0.9 })
+    }
+    this.traceBody(g, o.outline, 1)
+    g.stroke({ width: Math.max(0.5, r * 0.09), color: 0xffffff, alpha: 0.4 })
+    for (const side of [-1, 1]) {
+      g.circle(r * 0.5, side * r * 0.3, r * 0.2).fill({ color: 0xffffff })
+      g.circle(r * 0.56, side * r * 0.3, r * 0.1).fill({ color: 0x0b1020 })
+    }
+  }
+
+  /** Removes the graphics of creatures that are no longer in the frame. */
+  private dropGoneBodies(): void {
+    for (const [id, drawing] of this.bodyDrawings) {
+      if (drawing.seen === this.sceneStamp) continue
+      drawing.graphics.destroy()
+      this.bodyDrawings.delete(id)
+    }
+  }
+
   private updateScene(frame: RenderSnapshot): void {
+    this.sceneStamp++
     this.organismCount = frame.organisms.length
     this.resourceCount = frame.resources.length
 
@@ -411,7 +490,6 @@ export class PixiRenderer implements Renderer {
 
     // organisms and their shadows
     this.sync(this.shadows, frame.organisms.length, this.dotTexture)
-    this.sync(this.bodies, frame.organisms.length, this.bodyTexture)
     for (let i = 0; i < frame.organisms.length; i++) {
       const o = frame.organisms[i]!
       const scale = (o.radius * 2 * (o.lifeStage === 'juvenile' ? 0.75 : 1)) / 64
@@ -420,13 +498,13 @@ export class PixiRenderer implements Renderer {
       shadow.scale.set(scale * 1.05)
       shadow.tint = 0x000000
       shadow.alpha = 0.35
-      const body = this.bodies.pool[i] as Sprite
+      const body = this.bodyOf(o)
       body.position.set(o.x, o.y)
       body.rotation = o.rotation
-      body.scale.set(scale)
-      body.tint = this.numberOf(o.speciesColor)
+      body.scale.set(o.lifeStage === 'juvenile' ? 0.75 : 1)
       body.alpha = (0.68 + 0.32 * o.energyRatio) * (o.lifeStage === 'senescent' ? 0.85 : 1)
     }
+    this.dropGoneBodies()
 
     this.drawHazards(frame)
     this.drawTrails(frame)

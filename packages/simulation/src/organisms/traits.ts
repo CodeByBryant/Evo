@@ -1,4 +1,5 @@
 import type { Genome, WorldConfig } from '@evo/contracts'
+import { outlineDragOf, outlineOf, outlineScaleOf } from '../development/outline'
 
 /**
  * Quantities derived from an organism's genes rather than stored as genes, so that no capability
@@ -8,9 +9,23 @@ import type { Genome, WorldConfig } from '@evo/contracts'
  * exactly 1), which is what keeps the genome refactor behavior-preserving.
  */
 
-/** `(radius / baseRadius)^2`, by multiplication (`**` is banned in the engine). */
+/**
+ * The body radius: the `radius` gene scaled by the outline (ADR 0013), whose area-equivalent
+ * radius is compared with the founder outline's. Exactly the gene for a founder outline, which is
+ * what every world with `anatomy.enabled: false` carries.
+ */
+export function bodyRadiusOf(genome: Genome, config: WorldConfig): number {
+  return genome.physical.radius * outlineScaleOf(genome.body.genes, config.anatomy)
+}
+
+/** Multiplier on movement energy for the outline's roughness; exactly 1 for the founder outline. */
+export function outlineDragFactor(genome: Genome, config: WorldConfig): number {
+  return outlineDragOf(genome.body.genes, config.anatomy)
+}
+
+/** `(bodyRadius / baseRadius)^2`, by multiplication (`**` is banned in the engine). */
 export function sizeFactor(genome: Genome, config: WorldConfig): number {
-  const ratio = genome.physical.radius / config.organisms.radius
+  const ratio = bodyRadiusOf(genome, config) / config.organisms.radius
   return ratio * ratio
 }
 
@@ -58,4 +73,22 @@ export function reproductionThresholdOf(genome: Genome, config: WorldConfig): nu
 /** Health capacity: `ecology.health.maxHealth` scaled by the body-size factor (bigger bodies are sturdier). */
 export function maxHealthOf(genome: Genome, config: WorldConfig): number {
   return config.ecology.health.maxHealth * sizeFactor(genome, config)
+}
+
+const drawn = new WeakMap<readonly number[], { radius: number; flat: readonly number[] }>()
+
+/**
+ * The outline for drawing: flat `x, y` pairs in world units, scaled so the area-equivalent radius
+ * is the body radius. Remembered per body-gene array (it never changes for an organism).
+ */
+export function drawnOutlineOf(genome: Genome, config: WorldConfig): readonly number[] {
+  const radius = bodyRadiusOf(genome, config)
+  const known = drawn.get(genome.body.genes)
+  if (known !== undefined && known.radius === radius) return known.flat
+  const outline = outlineOf(genome.body.genes)
+  const factor = radius / outline.areaRadius
+  const flat: number[] = []
+  for (const point of outline.points) flat.push(point.x * factor, point.y * factor)
+  drawn.set(genome.body.genes, { radius, flat })
+  return flat
 }

@@ -4,7 +4,7 @@ import type { EcologyModel } from '../ecology/EcologyModel'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
-import { basalCostOf, learningCostOf, sensorCostOf } from '../organisms/traits'
+import { basalCostOf, learningCostOf, outlineDragFactor, sensorCostOf } from '../organisms/traits'
 
 /**
  * Charges the explicit, tested metabolic cost
@@ -36,10 +36,11 @@ export class MetabolismSystem {
       const genome = organism.genome
       const stage = lifeStageFor(organism.age, genome.physical)
       const scale = stage === 'juvenile' ? juvenileMetabolicScale : 1
+      const drag = outlineDragFactor(genome, this.config)
       const cost =
         (basalCostOf(genome, this.config) +
-          genome.metabolic.movementCost * speedSquared +
-          genome.metabolic.turningCost * turnSquared +
+          genome.metabolic.movementCost * speedSquared * drag +
+          genome.metabolic.turningCost * turnSquared * drag +
           sensorCostOf(genome, this.config) +
           learningCostOf(genome, this.config) +
           (this.ecology === null

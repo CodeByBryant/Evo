@@ -48,9 +48,15 @@ describe('anatomy long run', () => {
     }
   }, 300_000)
 
-  it('anatomy on leaves the legacy dynamics alone: the same population, birth for birth', () => {
+  it('anatomy on with a frozen outline leaves the legacy dynamics alone: birth for birth', () => {
     const off = World.create({ seed: 23, config: { genetics: BUSY.genetics ?? {} } })
-    const on = World.create({ seed: 23, config: BUSY })
+    const on = World.create({
+      seed: 23,
+      config: {
+        ...BUSY,
+        anatomy: { ...BUSY.anatomy, mutation: { ...BUSY.anatomy?.mutation, outlineRate: 0 } }
+      }
+    })
     off.run(30_000)
     on.run(30_000)
     expect(on.snapshot().metrics).toEqual(off.snapshot().metrics)

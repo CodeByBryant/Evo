@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   BODY_GENE_COUNT,
+  OUTLINE_COUNT_INDEX,
+  outlineAngleIndex,
+  outlineRadiusIndex,
   BODY_GENE_DEFINITIONS,
   BODY_SLOT_COUNT,
   PART_DEFINITIONS,
@@ -27,19 +30,28 @@ describe('anatomy contracts', () => {
     ])
     expect(BODY_SLOT_COUNT).toBe(12)
     expect(SLOT_FIELDS).toHaveLength(7)
-    expect(VISUAL_FIELDS).toEqual(['shape', 'pattern', 'accentHue'])
+    expect(VISUAL_FIELDS).toEqual(['pattern', 'accentHue'])
   })
 
-  it('lays out 87 body genes in canonical order', () => {
-    expect(BODY_GENE_COUNT).toBe(87)
-    expect(BODY_GENE_DEFINITIONS).toHaveLength(87)
+  it('lays out 119 body genes in canonical order', () => {
+    expect(BODY_GENE_COUNT).toBe(119)
+    expect(BODY_GENE_DEFINITIONS).toHaveLength(119)
     expect(BODY_GENE_DEFINITIONS[0]?.path).toBe('body.slot0.present')
     expect(BODY_GENE_DEFINITIONS[6]?.path).toBe('body.slot0.param')
     expect(BODY_GENE_DEFINITIONS[7]?.path).toBe('body.slot1.present')
     expect(BODY_GENE_DEFINITIONS[83]?.path).toBe('body.slot11.param')
-    expect(BODY_GENE_DEFINITIONS[84]?.path).toBe('body.visual.shape')
-    expect(BODY_GENE_DEFINITIONS[86]?.path).toBe('body.visual.accentHue')
-    expect(new Set(BODY_GENE_DEFINITIONS.map((d) => d.path)).size).toBe(87)
+    expect(BODY_GENE_DEFINITIONS[84]?.path).toBe('body.visual.pattern')
+    expect(BODY_GENE_DEFINITIONS[85]?.path).toBe('body.visual.accentHue')
+    expect(BODY_GENE_DEFINITIONS[86]?.path).toBe('body.outline.count')
+    expect(BODY_GENE_DEFINITIONS[87]?.path).toBe('body.outline.radius0')
+    expect(BODY_GENE_DEFINITIONS[102]?.path).toBe('body.outline.radius15')
+    expect(BODY_GENE_DEFINITIONS[103]?.path).toBe('body.outline.angle0')
+    expect(BODY_GENE_DEFINITIONS[118]?.path).toBe('body.outline.angle15')
+    expect(OUTLINE_COUNT_INDEX).toBe(86)
+    expect(outlineRadiusIndex(15)).toBe(102)
+    expect(outlineAngleIndex(0)).toBe(103)
+    expect(BODY_GENE_DEFINITIONS[86]).toMatchObject({ kind: 'int', min: 5, max: 16 })
+    expect(new Set(BODY_GENE_DEFINITIONS.map((d) => d.path)).size).toBe(119)
   })
 
   it('indexes slot and visual genes consistently with the definitions', () => {
