@@ -21,7 +21,7 @@ Normative spec for the simulation engine (`@evo/simulation`). Anything an indepe
 A single master seed yields independent named streams. The stream names form a fixed, ordered constant:
 
 ```text
-world, genetics, reproduction, environment, learning, events, terrain
+world, genetics, reproduction, environment, learning, events, terrain, anatomy
 ```
 
 Nothing may iterate a stream registry by object key; code always uses this array or a named field. Adding a draw in one stream never changes another.
@@ -156,7 +156,7 @@ Introduced in Phase 5 when organisms started carrying a runtime `BrainState` (AD
 
 The inspection caches `lastObservation` and `lastOutput` are not hashed: nothing reads them to decide a later tick. Under `learning.controller: 'reflex'` the present flag is 0 and the `learning` stream never advances; under `'brain'` it advances by exactly five normals per organism per tick. The stream's state words are hashed in section 5 (it has been one of the named streams since version 1).
 
-#### Version 5 (current, Phase 6+)
+#### Version 5 (Phase 6; superseded by version 6 in the anatomy work)
 
 Introduced in Phase 6 with health, resource kinds, hazards and the larger observation (ADR 0009). The header carries the new version, so **every** hash differs from version 4 even for a world whose behavior is unchanged; behavior equivalence is shown by comparing snapshots, events and records against the previous commit instead (docs/ecology/ecology.md). Everything in version 4 is unchanged except: the stream list in section 5 now has seven names (`terrain` is appended last, so its four state words and spare follow `events`), and the brain architecture input size is 33 (weight count 394 by default; Phase 7 made it 37 and 426, ADR 0010, which does not change the schema version because the hash covers genome weights as they are). New fields are appended, never inserted:
 
@@ -171,6 +171,17 @@ Introduced in Phase 6 with health, resource kinds, hazards and the larger observ
 The region map is generated once from the `terrain` stream and never changes, the seasons are a pure function of the clock, and the `MigrationTracker` is a derived record, so none of them is hashed (the `terrain` stream's state is). The `SpeciesRegistry` (ADR 0008) is likewise derived and unhashed.
 
 The `LineageStore` and `HistoryStore` are derived records of what happened, not simulation state, and are **not** hashed (they cannot influence any later tick). The `genetics` stream's four state words are already hashed in section 5 because it has been one of the named streams since version 1.
+
+#### Version 6 (current, anatomy foundation)
+
+Introduced with body-plan genes (ADR 0012). The header carries the new version, so **every** hash differs from version 5 even though the dynamics do not change; behavior equivalence is shown by an equivalence harness against the previous commit (snapshots, events and records, with the default configuration, mutation on). Everything in version 5 is unchanged except:
+
+| Order | Section   | Change                                                                                                                                                                                                                                                 |
+| ----- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 5     | rng       | the stream list now has **eight** names: `anatomy` is appended last, so its four state words and spare follow `terrain`                                                                                                                                |
+| 6     | organisms | after each genome's brain weights (and before the brain state): the body gene count (u32, 87) then the 87 body genes (f64 each) in `BODY_GENE_DEFINITIONS` order: slot 0's seven genes, slot 1's, ..., slot 11's, then `shape`, `pattern`, `accentHue` |
+
+An anatomy (the developed body) is a pure function of the body genes and the configuration, so it is derived and **not** hashed, like the species registry. With `anatomy.enabled: false` the body genes are the founder body in every genome and the `anatomy` stream never advances; with it on, body genes recombine and mutate by drawing only from the `anatomy` stream, which is why the `genetics` stream (and so every other gene and every brain weight) is drawn exactly as before.
 
 `WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
@@ -202,7 +213,7 @@ These are computed from the spec above with a reference script and must be repro
 | 4294967295 | `events`      | `db27b2e6` | `22508baa 02d8d2a4 f08f4592 4f1fdf14` | `0e836a3f a003b648 9386b468 a8d03560 10ea8822` |
 | 0          | `terrain`     | `1422fca8` | `408be392 28a2f4a9 ffc296b7 c78f641a` | `5280de0d 32e2d253 e744779f e579bdc2 947655ee` |
 
-`s` for every stream at seed `12345`: `world addaf902`, `genetics 7414af4a`, `reproduction 69d29d14`, `environment 6f3eec1b`, `learning f025d548`, `events ba7b610b`, `terrain c1662d8f`.
+`s` for every stream at seed `12345`: `world addaf902`, `genetics 7414af4a`, `reproduction 69d29d14`, `environment 6f3eec1b`, `learning f025d548`, `events ba7b610b`, `terrain c1662d8f`, `anatomy 7dff8997`.
 
 **`float()`**, seed `12345`, stream `world`, first three: `0.8388949193384299, 0.979087543397773, 0.4651862415849056`.
 
@@ -213,8 +224,8 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(5)`                                            | `6aaa5fb5c2783e3fda99e31ec2a6d1ee` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `e3fef3c99039366808f5456325b9750f` |
+| header only: `"EVOH"`, `writeUint32(6)`                                            | `6a15b770e4859c826a4b7d26ff489b89` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `5060783523fb58beaf3ff559b6fdf302` |
 | same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `e3fef3c99039366808f5456325b9750f` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
