@@ -44,18 +44,21 @@ An organism can legitimately inherit a combination that cannot reproduce (for ex
 
 ## Body genes (anatomy)
 
-Since the anatomy work (ADR 0012) a genome also carries a `body` section: **87 genes** in their own table, `BODY_GENE_DEFINITIONS` in `@evo/contracts`, kept beside the scalar genes above and not part of `GENE_DEFINITIONS`. They are a fixed number of part slots, not a variable-length list, so the generic operators work on them unchanged:
+Since the anatomy work (ADR 0012) a genome also carries a `body` section: **119 genes** in their own table, `BODY_GENE_DEFINITIONS` in `@evo/contracts`, kept beside the scalar genes above and not part of `GENE_DEFINITIONS`. They are a fixed number of part slots, not a variable-length list, so the generic operators work on them unchanged:
 
-| Genes                                         | Kind                       | Meaning                                                                                                                |
-| --------------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `body.slotN.present` (N = 0-11)               | bool                       | whether the slot holds a part                                                                                          |
-| `body.slotN.type`                             | int 0-9                    | the part type, in functional order: flagellum, cilia, eye, sniffer, mouth, intestine, stomach, armor, membrane, mender |
-| `body.slotN.size`                             | float 0.1-1                | scales the part's effect, mass and upkeep                                                                              |
-| `body.slotN.angle`                            | circular 0-2pi             | where the part sits on the body (0 is the front)                                                                       |
-| `body.slotN.offset`                           | float 0-1                  | distance from the centre as a fraction of the body radius                                                              |
-| `body.slotN.orientation`                      | circular 0-2pi             | the direction of the part's force or axis in the body frame (0 is forward)                                             |
-| `body.slotN.param`                            | float 0-1                  | the type-specific parameter (an eye's range, a sniffer's favored food kind, ...)                                       |
-| `body.visual.shape`, `.pattern`, `.accentHue` | int 3-8, int 0-3, circular | how the body looks; no effect on fitness                                                                               |
+| Genes                               | Kind              | Meaning                                                                                                                |
+| ----------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `body.slotN.present` (N = 0-11)     | bool              | whether the slot holds a part                                                                                          |
+| `body.slotN.type`                   | int 0-9           | the part type, in functional order: flagellum, cilia, eye, sniffer, mouth, intestine, stomach, armor, membrane, mender |
+| `body.slotN.size`                   | float 0.1-1       | scales the part's effect, mass and upkeep                                                                              |
+| `body.slotN.angle`                  | circular 0-2pi    | where the part sits on the body (0 is the front)                                                                       |
+| `body.slotN.offset`                 | float 0-1         | distance from the centre as a fraction of the body radius                                                              |
+| `body.slotN.orientation`            | circular 0-2pi    | the direction of the part's force or axis in the body frame (0 is forward)                                             |
+| `body.slotN.param`                  | float 0-1         | the type-specific parameter (an eye's range, a sniffer's favored food kind, ...)                                       |
+| `body.visual.pattern`, `.accentHue` | int 0-3, circular | how the body is painted; no effect on fitness                                                                          |
+| `body.outline.count`                | int 5-16          | how many points the body outline has                                                                                   |
+| `body.outline.radius0..15`          | float 0.35-1      | distance of each point from the centre                                                                                 |
+| `body.outline.angle0..15`           | float 0-1         | where each point sits inside its own sector                                                                            |
 
 Empty slots still carry genes, which mutate silently, so a part that switches on arrives with latent parameters. The founder body (`anatomy.founder`, the same for every founder) is seven parts: two rear flagella, two side cilia, an eye, a mouth and a stomach. Body genes recombine and mutate with the same operators as every other gene but on their own `anatomy` random stream, and with `anatomy.enabled: false` they are inert. How a body is grown and what it can do is in [docs/anatomy/anatomy.md](../anatomy/anatomy.md). `genomeDistance` reports a `body` distance (the mean range-normalized difference of the body genes) that is not part of `total`; `species.distanceWeights.body` (default 0) decides whether bodies separate species.
 
