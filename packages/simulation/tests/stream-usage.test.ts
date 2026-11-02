@@ -11,7 +11,7 @@ import { STREAM_NAMES } from '../src/random/streams'
  * still be reproducible. Every named stream must be drawn from by the engine, and the draws must
  * come from the owner the docs name (docs/simulation/determinism.md, section 3). Each stream left
  * the "reserved" list when its owner arrived: `reproduction` in Phase 3, `genetics` in Phase 4,
- * `learning` in Phase 5, and `events` and `terrain` in Phase 6 (docs/decisions/0009).
+ * `learning` in Phase 5, and `events` and `terrain` in Phase 6 (docs/decisions/0009), and `anatomy` with the body genes (docs/decisions/0012).
  */
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))

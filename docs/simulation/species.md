@@ -21,7 +21,7 @@ else: found a new species (representative = g, ancestor = the child's mother's s
 
 - A species' representative is its **founding genome** and never changes.
 - An **extinct** species (no living members) is never rejoined, even by a genome that is close to its representative. A later lookalike founds a new species whose ancestor is the mother's species.
-- `weightedDistance` combines the seven group distances from `genomeDistance` with `species.distanceWeights`, normalized by the sum of the weights. Each group distance is in `[0, 1]`, so the result is too.
+- `weightedDistance` combines the group distances from `genomeDistance` (the seven original groups, plus `body` since the anatomy work, whose default weight is 0) with `species.distanceWeights`, normalized by the sum of the weights. Each group distance is in `[0, 1]`, so the result is too.
 - No randomness is consumed. The same genomes in the same order always give the same species and the same ids (species ids are allocated from 0 in creation order).
 
 ## Records

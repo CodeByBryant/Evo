@@ -15,7 +15,8 @@ export const STREAM_NAMES = [
   'environment',
   'learning',
   'events',
-  'terrain'
+  'terrain',
+  'anatomy'
 ] as const
 
 export type StreamName = (typeof STREAM_NAMES)[number]

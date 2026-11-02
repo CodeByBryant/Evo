@@ -7,6 +7,7 @@ Welcome to the Evo documentation! This guide will help you understand how to use
 - [Getting Started](./getting-started.md) - Installation and first steps
 - [Architecture](./architecture.md) - Technical overview of the codebase
 - [The web application](./architecture/web-app.md) - How the browser app is built and deployed
+- [Anatomy](./anatomy/anatomy.md) - Organism bodies: parts, development and capabilities
 - [User Guide](./user-guide.md) - How to use the simulation
 - [Development](./development.md) - Contributing and development setup
 
@@ -15,7 +16,7 @@ Welcome to the Evo documentation! This guide will help you understand how to use
 - [Determinism policy](./simulation/determinism.md), [update order](./simulation/update-order.md) and [configuration](./simulation/configuration.md)
 - [Genetics](./genetics/genome.md), [the brain and learning](./learning/brain.md)
 - [Species](./simulation/species.md) and [ecology: health, resource kinds, regions, seasons, hazards, migration](./ecology/ecology.md)
-- [Architecture decisions](./decisions/) (ADR 0001-0011)
+- [Architecture decisions](./decisions/) (ADR 0001-0012)
 
 ## Quick Links
 

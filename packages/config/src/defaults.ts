@@ -1,4 +1,5 @@
 import type { GenePath, GeneRange, WorldConfig } from '@evo/contracts'
+import { DEFAULT_ANATOMY } from './anatomy'
 
 /** Recursively freezes plain objects so shared defaults cannot be mutated by accident. */
 function deepFreeze<T>(value: T): T {
@@ -104,7 +105,8 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       behavioral: 0.1,
       reproduction: 0.05,
       learning: 0.05,
-      brain: 0.3
+      brain: 0.3,
+      body: 0
     },
     sampleInterval: 500,
     maxHistorySamples: 1000,
@@ -262,7 +264,8 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       enabled: true,
       dwellTime: 20
     }
-  }
+  },
+  anatomy: DEFAULT_ANATOMY
 } satisfies WorldConfig)
 
 const range = (min: number, max: number, mutationStd = 0.05): GeneRange => ({

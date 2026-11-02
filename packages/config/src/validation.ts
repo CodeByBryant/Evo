@@ -14,6 +14,7 @@ import { checkGenetics } from './genetics'
 import { checkLearning, checkRegion } from './learning'
 import { checkEcology } from './ecology'
 import { checkSpecies } from './species'
+import { checkAnatomy } from './anatomy'
 
 const ROOT_KEYS = [
   'timestep',
@@ -27,7 +28,8 @@ const ROOT_KEYS = [
   'genetics',
   'learning',
   'species',
-  'ecology'
+  'ecology',
+  'anatomy'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height']
 const ORGANISM_KEYS = [
@@ -294,6 +296,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   checkLearning(value, errors)
   checkSpecies(value, errors)
   checkEcology(value, errors)
+  checkAnatomy(value, errors)
 
   return { ok: errors.length === 0, errors }
 }
@@ -395,6 +398,25 @@ function mergeEcology(base: object, override: unknown): unknown {
   return merged
 }
 
+/**
+ * Merges the anatomy section: `mutation` and `founderLook` merge field by field, `parts` merges
+ * per type, and `founder` (a list) is replaced whole.
+ */
+function mergeAnatomy(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  const parts = override['parts']
+  return {
+    ...base,
+    ...override,
+    mutation: mergeSection(defaults['mutation'] as object, override['mutation']),
+    founderLook: mergeSection(defaults['founderLook'] as object, override['founderLook']),
+    parts: isObject(parts)
+      ? mergeNamed(defaults['parts'] as Record<string, object>, parts)
+      : mergeSection(defaults['parts'] as object, parts)
+  }
+}
+
 /** Merges a table of named sections, keeping unknown names so validation can report them. */
 function mergeNamed(base: Record<string, object>, override: Record<string, unknown>): unknown {
   const result: Record<string, unknown> = { ...base }
@@ -432,7 +454,8 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     genetics: mergeGenetics(base.genetics, given['genetics']),
     learning: mergeLearning(base.learning, given['learning']),
     species: mergeSpecies(base.species, given['species']),
-    ecology: mergeEcology(base.ecology, given['ecology'])
+    ecology: mergeEcology(base.ecology, given['ecology']),
+    anatomy: mergeAnatomy(base.anatomy, given['anatomy'])
   }
   const result = validateWorldConfig(merged)
   if (!result.ok) throw new ConfigValidationError(result.errors)

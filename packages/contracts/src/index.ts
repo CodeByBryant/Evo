@@ -132,3 +132,33 @@ export type {
   ViewState,
   SimulationControls
 } from './view'
+export {
+  BODY_GENE_COUNT,
+  BODY_GENE_DEFINITIONS,
+  BODY_SLOT_COUNT,
+  PART_DEFINITIONS,
+  PART_TYPES,
+  SLOT_FIELDS,
+  VISUAL_FIELDS,
+  slotGeneIndex,
+  visualGeneIndex
+} from './anatomy'
+export type {
+  Anatomy,
+  AnatomyView,
+  AnatomyConfig,
+  AnatomyConfigOverrides,
+  AnatomyMutationConfig,
+  AnatomyPart,
+  BodyGeneDefinition,
+  BodyGenome,
+  BodyLook,
+  Capabilities,
+  CapabilityFactors,
+  FounderPart,
+  PartConfig,
+  PartDefinition,
+  PartType,
+  SlotField,
+  VisualField
+} from './anatomy'

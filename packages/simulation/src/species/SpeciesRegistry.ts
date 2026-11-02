@@ -91,7 +91,8 @@ export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
   constructor(
     private readonly config: SpeciesConfig,
     private readonly geneSpecs: readonly GeneSpec[],
-    private readonly initialWeightStd: number
+    private readonly initialWeightStd: number,
+    private readonly bodySpecs?: readonly GeneSpec[]
   ) {}
 
   get size(): number {
@@ -118,7 +119,13 @@ export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
     for (const id of this.activeIds) {
       const entry = this.entries[id] as Entry
       const distance = weightedDistance(
-        genomeDistance(request.genome, entry.representative, this.geneSpecs, this.initialWeightStd),
+        genomeDistance(
+          request.genome,
+          entry.representative,
+          this.geneSpecs,
+          this.initialWeightStd,
+          this.bodySpecs
+        ),
         this.config.distanceWeights
       )
       if (distance < nearestDistance) {

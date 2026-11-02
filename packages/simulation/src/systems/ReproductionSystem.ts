@@ -78,7 +78,8 @@ export class ReproductionSystem {
       parentIds: genome.parentIds,
       vector: genomeToVector(genome),
       architecture: genome.brain.architecture,
-      weights: genome.brain.weights.slice(0, learnOffset).concat(tail)
+      weights: genome.brain.weights.slice(0, learnOffset).concat(tail),
+      body: genome.body.genes
     })
   }
 

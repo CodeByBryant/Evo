@@ -3,6 +3,7 @@ import type { LearningConfig, LearningConfigOverrides } from './learning'
 import type { Rect } from './math'
 import type { EcologyConfig, EcologyConfigOverrides } from './ecology'
 import type { SpeciesConfig, SpeciesConfigOverrides } from './species'
+import type { AnatomyConfig, AnatomyConfigOverrides } from './anatomy'
 
 /** Largest valid world seed (seeds are unsigned 32-bit integers). */
 export const MAX_SEED = 4_294_967_295
@@ -128,6 +129,7 @@ export interface WorldConfig {
   learning: LearningConfig
   species: SpeciesConfig
   ecology: EcologyConfig
+  anatomy: AnatomyConfig
 }
 
 /** A partial configuration merged onto the defaults. */
@@ -144,6 +146,7 @@ export interface WorldConfigOverrides {
   learning?: LearningConfigOverrides
   species?: SpeciesConfigOverrides
   ecology?: EcologyConfigOverrides
+  anatomy?: AnatomyConfigOverrides
 }
 
 export interface WorldOptions {

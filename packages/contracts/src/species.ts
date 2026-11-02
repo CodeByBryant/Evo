@@ -13,6 +13,8 @@ export interface SpeciesDistanceWeights {
   reproduction: number
   learning: number
   brain: number
+  /** Body-plan genes (ADR 0012). Zero by default, so bodies do not affect species until asked to. */
+  body: number
 }
 
 /** A count of living members at one tick. */

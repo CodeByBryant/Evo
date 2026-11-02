@@ -23,6 +23,8 @@ export interface InvariantContext {
   readonly nextGenomeId: number
   /** The world's gene table, which every living genome must satisfy. */
   readonly geneSpecs: readonly GeneSpec[]
+  /** The body gene table (ADR 0012), which every living genome's body must satisfy. */
+  readonly bodySpecs: readonly GeneSpec[]
   /** Every living genome, and every parent it names, must have a lineage record. */
   readonly lineage: LineageQueries
   /** Every living organism must have an active species and the counts must agree. */
@@ -116,6 +118,7 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
     nextEntityId,
     nextGenomeId,
     geneSpecs,
+    bodySpecs,
     lineage
   } = context
   const seenGenomeIds = new Set<number>()
@@ -146,7 +149,8 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
 
     const genomeResult = validateGenome(organism.genome, geneSpecs, {
       brain: architectureOf(config.genetics.brain),
-      nextGenomeId
+      nextGenomeId,
+      body: bodySpecs
     })
     for (const message of genomeResult.errors) {
       errors.push(`organism ${organism.id}: genome: ${message}`)
