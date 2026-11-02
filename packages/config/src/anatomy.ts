@@ -1,4 +1,10 @@
-import { BODY_SLOT_COUNT, PART_TYPES } from '@evo/contracts'
+import {
+  BODY_SLOT_COUNT,
+  OUTLINE_MAX_POINTS,
+  OUTLINE_MIN_POINTS,
+  OUTLINE_MIN_RADIUS,
+  PART_TYPES
+} from '@evo/contracts'
 import type { AnatomyConfig } from '@evo/contracts'
 import { checkChoice, checkNumber, checkSection, isObject } from './checks'
 import type { PlainObject } from './checks'
@@ -21,7 +27,8 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     typeRate: 0.004,
     continuousRate: 0.05,
     continuousStd: 0.05,
-    visualRate: 0.02
+    visualRate: 0.02,
+    outlineRate: 0.03
   },
   parts: {
     flagellum: { mass: 0.3, upkeep: 0.01, strength: 1 },
@@ -58,7 +65,25 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     { type: 'mouth', size: 0.5, angle: 0, offset: 1, orientation: 0, param: 0.5 },
     { type: 'stomach', size: 0.5, angle: Math.PI, offset: 0.2, orientation: 0, param: 0.5 }
   ],
-  founderLook: { shape: 6, pattern: 0, accentHue: 0.1 }
+  founderLook: { pattern: 0, accentHue: 0.1 },
+  // Eight points, each in the middle of its sector, mirrored left to right: a snout at the front,
+  // narrow flanks and a fuller rear, which drawn as a smooth curve reads as a small creature.
+  founderOutline: {
+    count: 8,
+    radii: [
+      0.95,
+      0.8,
+      0.72,
+      0.88,
+      0.88,
+      0.72,
+      0.8,
+      0.95,
+      ...new Array<number>(OUTLINE_MAX_POINTS - 8).fill(0.8)
+    ],
+    angles: new Array<number>(OUTLINE_MAX_POINTS).fill(0.5)
+  },
+  outlineDrag: 0.5
 }
 
 const ANATOMY_KEYS = [
@@ -69,12 +94,22 @@ const ANATOMY_KEYS = [
   'mutation',
   'parts',
   'founder',
-  'founderLook'
+  'founderLook',
+  'founderOutline',
+  'outlineDrag'
 ]
-const MUTATION_KEYS = ['presenceRate', 'typeRate', 'continuousRate', 'continuousStd', 'visualRate']
+const MUTATION_KEYS = [
+  'presenceRate',
+  'typeRate',
+  'continuousRate',
+  'continuousStd',
+  'visualRate',
+  'outlineRate'
+]
 const PART_KEYS = ['mass', 'upkeep', 'strength']
 const FOUNDER_PART_KEYS = ['type', 'size', 'angle', 'offset', 'orientation', 'param']
-const LOOK_KEYS = ['shape', 'pattern', 'accentHue']
+const LOOK_KEYS = ['pattern', 'accentHue']
+const OUTLINE_KEYS = ['count', 'radii', 'angles']
 
 function checkRange(
   section: PlainObject,
@@ -118,7 +153,7 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
 
   const mutation = checkSection(anatomy, 'mutation', MUTATION_KEYS, errors, 'anatomy.mutation')
   if (mutation) {
-    for (const key of ['presenceRate', 'typeRate', 'continuousRate', 'visualRate']) {
+    for (const key of ['presenceRate', 'typeRate', 'continuousRate', 'visualRate', 'outlineRate']) {
       checkRange(mutation, key, `anatomy.mutation.${key}`, 0, 1, true, errors)
     }
     checkNumber(
@@ -180,10 +215,6 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
 
   const look = checkSection(anatomy, 'founderLook', LOOK_KEYS, errors, 'anatomy.founderLook')
   if (look) {
-    const shape = checkNumber(look, 'shape', 'anatomy.founderLook.shape', { integer: true }, errors)
-    if (shape !== undefined && (shape < 3 || shape > 8)) {
-      errors.push('anatomy.founderLook.shape must be an integer from 3 to 8')
-    }
     const pattern = checkNumber(
       look,
       'pattern',
@@ -195,5 +226,44 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
       errors.push('anatomy.founderLook.pattern must be an integer from 0 to 3')
     }
     checkRange(look, 'accentHue', 'anatomy.founderLook.accentHue', 0, 1, false, errors)
+  }
+
+  checkNumber(anatomy, 'outlineDrag', 'anatomy.outlineDrag', { nonnegative: true }, errors)
+
+  const outline = checkSection(
+    anatomy,
+    'founderOutline',
+    OUTLINE_KEYS,
+    errors,
+    'anatomy.founderOutline'
+  )
+  if (outline) {
+    const count = checkNumber(
+      outline,
+      'count',
+      'anatomy.founderOutline.count',
+      { integer: true },
+      errors
+    )
+    if (count !== undefined && (count < OUTLINE_MIN_POINTS || count > OUTLINE_MAX_POINTS)) {
+      errors.push(
+        `anatomy.founderOutline.count must be an integer from ${OUTLINE_MIN_POINTS} to ${OUTLINE_MAX_POINTS}`
+      )
+    }
+    const list = (key: 'radii' | 'angles', low: number, high: number): void => {
+      const values = outline[key]
+      const path = `anatomy.founderOutline.${key}`
+      if (!Array.isArray(values) || values.length !== OUTLINE_MAX_POINTS) {
+        errors.push(`${path} must be an array of ${OUTLINE_MAX_POINTS} numbers`)
+        return
+      }
+      values.forEach((value: unknown, index: number) => {
+        if (typeof value !== 'number' || !Number.isFinite(value) || value < low || value > high) {
+          errors.push(`${path}[${index}] must be a number from ${low} to ${high}`)
+        }
+      })
+    }
+    list('radii', OUTLINE_MIN_RADIUS, 1)
+    list('angles', 0, 1)
   }
 }

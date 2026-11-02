@@ -17,6 +17,9 @@ const organism = (id: number, x: number, y: number, radius = 5): RenderOrganism 
   y,
   rotation: 0,
   radius,
+  outline: [1, 0, 0, 1, -1, 0, 0, -1],
+  pattern: 0,
+  accentColor: '#ffcc00',
   hue: 0,
   speciesColor: '#ffffff',
   speciesId: 0,
@@ -108,6 +111,9 @@ describe('buildRenderSnapshot', () => {
         velocity: { x: 0, y: 0 },
         heading: 1.5,
         radius: 5,
+        outline: [1, 0, 0, 1, -1, 0, 0, -1],
+        pattern: 0,
+        accentHue: 0.1,
         age: 3,
         maxAge: 600,
         energy: 25,
@@ -126,6 +132,9 @@ describe('buildRenderSnapshot', () => {
         velocity: { x: 0, y: 0 },
         heading: 0,
         radius: 6,
+        outline: [1, 0, 0, 1, -1, 0, 0, -1],
+        pattern: 0,
+        accentHue: 0.1,
         age: 10,
         maxAge: 600,
         energy: 500,
@@ -190,6 +199,8 @@ describe('buildRenderSnapshot', () => {
       y: 20,
       rotation: 1.5,
       radius: 5,
+      outline: [1, 0, 0, 1, -1, 0, 0, -1],
+      pattern: 0,
       lifeStage: 'juvenile',
       energyRatio: 0.25,
       healthRatio: 0.5,
@@ -225,5 +236,49 @@ describe('buildRenderSnapshot', () => {
     ;(world.organisms[0] as { position: { x: number } }).position.x = 999
     expect((frame.organisms[0] as RenderOrganism).x).toBe(10)
     ;(world.organisms[0] as { position: { x: number } }).position.x = 10
+  })
+})
+
+describe('buildRenderSnapshot body data', () => {
+  it('passes the outline through and turns the accent hue into a color', () => {
+    const snapshot = buildRenderSnapshot(
+      {
+        seed: 1,
+        tick: 1,
+        time: 0.1,
+        population: { active: 1, extinctionTick: null },
+        organisms: [
+          {
+            id: 1,
+            genomeId: 1,
+            parentIds: [],
+            speciesId: 0,
+            position: { x: 0, y: 0 },
+            velocity: { x: 0, y: 0 },
+            heading: 0,
+            radius: 5,
+            outline: [5, 0, 0, 5, -5, 0, 0, -5],
+            pattern: 2,
+            accentHue: 0.5,
+            age: 0,
+            maxAge: 100,
+            energy: 1,
+            maxEnergy: 1,
+            health: 1,
+            maxHealth: 1,
+            lifeStage: 'mature',
+            reproductionCooldownRemaining: 0
+          }
+        ],
+        resources: [],
+        hazards: [],
+        metrics: {} as never
+      },
+      { worldWidth: 500, worldHeight: 500, season: null, selectedId: null }
+    )
+    const o = snapshot.organisms[0]
+    expect(o?.outline).toEqual([5, 0, 0, 5, -5, 0, 0, -5])
+    expect(o?.pattern).toBe(2)
+    expect(o?.accentColor).toMatch(/^#[0-9a-f]{6}$/)
   })
 })

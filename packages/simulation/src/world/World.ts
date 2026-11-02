@@ -1,5 +1,5 @@
 import { resolveWorldConfig, validateSeed } from '@evo/config'
-import { ACTION_SIZE, OBSERVATION_SIZE } from '@evo/contracts'
+import { ACTION_SIZE, OBSERVATION_SIZE, visualGeneIndex } from '@evo/contracts'
 import type {
   AnatomyView,
   BrainSnapshot,
@@ -37,7 +37,13 @@ import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { ReproductionReadiness } from '../organisms/reproductionReadiness'
-import { maxEnergyOf, maxHealthOf, sizeFactor } from '../organisms/traits'
+import {
+  bodyRadiusOf,
+  drawnOutlineOf,
+  maxEnergyOf,
+  maxHealthOf,
+  sizeFactor
+} from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
@@ -596,7 +602,10 @@ export class World {
         position: { x: organism.x, y: organism.y },
         velocity: { x: organism.vx, y: organism.vy },
         heading: organism.heading,
-        radius: organism.genome.physical.radius,
+        radius: bodyRadiusOf(organism.genome, this.config),
+        outline: drawnOutlineOf(organism.genome, this.config),
+        pattern: organism.genome.body.genes[visualGeneIndex('pattern')] as number,
+        accentHue: organism.genome.body.genes[visualGeneIndex('accentHue')] as number,
         age: organism.age,
         maxAge: organism.genome.physical.maxAge,
         energy: organism.energy,

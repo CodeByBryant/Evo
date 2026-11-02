@@ -5,7 +5,7 @@ import type { OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
-import { maxEnergyOf } from '../organisms/traits'
+import { bodyRadiusOf, maxEnergyOf } from '../organisms/traits'
 import type { SpatialHash } from '../spatial/SpatialHash'
 
 /**
@@ -53,7 +53,7 @@ export class InteractionSystem {
       if (this.intents && this.intents.get(organism.id)?.interact === false) continue
       const stage = lifeStageFor(organism.age, organism.genome.physical)
       const sizeScale = stage === 'juvenile' ? juvenileSizeScale : 1
-      const bodyRadius = organism.genome.physical.radius * sizeScale
+      const bodyRadius = bodyRadiusOf(organism.genome, this.config) * sizeScale
       const captureRadius = bodyRadius + this.largestResourceRadius
       const effectiveMaxEnergy = maxEnergyOf(organism.genome, this.config) * sizeScale
 

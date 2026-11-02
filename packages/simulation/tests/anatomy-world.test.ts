@@ -17,6 +17,9 @@ const BUSY: WorldConfigOverrides = {
   anatomy: { mutation: { presenceRate: 0.3, typeRate: 0.3, continuousRate: 0.5, visualRate: 0.5 } },
   genetics: { mutationRateScale: 4 }
 }
+/** Paint genes mutate with anatomy on (they have no effect on the dynamics), so snapshots are compared without them. */
+const unpainted = (key: string, value: unknown): unknown =>
+  key === 'pattern' || key === 'accentHue' ? undefined : value
 const on = (extra: WorldConfigOverrides = {}): WorldConfigOverrides => ({
   ...BUSY,
   ...extra,
@@ -51,14 +54,20 @@ describe('anatomy off', () => {
 })
 
 describe('anatomy on', () => {
-  it('does not change the existing dynamics: snapshots, events and legacy genes are identical', () => {
+  // Parts do not act yet (PR 4), but the outline does (ADR 0013), so a body with a changing outline
+  // is a different organism. With the outline frozen, every other body gene is invisible.
+  const FROZEN_OUTLINE = { anatomy: { mutation: { outlineRate: 0 } } }
+
+  it('does not change the existing dynamics while the outline stays the founder outline', () => {
     const off = World.create({ seed: SEED, config: BUSY })
-    const live = World.create({ seed: SEED, config: on() })
+    const live = World.create({ seed: SEED, config: on(FROZEN_OUTLINE) })
     for (let tick = 1; tick <= 3000; tick++) {
       off.step()
       live.step()
       if (tick % 500 === 0) {
-        expect(JSON.stringify(live.snapshot())).toBe(JSON.stringify(off.snapshot()))
+        expect(JSON.stringify(live.snapshot(), unpainted)).toBe(
+          JSON.stringify(off.snapshot(), unpainted)
+        )
       }
     }
     expect(JSON.stringify(live.events.list())).toBe(JSON.stringify(off.events.list()))
@@ -74,6 +83,18 @@ describe('anatomy on', () => {
     expect(b).toEqual(a)
     // ... but the bodies themselves have diverged, so the full state hashes differ
     expect(live.stateHash()).not.toBe(off.stateHash())
+  })
+
+  it('lets an evolving outline change the dynamics: size, energy and drag follow the shape', () => {
+    const off = World.create({ seed: SEED, config: BUSY })
+    const live = World.create({ seed: SEED, config: on() })
+    off.run(3000)
+    live.run(3000)
+    expect(JSON.stringify(live.snapshot().organisms)).not.toBe(
+      JSON.stringify(off.snapshot().organisms)
+    )
+    const radii = new Set(live.snapshot().organisms.map((o) => o.radius))
+    expect(radii.size).toBeGreaterThan(3)
   })
 
   it('evolves bodies, keeps every one valid, and stays deterministic', () => {

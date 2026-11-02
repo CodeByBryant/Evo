@@ -4,7 +4,7 @@ Status: **Accepted** (approved by the project owner with the "dynamic bodies" pl
 
 This is the concrete design that [ADR 0004](0004-dynamic-evolvable-anatomy-and-morphology.md) said every anatomy phase would need. 0004 remains the vision; where this ADR chooses differently it says so under "Deviations from 0004".
 
-Anatomy is delivered in three pull requests (owner decision): **PR 1** (this ADR): the data model, genome encoding, deterministic development and the capability formulas, with anatomy **switched off and proven not to change behavior**. **PR 2**: clusters, founder species and visual traits (ADR 0013). **PR 3**: systems read capabilities, the redundant scalar genes are retired, everything is tuned and the cluster world becomes the default.
+Anatomy is delivered in three pull requests (owner decision): **PR 1** (this ADR): the data model, genome encoding, deterministic development and the capability formulas, with anatomy **switched off and proven not to change behavior**. **PR 2** (changed during the work): creature bodies, an evolvable point outline with physics ([ADR 0013](0013-creature-bodies.md)). **PR 3**: the infinite cluster world and founder species (ADR 0014). **PR 4**: systems read capabilities, the redundant scalar genes are retired, everything is tuned and the cluster world becomes the default.
 
 ## Problem
 
@@ -63,13 +63,13 @@ The result is an `Anatomy` (body radius, the developed parts with their position
 - **thrust** from flagella and cilia: forward `sum(strength * size * max(0, cos orientation))`, lateral `sum(strength * size * |sin orientation|)`, and **torque** `sum(strength * size * |x * Fy - y * Fx|)` for each part's force `F` at its position. Placement and orientation therefore matter: a rear-facing flagellum drives forward, side-facing ones strafe, and an off-axis one turns the body;
 - **sense range** from eyes (`sum(size * (0.5 + param))` through a saturating curve, with a floor so an eyeless body still touches what it is on), sniffer detection per food kind, mouth **reach**, intestine **digestion and toxin tolerance**, stomach **energy capacity**, armor **damage resistance**, membrane **temperature tolerance**, mender **regeneration**.
 
-`capabilityFactors(anatomy, founder, config)` expresses each capability **relative to the founder body plan** (`anatomy.founder` in config, the same plan for every founder). The founder's factors are exactly 1 (the same arithmetic divided by itself), so defaults are preserved: in PR 3 the engine multiplies today's baselines by these factors, and an unmutated founder behaves exactly as before. All coefficients are config, are **provisional**, and are set by measurement in PR 3. Every capability has an upkeep or mass cost, so none is free (ADR 0004 section 17).
+`capabilityFactors(anatomy, founder, config)` expresses each capability **relative to the founder body plan** (`anatomy.founder` in config, the same plan for every founder). The founder's factors are exactly 1 (the same arithmetic divided by itself), so defaults are preserved: in PR 4 the engine multiplies today's baselines by these factors, and an unmutated founder behaves exactly as before. All coefficients are config, are **provisional**, and are set by measurement in PR 4. Every capability has an upkeep or mass cost, so none is free (ADR 0004 section 17).
 
 Eyes are omnidirectional in this design (no field of view); a part's `orientation` matters for thrust but not yet for sensing. That is a deliberate scope limit, listed below.
 
-### Where the engine reads body genes (for PR 3)
+### Where the engine reads body genes (for PR 4)
 
-The scalar body genes are read in only a few places: movement (`maxSpeed`, `maxTurnRate`), perception (`sensorRadius`), metabolism (`movementCost`, `turningCost`, `basalCost`, the sensor cost), interaction (body radius), death (`maxAge`), reproduction and the brain's scaling. PR 3 retires exactly these scalar genes, which anatomy replaces: **`maxSpeed`, `maxTurnRate`, `sensorRadius`, `movementCost` and `turningCost`**. Body `radius` (the body geometry), `basalCost`, the life-stage ages, reproduction, learning and the brain stay. Retiring genes shrinks the gene table, which is a hash-schema change (version 7) with its own regenerated goldens; it happens only after PR 3 has shown, with an equivalence harness, that factor-based capabilities reproduce today's dynamics.
+The scalar body genes are read in only a few places: movement (`maxSpeed`, `maxTurnRate`), perception (`sensorRadius`), metabolism (`movementCost`, `turningCost`, `basalCost`, the sensor cost), interaction (body radius), death (`maxAge`), reproduction and the brain's scaling. PR 4 retires exactly these scalar genes, which anatomy replaces: **`maxSpeed`, `maxTurnRate`, `sensorRadius`, `movementCost` and `turningCost`**. Body `radius` (the body geometry), `basalCost`, the life-stage ages, reproduction, learning and the brain stay. Retiring genes shrinks the gene table, which is a hash-schema change (version 8) with its own regenerated goldens; it happens only after PR 4 has shown, with an equivalence harness, that factor-based capabilities reproduce today's dynamics.
 
 ### Hash schema 6 and the `anatomy` stream
 
@@ -78,8 +78,8 @@ The state hash appends each organism's body vector after its brain weights, and 
 ## Deviations from ADR 0004
 
 - **A fixed-capacity slot genome instead of a free-form part graph.** It fits the existing operators and keeps random draws fixed. A part's parent or connection is not an evolvable relation in this design; every part attaches to the body at its own polar position. Dependencies (what a part needs) are expressed through capability tokens rather than connection edges.
-- **Development has no randomness and no development stream.** 0004 anticipated one; a pure function is cheaper, trivially replayable and removes a class of bugs. The `anatomy` stream exists only for body-gene mutation and recombination, and for the cluster founders of PR 2.
-- **No radial silhouette.** The body is a circle (the existing body radius) plus a polygon styling; the outline is a rendering concern, not simulation truth. 0004 itself called the radial model "not mandatory".
+- **Development has no randomness and no development stream.** 0004 anticipated one; a pure function is cheaper, trivially replayable and removes a class of bugs. The `anatomy` stream exists only for body-gene mutation and recombination, and for the cluster founders.
+- **~~No radial silhouette.~~ Reversed by [ADR 0013](0013-creature-bodies.md).** This ADR first kept the body a circle with polygon styling; the owner asked for bodied creatures with `n` points, so the radial outline is now part of the genome and the physics.
 - **Eyes are omnidirectional.** Field of view needs directional perception, a new mechanic.
 - **Ten parts, not the 60 in 0004's vocabulary**, and no part that needs predation.
 - **No "duplicate part" or "move part" mutation operators.** Parts move and rotate by drifting their own genes; duplication happens by a second slot switching on and converging.
@@ -93,7 +93,7 @@ The state hash appends each organism's body vector after its brain weights, and 
 ## Consequences
 
 - Hash schema 6: all goldens regenerate once, in the commit that causes it, with the equivalence proof alongside.
-- Genome `version` becomes 2 (it gains the `body` section); the gene table for the scalar genes is unchanged until PR 3.
+- Genome `version` becomes 2 (it gains the `body` section); the gene table for the scalar genes is unchanged until PR 4.
 - A new gene group in species distance: `genomeDistance` reports a `body` distance and `species.distanceWeights` gains a `body` weight. It defaults to **0**, so species assignment is unchanged by this PR.
 - Genome size grows by 87 genes; each birth adds about 350 draws on the `anatomy` stream (when enabled), which is negligible.
-- Not in this PR: the systems do not read capabilities, nothing is drawn, and species ignore bodies. Those are PR 3 and the rendering work in PR 2 and 3.
+- Not in this PR: the systems do not read capabilities, nothing is drawn, and species ignore bodies. Parts act in PR 4; the outline acts and is drawn in PR 2 (ADR 0013).

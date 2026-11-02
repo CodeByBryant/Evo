@@ -121,10 +121,9 @@ describe('developAnatomy', () => {
 
   it('reads the visual genes', () => {
     const vector = founderBodyVector(defaults)
-    vector[visualGeneIndex('shape')] = 8
     vector[visualGeneIndex('pattern')] = 3
     vector[visualGeneIndex('accentHue')] = 0.75
-    expect(developAnatomy(vector, defaults).look).toEqual({ shape: 8, pattern: 3, accentHue: 0.75 })
+    expect(developAnatomy(vector, defaults).look).toEqual({ pattern: 3, accentHue: 0.75 })
   })
 
   it('is pure: same genes, same body; the input is not modified', () => {

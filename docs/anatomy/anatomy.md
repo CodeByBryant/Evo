@@ -1,12 +1,23 @@
 # Anatomy
 
-How an organism's body works. The decisions are in [ADR 0012](../decisions/0012-anatomy.md) (the vision is [ADR 0004](../decisions/0004-dynamic-evolvable-anatomy-and-morphology.md)); the genes are in [genome.md](../genetics/genome.md). Status: **the data model, genome encoding, development and capability formulas exist; the simulation does not read capabilities yet** (that is the next pull request). Everything here is derived from the genome, so nothing about a body is saved or hashed beyond the genes.
+How an organism's body works. The decisions are in [ADR 0012](../decisions/0012-anatomy.md) (the vision is [ADR 0004](../decisions/0004-dynamic-evolvable-anatomy-and-morphology.md)); the genes are in [genome.md](../genetics/genome.md). Status: **the body outline is live (it changes size, energy and drag, and is drawn); the parts, their development and capability formulas exist, but the simulation does not read capabilities yet** (that is a later pull request). Everything here is derived from the genome, so nothing about a body is saved or hashed beyond the genes.
 
 ```text
-genome.body (87 genes)  ->  developAnatomy()  ->  Anatomy  ->  capabilitiesOf()  ->  Capabilities
+genome.body (119 genes)  ->  developAnatomy()  ->  Anatomy  ->  capabilitiesOf()  ->  Capabilities
                               pure, no randomness                                      |
                                                                     capabilityFactors() against the founder
 ```
+
+## The outline
+
+Every creature has a silhouette of `n` points, 5 to 16 ([ADR 0013](../decisions/0013-creature-bodies.md)). `developOutline(body)` turns the outline genes into a closed polygon: sector `i` of `n` holds point `i`, at its `radius` gene and at an angle inside the sector set by its `angle` gene, so the polygon never crosses itself. It reports the area, the area-equivalent radius, the perimeter and the roughness (`perimeter / (2 pi areaRadius)`).
+
+Two things follow from the outline, both measured against the founder outline and both exactly 1 for it:
+
+- **Size**: effective body radius = the `radius` gene * `areaRadius / founderAreaRadius`. It feeds energy capacity, basal cost, health, eating reach and the drawn size.
+- **Drag**: movement and turning energy * `max(0.25, 1 + outlineDrag * (roughness - founderRoughness))`: spiky bodies pay more to move.
+
+The renderer draws the outline as a smooth closed curve through the points, with eyes at the front and a pattern in the accent color. The "Evolving bodies" preset turns `anatomy.enabled` on so outlines evolve.
 
 ## The ten parts
 

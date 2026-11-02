@@ -60,12 +60,23 @@ export const SLOT_FIELDS = [
 ] as const
 export type SlotField = (typeof SLOT_FIELDS)[number]
 
-/** Genes that only change how a body looks (no effect on fitness). */
-export const VISUAL_FIELDS = ['shape', 'pattern', 'accentHue'] as const
+/** Genes that only change how a body is painted (no effect on fitness). */
+export const VISUAL_FIELDS = ['pattern', 'accentHue'] as const
 export type VisualField = (typeof VISUAL_FIELDS)[number]
 
-/** Total body genes: 12 slots x 7 genes, then 3 visual genes. */
-export const BODY_GENE_COUNT = BODY_SLOT_COUNT * SLOT_FIELDS.length + VISUAL_FIELDS.length
+/**
+ * The body outline (ADR 0013): a closed star-shaped polygon of `count` points (5-16) around the
+ * body centre. Point `i` has a radius gene and an angle gene; angles are placed inside the point's
+ * own sector, so points never cross and the outline is always a simple polygon. The genes of
+ * points beyond `count` still exist and mutate silently, like an empty part slot's.
+ */
+export const OUTLINE_MIN_POINTS = 5
+export const OUTLINE_MAX_POINTS = 16
+export const OUTLINE_MIN_RADIUS = 0.35
+
+/** Total body genes: 12 slots x 7, the visual genes, the point count, then 16 radii and 16 angles. */
+export const BODY_GENE_COUNT =
+  BODY_SLOT_COUNT * SLOT_FIELDS.length + VISUAL_FIELDS.length + 1 + 2 * OUTLINE_MAX_POINTS
 
 const TWO_PI = Math.PI * 2
 
@@ -88,7 +99,6 @@ const SLOT_RANGES: Readonly<Record<SlotField, { kind: GeneKind; min: number; max
 }
 
 const VISUAL_RANGES: Readonly<Record<VisualField, { kind: GeneKind; min: number; max: number }>> = {
-  shape: { kind: 'int', min: 3, max: 8 },
   pattern: { kind: 'int', min: 0, max: 3 },
   accentHue: { kind: 'circular', min: 0, max: 1 }
 }
@@ -107,6 +117,18 @@ export const BODY_GENE_DEFINITIONS: readonly BodyGeneDefinition[] = (() => {
   for (const field of VISUAL_FIELDS) {
     out.push({ path: `body.visual.${field}`, ...VISUAL_RANGES[field] })
   }
+  out.push({
+    path: 'body.outline.count',
+    kind: 'int',
+    min: OUTLINE_MIN_POINTS,
+    max: OUTLINE_MAX_POINTS
+  })
+  for (let i = 0; i < OUTLINE_MAX_POINTS; i++) {
+    out.push({ path: `body.outline.radius${i}`, kind: 'float', min: OUTLINE_MIN_RADIUS, max: 1 })
+  }
+  for (let i = 0; i < OUTLINE_MAX_POINTS; i++) {
+    out.push({ path: `body.outline.angle${i}`, kind: 'float', min: 0, max: 1 })
+  }
   return out
 })()
 
@@ -118,6 +140,21 @@ export function slotGeneIndex(slot: number, field: SlotField): number {
 /** Index of a visual gene in the body vector. */
 export function visualGeneIndex(field: VisualField): number {
   return BODY_SLOT_COUNT * SLOT_FIELDS.length + VISUAL_FIELDS.indexOf(field)
+}
+
+const OUTLINE_BASE = BODY_SLOT_COUNT * SLOT_FIELDS.length + VISUAL_FIELDS.length
+
+/** Index of the outline point-count gene in the body vector. */
+export const OUTLINE_COUNT_INDEX = OUTLINE_BASE
+
+/** Index of point `i`'s radius gene. */
+export function outlineRadiusIndex(point: number): number {
+  return OUTLINE_BASE + 1 + point
+}
+
+/** Index of point `i`'s angle gene. */
+export function outlineAngleIndex(point: number): number {
+  return OUTLINE_BASE + 1 + OUTLINE_MAX_POINTS + point
 }
 
 /** An organism's body genes: one flat vector in `BODY_GENE_DEFINITIONS` order. */
@@ -140,17 +177,38 @@ export interface AnatomyPart {
   readonly functional: boolean
 }
 
-/** The visual genes, decoded. */
+/** The painted genes, decoded. */
 export interface BodyLook {
-  /** Polygon sides, 3-8. */
-  readonly shape: number
   readonly pattern: number
   /** In turns, `[0, 1)`. */
   readonly accentHue: number
 }
 
+/** The developed outline (`developOutline`): the creature's silhouette and what it costs to be that shape. */
+export interface BodyOutline {
+  /** Points around the body, counter-clockwise from the front, in body-radius units (x forward, y left). */
+  readonly points: readonly { readonly x: number; readonly y: number }[]
+  readonly area: number
+  /** Radius of the circle with the same area: the body's size. */
+  readonly areaRadius: number
+  readonly perimeter: number
+  /** `perimeter / (2 pi areaRadius)`: 1 for a circle, more for a spiky body (drag). */
+  readonly roughness: number
+}
+
+/** The founder outline's genes (`anatomy.founderOutline`). */
+export interface FounderOutline {
+  /** Point count, 5-16. */
+  count: number
+  /** 16 radius genes, 0.35-1. */
+  radii: number[]
+  /** 16 angle genes, 0-1 (the position inside the point's sector). */
+  angles: number[]
+}
+
 /** The result of development (`developAnatomy`). Derived from the genome, never hashed. */
 export interface Anatomy {
+  readonly outline: BodyOutline
   readonly parts: readonly AnatomyPart[]
   /** Slots that carry a part but did not develop because the structural budget was spent. */
   readonly undeveloped: readonly number[]
@@ -234,6 +292,8 @@ export interface AnatomyMutationConfig {
   continuousStd: number
   /** Chance per visual gene per birth. */
   visualRate: number
+  /** Chance per outline gene (point count, radii, angles) per birth. */
+  outlineRate: number
 }
 
 export interface AnatomyConfig {
@@ -252,8 +312,15 @@ export interface AnatomyConfig {
   parts: Record<PartType, PartConfig>
   /** The body plan every founder starts with: slot `i` is `founder[i]`, the rest are empty. */
   founder: FounderPart[]
-  /** The founders' visual genes. */
+  /** The founders' painted genes. */
   founderLook: BodyLook
+  /** The founders' outline. */
+  founderOutline: FounderOutline
+  /**
+   * Extra movement cost per unit of outline roughness above the founder's (ADR 0013): a spiky
+   * body drags. Zero turns the drag off; the founder outline itself always costs exactly nothing extra.
+   */
+  outlineDrag: number
 }
 
 /** Overrides merge field by field; `parts` merges per type and `founder` is replaced whole. */
@@ -266,6 +333,8 @@ export interface AnatomyConfigOverrides {
   parts?: { [K in PartType]?: Partial<PartConfig> }
   founder?: FounderPart[]
   founderLook?: Partial<BodyLook>
+  founderOutline?: Partial<FounderOutline>
+  outlineDrag?: number
 }
 
 /** What `World.anatomyOf` hands out: the developed body, its raw capabilities, and them relative to the founder. */

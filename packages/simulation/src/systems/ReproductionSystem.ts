@@ -12,7 +12,7 @@ import type { BrainState } from '../learning/BrainState'
 import { clamp, TWO_PI, wrapAngle } from '../math/scalar'
 import type { LineageStore } from '../lineage/LineageStore'
 import { ReproductionReadiness } from '../organisms/reproductionReadiness'
-import { maxEnergyOf, maxHealthOf } from '../organisms/traits'
+import { bodyRadiusOf, maxEnergyOf, maxHealthOf } from '../organisms/traits'
 import type { RandomSource } from '../random/RandomSource'
 import type { SeededRandom } from '../random/SeededRandom'
 import type { EcologyModel } from '../ecology/EcologyModel'
@@ -163,7 +163,7 @@ export class ReproductionSystem {
 
       const midX = (organism.x + partner.x) / 2
       const midY = (organism.y + partner.y) / 2
-      const radius = genome.physical.radius
+      const radius = bodyRadiusOf(genome, this.config)
       const x = clamp(midX + (this.random.float() * 2 - 1) * radius, 0, width)
       const y = clamp(midY + (this.random.float() * 2 - 1) * radius, 0, height)
       const heading = wrapAngle(this.random.float() * TWO_PI)

@@ -19,6 +19,15 @@ export interface OrganismSnapshot {
   readonly velocity: Readonly<Vec2>
   readonly heading: number
   readonly radius: number
+  /**
+   * The body outline as `x0, y0, x1, y1, ...` in world units relative to the centre, front along
+   * +x, counter-clockwise (ADR 0013). Its area-equivalent radius is `radius`.
+   */
+  readonly outline: readonly number[]
+  /** Painted pattern, 0-3. */
+  readonly pattern: number
+  /** Accent hue in turns, `[0, 1)`. */
+  readonly accentHue: number
   readonly age: number
   /** The age at which the organism dies of old age. */
   readonly maxAge: number

@@ -31,7 +31,7 @@ describe('anatomy config', () => {
         mutation: { presenceRate: 0.5 },
         parts: { eye: { strength: 2 } },
         founder: [{ type: 'mouth', size: 0.5, angle: 0, offset: 1, orientation: 0, param: 0.5 }],
-        founderLook: { shape: 4 }
+        founderLook: { pattern: 2 }
       }
     })
     expect(config.anatomy.enabled).toBe(true)
@@ -40,7 +40,7 @@ describe('anatomy config', () => {
     expect(config.anatomy.parts.eye).toEqual({ mass: 0.1, upkeep: 0.01, strength: 2 })
     expect(config.anatomy.parts.flagellum).toEqual(DEFAULT_WORLD_CONFIG.anatomy.parts.flagellum)
     expect(config.anatomy.founder).toHaveLength(1)
-    expect(config.anatomy.founderLook).toEqual({ shape: 4, pattern: 0, accentHue: 0.1 })
+    expect(config.anatomy.founderLook).toEqual({ pattern: 2, accentHue: 0.1 })
   })
 
   it('does not change the shared defaults', () => {
@@ -130,9 +130,6 @@ describe('anatomy config', () => {
   })
 
   it('rejects a bad founder look', () => {
-    expect(errorsFor((c) => (c.anatomy.founderLook.shape = 2))).toContain(
-      'anatomy.founderLook.shape must be an integer from 3 to 8'
-    )
     expect(errorsFor((c) => (c.anatomy.founderLook.pattern = 4))).toContain(
       'anatomy.founderLook.pattern must be an integer from 0 to 3'
     )

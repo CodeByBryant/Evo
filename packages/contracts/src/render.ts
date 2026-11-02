@@ -16,6 +16,12 @@ export interface RenderOrganism {
   /** Heading in radians, counter-clockwise from the +x axis. */
   readonly rotation: number
   readonly radius: number
+  /** The body outline as `x0, y0, x1, y1, ...` in world units relative to the centre (front along +x). */
+  readonly outline: readonly number[]
+  /** Painted pattern, 0-3. */
+  readonly pattern: number
+  /** The accent color of the pattern as `#rrggbb`. */
+  readonly accentColor: string
   /** Hue in degrees `[0, 360)`, derived from the species. */
   readonly hue: number
   /** The species color as `#rrggbb`. */

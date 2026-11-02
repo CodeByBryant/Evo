@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { resolveWorldConfig } from '@evo/config'
 import {
   BODY_GENE_COUNT,
+  OUTLINE_COUNT_INDEX,
   BODY_GENE_DEFINITIONS,
   BODY_SLOT_COUNT,
   PART_TYPES,
@@ -75,7 +76,8 @@ describe('the founder body', () => {
     for (let slot = config.founder.length; slot < BODY_SLOT_COUNT; slot++) {
       expect(vector[slotGeneIndex(slot, 'present')]).toBe(0)
     }
-    expect(vector[visualGeneIndex('shape')]).toBe(config.founderLook.shape)
+    expect(vector[visualGeneIndex('pattern')]).toBe(config.founderLook.pattern)
+    expect(vector[OUTLINE_COUNT_INDEX]).toBe(config.founderOutline.count)
     expect(vector[visualGeneIndex('accentHue')]).toBe(config.founderLook.accentHue)
   })
 
@@ -163,7 +165,9 @@ describe('recombining bodies', () => {
 
   it('with high rates, bodies change structurally while staying valid', () => {
     const { bodySpecs, mother, father, recombiner } = setup({
-      anatomy: { mutation: { presenceRate: 1, typeRate: 1, continuousRate: 1, visualRate: 1 } },
+      anatomy: {
+        mutation: { presenceRate: 1, typeRate: 1, continuousRate: 1, visualRate: 1, outlineRate: 1 }
+      },
       genetics: { mutationRateScale: 1 }
     })
     let flips = 0
@@ -193,15 +197,17 @@ describe('recombining bodies', () => {
     expect(typeSteps).toBeGreaterThan(0)
   })
 
-  it('keeps types inside the vocabulary and the shape inside 3-8 over many generations', () => {
+  it('keeps types inside the vocabulary and the outline valid over many generations', () => {
     const { bodySpecs, mother, father, recombiner } = setup({
-      anatomy: { mutation: { presenceRate: 1, typeRate: 1, continuousRate: 1, visualRate: 1 } }
+      anatomy: {
+        mutation: { presenceRate: 1, typeRate: 1, continuousRate: 1, visualRate: 1, outlineRate: 1 }
+      }
     })
     let a = mother
     for (let generation = 0; generation < 60; generation++) {
       a = recombiner(anatomyStream(generation), true).combine(a, father, geneticsStream(generation))
-      const shape = a.body.genes[visualGeneIndex('shape')] as number
-      expect(Number.isInteger(shape) && shape >= 3 && shape <= 8).toBe(true)
+      const count = a.body.genes[OUTLINE_COUNT_INDEX] as number
+      expect(Number.isInteger(count) && count >= 5 && count <= 16).toBe(true)
       expect(validateGeneValues(a.body.genes, bodySpecs)).toEqual([])
     }
   })
@@ -254,7 +260,7 @@ describe('body distance and validation', () => {
       'body.slot4.present must be 0 or 1'
     )
     expect(bad((g) => (g[slotGeneIndex(4, 'angle')] = 7)).join()).toContain('body.slot4.angle')
-    expect(bad((g) => (g[visualGeneIndex('shape')] = 9)).join()).toContain('body.visual.shape')
+    expect(bad((g) => (g[OUTLINE_COUNT_INDEX] = 17)).join()).toContain('body.outline.count')
     expect(bad((g) => (g[3] = Number.NaN)).join()).toContain('is not a finite number')
     expect(bad((g) => g.pop()).join()).toContain(`body has ${BODY_GENE_COUNT - 1} genes`)
   })

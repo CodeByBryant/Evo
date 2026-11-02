@@ -2,9 +2,13 @@ import {
   BODY_GENE_COUNT,
   BODY_GENE_DEFINITIONS,
   BODY_SLOT_COUNT,
+  OUTLINE_COUNT_INDEX,
+  OUTLINE_MAX_POINTS,
   PART_TYPES,
   SLOT_FIELDS,
   VISUAL_FIELDS,
+  outlineAngleIndex,
+  outlineRadiusIndex,
   slotGeneIndex,
   visualGeneIndex
 } from '@evo/contracts'
@@ -37,9 +41,13 @@ export function founderBodyVector(anatomy: AnatomyConfig): number[] {
       : { present: 0, ...EMPTY_SLOT }
     for (const field of SLOT_FIELDS) out[slotGeneIndex(slot, field)] = values[field]
   }
-  out[visualGeneIndex('shape')] = anatomy.founderLook.shape
   out[visualGeneIndex('pattern')] = anatomy.founderLook.pattern
   out[visualGeneIndex('accentHue')] = anatomy.founderLook.accentHue
+  out[OUTLINE_COUNT_INDEX] = anatomy.founderOutline.count
+  for (let i = 0; i < OUTLINE_MAX_POINTS; i++) {
+    out[outlineRadiusIndex(i)] = anatomy.founderOutline.radii[i] as number
+    out[outlineAngleIndex(i)] = anatomy.founderOutline.angles[i] as number
+  }
   return out
 }
 
@@ -57,15 +65,17 @@ export function buildBodySpecs(anatomy: AnatomyConfig): GeneSpec[] {
   const baseline = founderBodyVector(anatomy)
   const { mutation } = anatomy
   return BODY_GENE_DEFINITIONS.map((definition, index) => {
-    const field = definition.path.split('.')[2] as string
-    const visual = (VISUAL_FIELDS as readonly string[]).includes(field)
+    const [, group, field] = definition.path.split('.') as [string, string, string]
+    const visual = group === 'visual' && (VISUAL_FIELDS as readonly string[]).includes(field)
     const mutationRate = visual
       ? mutation.visualRate
-      : field === 'present'
-        ? mutation.presenceRate
-        : field === 'type'
-          ? mutation.typeRate
-          : mutation.continuousRate
+      : group === 'outline'
+        ? mutation.outlineRate
+        : field === 'present'
+          ? mutation.presenceRate
+          : field === 'type'
+            ? mutation.typeRate
+            : mutation.continuousRate
     return {
       path: definition.path,
       kind: definition.kind,
