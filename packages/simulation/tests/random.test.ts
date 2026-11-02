@@ -111,7 +111,9 @@ describe('published test vectors', () => {
       ['environment', '6f3eec1b'],
       ['learning', 'f025d548'],
       ['events', 'ba7b610b'],
-      ['terrain', 'c1662d8f']
+      ['terrain', 'c1662d8f'],
+      // computed independently (FNV-1a over the derivation bytes), like the others
+      ['anatomy', '7dff8997']
     ])
   })
 
@@ -307,7 +309,8 @@ describe('RandomStreams', () => {
       'environment',
       'learning',
       'events',
-      'terrain'
+      'terrain',
+      'anatomy'
     ])
     const streams = new RandomStreams(5)
     for (const name of STREAM_NAMES) {

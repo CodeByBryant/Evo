@@ -32,7 +32,9 @@ describe('weightedDistance', () => {
       behavioral: 1,
       reproduction: 1,
       learning: 1,
-      brain: 1
+      brain: 1,
+      // the unweighted total covers the seven original groups; the body is reported separately
+      body: 0
     }
     expect(weightedDistance(distance, equal)).toBeCloseTo(distance.total, 12)
   })
@@ -46,6 +48,7 @@ describe('weightedDistance', () => {
       reproduction: 0,
       learning: 0,
       brain: 0,
+      body: 0,
       [group]: 7
     })
     expect(weightedDistance(distance, only('brain'))).toBeCloseTo(distance.brain, 12)

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_WORLD_CONFIG as DEFAULTS } from '@evo/config'
 import type { MetricsSnapshot } from '@evo/contracts'
+import { buildBodySpecs } from '../src/genetics/BodyGenes'
 import { buildGeneSpecs } from '../src/genetics/GeneSpecs'
 import { LineageStore } from '../src/lineage/LineageStore'
 import { checkInvariants } from '../src/world/invariants'
@@ -68,6 +69,7 @@ const baseContext = (overrides: Partial<InvariantContext> = {}): InvariantContex
   nextEntityId: 1000,
   nextGenomeId: 1000,
   geneSpecs: buildGeneSpecs(DEFAULT_WORLD_CONFIG),
+  bodySpecs: buildBodySpecs(DEFAULT_WORLD_CONFIG.anatomy),
   ...overrides,
   lineage: overrides.lineage ?? lineageFor(overrides.organisms ?? []),
   species: overrides.species ?? { problems: () => [] },

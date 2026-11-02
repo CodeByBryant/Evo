@@ -1,3 +1,4 @@
+import { BODY_GENE_COUNT } from '@evo/contracts'
 import type { BrainArchitecture, Genome, GenomeId, ValidationResult } from '@evo/contracts'
 import { boundGene } from './geneMath'
 import type { GeneSpec } from './GeneSpecs'
@@ -57,6 +58,8 @@ export interface GenomeValidationContext {
   brain: BrainArchitecture
   /** When given, genome ids must be below it (the next id the world will allocate). */
   nextGenomeId?: GenomeId
+  /** When given, the body genes are checked against this table (the body gene table of the world). */
+  body?: readonly GeneSpec[]
 }
 
 /**
@@ -70,7 +73,7 @@ export function validateGenome(
 ): ValidationResult {
   const errors: string[] = []
 
-  if (genome.version !== 1) errors.push(`unsupported genome version ${String(genome.version)}`)
+  if (genome.version !== 2) errors.push(`unsupported genome version ${String(genome.version)}`)
   if (!Number.isInteger(genome.id) || genome.id < 0) {
     errors.push(`genome id (${genome.id}) must be a nonnegative integer`)
   } else if (context.nextGenomeId !== undefined && genome.id >= context.nextGenomeId) {
@@ -86,6 +89,11 @@ export function validateGenome(
   }
 
   errors.push(...validateGeneValues(genomeToVector(genome), specs))
+  if (genome.body.genes.length !== BODY_GENE_COUNT) {
+    errors.push(`body has ${genome.body.genes.length} genes but needs ${BODY_GENE_COUNT}`)
+  } else if (context.body !== undefined) {
+    errors.push(...validateGeneValues(genome.body.genes, context.body).map((m) => `body: ${m}`))
+  }
 
   const { learning, reproduction } = genome
   if (!(learning.learningRate >= 0)) errors.push('learningRate must be nonnegative')
@@ -142,12 +150,17 @@ export function repairGeneValues(values: readonly number[], specs: readonly Gene
  * `repairGeneValues`) and non-finite weights zeroed. A tooling helper only - the engine never
  * repairs a genome, it rejects an invalid one (roadmap 4.5).
  */
-export function repairGenome(genome: Genome, specs: readonly GeneSpec[]): Genome {
+export function repairGenome(
+  genome: Genome,
+  specs: readonly GeneSpec[],
+  bodySpecs?: readonly GeneSpec[]
+): Genome {
   return genomeFromParts({
     id: genome.id,
     parentIds: genome.parentIds,
     vector: repairGeneValues(genomeToVector(genome), specs),
     architecture: genome.brain.architecture,
-    weights: genome.brain.weights.map((weight) => (Number.isFinite(weight) ? weight : 0))
+    weights: genome.brain.weights.map((weight) => (Number.isFinite(weight) ? weight : 0)),
+    body: bodySpecs ? repairGeneValues(genome.body.genes, bodySpecs) : genome.body.genes
   })
 }

@@ -37,7 +37,8 @@ describe('genomeDistance', () => {
       behavioral: 0,
       reproduction: 0,
       brain: 0,
-      learning: 0
+      learning: 0,
+      body: 0
     })
   })
 

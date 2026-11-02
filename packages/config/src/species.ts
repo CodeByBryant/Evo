@@ -16,7 +16,8 @@ export const DISTANCE_WEIGHT_KEYS = [
   'behavioral',
   'reproduction',
   'learning',
-  'brain'
+  'brain',
+  'body'
 ]
 
 function checkBoolean(section: PlainObject, key: string, path: string, errors: string[]): void {

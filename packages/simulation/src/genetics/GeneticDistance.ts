@@ -5,7 +5,7 @@ import { genomeToVector, sameArchitecture } from './GenomeFactory'
 
 /** Each field is in `[0, 1]`: `0` for identical, `1` for maximally different. */
 export interface GenomeDistance {
-  /** The unweighted mean of the seven group distances. */
+  /** The unweighted mean of the seven original group distances (`body` is reported separately). */
   total: number
   physical: number
   sensory: number
@@ -14,6 +14,8 @@ export interface GenomeDistance {
   reproduction: number
   brain: number
   learning: number
+  /** Body-plan genes (ADR 0012); `0` when no body table is given. */
+  body: number
 }
 
 type ScalarGroup = 'physical' | 'sensory' | 'metabolic' | 'behavioral' | 'reproduction' | 'learning'
@@ -37,7 +39,8 @@ export function genomeDistance(
   a: Genome,
   b: Genome,
   specs: readonly GeneSpec[],
-  initialWeightStd: number
+  initialWeightStd: number,
+  bodySpecs?: readonly GeneSpec[]
 ): GenomeDistance {
   if (!sameArchitecture(a.brain.architecture, b.brain.architecture)) {
     throw new RangeError('genomes must share one brain architecture to be compared')
@@ -78,8 +81,16 @@ export function genomeDistance(
   const behavioral = groupDistance('behavioral')
   const reproduction = groupDistance('reproduction')
   const learning = groupDistance('learning')
+  let body = 0
+  if (bodySpecs !== undefined && bodySpecs.length > 0) {
+    let sum = 0
+    bodySpecs.forEach((spec, index) => {
+      sum += geneDistance(spec, a.body.genes[index] as number, b.body.genes[index] as number)
+    })
+    body = sum / bodySpecs.length
+  }
   const total = (physical + sensory + metabolic + behavioral + reproduction + brain + learning) / 7
-  return { total, physical, sensory, metabolic, behavioral, reproduction, brain, learning }
+  return { total, physical, sensory, metabolic, behavioral, reproduction, brain, learning, body }
 }
 
 /**
@@ -99,7 +110,8 @@ export function weightedDistance(
     weights.behavioral +
     weights.reproduction +
     weights.learning +
-    weights.brain
+    weights.brain +
+    weights.body
   if (sum <= 0) return 0
   const weighted =
     distance.physical * weights.physical +
@@ -108,6 +120,7 @@ export function weightedDistance(
     distance.behavioral * weights.behavioral +
     distance.reproduction * weights.reproduction +
     distance.learning * weights.learning +
-    distance.brain * weights.brain
+    distance.brain * weights.brain +
+    distance.body * weights.body
   return weighted / sum
 }

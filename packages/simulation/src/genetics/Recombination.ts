@@ -99,11 +99,20 @@ export function crossoverWeights(
  * source it is given (the `genetics` stream) and draws in a fixed order: gene crossover, weight
  * crossover, gene mutation, weight mutation.
  */
+/** What the recombiner needs to evolve body genes (ADR 0012): their table, their own stream, and the on/off switch. */
+export interface BodyEvolution {
+  readonly specs: readonly GeneSpec[]
+  readonly random: RandomSource
+  /** `false`: body genes are inert; the child simply keeps its mother's body and nothing is drawn. */
+  readonly enabled: boolean
+}
+
 export class GenomeRecombiner implements RecombinationStrategy {
   constructor(
     private readonly specs: readonly GeneSpec[],
     private readonly genetics: GeneticsConfig,
-    private readonly allocateId: () => GenomeId
+    private readonly allocateId: () => GenomeId,
+    private readonly body?: BodyEvolution
   ) {}
 
   combine(mother: Genome, father: Genome, random: RandomSource): Genome {
@@ -135,13 +144,27 @@ export class GenomeRecombiner implements RecombinationStrategy {
       { rate: this.genetics.brain.weightMutationRate, std: this.genetics.brain.weightMutationStd },
       scales
     )
+    // Body genes use their own stream, so the genes above are drawn exactly as before whether or
+    // not anatomy is on (docs/decisions/0012).
+    let body: readonly number[] = mother.body.genes
+    if (this.body?.enabled) {
+      const crossedBody = crossoverVector(
+        mother.body.genes,
+        father.body.genes,
+        this.body.specs,
+        this.body.random,
+        this.genetics.blendAlpha
+      )
+      body = mutateVector(crossedBody, this.body.specs, this.body.random, scales)
+    }
     const parentIds = mother.id <= father.id ? [mother.id, father.id] : [father.id, mother.id]
     return genomeFromParts({
       id: this.allocateId(),
       parentIds,
       vector,
       architecture,
-      weights
+      weights,
+      body
     })
   }
 }

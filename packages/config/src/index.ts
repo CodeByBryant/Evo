@@ -8,3 +8,4 @@ export {
 } from './validation'
 export { DEFAULT_PRESET, PRESETS, presetByName } from './presets'
 export type { WorldPreset } from './presets'
+export { DEFAULT_ANATOMY } from './anatomy'

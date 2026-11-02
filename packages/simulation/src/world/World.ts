@@ -39,6 +39,7 @@ import { maxEnergyOf, maxHealthOf } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
+import { buildBodySpecs, founderBodyVector } from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
 import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
@@ -105,6 +106,8 @@ export class World {
   private readonly hazardStore: HazardStore
   private readonly migrationTracker: MigrationTracker
   private readonly geneSpecs: GeneSpec[]
+  private readonly bodySpecs: GeneSpec[]
+  private readonly founderBody: number[]
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
   private readonly peerBuffer: PeerBuffer = new Map()
@@ -147,6 +150,8 @@ export class World {
     this.ids = new IdGenerator()
     this.genomeIds = new IdGenerator()
     this.geneSpecs = buildGeneSpecs(this.config)
+    this.bodySpecs = buildBodySpecs(this.config.anatomy)
+    this.founderBody = founderBodyVector(this.config.anatomy)
     this.randomStreams = new RandomStreams(this.seed)
     this.organisms = new OrganismStore()
     this.resources = new ResourceStore()
@@ -167,7 +172,8 @@ export class World {
     this.speciesRegistry = new SpeciesRegistry(
       this.config.species,
       this.geneSpecs,
-      this.config.genetics.brain.initialWeightStd
+      this.config.genetics.brain.initialWeightStd,
+      this.bodySpecs
     )
 
     // The terrain is drawn once, from its own stream, and only when regions are on.
@@ -279,7 +285,11 @@ export class World {
       this.organisms,
       this.organismIndex,
       this.ids,
-      new GenomeRecombiner(this.geneSpecs, this.config.genetics, () => this.genomeIds.allocate()),
+      new GenomeRecombiner(this.geneSpecs, this.config.genetics, () => this.genomeIds.allocate(), {
+        specs: this.bodySpecs,
+        random: this.randomStreams.get('anatomy'),
+        enabled: this.config.anatomy.enabled
+      }),
       this.randomStreams.get('genetics'),
       this.lineageStore,
       this.randomStreams.get('reproduction'),
@@ -324,7 +334,8 @@ export class World {
         this.genomeIds.allocate(),
         this.geneSpecs,
         this.config.genetics.brain,
-        geneticsRandom
+        geneticsRandom,
+        this.founderBody
       )
       const organism: OrganismState = {
         id,
@@ -530,6 +541,7 @@ export class World {
       nextEntityId: this.ids.nextId,
       nextGenomeId: this.genomeIds.nextId,
       geneSpecs: this.geneSpecs,
+      bodySpecs: this.bodySpecs,
       lineage: this.lineageStore,
       species: this.speciesRegistry,
       hazards: this.hazardStore.values()
@@ -645,6 +657,9 @@ export class World {
         .writeUint32(architecture.outputSize)
         .writeUint32(weights.length)
       for (const weight of weights) hasher.writeFloat64(weight)
+      // Schema v6: the body genes follow the brain weights (docs/decisions/0012).
+      hasher.writeUint32(genome.body.genes.length)
+      for (const gene of genome.body.genes) hasher.writeFloat64(gene)
       writeBrainState(hasher, organism.brain)
       hasher.writeFloat64(organism.health)
     }

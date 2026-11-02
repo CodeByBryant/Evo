@@ -1,3 +1,4 @@
+import type { BodyGenome } from './anatomy'
 import type { EntityId } from './entity'
 
 /**
@@ -70,7 +71,8 @@ export interface LearningGenes {
 
 /** Immutable. One per organism; a child's genome is built from both parents' genomes. */
 export interface Genome {
-  readonly version: 1
+  /** 2 since anatomy (ADR 0012): the genome gained the `body` section. */
+  readonly version: 2
   readonly id: GenomeId
   /** Empty for founders; otherwise the two parents' genome ids, ascending. */
   readonly parentIds: readonly GenomeId[]
@@ -81,6 +83,8 @@ export interface Genome {
   readonly reproduction: ReproductionGenes
   readonly brain: BrainGenome
   readonly learning: LearningGenes
+  /** Body-plan genes (ADR 0012); the founder body unless `anatomy.enabled`. */
+  readonly body: BodyGenome
 }
 
 export type GeneGroup =

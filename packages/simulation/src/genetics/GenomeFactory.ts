@@ -3,6 +3,7 @@ import type { BrainArchitecture, BrainConfig, Genome, GenomeId } from '@evo/cont
 import type { RandomSource } from '../random/RandomSource'
 import { brainBlockLengths } from '../learning/BrainLayout'
 import { innatePriorWeights } from '../learning/InnatePrior'
+import { DEFAULT_BODY_GENES } from './BodyGenes'
 import type { GeneSpec } from './GeneSpecs'
 
 export { brainBlockLengths }
@@ -59,6 +60,8 @@ export interface GenomeParts {
   vector: readonly number[]
   architecture: BrainArchitecture
   weights: readonly number[]
+  /** One value per `BODY_GENE_DEFINITIONS` entry; the default founder body when omitted. */
+  body?: readonly number[]
 }
 
 /** Assembles an immutable genome from a gene vector and brain weights. */
@@ -76,11 +79,12 @@ export function genomeFromParts(parts: GenomeParts): Genome {
     ;(groups[group] as Record<string, number>)[name] = parts.vector[index] as number
   })
   const genome = {
-    version: 1,
+    version: 2,
     id: parts.id,
     parentIds: [...parts.parentIds],
     ...groups,
-    brain: { architecture: { ...parts.architecture }, weights: [...parts.weights] }
+    brain: { architecture: { ...parts.architecture }, weights: [...parts.weights] },
+    body: { genes: [...(parts.body ?? DEFAULT_BODY_GENES)] }
   } as unknown as Genome
   return freezeGenome(genome)
 }
@@ -97,6 +101,8 @@ function freezeGenome(genome: Genome): Genome {
   Object.freeze(genome.brain.architecture)
   Object.freeze(genome.brain.weights)
   Object.freeze(genome.brain)
+  Object.freeze(genome.body.genes)
+  Object.freeze(genome.body)
   return Object.freeze(genome)
 }
 
@@ -111,7 +117,8 @@ export function createFounderGenome(
   id: GenomeId,
   specs: readonly GeneSpec[],
   brain: BrainConfig,
-  random: RandomSource
+  random: RandomSource,
+  body?: readonly number[]
 ): Genome {
   const architecture = architectureOf(brain)
   const count = brainWeightCount(architecture)
@@ -129,6 +136,7 @@ export function createFounderGenome(
     parentIds: [],
     vector: specs.map((spec) => spec.baseline),
     architecture,
-    weights
+    weights,
+    ...(body !== undefined ? { body } : {})
   })
 }
