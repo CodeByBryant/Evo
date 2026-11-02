@@ -75,3 +75,4 @@ temp
 
 .dev
 .pnpm-store
+.vitest/
