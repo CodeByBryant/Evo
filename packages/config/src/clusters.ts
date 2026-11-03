@@ -11,6 +11,7 @@ const CLUSTER_KEYS = [
   'voidSpeedScale',
   'voidVisibility',
   'mateSignalCap',
+  'speciesThreshold',
   'clusterSpread',
   'speciesSpread'
 ]
@@ -96,6 +97,7 @@ export function checkClusters(environment: PlainObject, errors: string[]): void 
       'environment.clusters.mateSignalCap must be less than the void width (spacing minus twice the radius)'
     )
   }
+  unit('speciesThreshold', false)
   const clusterSpread = unit('clusterSpread', false)
   const speciesSpread = unit('speciesSpread', false)
   if (clusterSpread !== undefined && speciesSpread !== undefined && speciesSpread > clusterSpread) {
