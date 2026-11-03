@@ -523,22 +523,28 @@
       "expectedHash": "6ae673539499542132a15ab3bed1d4b5"
     },
     {
-      "name": "clusters-default-6k",
+      "name": "clusters-small-6k",
       "seed": 3,
       "config": {
         "environment": {
-          "layout": "clusters"
+          "layout": "clusters",
+          "clusters": {
+            "organismsPerSpecies": 4
+          }
         }
       },
       "steps": 6000,
       "expectedHash": "0be114589badafe6a6574a2dd12cb4b4"
     },
     {
-      "name": "clusters-reflex-4k",
+      "name": "clusters-small-reflex-4k",
       "seed": 8,
       "config": {
         "environment": {
-          "layout": "clusters"
+          "layout": "clusters",
+          "clusters": {
+            "organismsPerSpecies": 4
+          }
         },
         "learning": {
           "controller": "reflex"

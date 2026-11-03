@@ -18,10 +18,15 @@ import { TrailBuffer } from '../trails'
 /** How long (in ticks) a birth, death or damage marker stays visible. */
 const EFFECT_TICKS = 14
 const GRID_SPACING = 50
+/** The grid of the cluster layout is coarser: its world is about a hundred times wider than the field. */
+const CLUSTER_GRID_SPACING = 250
+/** The camera's lowest zoom in the field and in the (far larger) cluster layout. */
+const DEFAULT_MIN_ZOOM = 0.15
+const CLUSTER_MIN_ZOOM = 0.01
 /** From this zoom (screen pixels per world unit) each creature's parts are drawn over its body. */
 const PARTS_ZOOM = 3
 /** How far the cluster layout's grid runs past the clusters, in world units. */
-const GRID_PAD = 2000
+const CLUSTER_GRID_PAD = 8000
 /** Pixels per side of a cluster's biome picture. */
 const CLUSTER_TEXTURE = 192
 const BACKGROUND = 0x070b14
@@ -166,6 +171,7 @@ export class PixiRenderer implements Renderer {
     this.worldWidth = width
     this.worldHeight = height
     // The cluster layout has no walls; the camera works inside its bounds plus a margin.
+    this.camera.setMinZoom(clusters === null ? DEFAULT_MIN_ZOOM : CLUSTER_MIN_ZOOM)
     this.camera.setWorld(width, height, clusters?.bounds.minX ?? 0, clusters?.bounds.minY ?? 0)
     this.trails.clear()
     this.frame = null
@@ -371,12 +377,16 @@ export class PixiRenderer implements Renderer {
     if (clusters !== null) {
       // A grid that runs well past the clusters, so the world reads as unbounded.
       const { minX, minY, maxX, maxY } = clusters.bounds
-      const left = Math.floor((minX - GRID_PAD) / GRID_SPACING) * GRID_SPACING
-      const top = Math.floor((minY - GRID_PAD) / GRID_SPACING) * GRID_SPACING
-      const right = maxX + GRID_PAD
-      const bottom = maxY + GRID_PAD
-      for (let x = left; x <= right; x += GRID_SPACING) this.gridG.moveTo(x, top).lineTo(x, bottom)
-      for (let y = top; y <= bottom; y += GRID_SPACING) this.gridG.moveTo(left, y).lineTo(right, y)
+      const left =
+        Math.floor((minX - CLUSTER_GRID_PAD) / CLUSTER_GRID_SPACING) * CLUSTER_GRID_SPACING
+      const top =
+        Math.floor((minY - CLUSTER_GRID_PAD) / CLUSTER_GRID_SPACING) * CLUSTER_GRID_SPACING
+      const right = maxX + CLUSTER_GRID_PAD
+      const bottom = maxY + CLUSTER_GRID_PAD
+      for (let x = left; x <= right; x += CLUSTER_GRID_SPACING)
+        this.gridG.moveTo(x, top).lineTo(x, bottom)
+      for (let y = top; y <= bottom; y += CLUSTER_GRID_SPACING)
+        this.gridG.moveTo(left, y).lineTo(right, y)
       this.gridG.stroke({ width: 1, color: 0x7f93bf, alpha: 0.06, pixelLine: true })
       return
     }

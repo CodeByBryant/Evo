@@ -98,8 +98,12 @@ export interface WorldCreateOptions extends WorldOptions {
   validateEveryTicks?: number
 }
 
+/** Founders start within this fraction of their cluster's radius (ADR 0015). */
+const FOUNDER_CORE = 0.8
+
 /** How far beyond the clusters a camera may look, in world units. */
-const CLUSTER_VIEW_MARGIN = 150
+/** The camera may look this fraction of a cluster's radius beyond the clusters. */
+const CLUSTER_VIEW_MARGIN = 0.6
 
 /**
  * A headless, seeded, fixed-timestep world. `step()`/`run()` are the only ways state changes;
@@ -398,7 +402,12 @@ export class World {
       let x: number
       let y: number
       if (clusters !== null && plan !== undefined) {
-        const point = clusters.pointIn(plan.cluster, worldRandom.float(), worldRandom.float())
+        const point = clusters.pointIn(
+          plan.cluster,
+          worldRandom.float(),
+          worldRandom.float(),
+          FOUNDER_CORE
+        )
         x = point.x
         y = point.y
       } else {
@@ -499,8 +508,9 @@ export class World {
   /** The cluster layout for drawing, or `null` in the field layout. A copy; it never changes during a run. */
   clusterLayout(): ClusterLayoutSnapshot | null {
     if (this.clusters === null) return null
-    if (this.clusterTerrain !== null) return this.clusterTerrain.toSnapshot(CLUSTER_VIEW_MARGIN)
-    const b = this.clusters.bounds(CLUSTER_VIEW_MARGIN)
+    const margin = CLUSTER_VIEW_MARGIN * this.clusters.radius
+    if (this.clusterTerrain !== null) return this.clusterTerrain.toSnapshot(margin)
+    const b = this.clusters.bounds(margin)
     return {
       radius: this.clusters.radius,
       bounds: b,

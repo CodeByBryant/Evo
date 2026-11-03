@@ -363,8 +363,8 @@ describe('environment.layout and environment.clusters (ADR 0014)', () => {
     expect(environment.layout).toBe('field')
     expect(environment.clusters).toMatchObject({
       count: 6,
-      radius: 250,
-      spacing: 750,
+      radius: 500,
+      spacing: 4500,
       speciesPerCluster: 3
     })
   })
@@ -382,7 +382,7 @@ describe('environment.layout and environment.clusters (ADR 0014)', () => {
     expect(errorsFor({ environment: { clusters: { spacing: 400 } } })).toContain(
       'environment.clusters.spacing must be at least twice environment.clusters.radius'
     )
-    expect(errorsFor({ environment: { clusters: { mateSignalCap: 250 } } }).join()).toContain(
+    expect(errorsFor({ environment: { clusters: { mateSignalCap: 3500 } } }).join()).toContain(
       'mateSignalCap must be less than the void width'
     )
     expect(errorsFor({ environment: { clusters: { count: 0 } } }).join()).toContain(

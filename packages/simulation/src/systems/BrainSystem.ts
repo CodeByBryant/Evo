@@ -19,7 +19,7 @@ import { buildObservation } from '../learning/ObservationBuilder'
 import type { HazardSighting, Sighting } from '../learning/ObservationBuilder'
 import { VISITED_GRID } from '../learning/BrainState'
 import { TWO_PI } from '../math/scalar'
-import { cos, sin } from '../math/trig'
+import { atan2, cos, sin } from '../math/trig'
 import { computeReward } from '../learning/RewardModel'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { factorsOf } from '../organisms/bodyFactors'
@@ -30,6 +30,10 @@ const THRUST = 0
 const TURN = 1
 const STRAFE = 2
 const INTERACT = 3
+
+/** Where the way-home sense starts and is full: fractions of a cluster's radius from its centre. */
+const HOME_INNER = 0.7
+const HOME_OUTER = 1.1
 
 /**
  * The learned controller (docs/learning/brain.md). Owns every organism's `BrainState` and has two
@@ -108,6 +112,35 @@ export class BrainSystem {
     }
   }
 
+  /**
+   * The way home in the cluster layout (ADR 0015): `present` grows from 0 at 0.7 of the cluster's
+   * radius to 1 at 1.1, and the bearing points to the centre of the nearest cluster in the body
+   * frame. `null` in the field, where there is no home to come back to.
+   */
+  private homeOf(
+    organism: OrganismState
+  ): { present: number; bearingCos: number; bearingSin: number } | null {
+    const layout = this.ecology === null ? null : this.ecology.clusters
+    if (layout === null) return null
+    const centre = layout.centres[layout.nearestCluster(organism.x, organism.y)] as {
+      x: number
+      y: number
+    }
+    const dx = centre.x - organism.x
+    const dy = centre.y - organism.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    const present = Math.min(
+      1,
+      Math.max(
+        0,
+        (distance - HOME_INNER * layout.radius) / ((HOME_OUTER - HOME_INNER) * layout.radius)
+      )
+    )
+    if (present === 0) return { present: 0, bearingCos: 0, bearingSin: 0 }
+    const bearing = atan2(dy, dx) - organism.heading
+    return { present, bearingCos: cos(bearing), bearingSin: sin(bearing) }
+  }
+
   /** The coarse novelty-grid cell an organism stands in. */
   private cellOf(organism: OrganismState): number {
     const place = this.local(organism)
@@ -165,6 +198,7 @@ export class BrainSystem {
       // Mark the starting cell as seen: the novelty reward is for *entering* new ground.
       if (brain.decisions === 0) brain.visited[this.cellOf(organism)] = 1
 
+      const home = this.homeOf(organism)
       const observation = buildObservation({
         energy: capacity > 0 ? organism.energy / capacity : 0,
         age: organism.age / genome.physical.maxAge,
@@ -175,6 +209,7 @@ export class BrainSystem {
         heading: organism.heading,
         maxSpeed,
         sensorRadius: sensorRadiusOf(genome, this.config),
+        ...(home === null ? {} : { home }),
         worldWidth: place.width,
         worldHeight: place.height,
         food: sight(food),
