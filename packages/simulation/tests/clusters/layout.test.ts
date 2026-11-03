@@ -113,6 +113,6 @@ describe('effectiveConfig', () => {
     expect(scaled.resources.spawnRate).toBeCloseTo(config.resources.spawnRate * scale, 9)
     expect(scaled.maxPopulation).toBe(Math.round(config.maxPopulation * scale))
     expect(scaled.reproduction.mateSenseRadius).toBe(200)
-    expect(scaled.reproduction.mateSenseRadius).toBeLessThan(4500 - 2 * 500)
+    expect(scaled.reproduction.mateSenseRadius).toBeLessThan(2500 - 2 * 500)
   })
 })

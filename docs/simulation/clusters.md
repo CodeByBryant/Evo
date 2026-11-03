@@ -11,10 +11,10 @@ How the cluster layout works. The decisions and the reasons are in [ADR 0014](..
 | Setting (`environment.clusters.*`)         | Default    | Meaning                                                                                                      |
 | ------------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------ |
 | `count`                                    | 6          | clusters, on a regular polygon around the origin                                                             |
-| `radius`                                   | 250        | radius of each circular cluster                                                                              |
-| `spacing`                                  | 750        | distance between neighbouring centres; the void between two circles is `spacing - 2 * radius` (250) wide     |
-| `patches`                                  | 6          | biome patches inside each cluster                                                                            |
-| `speciesPerCluster`, `organismsPerSpecies` | 3, 6       | founders: 6 x 3 x 6 = 108 organisms, 18 species                                                              |
+| `radius`                                   | 500        | radius of each circular cluster                                                                              |
+| `spacing`                                  | 2500       | distance between neighbouring centres; the void between two circles is `spacing - 2 * radius` (1,500) wide   |
+| `patches`                                  | 12         | biome patches inside each cluster                                                                            |
+| `speciesPerCluster`, `organismsPerSpecies` | 3, 24      | founders: 6 x 3 x 24 = 432 organisms, 18 species                                                             |
 | `voidSpeedScale`, `voidVisibility`         | 0.7, 0.5   | top speed and sensor range in the void                                                                       |
 | `mateSignalCap`                            | 200        | the mating signal reaches at most this far (it must be less than the void width)                             |
 | `clusterSpread`, `speciesSpread`           | 0.08, 0.03 | founder gene offsets between clusters and between species of one cluster, as a fraction of each gene's range |
@@ -24,7 +24,7 @@ The world has no walls. `environment.width` and `height` are only the reference 
 ## What changes in the engine
 
 - **Ground:** the cluster whose circle contains a position, then the nearest of that cluster's biome patches; outside every circle it is void. The map is built once from the `terrain` stream and is not hashed.
-- **Food and hazards** are placed inside clusters only (pick a cluster, then a point in its disc). `resources.initialCount`, `maxCount`, `spawnRate` and `maxPopulation` are multiplied by the clusters' combined area over the reference area (about 4.71), so density per unit of habitable ground is the tuned field density. `World.config` reports the values the world actually runs with.
+- **Food and hazards** are placed inside clusters only (pick a cluster, then a point in its disc). `resources.initialCount`, `maxCount`, `spawnRate` and `maxPopulation` are multiplied by the clusters' combined area over the reference area (about 18.85 for six clusters of radius 500), so density per unit of habitable ground is the tuned field density. `World.config` reports the values the world actually runs with.
 - **Movement and newborns** are not clamped to a box. In the void top speed is `voidSpeedScale` and sensor range `voidVisibility`.
 - **Observations:** position inputs are relative to the nearest cluster centre over 2.4 radii, and the novelty grid covers the same box, so a brain sees the same range in every cluster.
 - **Founders:** 18 species, each a small offset from its cluster's archetype, with a hue family per cluster. The registry keeps each founder group together (see the ADR).

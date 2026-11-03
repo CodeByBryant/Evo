@@ -28,7 +28,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     clusters: {
       count: 6,
       radius: 500,
-      spacing: 4500,
+      spacing: 2500,
       speciesPerCluster: 3,
       organismsPerSpecies: 24,
       patches: 12,
