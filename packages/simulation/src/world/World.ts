@@ -4,6 +4,8 @@ import type {
   AnatomyView,
   BrainSnapshot,
   Capabilities,
+  ClusterLayoutSnapshot,
+  ClusterReport,
   EntityId,
   Genome,
   HazardSnapshot,
@@ -31,6 +33,7 @@ import { SimulationClock } from '../clock/SimulationClock'
 import { EcologyModel } from '../ecology/EcologyModel'
 import { HazardStore } from '../ecology/HazardStore'
 import { MigrationTracker } from '../ecology/MigrationTracker'
+import { ClusterTerrain } from '../ecology/ClusterTerrain'
 import { RegionMap } from '../ecology/RegionMap'
 import { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState } from '../entities/OrganismStore'
@@ -52,6 +55,8 @@ import { developAnatomy } from '../development/develop'
 import { buildBodySpecs, founderBodyVector } from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
+import { planClusterFounders } from '../genetics/ClusterFounders'
+import type { FounderPlan } from '../genetics/ClusterFounders'
 import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
 import { GenomeRecombiner } from '../genetics/Recombination'
 import { HistoryStore } from '../history/HistoryStore'
@@ -79,6 +84,8 @@ import { MetabolismSystem } from '../systems/MetabolismSystem'
 import { MovementSystem } from '../systems/MovementSystem'
 import { PerceptionSystem } from '../systems/PerceptionSystem'
 import { ReproductionSystem } from '../systems/ReproductionSystem'
+import { ClusterLayout } from '../ecology/ClusterLayout'
+import { effectiveConfig } from './clusterScaling'
 import { checkInvariants } from './invariants'
 
 export interface WorldCreateOptions extends WorldOptions {
@@ -89,6 +96,9 @@ export interface WorldCreateOptions extends WorldOptions {
    */
   validateEveryTicks?: number
 }
+
+/** How far beyond the clusters a camera may look, in world units. */
+const CLUSTER_VIEW_MARGIN = 150
 
 /**
  * A headless, seeded, fixed-timestep world. `step()`/`run()` are the only ways state changes;
@@ -112,6 +122,8 @@ export class World {
   private readonly lineageStore: LineageStore
   private readonly speciesRegistry: SpeciesRegistry
   private readonly regionMap: RegionMap | null
+  private readonly clusters: ClusterLayout | null
+  private readonly clusterTerrain: ClusterTerrain | null
   private readonly ecology: EcologyModel
   private readonly hazardStore: HazardStore
   private readonly migrationTracker: MigrationTracker
@@ -154,7 +166,7 @@ export class World {
     }
 
     this.seed = options.seed
-    this.config = resolveWorldConfig(options.config)
+    this.config = effectiveConfig(resolveWorldConfig(options.config))
     this.validateEveryTicks = options.validateEveryTicks
 
     this.clockImpl = new SimulationClock(this.config.timestep)
@@ -189,15 +201,35 @@ export class World {
 
     // The terrain is drawn once, from its own stream, and only when regions are on.
     const { regions } = this.config.ecology
-    this.regionMap = regions.enabled
-      ? RegionMap.generate(
-          regions,
-          this.config.environment.width,
-          this.config.environment.height,
-          this.randomStreams.get('terrain')
-        )
-      : null
-    this.ecology = new EcologyModel(this.config, this.regionMap)
+    const { environment } = this.config
+    if (environment.layout === 'clusters') {
+      // The cluster layout (docs/decisions/0014): biome patches inside circular clusters, void between.
+      this.clusters = new ClusterLayout(environment.clusters)
+      this.clusterTerrain = regions.enabled
+        ? new ClusterTerrain(
+            this.clusters,
+            environment.clusters.patches,
+            this.randomStreams.get('terrain')
+          )
+        : null
+      this.regionMap = null
+    } else {
+      this.clusters = null
+      this.clusterTerrain = null
+      this.regionMap = regions.enabled
+        ? RegionMap.generate(
+            regions,
+            environment.width,
+            environment.height,
+            this.randomStreams.get('terrain')
+          )
+        : null
+    }
+    this.ecology = new EcologyModel(
+      this.config,
+      this.clusterTerrain ?? this.regionMap,
+      this.clusters
+    )
     this.founderCapabilities = capabilitiesOf(
       developAnatomy(this.founderBody, this.config.anatomy),
       this.config.anatomy,
@@ -342,17 +374,42 @@ export class World {
     const worldRandom = this.randomStreams.get('world')
     const geneticsRandom = this.randomStreams.get('genetics')
     const { width, height } = this.config.environment
+    // In the cluster layout the founders are planned first (a body of genes per species), then
+    // placed species by species inside their home cluster (docs/decisions/0014).
+    const clusters = this.clusters
+    const plans: FounderPlan[] =
+      clusters === null
+        ? []
+        : planClusterFounders(
+            this.geneSpecs,
+            this.founderBody,
+            this.bodySpecs,
+            this.config.environment.clusters,
+            geneticsRandom
+          )
+    const perSpecies = this.config.environment.clusters.organismsPerSpecies
     for (let i = 0; i < this.config.organisms.initialCount; i++) {
       const id = this.ids.allocate()
-      const x = worldRandom.float() * width
-      const y = worldRandom.float() * height
+      const plan =
+        clusters === null ? undefined : (plans[Math.floor(i / perSpecies)] as FounderPlan)
+      let x: number
+      let y: number
+      if (clusters !== null && plan !== undefined) {
+        const point = clusters.pointIn(plan.cluster, worldRandom.float(), worldRandom.float())
+        x = point.x
+        y = point.y
+      } else {
+        x = worldRandom.float() * width
+        y = worldRandom.float() * height
+      }
       const heading = wrapAngle(worldRandom.float() * TWO_PI)
       const genome = createFounderGenome(
         this.genomeIds.allocate(),
         this.geneSpecs,
         this.config.genetics.brain,
         geneticsRandom,
-        this.founderBody
+        plan === undefined ? this.founderBody : plan.body,
+        plan?.vector
       )
       const organism: OrganismState = {
         id,
@@ -385,7 +442,8 @@ export class World {
         organismId: id,
         genome,
         parentOrganismId: null,
-        tick: 0
+        tick: 0,
+        ...(plan === undefined ? {} : { founderGroup: plan.group })
       })
       this.events.record({
         type: 'organism-born',
@@ -433,6 +491,69 @@ export class World {
    */
   terrain(): TerrainSnapshot | null {
     return this.regionMap === null ? null : this.regionMap.toSnapshot()
+  }
+
+  /** The cluster layout for drawing, or `null` in the field layout. A copy; it never changes during a run. */
+  clusterLayout(): ClusterLayoutSnapshot | null {
+    if (this.clusters === null) return null
+    if (this.clusterTerrain !== null) return this.clusterTerrain.toSnapshot(CLUSTER_VIEW_MARGIN)
+    const b = this.clusters.bounds(CLUSTER_VIEW_MARGIN)
+    return {
+      radius: this.clusters.radius,
+      bounds: b,
+      clusters: this.clusters.centres.map((centre) => ({ x: centre.x, y: centre.y, patches: [] }))
+    }
+  }
+
+  /**
+   * Where the living organisms are in the cluster layout: per cluster and per species, and the
+   * mean purity (docs/decisions/0014); `null` in the field layout. A read: it never changes state.
+   */
+  clusterReport(): ClusterReport | null {
+    const layout = this.clusters
+    if (layout === null) return null
+    const alive = layout.centres.map(() => 0)
+    const inVoid = layout.centres.map(() => 0)
+    const bySpecies = new Map<number, number[]>()
+    for (const organism of this.organisms.values()) {
+      const cluster = layout.nearestCluster(organism.x, organism.y)
+      alive[cluster] = (alive[cluster] as number) + 1
+      if (layout.clusterAt(organism.x, organism.y) < 0)
+        inVoid[cluster] = (inVoid[cluster] as number) + 1
+      const speciesId = this.speciesRegistry.speciesOf(organism.id)
+      if (speciesId === undefined || speciesId === null) continue
+      let counts = bySpecies.get(speciesId)
+      if (counts === undefined) {
+        counts = layout.centres.map(() => 0)
+        bySpecies.set(speciesId, counts)
+      }
+      counts[cluster] = (counts[cluster] as number) + 1
+    }
+    const species: ClusterReport['species'][number][] = []
+    let weighted = 0
+    let total = 0
+    for (const [speciesId, counts] of bySpecies) {
+      let best = 0
+      let sum = 0
+      for (let c = 0; c < counts.length; c++) {
+        sum += counts[c] as number
+        if ((counts[c] as number) > (counts[best] as number)) best = c
+      }
+      const purity = (counts[best] as number) / sum
+      species.push({ speciesId, alive: sum, dominantCluster: best, purity })
+      weighted += purity * sum
+      total += sum
+    }
+    species.sort((a, b) => a.speciesId - b.speciesId)
+    return {
+      clusters: layout.centres.map((_, index) => ({
+        index,
+        alive: alive[index] as number,
+        inVoid: inVoid[index] as number
+      })),
+      species,
+      meanPurity: total === 0 ? 1 : weighted / total
+    }
   }
 
   /** The current season, or `null` when seasons are off. */
@@ -604,6 +725,7 @@ export class World {
         heading: organism.heading,
         radius: bodyRadiusOf(organism.genome, this.config),
         outline: drawnOutlineOf(organism.genome, this.config),
+        hue: organism.genome.physical.hue,
         pattern: organism.genome.body.genes[visualGeneIndex('pattern')] as number,
         accentHue: organism.genome.body.genes[visualGeneIndex('accentHue')] as number,
         age: organism.age,

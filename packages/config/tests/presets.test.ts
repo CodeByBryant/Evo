@@ -31,6 +31,11 @@ describe('presets', () => {
     expect(
       resolveWorldConfig(presetByName('rapid-evolution')?.overrides).genetics.mutationRateScale
     ).toBe(3)
+    expect(resolveWorldConfig(presetByName('clusters')?.overrides).environment.layout).toBe(
+      'clusters'
+    )
+    expect(base.environment.layout).toBe('field')
+    expect(resolveWorldConfig(presetByName('creatures')?.overrides).anatomy.enabled).toBe(true)
     const classic = resolveWorldConfig(presetByName('classic')?.overrides)
     expect(classic.ecology.regions.enabled).toBe(false)
     expect(classic.ecology.seasons.enabled).toBe(false)

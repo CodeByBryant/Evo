@@ -121,7 +121,10 @@ describe('checkInvariants', () => {
   })
 
   it('catches organism and resource positions outside the environment bounds', () => {
-    const config = { ...DEFAULT_WORLD_CONFIG, environment: { width: 100, height: 100 } }
+    const config = {
+      ...DEFAULT_WORLD_CONFIG,
+      environment: { ...DEFAULT_WORLD_CONFIG.environment, width: 100, height: 100 }
+    }
     const result = checkInvariants(
       baseContext({
         config,
@@ -136,7 +139,10 @@ describe('checkInvariants', () => {
   })
 
   it('accepts positions exactly on the environment boundary', () => {
-    const config = { ...DEFAULT_WORLD_CONFIG, environment: { width: 100, height: 100 } }
+    const config = {
+      ...DEFAULT_WORLD_CONFIG,
+      environment: { ...DEFAULT_WORLD_CONFIG.environment, width: 100, height: 100 }
+    }
     const result = checkInvariants(
       baseContext({ config, organisms: [organism(1, { x: 0, y: 100 })] })
     )

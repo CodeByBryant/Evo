@@ -1,4 +1,10 @@
-import type { EntityId, RenderLayers, RenderSnapshot, TerrainSnapshot } from '@evo/contracts'
+import type {
+  ClusterLayoutSnapshot,
+  EntityId,
+  RenderLayers,
+  RenderSnapshot,
+  TerrainSnapshot
+} from '@evo/contracts'
 
 export interface RendererCallbacks {
   /** The user clicked an organism, or empty space (`null`). */
@@ -27,8 +33,17 @@ export interface RendererStats {
 export interface Renderer {
   /** Creates the canvas inside `container` and starts listening for pointer input. */
   mount(container: HTMLElement, callbacks: RendererCallbacks): Promise<void>
-  /** Sets the world size and, when regions are on, the region map (static for a world's life). */
-  setWorld(width: number, height: number, terrain: TerrainSnapshot | null): void
+  /**
+   * Sets the world size and, when regions are on, the region map (static for a world's life). In
+   * the cluster layout `clusters` describes the unbounded world and `width` and `height` are the
+   * size of its bounds.
+   */
+  setWorld(
+    width: number,
+    height: number,
+    terrain: TerrainSnapshot | null,
+    clusters?: ClusterLayoutSnapshot | null
+  ): void
   /** Draws a frame. Cheap to call every animation frame. */
   render(frame: RenderSnapshot): void
   setLayers(layers: RenderLayers): void

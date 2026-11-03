@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_SEED } from '@evo/contracts'
-import type { WorldConfig } from '@evo/contracts'
+import type { WorldConfig, WorldConfigOverrides } from '@evo/contracts'
 import {
   ConfigValidationError,
   DEFAULT_WORLD_CONFIG,
@@ -345,5 +345,57 @@ describe('resolveWorldConfig', () => {
 
   it('rejects overrides that are not an object', () => {
     expect(() => resolveWorldConfig(5 as never)).toThrow(/overrides must be an object/)
+  })
+})
+
+describe('environment.layout and environment.clusters (ADR 0014)', () => {
+  const errorsFor = (overrides: WorldConfigOverrides): readonly string[] => {
+    try {
+      resolveWorldConfig(overrides)
+      return []
+    } catch (error) {
+      return (error as ConfigValidationError).errors
+    }
+  }
+
+  it('defaults to the field layout with the owner-chosen cluster numbers', () => {
+    const { environment } = resolveWorldConfig()
+    expect(environment.layout).toBe('field')
+    expect(environment.clusters).toMatchObject({
+      count: 6,
+      radius: 250,
+      spacing: 750,
+      speciesPerCluster: 3
+    })
+  })
+
+  it('merges cluster overrides field by field', () => {
+    const { environment } = resolveWorldConfig({
+      environment: { layout: 'clusters', clusters: { count: 4 } }
+    })
+    expect(environment.layout).toBe('clusters')
+    expect(environment.clusters.count).toBe(4)
+    expect(environment.clusters.radius).toBe(250)
+  })
+
+  it('rejects overlapping clusters, a mate signal that crosses the void, and bad counts', () => {
+    expect(errorsFor({ environment: { clusters: { spacing: 400 } } })).toContain(
+      'environment.clusters.spacing must be at least twice environment.clusters.radius'
+    )
+    expect(errorsFor({ environment: { clusters: { mateSignalCap: 250 } } }).join()).toContain(
+      'mateSignalCap must be less than the void width'
+    )
+    expect(errorsFor({ environment: { clusters: { count: 0 } } }).join()).toContain(
+      'environment.clusters.count must be an integer from 1 to 12'
+    )
+    expect(errorsFor({ environment: { clusters: { speciesSpread: 0.5 } } }).join()).toContain(
+      'speciesSpread must not exceed'
+    )
+    expect(errorsFor({ environment: { layout: 'ring' as never } }).join()).toContain(
+      'environment.layout'
+    )
+    expect(errorsFor({ environment: { clusters: { voidSpeedScale: 0 } } }).join()).toContain(
+      'voidSpeedScale'
+    )
   })
 })

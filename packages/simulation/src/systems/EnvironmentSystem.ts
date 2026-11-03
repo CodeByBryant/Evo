@@ -2,6 +2,7 @@ import type { WorldConfig } from '@evo/contracts'
 import type { IdGenerator } from '../entities/IdGenerator'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EcologyModel } from '../ecology/EcologyModel'
+import type { ClusterLayout } from '../ecology/ClusterLayout'
 import type { HazardStore } from '../ecology/HazardStore'
 import type { EventLog } from '../events/EventLog'
 import type { RandomSource } from '../random/RandomSource'
@@ -50,6 +51,13 @@ export class EnvironmentSystem {
     return this.stormAccumulator
   }
 
+  /** A point inside a uniformly chosen cluster (3 draws: cluster, distance, angle). */
+  private clusterPoint(random: RandomSource): { x: number; y: number } {
+    const layout = (this.ecology as EcologyModel).clusters as ClusterLayout
+    const cluster = Math.min(layout.count - 1, Math.floor(random.float() * layout.count))
+    return layout.pointIn(cluster, random.float(), random.float())
+  }
+
   private spawnOne(tick: number): void {
     // With no region the whole world is used and the draws are exactly Phase 4's.
     const { region } = this.config.resources
@@ -63,7 +71,17 @@ export class EnvironmentSystem {
     let kind = 0
     let x: number
     let y: number
-    if (eco !== null && eco.kindsOn) {
+    if (eco !== null && eco.clusters !== null) {
+      // The cluster layout (docs/decisions/0014): food grows inside clusters only.
+      if (eco.kindsOn) kind = eco.chooseKind(this.random.float())
+      let point = this.clusterPoint(this.random)
+      for (let attempt = 1; eco.kindsOn && !eco.kindGrowsAt(kind, point.x, point.y); attempt++) {
+        if (attempt >= PLACEMENT_ATTEMPTS) return
+        point = this.clusterPoint(this.random)
+      }
+      x = point.x
+      y = point.y
+    } else if (eco !== null && eco.kindsOn) {
       kind = eco.chooseKind(this.random.float())
       x = area.x + this.random.float() * area.width
       y = area.y + this.random.float() * area.height
@@ -107,8 +125,11 @@ export class EnvironmentSystem {
     const { width, height } = this.config.environment
     for (let i = 0; i < settings.areaCount; i++) {
       for (let attempt = 0; attempt < HAZARD_PLACEMENT_ATTEMPTS; attempt++) {
-        const x = terrain.float() * width
-        const y = terrain.float() * height
+        const spot =
+          eco.clusters === null
+            ? { x: terrain.float() * width, y: terrain.float() * height }
+            : this.clusterPoint(terrain)
+        const { x, y } = spot
         if (eco.regionsOn && !(eco.hazardExposure(x, y) > 0)) continue
         const hazard = this.hazards.add({
           kind: 'damage-area',
@@ -152,8 +173,11 @@ export class EnvironmentSystem {
       this.stormAccumulator -= count
       const { width, height } = this.config.environment
       for (let i = 0; i < count; i++) {
-        const x = this.stormRandom.float() * width
-        const y = this.stormRandom.float() * height
+        const spot =
+          eco.clusters === null
+            ? { x: this.stormRandom.float() * width, y: this.stormRandom.float() * height }
+            : this.clusterPoint(this.stormRandom)
+        const { x, y } = spot
         const hazard = this.hazards.add({
           kind: 'storm',
           x,

@@ -46,6 +46,12 @@ export interface SpeciesAssignment {
   /** The organism whose species the new species descends from if one is founded (the mother). */
   parentOrganismId: EntityId | null
   tick: number
+  /**
+   * Founders of the cluster layout name the species they belong to (docs/decisions/0014): the
+   * first member of a group founds its species whatever its distance to other species, and the
+   * rest of the group join it. Ordinary births leave this out.
+   */
+  founderGroup?: number
 }
 
 interface Entry {
@@ -87,6 +93,8 @@ export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
   private readonly activeIds: SpeciesId[] = []
   /** Living organism -> its species. */
   private readonly speciesByOrganism = new Map<EntityId, SpeciesId>()
+  /** Founder group -> the species founded for it. */
+  private readonly speciesByGroup = new Map<number, SpeciesId>()
 
   constructor(
     private readonly config: SpeciesConfig,
@@ -114,9 +122,13 @@ export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
       throw new Error(`organism ${request.organismId} already has a species`)
     }
 
+    const grouped =
+      request.founderGroup === undefined ? undefined : this.speciesByGroup.get(request.founderGroup)
     let nearest: Entry | null = null
     let nearestDistance = Infinity
-    for (const id of this.activeIds) {
+    for (const id of grouped === undefined && request.founderGroup === undefined
+      ? this.activeIds
+      : []) {
       const entry = this.entries[id] as Entry
       const distance = weightedDistance(
         genomeDistance(
@@ -135,7 +147,9 @@ export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
     }
 
     let species: Entry
-    if (nearest !== null && nearestDistance <= this.config.threshold) {
+    if (grouped !== undefined) {
+      species = this.entries[grouped] as Entry
+    } else if (nearest !== null && nearestDistance <= this.config.threshold) {
       species = nearest
     } else {
       const parentSpecies =
@@ -154,6 +168,8 @@ export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
       }
       this.entries.push(species)
       this.activeIds.push(species.id)
+      if (request.founderGroup !== undefined)
+        this.speciesByGroup.set(request.founderGroup, species.id)
     }
     species.memberCount += 1
     species.lastSeenTick = request.tick

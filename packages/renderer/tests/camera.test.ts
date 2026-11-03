@@ -95,4 +95,27 @@ describe('Camera', () => {
     c.setWorld(300, 300)
     expect(c.state.x).toBe(300)
   })
+
+  it('works over a world that does not start at the origin (the cluster layout)', () => {
+    const c = camera()
+    c.setViewport(800, 600)
+    c.setWorld(2000, 1500, -1000, -750)
+    c.fit()
+    expect(c.state.x).toBe(0)
+    expect(c.state.y).toBe(0)
+    c.focus(-5000, 5000)
+    expect(c.state.x).toBe(-1000)
+    expect(c.state.y).toBe(750)
+    c.panBy(-100000, 100000)
+    expect(c.state.x).toBe(1000)
+    expect(c.state.y).toBe(-750)
+  })
+
+  it('keeps the field behaviour when no origin is given', () => {
+    const c = camera()
+    c.setWorld(300, 300)
+    c.focus(-5, 400)
+    expect(c.state.x).toBe(0)
+    expect(c.state.y).toBe(300)
+  })
 })

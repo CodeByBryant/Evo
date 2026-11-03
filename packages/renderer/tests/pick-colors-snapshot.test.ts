@@ -113,6 +113,7 @@ describe('buildRenderSnapshot', () => {
         radius: 5,
         outline: [1, 0, 0, 1, -1, 0, 0, -1],
         pattern: 0,
+        hue: 0.55,
         accentHue: 0.1,
         age: 3,
         maxAge: 600,
@@ -134,6 +135,7 @@ describe('buildRenderSnapshot', () => {
         radius: 6,
         outline: [1, 0, 0, 1, -1, 0, 0, -1],
         pattern: 0,
+        hue: 0.55,
         accentHue: 0.1,
         age: 10,
         maxAge: 600,
@@ -258,6 +260,7 @@ describe('buildRenderSnapshot body data', () => {
             heading: 0,
             radius: 5,
             outline: [5, 0, 0, 5, -5, 0, 0, -5],
+            hue: 0.3,
             pattern: 2,
             accentHue: 0.5,
             age: 0,
@@ -280,5 +283,49 @@ describe('buildRenderSnapshot body data', () => {
     expect(o?.outline).toEqual([5, 0, 0, 5, -5, 0, 0, -5])
     expect(o?.pattern).toBe(2)
     expect(o?.accentColor).toMatch(/^#[0-9a-f]{6}$/)
+  })
+})
+
+describe('colorByHue', () => {
+  it('colors a creature by its hue gene instead of its species', () => {
+    const world = {
+      seed: 1,
+      tick: 1,
+      time: 0.1,
+      population: { active: 1, extinctionTick: null },
+      organisms: [
+        {
+          id: 1,
+          genomeId: 1,
+          parentIds: [],
+          speciesId: 7,
+          position: { x: 0, y: 0 },
+          velocity: { x: 0, y: 0 },
+          heading: 0,
+          radius: 5,
+          outline: [5, 0, 0, 5, -5, 0, 0, -5],
+          hue: 0.25,
+          pattern: 0,
+          accentHue: 0.75,
+          age: 0,
+          maxAge: 100,
+          energy: 1,
+          maxEnergy: 1,
+          health: 1,
+          maxHealth: 1,
+          lifeStage: 'mature' as const,
+          reproductionCooldownRemaining: 0
+        }
+      ],
+      resources: [],
+      hazards: [],
+      metrics: {} as never
+    }
+    const context = { worldWidth: 1, worldHeight: 1, season: null, selectedId: null }
+    const bySpecies = buildRenderSnapshot(world, context).organisms[0]
+    const byHue = buildRenderSnapshot(world, { ...context, colorByHue: true }).organisms[0]
+    expect(bySpecies?.hue).toBe(speciesHue(7))
+    expect(byHue?.hue).toBeCloseTo(90, 9)
+    expect(byHue?.speciesColor).not.toBe(bySpecies?.speciesColor)
   })
 })

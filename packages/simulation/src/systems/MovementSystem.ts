@@ -29,7 +29,7 @@ export class MovementSystem {
     private readonly ecology: EcologyModel | null = null
   ) {
     this.emitVerbose = config.history.eventDetail === 'verbose'
-    this.terrainSlows = ecology !== null && (ecology.regionsOn || ecology.seasonsOn)
+    this.terrainSlows = ecology !== null && ecology.movementModified
   }
 
   update(tick: number): void {
@@ -37,6 +37,7 @@ export class MovementSystem {
     const { juvenileSpeedScale } = this.config.organisms
     const width = this.config.environment.width
     const height = this.config.environment.height
+    const unbounded = this.ecology !== null && this.ecology.clusters !== null
 
     for (const organism of this.organisms.values()) {
       const genes = organism.genome.physical
@@ -64,8 +65,9 @@ export class MovementSystem {
       }
       const fromX = organism.x
       const fromY = organism.y
-      const toX = clamp(organism.x + vx * dt, 0, width)
-      const toY = clamp(organism.y + vy * dt, 0, height)
+      // The field has walls; the cluster layout is unbounded (docs/decisions/0014).
+      const toX = unbounded ? organism.x + vx * dt : clamp(organism.x + vx * dt, 0, width)
+      const toY = unbounded ? organism.y + vy * dt : clamp(organism.y + vy * dt, 0, height)
 
       organism.heading = heading
       organism.vx = vx

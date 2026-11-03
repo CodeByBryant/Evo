@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import {
+  ClusterPanel,
   ControlPanel,
   ExtinctionBanner,
   Inspector,
@@ -69,6 +70,7 @@ export function App({ host }: { host: SimulationHost }): React.JSX.Element {
         >
           <ControlPanel view={view} controls={host} />
           <StatsPanel view={view} />
+          <ClusterPanel view={view} />
           <SpeciesPanel view={view} />
           <LayerPanel view={view} controls={host} />
           <p className="app-help">

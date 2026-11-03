@@ -6,7 +6,8 @@ import type {
   SeasonConfig,
   WorldConfig
 } from '@evo/contracts'
-import type { RegionMap } from './RegionMap'
+import type { ClusterLayout } from './ClusterLayout'
+import type { Terrain } from './Terrain'
 import { SeasonModel } from './SeasonModel'
 
 /** What a resource of one kind is worth and how it behaves, with the baseline already applied. */
@@ -37,6 +38,8 @@ export class EcologyModel {
   readonly migrationOn: boolean
   /** `true` when perception must apply per-hit detectability and visibility. */
   readonly perceptionModified: boolean
+  /** `true` when top speed depends on where the organism is (regions, seasons, or the void). */
+  readonly movementModified: boolean
 
   private readonly seasons: SeasonModel | null
   private readonly seasonTable: readonly SeasonConfig[]
@@ -44,10 +47,17 @@ export class EcologyModel {
   private readonly kinds: readonly KindProperties[]
   private readonly tolerance: number
   private readonly temperatureCost: number
+  private readonly voidSpeed: number
+  private readonly voidVisibility: number
 
+  /**
+   * `map` is the field's region map or the cluster layout's terrain; `clusters` is the cluster
+   * geometry, present only in the cluster layout, where the void between clusters slows and blinds.
+   */
   constructor(
     config: WorldConfig,
-    private readonly map: RegionMap | null
+    private readonly map: Terrain | null,
+    readonly clusters: ClusterLayout | null = null
   ) {
     const ecology = config.ecology
     this.regionsOn = ecology.regions.enabled && map !== null
@@ -56,7 +66,10 @@ export class EcologyModel {
     this.kindsOn = ecology.resourceKinds.enabled
     this.healthOn = ecology.health.enabled
     this.migrationOn = ecology.migration.enabled && this.regionsOn
-    this.perceptionModified = this.regionsOn || this.seasonsOn || this.kindsOn
+    this.perceptionModified = this.regionsOn || this.seasonsOn || this.kindsOn || clusters !== null
+    this.movementModified = this.regionsOn || this.seasonsOn || clusters !== null
+    this.voidSpeed = config.environment.clusters.voidSpeedScale
+    this.voidVisibility = config.environment.clusters.voidVisibility
 
     this.seasons = this.seasonsOn ? new SeasonModel(ecology.seasons, config.timestep) : null
     this.seasonTable = SEASONS.map((season) => ecology.seasons.seasons[season])
@@ -101,7 +114,8 @@ export class EcologyModel {
   kindGrowsAt(kindIndex: number, x: number, y: number): boolean {
     const kind = this.kinds[kindIndex] as KindProperties
     if (!this.regionsOn || kind.regions.length === 0) return true
-    return kind.regions.includes((this.map as RegionMap).typeAt(x, y))
+    const type = (this.map as Terrain).typeAt(x, y)
+    return type !== null && kind.regions.includes(type)
   }
 
   /** Picks a kind by spawn weight from a uniform value in `[0, 1)`. */
@@ -138,31 +152,38 @@ export class EcologyModel {
 
   private region(x: number, y: number): RegionTypeConfig | null {
     if (!this.regionsOn) return null
-    const type = (this.map as RegionMap).typeAt(x, y)
-    return this.regionTable[REGION_TYPES.indexOf(type)] as RegionTypeConfig
+    const type = (this.map as Terrain).typeAt(x, y)
+    return type === null ? null : (this.regionTable[REGION_TYPES.indexOf(type)] as RegionTypeConfig)
   }
 
   /** The region instance at a position, or `-1` when regions are off. */
   regionIndexAt(x: number, y: number): number {
-    return this.regionsOn ? (this.map as RegionMap).indexAt(x, y) : -1
+    return this.regionsOn ? (this.map as Terrain).indexAt(x, y) : -1
   }
 
   regionTypeOfIndex(index: number): RegionType | null {
-    return this.regionsOn && index >= 0 ? (this.map as RegionMap).typeOf(index) : null
+    return this.regionsOn && index >= 0 ? (this.map as Terrain).typeOf(index) : null
   }
 
   regionTypeAt(x: number, y: number): RegionType | null {
-    return this.regionsOn ? (this.map as RegionMap).typeAt(x, y) : null
+    return this.regionsOn ? (this.map as Terrain).typeAt(x, y) : null
+  }
+
+  /** Whether a position is in the void between clusters (never, in the field layout). */
+  inVoid(x: number, y: number): boolean {
+    return this.clusters !== null && this.clusters.clusterAt(x, y) < 0
   }
 
   /** Multiplier on top speed. */
   movementScale(x: number, y: number, tick: number): number {
-    return (this.region(x, y)?.movementScale ?? 1) * (this.season(tick)?.movementScale ?? 1)
+    const scale = (this.region(x, y)?.movementScale ?? 1) * (this.season(tick)?.movementScale ?? 1)
+    return this.inVoid(x, y) ? scale * this.voidSpeed : scale
   }
 
   /** Multiplier on the sensor radius. */
   visibilityScale(x: number, y: number, tick: number): number {
-    return (this.region(x, y)?.visibility ?? 1) * (this.season(tick)?.visibility ?? 1)
+    const scale = (this.region(x, y)?.visibility ?? 1) * (this.season(tick)?.visibility ?? 1)
+    return this.inVoid(x, y) ? scale * this.voidVisibility : scale
   }
 
   /** Region plus season temperature, clamped to `[-1, 1]`; `0` with both off. */

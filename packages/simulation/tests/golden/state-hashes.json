@@ -521,6 +521,31 @@
       },
       "steps": 4000,
       "expectedHash": "969ce04871823a94545c1719e89797b5"
+    },
+    {
+      "name": "clusters-default-6k",
+      "seed": 3,
+      "config": {
+        "environment": {
+          "layout": "clusters"
+        }
+      },
+      "steps": 6000,
+      "expectedHash": "006c16a283cac4de67f6d302a8cc7bfe"
+    },
+    {
+      "name": "clusters-reflex-4k",
+      "seed": 8,
+      "config": {
+        "environment": {
+          "layout": "clusters"
+        },
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 4000,
+      "expectedHash": "7d8056b3118c8963b739afe48ad26d0e"
     }
   ]
 }

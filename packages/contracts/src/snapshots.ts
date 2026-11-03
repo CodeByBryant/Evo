@@ -24,6 +24,8 @@ export interface OrganismSnapshot {
    * +x, counter-clockwise (ADR 0013). Its area-equivalent radius is `radius`.
    */
   readonly outline: readonly number[]
+  /** The `hue` gene in turns, `[0, 1)`: the colour family of a cluster-layout creature. */
+  readonly hue: number
   /** Painted pattern, 0-3. */
   readonly pattern: number
   /** Accent hue in turns, `[0, 1)`. */

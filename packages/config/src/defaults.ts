@@ -21,7 +21,24 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   timestep: 0.1,
   maxPopulation: 1000,
   extinctionPolicy: 'stop',
-  environment: { width: 500, height: 500 },
+  environment: {
+    width: 500,
+    height: 500,
+    layout: 'field',
+    clusters: {
+      count: 6,
+      radius: 250,
+      spacing: 750,
+      speciesPerCluster: 3,
+      organismsPerSpecies: 6,
+      patches: 6,
+      voidSpeedScale: 0.7,
+      voidVisibility: 0.5,
+      mateSignalCap: 200,
+      clusterSpread: 0.08,
+      speciesSpread: 0.03
+    }
+  },
   organisms: {
     initialCount: 20,
     initialEnergy: 50,

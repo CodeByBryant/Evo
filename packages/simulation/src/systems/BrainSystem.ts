@@ -80,16 +80,40 @@ export class BrainSystem {
     }
   }
 
+  /**
+   * Where an organism is for the brain: its position over the world's size in the field, and in
+   * the cluster layout its position inside the nearest cluster over 2.4 radii (so a brain sees the
+   * same range of inputs in every cluster, and a little of the void around its own; ADR 0014).
+   */
+  private local(organism: OrganismState): { x: number; y: number; width: number; height: number } {
+    const layout = this.ecology === null ? null : this.ecology.clusters
+    if (layout === null) {
+      const { width, height } = this.config.environment
+      return { x: organism.x, y: organism.y, width, height }
+    }
+    const centre = layout.centres[layout.nearestCluster(organism.x, organism.y)] as {
+      x: number
+      y: number
+    }
+    const span = 2.4 * layout.radius
+    return {
+      x: organism.x - centre.x + span / 2,
+      y: organism.y - centre.y + span / 2,
+      width: span,
+      height: span
+    }
+  }
+
   /** The coarse novelty-grid cell an organism stands in. */
   private cellOf(organism: OrganismState): number {
-    const { width, height } = this.config.environment
+    const place = this.local(organism)
     const column = Math.min(
       VISITED_GRID - 1,
-      Math.max(0, Math.floor((organism.x / width) * VISITED_GRID))
+      Math.max(0, Math.floor((place.x / place.width) * VISITED_GRID))
     )
     const row = Math.min(
       VISITED_GRID - 1,
-      Math.max(0, Math.floor((organism.y / height) * VISITED_GRID))
+      Math.max(0, Math.floor((place.y / place.height) * VISITED_GRID))
     )
     return row * VISITED_GRID + column
   }
@@ -97,7 +121,6 @@ export class BrainSystem {
   decide(tick = 0): void {
     this.intentBuffer.clear()
     const dt = this.config.timestep
-    const { width, height } = this.config.environment
     const { foodHorizon, enabled } = this.config.learning
 
     for (const organism of this.organisms.values()) {
@@ -107,6 +130,7 @@ export class BrainSystem {
       if (brain === null) throw new Error(`organism ${organism.id} has no brain state`)
 
       const genome = organism.genome
+      const place = this.local(organism)
       const { capacity, maxSpeed } = this.scales(organism)
       const food = this.perceptionBuffer.get(organism.id)
       const peer = this.peerBuffer.get(organism.id)
@@ -140,15 +164,15 @@ export class BrainSystem {
       const observation = buildObservation({
         energy: capacity > 0 ? organism.energy / capacity : 0,
         age: organism.age / genome.physical.maxAge,
-        x: organism.x,
-        y: organism.y,
+        x: place.x,
+        y: place.y,
         vx: organism.vx,
         vy: organism.vy,
         heading: organism.heading,
         maxSpeed,
         sensorRadius: genome.sensory.sensorRadius,
-        worldWidth: width,
-        worldHeight: height,
+        worldWidth: place.width,
+        worldHeight: place.height,
         food: sight(food),
         peer: sight(peer),
         mate: sight(mate),

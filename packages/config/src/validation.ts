@@ -15,6 +15,7 @@ import { checkLearning, checkRegion } from './learning'
 import { checkEcology } from './ecology'
 import { checkSpecies } from './species'
 import { checkAnatomy } from './anatomy'
+import { checkClusters } from './clusters'
 
 const ROOT_KEYS = [
   'timestep',
@@ -31,7 +32,7 @@ const ROOT_KEYS = [
   'ecology',
   'anatomy'
 ]
-const ENVIRONMENT_KEYS = ['width', 'height']
+const ENVIRONMENT_KEYS = ['width', 'height', 'layout', 'clusters']
 const ORGANISM_KEYS = [
   'initialCount',
   'initialEnergy',
@@ -105,6 +106,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   if (environment) {
     width = checkNumber(environment, 'width', 'environment.width', { positive: true }, errors)
     height = checkNumber(environment, 'height', 'environment.height', { positive: true }, errors)
+    checkClusters(environment, errors)
   }
 
   const organisms = checkSection(value, 'organisms', ORGANISM_KEYS, errors)
@@ -418,6 +420,17 @@ function mergeAnatomy(base: object, override: unknown): unknown {
   }
 }
 
+/** Merges the environment: `clusters` merges field by field. */
+function mergeEnvironment(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  return {
+    ...base,
+    ...override,
+    clusters: mergeSection(defaults['clusters'] as object, override['clusters'])
+  }
+}
+
 /** Merges a table of named sections, keeping unknown names so validation can report them. */
 function mergeNamed(base: Record<string, object>, override: Record<string, unknown>): unknown {
   const result: Record<string, unknown> = { ...base }
@@ -447,7 +460,7 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
   const merged = {
     ...base,
     ...given,
-    environment: mergeSection(base.environment, given['environment']),
+    environment: mergeEnvironment(base.environment, given['environment']),
     organisms: mergeSection(base.organisms, given['organisms']),
     resources: mergeSection(base.resources, given['resources']),
     reproduction: mergeSection(base.reproduction, given['reproduction']),

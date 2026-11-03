@@ -44,6 +44,13 @@ export const PRESETS: readonly WorldPreset[] = [
     overrides: { genetics: { mutationRateScale: 3, mutationStrengthScale: 1.5 } }
   },
   {
+    name: 'clusters',
+    label: 'Clusters',
+    description:
+      'The prototype world: six circular clusters with several biomes each, empty void between them, three species per cluster.',
+    overrides: { environment: { layout: 'clusters' } }
+  },
+  {
     name: 'creatures',
     label: 'Evolving bodies',
     description:

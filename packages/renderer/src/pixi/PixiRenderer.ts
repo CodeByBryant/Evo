@@ -1,6 +1,12 @@
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import { DEFAULT_RENDER_LAYERS, REGION_TYPES } from '@evo/contracts'
-import type { RenderLayers, RenderOrganism, RenderSnapshot, TerrainSnapshot } from '@evo/contracts'
+import type {
+  ClusterLayoutSnapshot,
+  RenderLayers,
+  RenderOrganism,
+  RenderSnapshot,
+  TerrainSnapshot
+} from '@evo/contracts'
 import { Camera } from '../camera'
 import { REGION_COLORS, hexToNumber, resourceColor } from '../colors'
 import { GestureTracker } from '../gestures'
@@ -12,6 +18,10 @@ import { TrailBuffer } from '../trails'
 /** How long (in ticks) a birth, death or damage marker stays visible. */
 const EFFECT_TICKS = 14
 const GRID_SPACING = 50
+/** How far the cluster layout's grid runs past the clusters, in world units. */
+const GRID_PAD = 2000
+/** Pixels per side of a cluster's biome picture. */
+const CLUSTER_TEXTURE = 192
 const BACKGROUND = 0x070b14
 const FIELD = 0x0e1524
 
@@ -57,6 +67,9 @@ export class PixiRenderer implements Renderer {
   private gridG = new Graphics()
   private fieldG = new Graphics()
   private terrainSprite = new Sprite()
+  /** One biome picture per cluster (the cluster layout), under the same layer switch as the field's terrain. */
+  private clusterTerrain = new Container()
+  private clusters: ClusterLayoutSnapshot | null = null
   private hazardG = new Graphics()
   private trailG = new Graphics()
   private selectionG = new Graphics()
@@ -113,6 +126,7 @@ export class PixiRenderer implements Renderer {
     this.world.addChild(
       this.fieldG,
       this.terrainSprite,
+      this.clusterTerrain,
       this.gridG,
       this.hazardG,
       this.resources.container,
@@ -137,16 +151,24 @@ export class PixiRenderer implements Renderer {
     this.drawGrid()
   }
 
-  setWorld(width: number, height: number, terrain: TerrainSnapshot | null): void {
+  setWorld(
+    width: number,
+    height: number,
+    terrain: TerrainSnapshot | null,
+    clusters: ClusterLayoutSnapshot | null = null
+  ): void {
+    this.clusters = clusters
     this.worldWidth = width
     this.worldHeight = height
-    this.camera.setWorld(width, height)
+    // The cluster layout has no walls; the camera works inside its bounds plus a margin.
+    this.camera.setWorld(width, height, clusters?.bounds.minX ?? 0, clusters?.bounds.minY ?? 0)
     this.trails.clear()
     this.frame = null
     this.drawnFrame = null
     this.drawBackground()
     this.drawGrid()
     this.buildTerrain(terrain)
+    this.buildClusterTerrain(clusters)
     this.camera.fit()
     this.fitted = true
     this.follow = false
@@ -178,6 +200,7 @@ export class PixiRenderer implements Renderer {
     if (!layers.trails) this.trails.clear()
     this.gridG.visible = layers.grid
     this.terrainSprite.visible = layers.terrain && this.terrainSprite.texture !== Texture.EMPTY
+    this.clusterTerrain.visible = layers.terrain
     this.hazardG.visible = layers.hazards
     this.resources.container.visible = layers.resources
     this.shadows.container.visible = layers.shadows
@@ -316,11 +339,37 @@ export class PixiRenderer implements Renderer {
 
   private drawBackground(): void {
     this.fieldG.clear()
-    this.fieldG.rect(0, 0, this.worldWidth, this.worldHeight).fill(FIELD)
+    const clusters = this.clusters
+    if (clusters === null) {
+      this.fieldG.rect(0, 0, this.worldWidth, this.worldHeight).fill(FIELD)
+      return
+    }
+    // Each cluster is a disc with a faint ring; everything else is void.
+    for (const cluster of clusters.clusters) {
+      this.fieldG.circle(cluster.x, cluster.y, clusters.radius).fill(FIELD)
+    }
+    for (const cluster of clusters.clusters) {
+      this.fieldG
+        .circle(cluster.x, cluster.y, clusters.radius)
+        .stroke({ width: 2, color: 0x7f93bf, alpha: 0.4, pixelLine: true })
+    }
   }
 
   private drawGrid(): void {
     this.gridG.clear()
+    const clusters = this.clusters
+    if (clusters !== null) {
+      // A grid that runs well past the clusters, so the world reads as unbounded.
+      const { minX, minY, maxX, maxY } = clusters.bounds
+      const left = Math.floor((minX - GRID_PAD) / GRID_SPACING) * GRID_SPACING
+      const top = Math.floor((minY - GRID_PAD) / GRID_SPACING) * GRID_SPACING
+      const right = maxX + GRID_PAD
+      const bottom = maxY + GRID_PAD
+      for (let x = left; x <= right; x += GRID_SPACING) this.gridG.moveTo(x, top).lineTo(x, bottom)
+      for (let y = top; y <= bottom; y += GRID_SPACING) this.gridG.moveTo(left, y).lineTo(right, y)
+      this.gridG.stroke({ width: 1, color: 0x7f93bf, alpha: 0.06, pixelLine: true })
+      return
+    }
     for (let x = 0; x <= this.worldWidth; x += GRID_SPACING) {
       this.gridG.moveTo(x, 0).lineTo(x, this.worldHeight)
     }
@@ -331,6 +380,57 @@ export class PixiRenderer implements Renderer {
     this.gridG
       .rect(0, 0, this.worldWidth, this.worldHeight)
       .stroke({ width: 1, color: 0x7f93bf, alpha: 0.35, pixelLine: true })
+  }
+
+  /** Paints each cluster's biome patches (nearest patch wins) inside its circle; outside it stays clear. */
+  private buildClusterTerrain(clusters: ClusterLayoutSnapshot | null): void {
+    for (const child of this.clusterTerrain.removeChildren()) child.destroy({ texture: true })
+    if (clusters === null) return
+    const palette = REGION_TYPES.map((type) => hexToNumber(REGION_COLORS[type]))
+    const size = CLUSTER_TEXTURE
+    const diameter = clusters.radius * 2
+    for (const cluster of clusters.clusters) {
+      if (cluster.patches.length === 0) continue
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const context = canvas.getContext('2d')
+      if (context === null) continue
+      const image = context.createImageData(size, size)
+      for (let row = 0; row < size; row++) {
+        for (let column = 0; column < size; column++) {
+          const dx = ((column + 0.5) / size) * diameter - clusters.radius
+          const dy = ((row + 0.5) / size) * diameter - clusters.radius
+          if (dx * dx + dy * dy > clusters.radius * clusters.radius) continue
+          let best = 0
+          let bestDistance = Infinity
+          for (let i = 0; i < cluster.patches.length; i++) {
+            const patch = cluster.patches[i] as { x: number; y: number }
+            const px = patch.x - cluster.x - dx
+            const py = patch.y - cluster.y - dy
+            const distance = px * px + py * py
+            if (distance < bestDistance) {
+              bestDistance = distance
+              best = i
+            }
+          }
+          const type = (cluster.patches[best] as { type: (typeof REGION_TYPES)[number] }).type
+          const rgb = palette[REGION_TYPES.indexOf(type)] as number
+          const at = (row * size + column) * 4
+          image.data[at] = (rgb >> 16) & 255
+          image.data[at + 1] = (rgb >> 8) & 255
+          image.data[at + 2] = rgb & 255
+          image.data[at + 3] = 255
+        }
+      }
+      context.putImageData(image, 0, 0)
+      const sprite = new Sprite(Texture.from(canvas))
+      sprite.position.set(cluster.x - clusters.radius, cluster.y - clusters.radius)
+      sprite.width = diameter
+      sprite.height = diameter
+      this.clusterTerrain.addChild(sprite)
+    }
+    this.clusterTerrain.visible = this.layers.terrain
   }
 
   private buildTerrain(terrain: TerrainSnapshot | null): void {

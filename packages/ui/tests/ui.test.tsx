@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import {
+  ClusterPanel,
   ControlPanel,
   ExtinctionBanner,
   Inspector,
@@ -168,5 +169,33 @@ describe('components render', () => {
     expect(html).toContain('55 / 100')
     expect(html).toContain('role="meter"')
     expect(html).toContain('aria-label="Close inspector"')
+  })
+})
+
+describe('ClusterPanel', () => {
+  it('renders nothing in the field layout', () => {
+    expect(renderToStaticMarkup(<ClusterPanel view={view({ clusters: null })} />)).toBe('')
+  })
+
+  it('lists every cluster with its population, the void count and the mean purity', () => {
+    const html = renderToStaticMarkup(
+      <ClusterPanel
+        view={view({
+          clusters: {
+            clusters: [
+              { index: 0, alive: 12, inVoid: 3 },
+              { index: 1, alive: 0, inVoid: 0 }
+            ],
+            species: [],
+            meanPurity: 0.874
+          }
+        })}
+      />
+    )
+    expect(html).toContain('Cluster 1')
+    expect(html).toContain('3 in void')
+    expect(html).toContain('Cluster 2')
+    expect(html).toContain('empty')
+    expect(html).toContain('Purity 87%')
   })
 })

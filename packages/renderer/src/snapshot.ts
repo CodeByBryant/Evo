@@ -15,14 +15,20 @@ export interface RenderContext {
   readonly worldHeight: number
   readonly season: Season | null
   readonly selectedId: EntityId | null
+  /** Color creatures by their `hue` gene (the cluster layout's colour families) instead of by species. */
+  readonly colorByHue?: boolean
   readonly effects?: readonly RenderEffect[]
 }
 
 const ratio = (value: number, capacity: number): number =>
   capacity > 0 ? clamp(value / capacity, 0, 1) : 0
 
-function organismOf(organism: OrganismSnapshot, selectedId: EntityId | null): RenderOrganism {
-  const hue = speciesHue(organism.speciesId)
+function organismOf(
+  organism: OrganismSnapshot,
+  selectedId: EntityId | null,
+  colorByHue: boolean
+): RenderOrganism {
+  const hue = colorByHue ? organism.hue * 360 : speciesHue(organism.speciesId)
   return {
     id: organism.id,
     x: organism.position.x,
@@ -53,7 +59,9 @@ export function buildRenderSnapshot(world: WorldSnapshot, context: RenderContext
     worldWidth: context.worldWidth,
     worldHeight: context.worldHeight,
     season: context.season,
-    organisms: world.organisms.map((organism) => organismOf(organism, context.selectedId)),
+    organisms: world.organisms.map((organism) =>
+      organismOf(organism, context.selectedId, context.colorByHue === true)
+    ),
     resources: world.resources.map((resource) => ({
       id: resource.id,
       x: resource.position.x,

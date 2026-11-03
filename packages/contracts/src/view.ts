@@ -1,6 +1,6 @@
 import type { EntityId } from './entity'
 import type { LifeStage } from './organism'
-import type { MigrationSummary, RegionType, Season } from './ecology'
+import type { ClusterReport, MigrationSummary, RegionType, Season } from './ecology'
 import type { MetricsSnapshot } from './snapshots'
 import type { SpeciesId } from './species'
 import type { RenderLayerName, RenderLayers } from './render'
@@ -118,6 +118,8 @@ export interface ViewState {
   readonly activeSpecies: number
   /** Species that have gone extinct so far (their rows are not sent). */
   readonly extinctSpecies: number
+  /** Where the living organisms are in the cluster layout; `null` in the field layout. */
+  readonly clusters: ClusterReport | null
   readonly layers: RenderLayers
   readonly following: boolean
   readonly selected: InspectorView | null
