@@ -90,6 +90,7 @@ export function inspector(overrides: Partial<InspectorView> = {}): InspectorView
       { group: 'physical', name: 'maturityAge', value: 90 },
       { group: 'metabolic', name: 'basalCost', value: 0.5 }
     ],
+    anatomy: null,
     brain: {
       inputs: [
         { label: 'energy', value: 0.55 },

@@ -1,4 +1,5 @@
 import type { EntityId } from './entity'
+import type { PartSnapshot } from './snapshots'
 import type { LifeStage } from './organism'
 import type { HazardKind, Season } from './ecology'
 import type { SpeciesId } from './species'
@@ -18,6 +19,8 @@ export interface RenderOrganism {
   readonly radius: number
   /** The body outline as `x0, y0, x1, y1, ...` in world units relative to the centre (front along +x). */
   readonly outline: readonly number[]
+  /** The developed parts, drawn only at high zoom (ADR 0015). */
+  readonly parts: readonly PartSnapshot[]
   /** Painted pattern, 0-3. */
   readonly pattern: number
   /** The accent color of the pattern as `#rrggbb`. */

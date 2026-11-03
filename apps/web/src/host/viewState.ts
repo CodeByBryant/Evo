@@ -3,6 +3,7 @@ import type {
   ClusterReport,
   EntityId,
   GeneRow,
+  InspectorAnatomy,
   InspectorBrain,
   InspectorView,
   LabelledValue,
@@ -56,6 +57,46 @@ export function lineageCounts(
 }
 
 /** The inspector's data for one living organism, or `null` if it is not in the snapshot. */
+/** The anatomy tab's data: outline, parts and what the body does relative to the founder. */
+export function buildAnatomy(world: World, id: EntityId): InspectorAnatomy | null {
+  const view = world.anatomyOf(id)
+  if (view === undefined) return null
+  const { anatomy, capabilities, factors } = view
+  const outline: number[] = []
+  for (const point of anatomy.outline.points) outline.push(point.x, point.y)
+  return {
+    outline,
+    parts: anatomy.parts.map((part) => ({
+      slot: part.slot,
+      type: part.type,
+      size: part.size,
+      x: part.x,
+      y: part.y,
+      orientation: part.orientation,
+      functional: part.functional
+    })),
+    undeveloped: anatomy.undeveloped,
+    sizeUsed: anatomy.sizeUsed,
+    budget: world.config.anatomy.structuralBudget,
+    capabilities: [
+      { label: 'speed', value: factors.speed },
+      { label: 'strafe', value: factors.strafe },
+      { label: 'turning', value: factors.turn },
+      { label: 'sense range', value: factors.senseRange },
+      { label: 'reach', value: factors.reach },
+      { label: 'digestion', value: factors.digestion },
+      { label: 'energy capacity', value: factors.energyCapacity },
+      { label: 'toxin damage', value: factors.toxinDamage },
+      { label: 'damage taken', value: factors.damageTaken },
+      { label: 'temperature tolerance', value: factors.temperatureTolerance },
+      { label: 'regeneration', value: factors.regeneration },
+      { label: 'mass', value: capabilities.mass },
+      { label: 'upkeep (energy/s)', value: capabilities.upkeep },
+      { label: 'extra upkeep (energy/s)', value: factors.upkeepDelta }
+    ]
+  }
+}
+
 export function buildInspector(
   world: World,
   snapshot: WorldSnapshot,
@@ -110,6 +151,7 @@ export function buildInspector(
       cooldown: organism.reproductionCooldownRemaining
     },
     genome: genes,
+    anatomy: buildAnatomy(world, id),
     brain: inspectorBrain,
     lineage: {
       parentIds: organism.parentIds,

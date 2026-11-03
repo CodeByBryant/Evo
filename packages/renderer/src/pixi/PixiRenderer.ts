@@ -8,7 +8,7 @@ import type {
   TerrainSnapshot
 } from '@evo/contracts'
 import { Camera } from '../camera'
-import { REGION_COLORS, hexToNumber, resourceColor } from '../colors'
+import { PART_COLORS, REGION_COLORS, hexToNumber, resourceColor } from '../colors'
 import { GestureTracker } from '../gestures'
 import type { GestureAction } from '../gestures'
 import { pickOrganism } from '../pick'
@@ -18,6 +18,8 @@ import { TrailBuffer } from '../trails'
 /** How long (in ticks) a birth, death or damage marker stays visible. */
 const EFFECT_TICKS = 14
 const GRID_SPACING = 50
+/** From this zoom (screen pixels per world unit) each creature's parts are drawn over its body. */
+const PARTS_ZOOM = 3
 /** How far the cluster layout's grid runs past the clusters, in world units. */
 const GRID_PAD = 2000
 /** Pixels per side of a cluster's biome picture. */
@@ -35,6 +37,8 @@ interface BodyDrawing {
   /** What the picture depends on besides the outline; a change rebuilds it. */
   key: string
   seen: number
+  /** The part glyphs, built the first time the camera is close enough to need them. */
+  parts: Graphics | null
 }
 
 /**
@@ -58,6 +62,7 @@ export class PixiRenderer implements Renderer {
   private drawnFrame: RenderSnapshot | null = null
   private follow = false
   private sceneDirty = true
+  private partsVisible = false
   private cameraDirty = true
   private fitted = false
   private worldWidth = 500
@@ -178,6 +183,11 @@ export class PixiRenderer implements Renderer {
 
   render(frame: RenderSnapshot): void {
     this.frame = frame
+    const near = this.camera.state.zoom >= PARTS_ZOOM
+    if (near !== this.partsVisible) {
+      this.partsVisible = near
+      this.sceneDirty = true
+    }
     if (frame === this.drawnFrame && !this.cameraDirty && !this.sceneDirty) return
     const started = performance.now()
     if (frame !== this.drawnFrame || this.sceneDirty) {
@@ -493,21 +503,93 @@ export class PixiRenderer implements Renderer {
   }
 
   /** The graphics of a creature, built the first time it is seen and again only if its colors change. */
-  private bodyOf(o: RenderOrganism): Graphics {
+  private bodyOf(o: RenderOrganism): BodyDrawing {
     const key = `${o.speciesColor}|${o.accentColor}|${o.pattern}`
     let drawing = this.bodyDrawings.get(o.id)
     if (drawing === undefined) {
       const graphics = new Graphics()
       this.bodies.container.addChild(graphics)
-      drawing = { graphics, key: '', seen: 0 }
+      drawing = { graphics, key: '', seen: 0, parts: null }
       this.bodyDrawings.set(o.id, drawing)
     }
     drawing.seen = this.sceneStamp
     if (drawing.key !== key) {
       drawing.key = key
       this.paintBody(drawing.graphics, o)
+      if (drawing.parts !== null) {
+        drawing.parts.destroy()
+        drawing.parts = null
+      }
     }
-    return drawing.graphics
+    return drawing
+  }
+
+  /** One small glyph per developed part, in the body's own frame (so it turns with the creature). */
+  private paintParts(o: RenderOrganism): Graphics {
+    const g = new Graphics()
+    for (const part of o.parts) {
+      const color = this.numberOf(PART_COLORS[part.type])
+      const alpha = part.functional ? 1 : 0.35
+      const r = part.radius
+      const dx = Math.cos(part.orientation)
+      const dy = Math.sin(part.orientation)
+      switch (part.type) {
+        case 'flagellum':
+          g.moveTo(part.x, part.y)
+            .lineTo(part.x - dx * r * 3, part.y - dy * r * 3)
+            .stroke({ width: Math.max(0.3, r * 0.5), color, alpha })
+          g.circle(part.x, part.y, r * 0.7).fill({ color, alpha })
+          break
+        case 'cilia':
+          for (const tilt of [-0.5, 0, 0.5]) {
+            const cx = Math.cos(part.orientation + tilt)
+            const cy = Math.sin(part.orientation + tilt)
+            g.moveTo(part.x, part.y)
+              .lineTo(part.x + cx * r * 1.8, part.y + cy * r * 1.8)
+              .stroke({ width: Math.max(0.25, r * 0.25), color, alpha })
+          }
+          break
+        case 'eye':
+          g.circle(part.x, part.y, r).fill({ color, alpha })
+          g.circle(part.x + dx * r * 0.3, part.y + dy * r * 0.3, r * 0.5).fill({
+            color: 0x0b1020,
+            alpha
+          })
+          break
+        case 'sniffer':
+          g.poly([
+            part.x + dx * r,
+            part.y + dy * r,
+            part.x - dy * r,
+            part.y + dx * r,
+            part.x + dy * r,
+            part.y - dx * r
+          ]).fill({ color, alpha })
+          break
+        case 'mouth':
+          g.circle(part.x, part.y, r).fill({ color, alpha })
+          g.circle(part.x, part.y, r * 0.5).fill({ color: 0x0b1020, alpha })
+          break
+        case 'intestine':
+          g.circle(part.x, part.y, r).stroke({ width: Math.max(0.3, r * 0.4), color, alpha })
+          break
+        case 'stomach':
+          g.circle(part.x, part.y, r).fill({ color, alpha: alpha * 0.8 })
+          g.circle(part.x, part.y, r * 0.4).fill({ color: 0x0b1020, alpha: alpha * 0.5 })
+          break
+        case 'armor':
+          g.rect(part.x - r, part.y - r, r * 2, r * 2).fill({ color, alpha })
+          break
+        case 'membrane':
+          g.circle(part.x, part.y, r * 1.2).stroke({ width: Math.max(0.2, r * 0.2), color, alpha })
+          break
+        case 'mender':
+          g.rect(part.x - r, part.y - r * 0.3, r * 2, r * 0.6).fill({ color, alpha })
+          g.rect(part.x - r * 0.3, part.y - r, r * 0.6, r * 2).fill({ color, alpha })
+          break
+      }
+    }
+    return g
   }
 
   /**
@@ -598,7 +680,13 @@ export class PixiRenderer implements Renderer {
       shadow.scale.set(scale * 1.05)
       shadow.tint = 0x000000
       shadow.alpha = 0.35
-      const body = this.bodyOf(o)
+      const drawing = this.bodyOf(o)
+      if (this.partsVisible && drawing.parts === null && o.parts.length > 0) {
+        drawing.parts = this.paintParts(o)
+        drawing.graphics.addChild(drawing.parts)
+      }
+      if (drawing.parts !== null) drawing.parts.visible = this.partsVisible
+      const body = drawing.graphics
       body.position.set(o.x, o.y)
       body.rotation = o.rotation
       body.scale.set(o.lifeStage === 'juvenile' ? 0.75 : 1)

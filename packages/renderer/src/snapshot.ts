@@ -36,6 +36,7 @@ function organismOf(
     rotation: organism.heading,
     radius: organism.radius,
     outline: organism.outline,
+    parts: organism.parts,
     pattern: organism.pattern,
     accentColor: hslToHex(organism.accentHue * 360, 0.85, 0.7),
     hue,

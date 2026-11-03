@@ -146,3 +146,20 @@ describe('view-state builders', () => {
     expect(view?.brain).toBeNull()
   })
 })
+
+describe('buildAnatomy', () => {
+  it('describes the body of a living organism and nothing for one that is gone', async () => {
+    const { World } = await import('@evo/simulation')
+    const { buildAnatomy } = await import('../src/host/viewState')
+    const world = World.create({ seed: 5 })
+    const id = world.snapshot().organisms[0]!.id
+    const anatomy = buildAnatomy(world, id)
+    expect(anatomy?.parts).toHaveLength(7)
+    expect(anatomy?.outline.length).toBeGreaterThanOrEqual(10)
+    expect((anatomy?.outline.length ?? 1) % 2).toBe(0)
+    expect(anatomy?.budget).toBe(world.config.anatomy.structuralBudget)
+    const speed = anatomy?.capabilities.find((c) => c.label === 'speed')
+    expect(speed?.value).toBe(1) // a founder is exactly the baseline
+    expect(buildAnatomy(world, 987654321)).toBeNull()
+  })
+})

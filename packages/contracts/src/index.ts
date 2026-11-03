@@ -106,6 +106,7 @@ export type {
 } from './events'
 export type {
   OrganismSnapshot,
+  PartSnapshot,
   ResourceSnapshot,
   PopulationSnapshot,
   MetricsSnapshot,
@@ -132,6 +133,8 @@ export type {
   GeneRow,
   LabelledValue,
   InspectorBrain,
+  InspectorAnatomy,
+  InspectorPart,
   InspectorView,
   ViewState,
   SimulationControls

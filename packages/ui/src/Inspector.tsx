@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import type { InspectorView, LabelledValue, SimulationControls } from '@evo/contracts'
+import { PART_TINT, arrowEnd, partRadius, smoothPath } from './anatomyView'
 import { barWidth, formatCount, formatNumber, humanize, percent } from './format'
 
-const TABS = ['Overview', 'Genome', 'Brain', 'Lineage', 'Environment'] as const
+const TABS = ['Overview', 'Genome', 'Anatomy', 'Brain', 'Lineage', 'Environment'] as const
 type Tab = (typeof TABS)[number]
 
 function Meter({
@@ -100,6 +101,80 @@ function Overview({ inspector }: { inspector: InspectorView }): React.JSX.Elemen
           <dd>{percent(o.age, o.maxAge)} of lifespan</dd>
         </div>
       </dl>
+    </div>
+  )
+}
+
+/** The body: a schematic with its parts, what they do relative to the founder, and what they cost. */
+export function AnatomyTab({ inspector }: { inspector: InspectorView }): React.JSX.Element {
+  const body = inspector.anatomy
+  if (body === null) return <p className="evo-hint">No body for this organism.</p>
+  return (
+    <div>
+      <figure className="evo-anatomy">
+        <svg viewBox="-1.3 -1.3 2.6 2.6" role="img" aria-label="Body schematic, front to the right">
+          <path d={smoothPath(body.outline)} className="evo-anatomy-body" />
+          {body.parts.map((part) => {
+            const end = arrowEnd(part, 0.3)
+            const tint = PART_TINT[part.type] ?? '#ffffff'
+            return (
+              <g key={part.slot} opacity={part.functional ? 1 : 0.4}>
+                <line
+                  x1={part.x}
+                  y1={part.y}
+                  x2={end.x}
+                  y2={end.y}
+                  stroke={tint}
+                  strokeWidth={0.03}
+                />
+                <circle
+                  cx={part.x}
+                  cy={part.y}
+                  r={partRadius(part.size)}
+                  fill={tint}
+                  stroke={part.functional ? 'none' : '#ff6b6b'}
+                  strokeWidth={0.03}
+                  strokeDasharray={part.functional ? undefined : '0.05 0.05'}
+                />
+              </g>
+            )
+          })}
+        </svg>
+        <figcaption>
+          {body.parts.length} parts, size {formatNumber(body.sizeUsed, 2)} of{' '}
+          {formatNumber(body.budget, 1)}
+          {body.undeveloped.length > 0 && ` (${body.undeveloped.length} did not develop)`}
+        </figcaption>
+      </figure>
+      <h3>Parts</h3>
+      <table className="evo-table">
+        <thead>
+          <tr>
+            <th scope="col">Slot</th>
+            <th scope="col">Part</th>
+            <th scope="col">Size</th>
+            <th scope="col">Works</th>
+          </tr>
+        </thead>
+        <tbody>
+          {body.parts.map((part) => (
+            <tr key={part.slot}>
+              <th scope="row">{part.slot}</th>
+              <td>
+                <span
+                  className="evo-swatch"
+                  style={{ background: PART_TINT[part.type] ?? '#fff' }}
+                />{' '}
+                {part.type}
+              </td>
+              <td className="evo-num">{formatNumber(part.size, 2)}</td>
+              <td>{part.functional ? 'yes' : 'dormant'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <h3>What it can do (1 is the founder)</h3>
+      <Values rows={body.capabilities} />
     </div>
   )
 }
@@ -276,6 +351,7 @@ export function Inspector({
       >
         {tab === 'Overview' && <Overview inspector={inspector} />}
         {tab === 'Genome' && <Genome inspector={inspector} />}
+        {tab === 'Anatomy' && <AnatomyTab inspector={inspector} />}
         {tab === 'Brain' && <Brain inspector={inspector} />}
         {tab === 'Lineage' && <Lineage inspector={inspector} />}
         {tab === 'Environment' && <Environment inspector={inspector} />}

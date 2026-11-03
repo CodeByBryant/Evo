@@ -1,3 +1,4 @@
+import type { PartType } from './anatomy'
 import type { EntityId } from './entity'
 import type { GenomeId } from './genome'
 import type { Vec2 } from './math'
@@ -6,6 +7,19 @@ import type { DeathCause } from './world'
 import type { LifeStage } from './organism'
 import type { HazardSnapshot, MigrationSummary } from './ecology'
 import type { SpeciesId } from './species'
+
+/** One developed part as drawn: world units relative to the creature's centre (front along +x). */
+export interface PartSnapshot {
+  readonly type: PartType
+  readonly x: number
+  readonly y: number
+  /** The glyph's radius, from the part's `size`. */
+  readonly radius: number
+  /** The direction of the part's force or axis, in radians from the front. */
+  readonly orientation: number
+  /** `false` when a requirement is missing: the part is dead weight. */
+  readonly functional: boolean
+}
 
 export interface OrganismSnapshot {
   readonly id: EntityId
@@ -26,6 +40,8 @@ export interface OrganismSnapshot {
   readonly outline: readonly number[]
   /** The `hue` gene in turns, `[0, 1)`: the colour family of a cluster-layout creature. */
   readonly hue: number
+  /** The developed parts, for drawing at high zoom (ADR 0015). Shared between snapshots of one organism. */
+  readonly parts: readonly PartSnapshot[]
   /** Painted pattern, 0-3. */
   readonly pattern: number
   /** Accent hue in turns, `[0, 1)`. */

@@ -9,6 +9,7 @@ const at = (id: number, x: number, y: number): RenderOrganism => ({
   rotation: 0,
   radius: 5,
   outline: [1, 0, 0, 1, -1, 0, 0, -1],
+  parts: [],
   pattern: 0,
   accentColor: '#ffcc00',
   hue: 0,

@@ -1,7 +1,7 @@
 export { PopulationChart, Sparkline, polylinePoints } from './Charts'
 export { ControlPanel, LayerPanel, parseSeedInput } from './Controls'
 export { ClusterPanel, ExtinctionBanner, SpeciesPanel, StatsPanel, TopBar } from './Overview'
-export { Inspector } from './Inspector'
+export { AnatomyTab, Inspector } from './Inspector'
 export {
   barWidth,
   formatCount,

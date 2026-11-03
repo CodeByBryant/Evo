@@ -40,7 +40,13 @@ import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { ReproductionReadiness } from '../organisms/reproductionReadiness'
-import { bodyRadiusOf, drawnOutlineOf, maxEnergyOf, maxHealthOf } from '../organisms/traits'
+import {
+  bodyRadiusOf,
+  drawnOutlineOf,
+  drawnPartsOf,
+  maxEnergyOf,
+  maxHealthOf
+} from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
@@ -722,6 +728,7 @@ export class World {
         heading: organism.heading,
         radius: bodyRadiusOf(organism.genome, this.config),
         outline: drawnOutlineOf(organism.genome, this.config),
+        parts: drawnPartsOf(organism.genome, this.config),
         hue: organism.genome.physical.hue,
         pattern: organism.genome.body.genes[visualGeneIndex('pattern')] as number,
         accentHue: organism.genome.body.genes[visualGeneIndex('accentHue')] as number,
