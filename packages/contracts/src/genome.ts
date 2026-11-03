@@ -10,22 +10,14 @@ export type GenomeId = number
 /** Body and life-history genes. Ages are in seconds; `hue` is in turns, `[0, 1)`. */
 export interface PhysicalGenes {
   readonly radius: number
-  readonly maxSpeed: number
-  readonly maxTurnRate: number
   readonly maturityAge: number
   readonly senescenceAge: number
   readonly maxAge: number
   readonly hue: number
 }
 
-export interface SensoryGenes {
-  readonly sensorRadius: number
-}
-
 export interface MetabolicGenes {
   readonly basalCost: number
-  readonly movementCost: number
-  readonly turningCost: number
 }
 
 export interface BehavioralGenes {
@@ -71,13 +63,15 @@ export interface LearningGenes {
 
 /** Immutable. One per organism; a child's genome is built from both parents' genomes. */
 export interface Genome {
-  /** 2 since anatomy (ADR 0012): the genome gained the `body` section. */
-  readonly version: 2
+  /**
+   * 3 since the parts act (ADR 0015): speed, turning, sensing and movement cost left the scalar
+   * genes and come from the body. 2 added the `body` section (ADR 0012).
+   */
+  readonly version: 3
   readonly id: GenomeId
   /** Empty for founders; otherwise the two parents' genome ids, ascending. */
   readonly parentIds: readonly GenomeId[]
   readonly physical: PhysicalGenes
-  readonly sensory: SensoryGenes
   readonly metabolic: MetabolicGenes
   readonly behavioral: BehavioralGenes
   readonly reproduction: ReproductionGenes
@@ -87,8 +81,7 @@ export interface Genome {
   readonly body: BodyGenome
 }
 
-export type GeneGroup =
-  'physical' | 'sensory' | 'metabolic' | 'behavioral' | 'reproduction' | 'learning'
+export type GeneGroup = 'physical' | 'metabolic' | 'behavioral' | 'reproduction' | 'learning'
 
 /**
  * How a gene mutates and recombines. `int` and `bool` genes exist so the operators are complete
@@ -98,16 +91,11 @@ export type GeneKind = 'float' | 'int' | 'bool' | 'circular'
 
 export type GenePath =
   | 'physical.radius'
-  | 'physical.maxSpeed'
-  | 'physical.maxTurnRate'
   | 'physical.maturityAge'
   | 'physical.senescenceAge'
   | 'physical.maxAge'
   | 'physical.hue'
-  | 'sensory.sensorRadius'
   | 'metabolic.basalCost'
-  | 'metabolic.movementCost'
-  | 'metabolic.turningCost'
   | 'behavioral.wanderJitter'
   | 'reproduction.minEnergy'
   | 'reproduction.offspringInvestment'
@@ -141,16 +129,11 @@ export interface GeneDefinition {
  */
 export const GENE_DEFINITIONS: readonly GeneDefinition[] = [
   { path: 'physical.radius', kind: 'float' },
-  { path: 'physical.maxSpeed', kind: 'float' },
-  { path: 'physical.maxTurnRate', kind: 'float' },
   { path: 'physical.maturityAge', kind: 'float' },
   { path: 'physical.senescenceAge', kind: 'float', orderedAfter: 'physical.maturityAge' },
   { path: 'physical.maxAge', kind: 'float', orderedAfter: 'physical.senescenceAge' },
   { path: 'physical.hue', kind: 'circular' },
-  { path: 'sensory.sensorRadius', kind: 'float' },
   { path: 'metabolic.basalCost', kind: 'float' },
-  { path: 'metabolic.movementCost', kind: 'float' },
-  { path: 'metabolic.turningCost', kind: 'float' },
   { path: 'behavioral.wanderJitter', kind: 'float' },
   { path: 'reproduction.minEnergy', kind: 'float' },
   { path: 'reproduction.offspringInvestment', kind: 'float' },

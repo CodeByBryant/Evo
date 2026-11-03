@@ -78,7 +78,7 @@ export class BrainSystem {
     return {
       capacity: maxEnergyOf(organism.genome, this.config) * (juvenile ? juvenileSizeScale : 1),
       maxSpeed:
-        organism.genome.physical.maxSpeed *
+        this.config.organisms.maxSpeed *
         (juvenile ? juvenileSpeedScale : 1) *
         factorsOf(organism.genome, this.config).speed
     }
@@ -212,7 +212,7 @@ export class BrainSystem {
         thrust: Math.max(0, action[THRUST] as number),
         turn:
           (action[TURN] as number) *
-          genome.physical.maxTurnRate *
+          this.config.organisms.maxTurnRate *
           dt *
           factorsOf(genome, this.config).turn,
         strafe: action[STRAFE] as number,

@@ -554,7 +554,7 @@ describe('PerceptionSystem with the ecology', () => {
     const index = new SpatialHash<ResourceState>(60, (r) => r)
     index.rebuild(store.values())
     const buffer = new Map()
-    new PerceptionSystem(organisms, index, buffer, undefined, eco).update(tick)
+    new PerceptionSystem(cfg, organisms, index, buffer, undefined, eco).update(tick)
     return buffer.get(1) as { resourceId: number; kind: number } | null
   }
   const kinds = [
@@ -580,7 +580,7 @@ describe('PerceptionSystem with the ecology', () => {
 
   it('sees a low-detectability kind only within its share of the sensor radius', () => {
     const cfg = config({ resourceKinds: { enabled: true, kinds } })
-    const radius = organismFor(cfg, 1).genome.sensory.sensorRadius
+    const radius = cfg.organisms.sensorRadius
     const eco = modelFor(cfg)
     expect(
       perceive(cfg, eco, [resource(1, { x: 100 + radius * 0.4, kind: 1, y: 100 })])
@@ -593,7 +593,7 @@ describe('PerceptionSystem with the ecology', () => {
 
   it('skips a hidden near resource for a visible farther one', () => {
     const cfg = config({ resourceKinds: { enabled: true, kinds } })
-    const radius = organismFor(cfg, 1).genome.sensory.sensorRadius
+    const radius = cfg.organisms.sensorRadius
     const found = perceive(cfg, modelFor(cfg), [
       resource(1, { x: 100 + radius * 0.7, kind: 1, y: 100 }),
       resource(2, { x: 100 + radius * 0.9, kind: 0, y: 100 })
@@ -603,7 +603,7 @@ describe('PerceptionSystem with the ecology', () => {
 
   it('shrinks the range with the region and season visibility', () => {
     const cfg = config(oneRegion({ seasons: { enabled: true } }))
-    const radius = organismFor(cfg, 1).genome.sensory.sensorRadius
+    const radius = cfg.organisms.sensorRadius
     const cave = cfg.ecology.regions.types.cave.visibility
     const winter = cfg.ecology.seasons.seasons.winter.visibility
     // a target just inside the meadow-in-spring range but outside the cave's and winter's
@@ -662,15 +662,24 @@ describe('PerceptionSystem with the ecology', () => {
     const buffer: HazardBuffer = new Map()
     const index = new SpatialHash<ResourceState>(60, (r) => r)
     index.rebuild([])
-    new PerceptionSystem(organisms, index, new Map(), undefined, eco, { hazards, buffer }).update(0)
+    new PerceptionSystem(cfg, organisms, index, new Map(), undefined, eco, {
+      hazards,
+      buffer
+    }).update(0)
     // edge distances: first = 60 - 5 = 55, second = 70 - 40 = 30, third is out of range
     expect(buffer.get(1)).toMatchObject({ hazardId: 1, radius: 40 })
     o.y = 135 // now inside the second hazard: edge distance 0
-    new PerceptionSystem(organisms, index, new Map(), undefined, eco, { hazards, buffer }).update(0)
+    new PerceptionSystem(cfg, organisms, index, new Map(), undefined, eco, {
+      hazards,
+      buffer
+    }).update(0)
     expect(buffer.get(1)).toMatchObject({ hazardId: 1 })
     o.x = 900
     o.y = 400
-    new PerceptionSystem(organisms, index, new Map(), undefined, eco, { hazards, buffer }).update(0)
+    new PerceptionSystem(cfg, organisms, index, new Map(), undefined, eco, {
+      hazards,
+      buffer
+    }).update(0)
     expect(buffer.get(1)).toBeNull()
   })
 })

@@ -16,25 +16,25 @@ describe('buildGeneSpecs', () => {
   it('produces one spec per gene, in the canonical order', () => {
     const { specs } = fixture()
     expect(specs.map((spec) => spec.path)).toEqual(GENE_DEFINITIONS.map((d) => d.path))
-    expect(specs).toHaveLength(23)
+    expect(specs).toHaveLength(18)
   })
 
   it('takes baselines from the config fields the genes replace', () => {
-    const { specs, config } = fixture({ organisms: { maxSpeed: 33 } })
-    const speed = specs.find((spec) => spec.path === 'physical.maxSpeed')
-    expect(speed?.baseline).toBe(33)
-    expect(config.organisms.maxSpeed).toBe(33)
+    const { specs, config } = fixture({ organisms: { basalCost: 0.7 } })
+    const basal = specs.find((spec) => spec.path === 'metabolic.basalCost')
+    expect(basal?.baseline).toBe(0.7)
+    expect(config.organisms.basalCost).toBe(0.7)
   })
 
   it('widens a default range to include a changed baseline', () => {
-    const { specs } = fixture({ organisms: { maxSpeed: 100 } })
-    const speed = specs.find((spec) => spec.path === 'physical.maxSpeed')
-    expect(speed?.max).toBe(100)
+    const { specs } = fixture({ organisms: { radius: 100 } })
+    const radius = specs.find((spec) => spec.path === 'physical.radius')
+    expect(radius?.max).toBe(100)
   })
 
   it('honors per-gene range overrides', () => {
-    const { specs } = fixture({ genetics: { genes: { 'physical.maxSpeed': { max: 60 } } } })
-    expect(specs.find((spec) => spec.path === 'physical.maxSpeed')?.max).toBe(60)
+    const { specs } = fixture({ genetics: { genes: { 'physical.radius': { max: 60 } } } })
+    expect(specs.find((spec) => spec.path === 'physical.radius')?.max).toBe(60)
   })
 
   it('links ordered genes to the gene they must follow, by index', () => {
@@ -77,7 +77,7 @@ describe('founder genomes', () => {
     const f = fixture()
     const genome = founder(f, 0, 1)
     expect(genomeToVector(genome)).toEqual(f.specs.map((spec) => spec.baseline))
-    expect(genome.version).toBe(2)
+    expect(genome.version).toBe(3)
     expect(genome.parentIds).toEqual([])
   })
 
@@ -156,8 +156,7 @@ describe('genome vectors', () => {
       architecture: founder(f, 0, 1).brain.architecture,
       weights: founder(f, 0, 1).brain.weights
     })
-    expect(genome.physical.maxSpeed).toBe(f.config.organisms.maxSpeed)
-    expect(genome.sensory.sensorRadius).toBe(f.config.organisms.sensorRadius)
+    expect(genome.physical.radius).toBe(f.config.organisms.radius)
     expect(genome.metabolic.basalCost).toBe(f.config.organisms.basalCost)
     expect(genome.behavioral.wanderJitter).toBe(f.config.organisms.wanderJitter)
     expect(genome.reproduction.offspringInvestment).toBe(f.config.reproduction.offspringInvestment)

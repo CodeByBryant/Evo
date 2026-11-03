@@ -11,8 +11,8 @@ import { lifeStageFor } from '../organisms/lifeStage'
 const NO_INTENT: OrganismIntent = { turn: 0, thrust: 0, strafe: 0, interact: false }
 
 /**
- * Applies each organism's intent: turns it (bounded by `maxTurnRate`), sets its speed (bounded by
- * the organism's `maxSpeed` gene, scaled down for juveniles), adds any lateral `strafe` velocity, and moves it,
+ * Applies each organism's intent: turns it (bounded by `organisms.maxTurnRate` scaled by the body's torque), sets its speed (bounded by
+ * the baseline `organisms.maxSpeed` scaled by the body's thrust and, for juveniles, down), adds any lateral `strafe` velocity, and moves it,
  * clamped to the world rectangle. Velocity is always derived from heading, speed and strafe, never set
  * independently. Also records the turn
  * actually applied as `lastTurnMagnitude`, which `MetabolismSystem` reads afterward.
@@ -43,13 +43,15 @@ export class MovementSystem {
     for (const organism of this.organisms.values()) {
       const genes = organism.genome.physical
       const body = factorsOf(organism.genome, this.config)
-      const maxTurn = genes.maxTurnRate * dt * body.turn
+      const maxTurn = this.config.organisms.maxTurnRate * dt * body.turn
       const intent = this.intentBuffer.get(organism.id) ?? NO_INTENT
       const turn = clamp(intent.turn, -maxTurn, maxTurn)
       const heading = wrapAngle(organism.heading + turn)
       const stage = lifeStageFor(organism.age, genes)
       const baseMaxSpeed =
-        stage === 'juvenile' ? genes.maxSpeed * juvenileSpeedScale : genes.maxSpeed
+        stage === 'juvenile'
+          ? this.config.organisms.maxSpeed * juvenileSpeedScale
+          : this.config.organisms.maxSpeed
       const terrainSpeed = this.terrainSlows
         ? baseMaxSpeed * (this.ecology as EcologyModel).movementScale(organism.x, organism.y, tick)
         : baseMaxSpeed

@@ -7,7 +7,6 @@ export type {
   GenomeId,
   Genome,
   PhysicalGenes,
-  SensoryGenes,
   MetabolicGenes,
   BehavioralGenes,
   ReproductionGenes,

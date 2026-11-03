@@ -122,14 +122,7 @@ describe('view-state builders', () => {
     expect(view?.lineage.parentIds).toEqual(target.parentIds)
     expect(view?.lineage.ancestorGenomes).toBe(counts.ancestors)
     const groups = new Set(view?.genome.map((g) => g.group))
-    for (const g of [
-      'physical',
-      'sensory',
-      'metabolic',
-      'behavioral',
-      'reproduction',
-      'learning'
-    ]) {
+    for (const g of ['physical', 'metabolic', 'behavioral', 'reproduction', 'learning']) {
       expect(groups.has(g)).toBe(true)
     }
     expect(view?.genome.every((row) => Number.isFinite(row.value))).toBe(true)

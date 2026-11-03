@@ -29,12 +29,7 @@ export interface FounderPlan {
  */
 const IDENTITY_GENES: ReadonlySet<string> = new Set([
   'physical.radius',
-  'physical.maxSpeed',
-  'physical.maxTurnRate',
-  'sensory.sensorRadius',
   'metabolic.basalCost',
-  'metabolic.movementCost',
-  'metabolic.turningCost',
   'behavioral.wanderJitter',
   'learning.learningRate',
   'learning.discountFactor',

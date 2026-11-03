@@ -38,9 +38,9 @@ describe('validateGenome', () => {
   })
 
   it.each([
-    ['physical.maxSpeed', 1000, 'physical.maxSpeed (1000) is outside its range [10, 40]'],
+    ['physical.maxAge', 5000, 'physical.maxAge (5000) is outside its range [570, 1200]'],
     ['physical.radius', -1, 'physical.radius (-1) is outside its range [2.5, 10]'],
-    ['sensory.sensorRadius', 5, 'sensory.sensorRadius (5) is outside its range [30, 120]'],
+    ['metabolic.basalCost', 5, 'metabolic.basalCost (5) is outside its range [0.3, 0.8]'],
     ['physical.hue', 1, 'physical.hue (1) is outside its range [0, 1]']
   ])('rejects %s out of range', (path, value, message) => {
     const result = validateGenome(withGenes(valid, { [path]: value }), f.specs, context(valid))
@@ -51,11 +51,11 @@ describe('validateGenome', () => {
   it('rejects non-finite genes', () => {
     for (const bad of [Number.NaN, Infinity, -Infinity]) {
       const result = validateGenome(
-        withGenes(valid, { 'physical.maxSpeed': bad }),
+        withGenes(valid, { 'metabolic.basalCost': bad }),
         f.specs,
         context(valid)
       )
-      expect(result.errors).toContain('physical.maxSpeed is not a finite number')
+      expect(result.errors).toContain('metabolic.basalCost is not a finite number')
     }
   })
 
@@ -118,7 +118,7 @@ describe('validateGenome', () => {
   })
 
   it('reports every violation at once', () => {
-    const bad = withGenes(valid, { 'physical.maxSpeed': 1000, 'sensory.sensorRadius': 5 })
+    const bad = withGenes(valid, { 'physical.radius': 1000, 'metabolic.basalCost': 5 })
     expect(validateGenome(bad, f.specs, context(valid)).errors.length).toBeGreaterThanOrEqual(2)
   })
 
@@ -169,19 +169,19 @@ describe('repairGenome', () => {
   })
 
   it('clamps out-of-range genes and reports a valid result', () => {
-    const broken = withGenes(valid, { 'physical.maxSpeed': 1000, 'sensory.sensorRadius': -4 })
+    const broken = withGenes(valid, { 'physical.radius': 1000, 'metabolic.basalCost': -4 })
     const repaired = repairGenome(broken, f.specs)
     expect(validateGenome(repaired, f.specs, context(valid))).toEqual({ ok: true, errors: [] })
-    expect(repaired.physical.maxSpeed).toBe(40)
-    expect(repaired.sensory.sensorRadius).toBe(30)
+    expect(repaired.physical.radius).toBe(10)
+    expect(repaired.metabolic.basalCost).toBe(0.3)
   })
 
   it('resets non-finite genes to their baseline and zeroes non-finite weights', () => {
     const weights = valid.brain.weights.slice()
     weights[0] = Number.NaN
-    const broken = withGenes(valid, { 'physical.maxSpeed': Number.NaN }, weights)
+    const broken = withGenes(valid, { 'physical.radius': Number.NaN }, weights)
     const repaired = repairGenome(broken, f.specs)
-    expect(repaired.physical.maxSpeed).toBe(f.config.organisms.maxSpeed)
+    expect(repaired.physical.radius).toBe(f.config.organisms.radius)
     expect(repaired.brain.weights[0]).toBe(0)
   })
 

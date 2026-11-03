@@ -39,7 +39,7 @@ export interface MateSensing {
 }
 
 /**
- * Finds the nearest resource within each organism's own sensor range (its `sensorRadius` gene),
+ * Finds the nearest resource within each organism's own sensor range (the baseline range times its eyes),
  * and, when `peers` is given, the nearest other organism within the same range, and, when
  * `hazardSensing` is given, the hazard whose edge is nearest, and, when `mateSensing` is given,
  * the nearest eligible partner - but only for an organism that is itself ready to reproduce, so
@@ -51,15 +51,15 @@ export interface MateSensing {
  */
 export class PerceptionSystem {
   constructor(
+    /** The baseline sensor range, which each body's eyes and sniffers scale (docs/decisions/0015). */
+    private readonly config: WorldConfig,
     private readonly organisms: OrganismStore,
     private readonly resourceIndex: SpatialHash<ResourceState>,
     private readonly perceptionBuffer: PerceptionBuffer,
     private readonly peers?: PeerSensing,
     private readonly ecology: EcologyModel | null = null,
     private readonly hazardSensing?: HazardSensing,
-    private readonly mateSensing?: MateSensing,
-    /** With it, the eyes and sniffers of each body scale its senses (docs/decisions/0015). */
-    private readonly config?: WorldConfig
+    private readonly mateSensing?: MateSensing
   ) {}
 
   update(tick = 0): void {
@@ -72,8 +72,8 @@ export class PerceptionSystem {
     const zones = this.hazardSensing ? this.hazardSensing.hazards.values() : []
 
     for (const organism of this.organisms.values()) {
-      const body = this.config === undefined ? null : factorsOf(organism.genome, this.config)
-      const sensor = organism.genome.sensory.sensorRadius * (body === null ? 1 : body.senseRange)
+      const body = factorsOf(organism.genome, this.config)
+      const sensor = this.config.organisms.sensorRadius * body.senseRange
       const radius = modified ? sensor * eco.visibilityScale(organism.x, organism.y, tick) : sensor
       const origin = { x: organism.x, y: organism.y }
 
@@ -92,7 +92,7 @@ export class PerceptionSystem {
         )
       } else {
         const hit = this.resourceIndex.queryRadius(origin, radius).find((candidate) => {
-          const detection = body === null ? 1 : (body.foodDetection[candidate.item.kind] ?? 1)
+          const detection = body.foodDetection[candidate.item.kind] ?? 1
           const reach = radius * eco.kind(candidate.item.kind).detectability * detection
           return candidate.distanceSquared <= reach * reach
         })

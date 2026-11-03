@@ -5,10 +5,9 @@ import { genomeToVector, sameArchitecture } from './GenomeFactory'
 
 /** Each field is in `[0, 1]`: `0` for identical, `1` for maximally different. */
 export interface GenomeDistance {
-  /** The unweighted mean of the seven original group distances (`body` is reported separately). */
+  /** The unweighted mean of the six scalar-group and brain distances (`body` is reported separately). */
   total: number
   physical: number
-  sensory: number
   metabolic: number
   behavioral: number
   reproduction: number
@@ -18,7 +17,7 @@ export interface GenomeDistance {
   body: number
 }
 
-type ScalarGroup = 'physical' | 'sensory' | 'metabolic' | 'behavioral' | 'reproduction' | 'learning'
+type ScalarGroup = 'physical' | 'metabolic' | 'behavioral' | 'reproduction' | 'learning'
 
 /** Distance between two gene values: range-normalized, shortest-arc for circular genes. */
 function geneDistance(spec: GeneSpec, a: number, b: number): number {
@@ -50,7 +49,6 @@ export function genomeDistance(
 
   const sums: Record<ScalarGroup, { total: number; count: number }> = {
     physical: { total: 0, count: 0 },
-    sensory: { total: 0, count: 0 },
     metabolic: { total: 0, count: 0 },
     behavioral: { total: 0, count: 0 },
     reproduction: { total: 0, count: 0 },
@@ -76,7 +74,6 @@ export function genomeDistance(
   const brain = Math.min(1, rms / (2 * initialWeightStd))
 
   const physical = groupDistance('physical')
-  const sensory = groupDistance('sensory')
   const metabolic = groupDistance('metabolic')
   const behavioral = groupDistance('behavioral')
   const reproduction = groupDistance('reproduction')
@@ -89,8 +86,8 @@ export function genomeDistance(
     })
     body = sum / bodySpecs.length
   }
-  const total = (physical + sensory + metabolic + behavioral + reproduction + brain + learning) / 7
-  return { total, physical, sensory, metabolic, behavioral, reproduction, brain, learning, body }
+  const total = (physical + metabolic + behavioral + reproduction + brain + learning) / 6
+  return { total, physical, metabolic, behavioral, reproduction, brain, learning, body }
 }
 
 /**
@@ -105,7 +102,6 @@ export function weightedDistance(
 ): number {
   const sum =
     weights.physical +
-    weights.sensory +
     weights.metabolic +
     weights.behavioral +
     weights.reproduction +
@@ -115,7 +111,6 @@ export function weightedDistance(
   if (sum <= 0) return 0
   const weighted =
     distance.physical * weights.physical +
-    distance.sensory * weights.sensory +
     distance.metabolic * weights.metabolic +
     distance.behavioral * weights.behavioral +
     distance.reproduction * weights.reproduction +

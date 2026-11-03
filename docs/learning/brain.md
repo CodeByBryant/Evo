@@ -18,32 +18,32 @@ Memory is the network's own recurrence, not an input. `learning.controller: 'ref
 
 `OBSERVATION_SIZE = 37` (23 until Phase 6, which appended ten values; Phase 7 appended four more, see below). The order is part of the contract (`OBSERVATION_LABELS` in `@evo/contracts`); changing it is a hash-schema change and a golden regeneration. "Body frame" means rotated by the organism's heading.
 
-| #     | Label                      | Value                                                                         | Range    |
-| ----- | -------------------------- | ----------------------------------------------------------------------------- | -------- |
-| 0     | `energy`                   | energy / effective `maxEnergy`                                                | [0, 1]   |
-| 1     | `age`                      | age / own `maxAge` gene                                                       | [0, 1]   |
-| 2     | `forwardVelocity`          | velocity along the heading / own `maxSpeed`                                   | [-1, 1]  |
-| 3     | `lateralVelocity`          | velocity across the heading / own `maxSpeed`                                  | [-1, 1]  |
-| 4-5   | `positionX`, `positionY`   | position / world width, height                                                | [0, 1]   |
-| 6-7   | `headingCos`, `headingSin` | heading as a unit vector                                                      | [-1, 1]  |
-| 8     | `foodPresent`              | 1 when a resource is within `sensorRadius`, else 0                            | {0, 1}   |
-| 9-10  | `foodBearingCos/Sin`       | direction to the nearest resource, body frame (0 when absent)                 | [-1, 1]  |
-| 11    | `foodProximity`            | `1 - distance / sensorRadius` (0 when absent)                                 | [0, 1]   |
-| 12-15 | `peer*`                    | the same four values for the nearest **other organism** within `sensorRadius` | as above |
-| 16    | `timeSinceFood`            | seconds since this organism last ate / `learning.foodHorizon`, clamped        | [0, 1]   |
-| 17    | `previousReward`           | last tick's total reward, clamped                                             | [-1, 1]  |
-| 18-22 | `previousAction*`          | the five action values chosen last tick                                       | [-1, 1]  |
-| 23    | `ownHealth`                | health / maximum health (1 when health is off)                                | [0, 1]   |
-| 24    | `hazardPresent`            | 1 when a hazard's edge is within the sensor range                             | {0, 1}   |
-| 25-26 | `hazardBearingCos/Sin`     | direction to the centre of the nearest hazard (by edge), body frame           | [-1, 1]  |
-| 27    | `hazardProximity`          | 1 inside the hazard, falling to 0 at the sensor range from its edge           | [0, 1]   |
-| 28    | `foodKind`                 | the perceived food's kind index / (kinds - 1); 0 when none or one kind        | [0, 1]   |
-| 29-30 | `seasonCos`, `seasonSin`   | the year phase as a unit vector (0, 0 when seasons are off)                   | [-1, 1]  |
-| 31    | `regionTemperature`        | region plus season temperature (0 when both are off)                          | [-1, 1]  |
-| 32    | `regionMovementScale`      | region times season movement multiplier (1 when both are off)                 | (0, 1]   |
-| 33    | `matePresent`              | 1 when this organism is ready and a ready partner is within `mateSenseRadius` | {0, 1}   |
-| 34-35 | `mateBearingCos/Sin`       | direction to the nearest eligible partner, body frame (0 when absent)         | [-1, 1]  |
-| 36    | `mateProximity`            | `1 - distance / sensorRadius`, clamped (0 beyond the sensor radius)           | [0, 1]   |
+| #     | Label                      | Value                                                                                      | Range    |
+| ----- | -------------------------- | ------------------------------------------------------------------------------------------ | -------- |
+| 0     | `energy`                   | energy / effective `maxEnergy`                                                             | [0, 1]   |
+| 1     | `age`                      | age / own `maxAge` gene                                                                    | [0, 1]   |
+| 2     | `forwardVelocity`          | velocity along the heading / own top speed (the baseline times the body's thrust factor)   | [-1, 1]  |
+| 3     | `lateralVelocity`          | velocity across the heading / own top speed (the baseline times the body's thrust factor)  | [-1, 1]  |
+| 4-5   | `positionX`, `positionY`   | position / world width, height                                                             | [0, 1]   |
+| 6-7   | `headingCos`, `headingSin` | heading as a unit vector                                                                   | [-1, 1]  |
+| 8     | `foodPresent`              | 1 when a resource is within the organism's sensor range, else 0                            | {0, 1}   |
+| 9-10  | `foodBearingCos/Sin`       | direction to the nearest resource, body frame (0 when absent)                              | [-1, 1]  |
+| 11    | `foodProximity`            | `1 - distance / sensor range` (0 when absent)                                              | [0, 1]   |
+| 12-15 | `peer*`                    | the same four values for the nearest **other organism** within the organism's sensor range | as above |
+| 16    | `timeSinceFood`            | seconds since this organism last ate / `learning.foodHorizon`, clamped                     | [0, 1]   |
+| 17    | `previousReward`           | last tick's total reward, clamped                                                          | [-1, 1]  |
+| 18-22 | `previousAction*`          | the five action values chosen last tick                                                    | [-1, 1]  |
+| 23    | `ownHealth`                | health / maximum health (1 when health is off)                                             | [0, 1]   |
+| 24    | `hazardPresent`            | 1 when a hazard's edge is within the sensor range                                          | {0, 1}   |
+| 25-26 | `hazardBearingCos/Sin`     | direction to the centre of the nearest hazard (by edge), body frame                        | [-1, 1]  |
+| 27    | `hazardProximity`          | 1 inside the hazard, falling to 0 at the sensor range from its edge                        | [0, 1]   |
+| 28    | `foodKind`                 | the perceived food's kind index / (kinds - 1); 0 when none or one kind                     | [0, 1]   |
+| 29-30 | `seasonCos`, `seasonSin`   | the year phase as a unit vector (0, 0 when seasons are off)                                | [-1, 1]  |
+| 31    | `regionTemperature`        | region plus season temperature (0 when both are off)                                       | [-1, 1]  |
+| 32    | `regionMovementScale`      | region times season movement multiplier (1 when both are off)                              | (0, 1]   |
+| 33    | `matePresent`              | 1 when this organism is ready and a ready partner is within `mateSenseRadius`              | {0, 1}   |
+| 34-35 | `mateBearingCos/Sin`       | direction to the nearest eligible partner, body frame (0 when absent)                      | [-1, 1]  |
+| 36    | `mateProximity`            | `1 - distance / sensor range`, clamped (0 beyond the sensor radius)                        | [0, 1]   |
 
 Slots 23-32 were **appended** in Phase 6 (ADR 0009) so no existing slot moved and the innate prior, which addresses slots by number, is unchanged. With a feature off its slots carry their neutral value (health 1, movement 1, the rest 0), a constant the network can use as a bias. The hazard and the food kind are found by `PerceptionSystem` in brain mode only. Ties in "nearest" follow the engine-wide rule `(distance squared, id)`. The peer is found only in brain mode, so the reflex controller costs nothing extra.
 
@@ -83,13 +83,13 @@ Default total: **426** weights (394 in Phase 6, 314 in Phase 5, 249 in Phase 4).
 
 `ACTION_SIZE = 5`, all in [-1, 1] (`ACTION_LABELS`):
 
-| #   | Output     | Effect                                                                                                   |
-| --- | ---------- | -------------------------------------------------------------------------------------------------------- |
-| 0   | `thrust`   | `max(0, value)` is the forward drive, as in the reflex controller (0 to 1)                               |
-| 1   | `turn`     | fraction of the organism's own `maxTurnRate`, signed                                                     |
-| 2   | `strafe`   | lateral velocity as a fraction of `maxSpeed`, signed; metabolism already charges for the resulting speed |
-| 3   | `interact` | consumption is attempted only when `value > 0`; reflex always interacts                                  |
-| 4   | `explore`  | scales next tick's exploration noise by `1 + value` (0 to 2)                                             |
+| #   | Output     | Effect                                                                                                      |
+| --- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| 0   | `thrust`   | `max(0, value)` is the forward drive, as in the reflex controller (0 to 1)                                  |
+| 1   | `turn`     | fraction of the organism's own top turn rate (the baseline times the body's torque factor), signed          |
+| 2   | `strafe`   | lateral velocity as a fraction of the top speed, signed; metabolism already charges for the resulting speed |
+| 3   | `interact` | consumption is attempted only when `value > 0`; reflex always interacts                                     |
+| 4   | `explore`  | scales next tick's exploration noise by `1 + value` (0 to 2)                                                |
 
 The action actually taken is the network output **plus exploration noise**, clamped to [-1, 1]; that taken action is what is fed back as `previousAction*` and what learning attributes reward to.
 

@@ -22,14 +22,7 @@ import type { World } from '@evo/simulation'
 /** Samples of a species' history sent to the interface. */
 const SPECIES_HISTORY_POINTS = 60
 
-const GENE_GROUPS = [
-  'physical',
-  'sensory',
-  'metabolic',
-  'behavioral',
-  'reproduction',
-  'learning'
-] as const
+const GENE_GROUPS = ['physical', 'metabolic', 'behavioral', 'reproduction', 'learning'] as const
 
 const labelled = (labels: readonly string[], values: readonly number[]): LabelledValue[] =>
   labels.map((label, i) => ({ label, value: values[i] ?? 0 }))

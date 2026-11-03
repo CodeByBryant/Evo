@@ -148,20 +148,20 @@ describe('senses: eyes set the range', () => {
   const sees = (config: WorldConfig, parts: Parts, fraction: number): boolean => {
     const organism = withBody(organismFor(config, 1, { x: 100, y: 100 }), config, parts)
     const resources = new ResourceStore()
-    const distance = organism.genome.sensory.sensorRadius * fraction
+    const distance = config.organisms.sensorRadius * fraction
     resources.add({ id: 9, x: 100 + distance, y: 100, remaining: 30, kind: 0 })
     const index = new SpatialHash<ResourceState>(60, (r) => r)
     index.rebuild(resources.values())
     const buffer: PerceptionBuffer = new Map()
     new PerceptionSystem(
+      config,
       store(organism),
       index,
       buffer,
       undefined,
       null,
       undefined,
-      undefined,
-      config
+      undefined
     ).update(0)
     return buffer.get(1) !== null && buffer.get(1) !== undefined
   }

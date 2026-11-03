@@ -178,7 +178,8 @@ export class World {
     // Grid cell sizes are the upper bound of the gene ranges: a query is correct for any cell
     // size, so this only affects efficiency, and it must not depend on an individual genome.
     this.resourceIndex = new SpatialHash<ResourceState>(
-      geneRangeMax(this.geneSpecs, 'sensory.sensorRadius'),
+      // Eyes can double the sensor range, and a query is correct for any cell size.
+      2 * this.config.organisms.sensorRadius,
       (resource) => resource
     )
     this.organismIndex = new SpatialHash<OrganismState>(
@@ -247,6 +248,7 @@ export class World {
     )
     this.brainLayout = brainLayoutOf(architectureOf(this.config.genetics.brain))
     this.perceptionSystem = new PerceptionSystem(
+      this.config,
       this.organisms,
       this.resourceIndex,
       this.perceptionBuffer,
@@ -264,8 +266,7 @@ export class World {
               !this.config.species.reproductiveIsolation ||
               this.speciesRegistry.speciesOf(a.id) === this.speciesRegistry.speciesOf(b.id)
           }
-        : undefined,
-      this.config
+        : undefined
     )
     this.decisionSystem = new DecisionSystem(
       this.config,

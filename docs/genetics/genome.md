@@ -8,39 +8,38 @@ All defaults are provisional. They are tuned by the engine's scenario tests, and
 
 Founders start at the **baseline** (the existing `organisms.*` / `reproduction.*` config values). A gene's **range** bounds every genome ever produced. `rate` is the probability that the gene mutates in a birth and `std` is the mutation standard deviation as a fraction of the range width, both before the global `mutationRateScale` / `mutationStrengthScale`.
 
-| Gene                               | Kind             | Baseline (config source)                  | Range         | Rate | Std  | Read by                                                      |
-| ---------------------------------- | ---------------- | ----------------------------------------- | ------------- | ---- | ---- | ------------------------------------------------------------ |
-| `physical.radius`                  | float            | 5 (`organisms.radius`)                    | 2.5 - 10      | 0.1  | 0.05 | Interaction (capture radius), size-derived costs, snapshot   |
-| `physical.maxSpeed`                | float            | 20 (`organisms.maxSpeed`)                 | 10 - 40       | 0.1  | 0.05 | Movement                                                     |
-| `physical.maxTurnRate`             | float            | 3 (`organisms.maxTurnRate`)               | 1.5 - 6       | 0.1  | 0.05 | Movement                                                     |
-| `physical.maturityAge`             | float            | 90 (`organisms.maturityAge`)              | 45 - 180      | 0.1  | 0.05 | life stage (Movement, Interaction, Metabolism, Reproduction) |
-| `physical.senescenceAge`           | float            | 510 (`organisms.senescenceAge`)           | 255 - 560     | 0.1  | 0.05 | life stage                                                   |
-| `physical.maxAge`                  | float            | 600 (`organisms.maxAge`)                  | 570 - 1200    | 0.1  | 0.05 | Death                                                        |
-| `physical.hue`                     | circular         | 0.55 (`organisms.hue`)                    | [0, 1) turns  | 0.1  | 0.05 | carried (rendering, Phase 7)                                 |
-| `sensory.sensorRadius`             | float            | 60 (`organisms.sensorRadius`)             | 30 - 120      | 0.1  | 0.05 | Perception; sensor cost                                      |
-| `metabolic.basalCost`              | float            | 0.5 (`organisms.basalCost`)               | 0.3 - 0.8     | 0.1  | 0.05 | Metabolism (scaled by body size)                             |
-| `metabolic.movementCost`           | float            | 0.005 (`organisms.movementCost`)          | 0.003 - 0.008 | 0.1  | 0.05 | Metabolism                                                   |
-| `metabolic.turningCost`            | float            | 0.05 (`organisms.turningCost`)            | 0.03 - 0.08   | 0.1  | 0.05 | Metabolism                                                   |
-| `behavioral.wanderJitter`          | float            | 1.5 (`organisms.wanderJitter`)            | 0.75 - 3      | 0.1  | 0.05 | Decision                                                     |
-| `reproduction.minEnergy`           | float            | 60 (`reproduction.minEnergy`)             | 40 - 90       | 0.1  | 0.05 | Reproduction (eligibility)                                   |
-| `reproduction.offspringInvestment` | float            | 12.5 (`reproduction.offspringInvestment`) | 6 - 25        | 0.1  | 0.05 | Reproduction (energy given to the child)                     |
-| `reproduction.cooldown`            | float            | 30 (`reproduction.cooldown`)              | 15 - 60       | 0.1  | 0.05 | Reproduction                                                 |
-| `reproduction.searchRadius`        | float            | 50 (`reproduction.searchRadius`)          | 25 - 100      | 0.1  | 0.05 | Reproduction (partner search)                                |
-| `learning.learningRate`            | float (relative) | 0.05 (`genetics.learning`)                | 0.001 - 0.5   | 0.1  | 0.05 | Brain (learning step size, learning cost)                    |
-| `learning.discountFactor`          | float            | 0.95 (`genetics.learning`)                | 0 - 1         | 0.1  | 0.05 | Brain (TD discount, trace decay)                             |
-| `learning.eligibilityTraceDecay`   | float            | 0.9 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (eligibility traces)                                   |
-| `learning.explorationRate`         | float            | 0.1 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (exploration noise)                                    |
-| `learning.riskTolerance`           | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | scales the damage penalty (Phase 6: `1 - riskTolerance`)     |
-| `learning.noveltyPreference`       | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | scales the novelty reward (Phase 6)                          |
-| `learning.persistence`             | float            | 0.5 (`genetics.learning`)                 | 0 - 1         | 0.1  | 0.05 | Brain (exploration annealing)                                |
+| Gene                               | Kind             | Baseline (config source)                  | Range        | Rate | Std  | Read by                                                      |
+| ---------------------------------- | ---------------- | ----------------------------------------- | ------------ | ---- | ---- | ------------------------------------------------------------ |
+| `physical.radius`                  | float            | 5 (`organisms.radius`)                    | 2.5 - 10     | 0.1  | 0.05 | Interaction (capture radius), size-derived costs, snapshot   |
+| `physical.maturityAge`             | float            | 90 (`organisms.maturityAge`)              | 45 - 180     | 0.1  | 0.05 | life stage (Movement, Interaction, Metabolism, Reproduction) |
+| `physical.senescenceAge`           | float            | 510 (`organisms.senescenceAge`)           | 255 - 560    | 0.1  | 0.05 | life stage                                                   |
+| `physical.maxAge`                  | float            | 600 (`organisms.maxAge`)                  | 570 - 1200   | 0.1  | 0.05 | Death                                                        |
+| `physical.hue`                     | circular         | 0.55 (`organisms.hue`)                    | [0, 1) turns | 0.1  | 0.05 | carried (rendering, Phase 7)                                 |
+| `metabolic.basalCost`              | float            | 0.5 (`organisms.basalCost`)               | 0.3 - 0.8    | 0.1  | 0.05 | Metabolism (scaled by body size)                             |
+| `behavioral.wanderJitter`          | float            | 1.5 (`organisms.wanderJitter`)            | 0.75 - 3     | 0.1  | 0.05 | Decision                                                     |
+| `reproduction.minEnergy`           | float            | 60 (`reproduction.minEnergy`)             | 40 - 90      | 0.1  | 0.05 | Reproduction (eligibility)                                   |
+| `reproduction.offspringInvestment` | float            | 12.5 (`reproduction.offspringInvestment`) | 6 - 25       | 0.1  | 0.05 | Reproduction (energy given to the child)                     |
+| `reproduction.cooldown`            | float            | 30 (`reproduction.cooldown`)              | 15 - 60      | 0.1  | 0.05 | Reproduction                                                 |
+| `reproduction.searchRadius`        | float            | 50 (`reproduction.searchRadius`)          | 25 - 100     | 0.1  | 0.05 | Reproduction (partner search)                                |
+| `learning.learningRate`            | float (relative) | 0.05 (`genetics.learning`)                | 0.001 - 0.5  | 0.1  | 0.05 | Brain (learning step size, learning cost)                    |
+| `learning.discountFactor`          | float            | 0.95 (`genetics.learning`)                | 0 - 1        | 0.1  | 0.05 | Brain (TD discount, trace decay)                             |
+| `learning.eligibilityTraceDecay`   | float            | 0.9 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | Brain (eligibility traces)                                   |
+| `learning.explorationRate`         | float            | 0.1 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | Brain (exploration noise)                                    |
+| `learning.riskTolerance`           | float            | 0.5 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | scales the damage penalty (Phase 6: `1 - riskTolerance`)     |
+| `learning.noveltyPreference`       | float            | 0.5 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | scales the novelty reward (Phase 6)                          |
+| `learning.persistence`             | float            | 0.5 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | Brain (exploration annealing)                                |
 
 The ordering `maturityAge < senescenceAge < maxAge` is enforced by the operators: `senescenceAge` is declared `orderedAfter` `maturityAge`, and `maxAge` after `senescenceAge`, and mutation, recombination and repair raise such a gene's lower bound above the earlier gene (by a 1e-6 margin) even when the later gene itself did not mutate. Config validation requires each ordered gene's range maximum to exceed the earlier gene's, so there is always room. The default ranges happen not to overlap, but nothing relies on that.
 
-If a default range edge excludes a changed founder baseline (for example `organisms.maxSpeed: 0`), that edge is widened to include it. An edge set explicitly in `genetics.genes` is never moved; config validation rejects a baseline outside it. For a relative gene (`learningRate`) the standard deviation is a fraction of the current value rather than of the range width.
+If a default range edge excludes a changed founder baseline (for example `organisms.radius: 50`), that edge is widened to include it. An edge set explicitly in `genetics.genes` is never moved; config validation rejects a baseline outside it. For a relative gene (`learningRate`) the standard deviation is a fraction of the current value rather than of the range width.
 
 Gene order in `GENE_SPECS` is fixed (the order above) and is the order used for mutation draws, the state hash and `genomeDistance`.
 
 An organism can legitimately inherit a combination that cannot reproduce (for example a small body whose derived `maxEnergy` is below its `minEnergy`). That is natural selection, not an invalid genome.
+
+## Retired genes
+
+Five scalar genes were retired when the parts started to act ([ADR 0015](../decisions/0015-anatomy-consequences.md)): `physical.maxSpeed`, `physical.maxTurnRate`, `sensory.sensorRadius`, `metabolic.movementCost` and `metabolic.turningCost`. Their values are now the config baselines (`organisms.maxSpeed`, `.maxTurnRate`, `.sensorRadius`, `.movementCost`, `.turningCost`) times the body's factor ([anatomy](../anatomy/anatomy.md)), so speed, turning, sensing and the cost of moving evolve only through the body. The scalar table has 18 genes, the `sensory` group no longer exists, and `Genome.version` is 3.
 
 ## Body genes (anatomy)
 
@@ -68,7 +67,7 @@ Empty slots still carry genes, which mutate silently, so a part that switches on
 sizeFactor        = (radius / baseRadius)^2          (computed by multiplication)
 maxEnergy         = baseMaxEnergy * sizeFactor        (base = organisms.maxEnergy)
 basal cost        = metabolic.basalCost * sizeFactor
-sensor cost       = baseSensorCost * (sensorRadius / baseSensorRadius)   (base = organisms.sensorCost)
+sensor cost       = organisms.sensorCost * (the body's sense-range factor)   (1 for the founder body)
 parent pays       = offspringInvestment * (1 + reproduction.overheadFraction)
 child energy      = min(investmentA + investmentB, child maxEnergy)
 eligibility        = energy >= max(minEnergy, parent pays)   (so paying never drives energy negative)
@@ -134,7 +133,7 @@ Because each block is cut strictly inside, every block of every child contains w
 
 ## Comparison
 
-`genomeDistance(a, b)` returns `{ total, physical, sensory, metabolic, behavioral, reproduction, brain, learning }`, each in `[0, 1]`. Scalar genes: `|a - b| / (max - min)`, circular genes: shortest arc / 0.5, group distance: mean over the group's genes. Brain: RMS weight difference / `(2 * initialWeightStd)`, clamped to 1. `total` is the unweighted mean of the seven groups; `weightedDistance(distance, weights)` combines the seven group distances with configurable weights (used for speciation, see [species](../simulation/species.md)). Symmetric; `0` for identical genomes.
+`genomeDistance(a, b)` returns `{ total, physical, metabolic, behavioral, reproduction, brain, learning, body }`, each in `[0, 1]`. Scalar genes: `|a - b| / (max - min)`, circular genes: shortest arc / 0.5, group distance: mean over the group's genes. Brain: RMS weight difference / `(2 * initialWeightStd)`, clamped to 1. `total` is the unweighted mean of the seven groups; `weightedDistance(distance, weights)` combines the seven group distances with configurable weights (used for speciation, see [species](../simulation/species.md)). Symmetric; `0` for identical genomes.
 
 ## Learning inheritance
 

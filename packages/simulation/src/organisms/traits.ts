@@ -39,9 +39,9 @@ export function maxEnergyOf(genome: Genome, config: WorldConfig): number {
   )
 }
 
-/** The sensor radius: the gene scaled by the eyes (docs/decisions/0015). */
+/** The sensor radius: the baseline range scaled by the eyes (docs/decisions/0015). */
 export function sensorRadiusOf(genome: Genome, config: WorldConfig): number {
-  return genome.sensory.sensorRadius * factorsOf(genome, config).senseRange
+  return config.organisms.sensorRadius * factorsOf(genome, config).senseRange
 }
 
 /** Energy per second just for being alive; grows with body size. */
@@ -51,9 +51,7 @@ export function basalCostOf(genome: Genome, config: WorldConfig): number {
 
 /** Energy per second for maintaining senses; grows with sensor radius. */
 export function sensorCostOf(genome: Genome, config: WorldConfig): number {
-  return (
-    config.organisms.sensorCost * (sensorRadiusOf(genome, config) / config.organisms.sensorRadius)
-  )
+  return config.organisms.sensorCost * factorsOf(genome, config).senseRange
 }
 
 /**

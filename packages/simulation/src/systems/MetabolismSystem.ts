@@ -41,8 +41,8 @@ export class MetabolismSystem {
       const body = factorsOf(genome, this.config)
       const cost =
         (basalCostOf(genome, this.config) +
-          genome.metabolic.movementCost * speedSquared * drag +
-          genome.metabolic.turningCost * turnSquared * drag +
+          this.config.organisms.movementCost * speedSquared * drag +
+          this.config.organisms.turningCost * turnSquared * drag +
           sensorCostOf(genome, this.config) +
           body.upkeepDelta +
           learningCostOf(genome, this.config) +
