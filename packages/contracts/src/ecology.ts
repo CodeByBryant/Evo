@@ -179,3 +179,52 @@ export interface TerrainSnapshot {
   /** The regions, indexed by the values in `cells`. */
   readonly regions: readonly { readonly x: number; readonly y: number; readonly type: RegionType }[]
 }
+
+/**
+ * The cluster layout for drawing (ADR 0014): where the clusters are and the biome patches inside
+ * each. Static for a world's life, so a presentation layer reads it once. Not part of the state hash.
+ */
+export interface ClusterLayoutSnapshot {
+  readonly radius: number
+  /** The clusters plus a margin, for fitting a camera. */
+  readonly bounds: {
+    readonly minX: number
+    readonly minY: number
+    readonly maxX: number
+    readonly maxY: number
+  }
+  readonly clusters: readonly {
+    readonly x: number
+    readonly y: number
+    readonly patches: readonly {
+      readonly x: number
+      readonly y: number
+      readonly type: RegionType
+    }[]
+  }[]
+}
+
+/**
+ * How the populations sit in the cluster layout (ADR 0014). Derived from positions and species, so
+ * it is not part of the state hash. Each organism is assigned to the cluster with the nearest
+ * centre, so an organism in the void still belongs to a cluster.
+ */
+export interface ClusterReport {
+  readonly clusters: readonly {
+    readonly index: number
+    /** Living organisms nearest this cluster's centre. */
+    readonly alive: number
+    /** Of those, how many are outside every cluster (in the void). */
+    readonly inVoid: number
+  }[]
+  readonly species: readonly {
+    readonly speciesId: number
+    readonly alive: number
+    /** The cluster holding most of the species' living members. */
+    readonly dominantCluster: number
+    /** The share of the species in that cluster, in `(0, 1]`: 1 means it never left home. */
+    readonly purity: number
+  }[]
+  /** The living-weighted mean of `purity` over species (1 when there are none). */
+  readonly meanPurity: number
+}

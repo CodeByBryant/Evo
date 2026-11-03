@@ -70,8 +70,13 @@ function checkOrganism(
   if (organism.reproductionCooldownRemaining < 0) {
     errors.push(`${label}: reproductionCooldownRemaining is negative`)
   }
-  if (organism.x < 0 || organism.x > width) errors.push(`${label}: x is outside [0, ${width}]`)
-  if (organism.y < 0 || organism.y > height) errors.push(`${label}: y is outside [0, ${height}]`)
+  if (organism.x > width || (width !== Infinity && organism.x < 0))
+    errors.push(`${label}: x is outside [0, ${width}]`)
+  if (organism.y > height || (height !== Infinity && organism.y < 0))
+    errors.push(`${label}: y is outside [0, ${height}]`)
+  if (!Number.isFinite(organism.x) || !Number.isFinite(organism.y)) {
+    errors.push(`${label}: position is not finite`)
+  }
   if (
     !Number.isInteger(organism.birthTick) ||
     organism.birthTick < 0 ||
@@ -97,8 +102,10 @@ function checkResource(
   checkFinite(label, 'y', resource.y, errors)
   checkFinite(label, 'remaining', resource.remaining, errors)
   if (resource.remaining < 0) errors.push(`${label}: remaining is negative`)
-  if (resource.x < 0 || resource.x > width) errors.push(`${label}: x is outside [0, ${width}]`)
-  if (resource.y < 0 || resource.y > height) errors.push(`${label}: y is outside [0, ${height}]`)
+  if (resource.x > width || (width !== Infinity && resource.x < 0))
+    errors.push(`${label}: x is outside [0, ${width}]`)
+  if (resource.y > height || (height !== Infinity && resource.y < 0))
+    errors.push(`${label}: y is outside [0, ${height}]`)
 }
 
 /**
@@ -124,8 +131,10 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
   const seenGenomeIds = new Set<number>()
   const brainLayout = brainLayoutOf(architectureOf(config.genetics.brain))
   const expectBrains = config.learning.controller === 'brain'
-  const width = config.environment.width
-  const height = config.environment.height
+  // The cluster layout has no walls (docs/decisions/0014): positions only have to be finite.
+  const unbounded = config.environment.layout === 'clusters'
+  const width = unbounded ? Infinity : config.environment.width
+  const height = unbounded ? Infinity : config.environment.height
 
   if (organisms.length > config.maxPopulation) {
     errors.push(`population (${organisms.length}) exceeds maxPopulation (${config.maxPopulation})`)

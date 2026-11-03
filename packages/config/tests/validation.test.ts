@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_SEED } from '@evo/contracts'
-import type { WorldConfig } from '@evo/contracts'
+import type { WorldConfig, WorldConfigOverrides } from '@evo/contracts'
 import {
   ConfigValidationError,
   DEFAULT_WORLD_CONFIG,
@@ -349,7 +349,7 @@ describe('resolveWorldConfig', () => {
 })
 
 describe('environment.layout and environment.clusters (ADR 0014)', () => {
-  const errorsFor = (overrides: WorldConfigOverrides): string[] => {
+  const errorsFor = (overrides: WorldConfigOverrides): readonly string[] => {
     try {
       resolveWorldConfig(overrides)
       return []

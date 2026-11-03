@@ -118,7 +118,9 @@ export function createFounderGenome(
   specs: readonly GeneSpec[],
   brain: BrainConfig,
   random: RandomSource,
-  body?: readonly number[]
+  body?: readonly number[],
+  /** The scalar gene values to start from instead of the spec baselines (cluster founders, ADR 0014). */
+  vector?: readonly number[]
 ): Genome {
   const architecture = architectureOf(brain)
   const count = brainWeightCount(architecture)
@@ -134,7 +136,7 @@ export function createFounderGenome(
   return genomeFromParts({
     id,
     parentIds: [],
-    vector: specs.map((spec) => spec.baseline),
+    vector: vector ?? specs.map((spec) => spec.baseline),
     architecture,
     weights,
     ...(body !== undefined ? { body } : {})

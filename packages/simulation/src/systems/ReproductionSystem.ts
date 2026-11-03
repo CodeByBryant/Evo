@@ -40,6 +40,8 @@ import type { SpatialHash } from '../spatial/SpatialHash'
 export class ReproductionSystem {
   private readonly layout: BrainLayout
   private readonly readiness: ReproductionReadiness
+  /** The cluster layout has no walls (docs/decisions/0014). */
+  private readonly unbounded: boolean
 
   constructor(
     private readonly config: WorldConfig,
@@ -54,6 +56,7 @@ export class ReproductionSystem {
     private readonly species: SpeciesTracker = NO_SPECIES,
     ecology: EcologyModel | null = null
   ) {
+    this.unbounded = ecology !== null && ecology.clusters !== null
     this.readiness = new ReproductionReadiness(config, ecology)
     this.layout = brainLayoutOf(architectureOf(config.genetics.brain))
   }
@@ -92,6 +95,7 @@ export class ReproductionSystem {
   update(tick: number): void {
     const dt = this.config.timestep
     const { width, height } = this.config.environment
+    const unbounded = this.unbounded
 
     const initiators = this.organisms.values()
     for (const organism of initiators) {
@@ -164,8 +168,11 @@ export class ReproductionSystem {
       const midX = (organism.x + partner.x) / 2
       const midY = (organism.y + partner.y) / 2
       const radius = bodyRadiusOf(genome, this.config)
-      const x = clamp(midX + (this.random.float() * 2 - 1) * radius, 0, width)
-      const y = clamp(midY + (this.random.float() * 2 - 1) * radius, 0, height)
+      const offsetX = midX + (this.random.float() * 2 - 1) * radius
+      const offsetY = midY + (this.random.float() * 2 - 1) * radius
+      // The field has walls; the cluster layout is unbounded (docs/decisions/0014).
+      const x = unbounded ? offsetX : clamp(offsetX, 0, width)
+      const y = unbounded ? offsetY : clamp(offsetY, 0, height)
       const heading = wrapAngle(this.random.float() * TWO_PI)
 
       const childEnergy = Math.min(

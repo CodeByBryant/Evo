@@ -43,6 +43,8 @@ export type {
 } from './learning'
 export { REGION_TYPES, SEASONS } from './ecology'
 export type {
+  ClusterLayoutSnapshot,
+  ClusterReport,
   RegionType,
   Season,
   HazardKind,
