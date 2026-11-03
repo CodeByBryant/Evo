@@ -23,9 +23,9 @@ import { PerceptionSystem } from '../src/systems/PerceptionSystem'
 import { idsFrom, makeReproduction, organismFor, withGenes } from './support/organism'
 
 /**
- * Each system reads an organism's traits from its own genome, not from global config
- * (docs/decisions/0006): two organisms in the same world, under the same config, behave
- * differently when their genes differ.
+ * Each system reads an organism's traits from its own genome where a gene still exists
+ * (docs/decisions/0006), and from the config baseline times the body's factor where the old gene
+ * was retired (docs/decisions/0015).
  */
 const config = resolveWorldConfig()
 const MATURE = 200
@@ -36,65 +36,54 @@ const mature = (id: number, overrides: Partial<OrganismState> = {}): OrganismSta
 const stream = (name: Parameters<typeof deriveStreamWords>[1]) =>
   new SeededRandom(deriveStreamWords(1, name))
 
-describe('MovementSystem reads physical genes', () => {
-  function runMovement(organism: OrganismState, intent: { turn: number; thrust: number }) {
+describe('MovementSystem reads the baseline speed and turn rate (docs/decisions/0015)', () => {
+  function runMovement(
+    c: typeof config,
+    organism: OrganismState,
+    intent: { turn: number; thrust: number }
+  ) {
     const full = { ...intent, strafe: 0, interact: true }
     const organisms = new OrganismStore()
     organisms.add(organism)
     const intents: IntentBuffer = new Map([[organism.id, full]])
     const events = new EventLog(10)
     events.beginTick()
-    new MovementSystem(config, organisms, intents, events).update(1)
+    new MovementSystem(c, organisms, intents, events).update(1)
     return organisms.get(organism.id) as OrganismState
   }
 
-  it('uses the organism’s own maxSpeed gene', () => {
-    const slow = runMovement(withGenes(mature(1), { 'physical.maxSpeed': 10 }), {
-      turn: 0,
-      thrust: 1
-    })
-    const fast = runMovement(withGenes(mature(2), { 'physical.maxSpeed': 30 }), {
-      turn: 0,
-      thrust: 1
-    })
-    expect(slow.vx).toBeCloseTo(10, 10)
-    expect(fast.vx).toBeCloseTo(30, 10)
+  it('moves at the configured maxSpeed (a founder body delivers exactly the baseline)', () => {
+    for (const speed of [10, 30]) {
+      const c = resolveWorldConfig({ organisms: { maxSpeed: speed } })
+      const moved = runMovement(c, organismFor(c, 1, { age: MATURE }), { turn: 0, thrust: 1 })
+      expect(moved.vx).toBeCloseTo(speed, 10)
+    }
   })
 
-  it('clamps the turn to the organism’s own maxTurnRate gene', () => {
-    const sluggish = runMovement(withGenes(mature(1), { 'physical.maxTurnRate': 1 }), {
-      turn: 10,
-      thrust: 0
-    })
-    const agile = runMovement(withGenes(mature(2), { 'physical.maxTurnRate': 5 }), {
-      turn: 10,
-      thrust: 0
-    })
-    expect(sluggish.heading).toBeCloseTo(1 * config.timestep, 12)
-    expect(agile.heading).toBeCloseTo(5 * config.timestep, 12)
-  })
-
-  it('judges juvenility by the organism’s own maturityAge gene', () => {
-    const early = withGenes(organismFor(config, 1, { age: 60 }), { 'physical.maturityAge': 50 })
-    const late = withGenes(organismFor(config, 2, { age: 60 }), { 'physical.maturityAge': 100 })
-    const fullSpeed = runMovement(early, { turn: 0, thrust: 1 }).vx
-    const juvenileSpeed = runMovement(late, { turn: 0, thrust: 1 }).vx
-    expect(juvenileSpeed).toBeCloseTo(fullSpeed * config.organisms.juvenileSpeedScale, 10)
+  it('clamps the turn to the configured maxTurnRate', () => {
+    for (const rate of [1, 5]) {
+      const c = resolveWorldConfig({ organisms: { maxTurnRate: rate } })
+      const turned = runMovement(c, organismFor(c, 1, { age: MATURE }), { turn: 10, thrust: 0 })
+      expect(turned.heading).toBeCloseTo(rate * c.timestep, 12)
+    }
   })
 })
 
-describe('PerceptionSystem reads the sensorRadius gene', () => {
-  it('lets a long-sighted organism see a resource a short-sighted one cannot', () => {
-    const organisms = new OrganismStore()
-    organisms.add(withGenes(mature(1), { 'sensory.sensorRadius': 30 }))
-    organisms.add(withGenes(mature(2), { 'sensory.sensorRadius': 100 }))
-    const resource: ResourceState = { id: 3, x: 50, y: 0, remaining: 30, kind: 0 }
-    const index = new SpatialHash<ResourceState>(120, (r) => r)
-    index.rebuild([resource])
-    const buffer: PerceptionBuffer = new Map()
-    new PerceptionSystem(organisms, index, buffer).update()
-    expect(buffer.get(1)).toBeNull()
-    expect(buffer.get(2)).toMatchObject({ resourceId: 3 })
+describe('PerceptionSystem reads the baseline sensor range', () => {
+  it('sees a resource only inside the configured range', () => {
+    const seen = (range: number) => {
+      const c = resolveWorldConfig({ organisms: { sensorRadius: range } })
+      const organisms = new OrganismStore()
+      organisms.add(organismFor(c, 1, { age: MATURE }))
+      const resource: ResourceState = { id: 3, x: 50, y: 0, remaining: 30, kind: 0 }
+      const index = new SpatialHash<ResourceState>(120, (r) => r)
+      index.rebuild([resource])
+      const buffer: PerceptionBuffer = new Map()
+      new PerceptionSystem(c, organisms, index, buffer).update()
+      return buffer.get(1)
+    }
+    expect(seen(30)).toBeNull()
+    expect(seen(100)).toMatchObject({ resourceId: 3 })
   })
 })
 
@@ -151,47 +140,41 @@ describe('MetabolismSystem reads cost genes and derives size-linked costs', () =
     expect(bigCost / smallCost).toBeCloseTo(4, 8)
   })
 
-  it('charges more to run a longer sensor', () => {
-    const sensing = resolveWorldConfig({
-      organisms: {
-        basalCost: 0,
-        movementCost: 0,
-        turningCost: 0,
-        learningCost: 0,
-        juvenileMetabolicScale: 1
-      }
-    })
-    const near = withGenes(organismFor(sensing, 1, { age: MATURE, energy: 100 }), {
-      'sensory.sensorRadius': 30
-    })
-    const far = withGenes(organismFor(sensing, 2, { age: MATURE, energy: 100 }), {
-      'sensory.sensorRadius': 120
-    })
-    expect((100 - energyAfter(far, sensing)) / (100 - energyAfter(near, sensing))).toBeCloseTo(4, 8)
+  it('charges the configured sensorCost for the baseline sensor, in proportion', () => {
+    const cost = (sensorCost: number) => {
+      const sensing = resolveWorldConfig({
+        organisms: {
+          basalCost: 0,
+          movementCost: 0,
+          turningCost: 0,
+          learningCost: 0,
+          sensorCost,
+          juvenileMetabolicScale: 1
+        }
+      })
+      return 100 - energyAfter(organismFor(sensing, 1, { age: MATURE, energy: 100 }), sensing)
+    }
+    expect(cost(0.04) / cost(0.01)).toBeCloseTo(4, 8)
   })
 
-  it('charges the movementCost and turningCost genes against realized speed and turn', () => {
-    const moving = resolveWorldConfig({
-      organisms: { basalCost: 0, sensorCost: 0, learningCost: 0, juvenileMetabolicScale: 1 }
-    })
-    const base = organismFor(moving, 1, { age: MATURE, energy: 100, vx: 10, vy: 0 })
-    const costly = withGenes(base, { 'metabolic.movementCost': 0.008 })
-    const thrifty = withGenes(base, { 'metabolic.movementCost': 0.004 })
-    expect((100 - energyAfter(costly, moving)) / (100 - energyAfter(thrifty, moving))).toBeCloseTo(
-      2,
-      8
-    )
-    const turning = organismFor(moving, 2, {
-      age: MATURE,
-      energy: 100,
-      lastTurnMagnitude: 0.2
-    })
-    const sharp = withGenes(turning, { 'metabolic.turningCost': 0.08 })
-    const gentle = withGenes(turning, { 'metabolic.turningCost': 0.04 })
-    expect((100 - energyAfter(sharp, moving)) / (100 - energyAfter(gentle, moving))).toBeCloseTo(
-      2,
-      8
-    )
+  it('charges the configured movementCost and turningCost against realized speed and turn', () => {
+    const run = (movementCost: number, turningCost: number, moving: Partial<OrganismState>) => {
+      const c = resolveWorldConfig({
+        organisms: {
+          basalCost: 0,
+          sensorCost: 0,
+          learningCost: 0,
+          movementCost,
+          turningCost,
+          juvenileMetabolicScale: 1
+        }
+      })
+      return 100 - energyAfter(organismFor(c, 1, { age: MATURE, energy: 100, ...moving }), c)
+    }
+    expect(run(0.008, 0.05, { vx: 10 }) / run(0.004, 0.05, { vx: 10 })).toBeCloseTo(2, 8)
+    expect(
+      run(0.005, 0.08, { lastTurnMagnitude: 0.2 }) / run(0.005, 0.04, { lastTurnMagnitude: 0.2 })
+    ).toBeCloseTo(2, 8)
   })
 })
 
@@ -321,7 +304,7 @@ describe('ReproductionSystem reads reproduction genes', () => {
     const steady = resolveWorldConfig({ genetics: { mutationRateScale: 0, blendAlpha: 0 } })
 
     it('gets a fresh id and names both parents’ genomes', () => {
-      const organisms = pair({ 'physical.maxSpeed': 11 }, { 'physical.maxSpeed': 33 })
+      const organisms = pair({ 'physical.radius': 4 }, { 'physical.radius': 8 })
       const { events } = runFull(organisms, 100)
       const child = organisms.get(50) as OrganismState
       expect(child.genome.id).toBe(100)
@@ -335,15 +318,15 @@ describe('ReproductionSystem reads reproduction genes', () => {
 
     it('takes each gene from between its parents’ values when mutation is off', () => {
       const organisms = pair(
-        { 'physical.maxSpeed': 11, 'sensory.sensorRadius': 40 },
-        { 'physical.maxSpeed': 33, 'sensory.sensorRadius': 100 }
+        { 'physical.radius': 4, 'behavioral.wanderJitter': 1 },
+        { 'physical.radius': 8, 'behavioral.wanderJitter': 3 }
       )
       runFull(organisms, 100, steady)
       const child = (organisms.get(50) as OrganismState).genome
-      expect(child.physical.maxSpeed).toBeGreaterThanOrEqual(11)
-      expect(child.physical.maxSpeed).toBeLessThanOrEqual(33)
-      expect(child.sensory.sensorRadius).toBeGreaterThanOrEqual(40)
-      expect(child.sensory.sensorRadius).toBeLessThanOrEqual(100)
+      expect(child.physical.radius).toBeGreaterThanOrEqual(4)
+      expect(child.physical.radius).toBeLessThanOrEqual(8)
+      expect(child.behavioral.wanderJitter).toBeGreaterThanOrEqual(1)
+      expect(child.behavioral.wanderJitter).toBeLessThanOrEqual(3)
     })
 
     it('takes brain weights from both parents when mutation is off', () => {

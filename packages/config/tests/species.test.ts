@@ -101,7 +101,6 @@ describe('species config', () => {
       species: {
         distanceWeights: {
           physical: 0,
-          sensory: 0,
           metabolic: 0,
           behavioral: 0,
           reproduction: 0,

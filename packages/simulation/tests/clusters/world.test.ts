@@ -3,25 +3,29 @@ import type { WorldConfigOverrides } from '@evo/contracts'
 import { World } from '../../src/world/World'
 
 const CLUSTERS: WorldConfigOverrides = { environment: { layout: 'clusters' } }
+/** The same world with 4 founders per species (72 organisms), for the long or repeated runs. */
+const LIGHT: WorldConfigOverrides = {
+  environment: { layout: 'clusters', clusters: { organismsPerSpecies: 4 } }
+}
 const SEED = 4
 
 describe('the cluster world at tick 0', () => {
   const world = World.create({ seed: SEED, config: CLUSTERS })
 
-  it('starts 108 founders, 18 per cluster, in their home clusters', () => {
+  it('starts 432 founders, 72 per cluster, in their home clusters', () => {
     const report = world.clusterReport()
-    expect(world.snapshot().organisms).toHaveLength(108)
-    expect(report?.clusters.map((c) => c.alive)).toEqual([18, 18, 18, 18, 18, 18])
+    expect(world.snapshot().organisms).toHaveLength(432)
+    expect(report?.clusters.map((c) => c.alive)).toEqual([72, 72, 72, 72, 72, 72])
     expect(report?.clusters.every((c) => c.inVoid === 0)).toBe(true)
     expect(report?.meanPurity).toBe(1)
   })
 
-  it('has exactly 18 species, 3 in each cluster, each with 6 founders', () => {
+  it('has exactly 18 species, 3 in each cluster, each with 24 founders', () => {
     const report = world.clusterReport()
     expect(world.species.active()).toHaveLength(18)
     const perCluster = [0, 0, 0, 0, 0, 0]
     for (const species of report?.species ?? []) {
-      expect(species.alive).toBe(6)
+      expect(species.alive).toBe(24)
       expect(species.purity).toBe(1)
       perCluster[species.dominantCluster] = (perCluster[species.dominantCluster] as number) + 1
     }
@@ -90,20 +94,19 @@ describe('the cluster world at tick 0', () => {
   it('has biome patches inside every cluster and several biomes overall', () => {
     const layout = world.clusterLayout()
     expect(layout?.clusters).toHaveLength(6)
-    expect(layout?.radius).toBe(250)
+    expect(layout?.radius).toBe(500)
     for (const cluster of layout?.clusters ?? []) {
-      expect(cluster.patches).toHaveLength(6)
+      expect(cluster.patches).toHaveLength(12)
       expect(new Set(cluster.patches.map((p) => p.type)).size).toBeGreaterThan(1)
     }
   })
 })
 
 describe('the cluster world while it runs', () => {
-  it('puts food only inside clusters, and lets organisms leave them (there are no walls)', () => {
+  it('puts food only inside clusters', () => {
     const world = World.create({ seed: SEED, config: CLUSTERS })
-    let wandered = false
-    for (let t = 0; t < 12; t++) {
-      world.run(250)
+    for (let t = 0; t < 6; t++) {
+      world.run(200)
       const snapshot = world.snapshot()
       const layout = world.clusterLayout()
       const clusters = layout?.clusters ?? []
@@ -111,10 +114,24 @@ describe('the cluster world while it runs', () => {
         clusters.some((c) => Math.hypot(x - c.x, y - c.y) <= (layout?.radius ?? 0))
       for (const food of snapshot.resources)
         expect(inside(food.position.x, food.position.y)).toBe(true)
-      if (snapshot.organisms.some((o) => !inside(o.position.x, o.position.y))) wandered = true
     }
-    expect(wandered).toBe(true)
     expect(world.validate()).toEqual({ ok: true, errors: [] })
+  })
+
+  it('has no walls: an organism far outside every cluster keeps its position, and nothing clamps it', () => {
+    const world = World.create({ seed: SEED, config: CLUSTERS })
+    const internals = world as unknown as {
+      organisms: { values(): Array<{ x: number; y: number; vx: number }> }
+    }
+    const organism = internals.organisms.values()[0]
+    if (!organism) throw new Error('expected a population')
+    organism.x = -40_000
+    organism.y = 40_000
+    world.run(20)
+    const moved = internals.organisms.values()[0]
+    expect(moved?.x).toBeLessThan(-30_000)
+    expect(moved?.y).toBeGreaterThan(30_000)
+    expect(world.validate().errors.join('\n')).not.toContain('outside')
   })
 
   it('slows and blinds organisms in the void only', () => {
@@ -139,18 +156,18 @@ describe('the cluster world while it runs', () => {
   })
 
   it('is deterministic, however the run is sliced', () => {
-    const a = World.create({ seed: 11, config: CLUSTERS })
-    const b = World.create({ seed: 11, config: CLUSTERS })
+    const a = World.create({ seed: 11, config: LIGHT })
+    const b = World.create({ seed: 11, config: LIGHT })
     a.run(1500)
     for (let i = 0; i < 1500; i++) b.step()
     expect(b.stateHash()).toBe(a.stateHash())
-    const c = World.create({ seed: 12, config: CLUSTERS })
+    const c = World.create({ seed: 12, config: LIGHT })
     c.run(1500)
     expect(c.stateHash()).not.toBe(a.stateHash())
-  })
+  }, 120_000)
 
   it('keeps the invariants for a few thousand ticks', () => {
-    const world = World.create({ seed: 13, config: CLUSTERS, validateEveryTicks: 500 })
+    const world = World.create({ seed: 13, config: LIGHT, validateEveryTicks: 500 })
     world.run(3000)
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })

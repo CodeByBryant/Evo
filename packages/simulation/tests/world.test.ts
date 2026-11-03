@@ -185,10 +185,14 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     // this scenario gives Phase 3's original 26 active / 47 born / 21 starved - see
     // world-genomes.test.ts. The pins below moved in Phases 5, 6 and 7 only because the larger
     // genome draws more founder weights from the `genetics` stream, which shifts later mutations;
-    // with mutation off the result is still 26/47/21 after the Phase 6 and 7 genome growth.)
-    expect(snapshot.population.active).toBe(25)
-    expect(snapshot.metrics.organismsBorn).toBe(44)
-    expect(snapshot.metrics.deathsByStarvation).toBe(19)
+    // with mutation off the result is still 26/47/21 after the Phase 6 and 7 genome growth. They
+    // moved again when the five scalar genes were retired (ADR 0015): fewer genes mutate, so
+    // fewer draws, and speed, turning and sensing no longer evolve in a world without anatomy. They
+    // moved once more when the brain gained three way-home inputs (founders draw 24 more weights)
+    // and again when bodies became evolvable by default.)
+    expect(snapshot.population.active).toBe(30)
+    expect(snapshot.metrics.organismsBorn).toBe(48)
+    expect(snapshot.metrics.deathsByStarvation).toBe(18)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 

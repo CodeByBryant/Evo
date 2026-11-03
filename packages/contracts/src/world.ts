@@ -38,6 +38,11 @@ export interface ClusterConfig {
   voidVisibility: number
   /** The mating signal reaches at most this far, which must be less than the void width. */
   mateSignalCap: number
+  /**
+   * Species distance threshold in the cluster layout (at least `species.threshold`): with five
+   * times the organisms the field's threshold splits lineages into over a hundred species.
+   */
+  speciesThreshold: number
   /** Founder gene offset between clusters, as a fraction of each gene's range. */
   clusterSpread: number
   /** Founder gene offset between the species of one cluster, as a fraction of each gene's range. */

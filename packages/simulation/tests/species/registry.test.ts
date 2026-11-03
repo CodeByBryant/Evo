@@ -13,7 +13,7 @@ const baselineGene = (spec: { min: number; max: number }): number => (spec.min +
 const genome = (id: number, weight: number): Genome => genomeWith(f, id, baselineGene, weight)
 
 function registry(overrides: Partial<SpeciesConfig> = {}): SpeciesRegistry {
-  return new SpeciesRegistry({ ...f.config.species, threshold: 0.15, ...overrides }, f.specs, std)
+  return new SpeciesRegistry({ ...f.config.species, threshold: 0.18, ...overrides }, f.specs, std)
 }
 
 describe('weightedDistance', () => {
@@ -27,13 +27,12 @@ describe('weightedDistance', () => {
   it('equals the unweighted total when every weight is equal', () => {
     const equal: SpeciesDistanceWeights = {
       physical: 1,
-      sensory: 1,
       metabolic: 1,
       behavioral: 1,
       reproduction: 1,
       learning: 1,
       brain: 1,
-      // the unweighted total covers the seven original groups; the body is reported separately
+      // the unweighted total covers the six scalar groups and the brain; the body is reported separately
       body: 0
     }
     expect(weightedDistance(distance, equal)).toBeCloseTo(distance.total, 12)
@@ -42,7 +41,6 @@ describe('weightedDistance', () => {
   it('with a single nonzero weight equals that group', () => {
     const only = (group: keyof SpeciesDistanceWeights): SpeciesDistanceWeights => ({
       physical: 0,
-      sensory: 0,
       metabolic: 0,
       behavioral: 0,
       reproduction: 0,

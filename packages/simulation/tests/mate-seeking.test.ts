@@ -47,7 +47,7 @@ function sense(
   const resources = new SpatialHash<ResourceState>(60, (r) => r)
   resources.rebuild([])
   const buffer: MateBuffer = new Map()
-  new PerceptionSystem(store, resources, new Map(), undefined, null, undefined, {
+  new PerceptionSystem(config, store, resources, new Map(), undefined, null, undefined, {
     organismIndex: index,
     buffer,
     radius: options.radius ?? config.reproduction.mateSenseRadius,
@@ -61,7 +61,7 @@ describe('sensing an eligible partner', () => {
   it('sees a ready partner far beyond the sensor radius, from both sides', () => {
     const a = ready(1, 100, 100)
     const b = ready(2, 300, 100) // 200 away; the sensor radius is far smaller
-    expect(b.x - a.x).toBeGreaterThan(a.genome.sensory.sensorRadius * 2)
+    expect(b.x - a.x).toBeGreaterThan(config.organisms.sensorRadius * 2)
     const mates = sense([a, b])
     expect(mates.get(1)).toMatchObject({ organismId: 2, distanceSquared: 200 * 200 })
     expect(mates.get(2)).toMatchObject({ organismId: 1 })
@@ -107,7 +107,7 @@ describe('sensing an eligible partner', () => {
     store.add(ready(1, 100, 100))
     const resources = new SpatialHash<ResourceState>(60, (r) => r)
     resources.rebuild([])
-    expect(() => new PerceptionSystem(store, resources, new Map()).update(0)).not.toThrow()
+    expect(() => new PerceptionSystem(config, store, resources, new Map()).update(0)).not.toThrow()
   })
 })
 

@@ -1,6 +1,6 @@
 # Anatomy
 
-How an organism's body works. The decisions are in [ADR 0012](../decisions/0012-anatomy.md) (the vision is [ADR 0004](../decisions/0004-dynamic-evolvable-anatomy-and-morphology.md)); the genes are in [genome.md](../genetics/genome.md). Status: **the body outline is live (it changes size, energy and drag, and is drawn); the parts, their development and capability formulas exist, but the simulation does not read capabilities yet** (that is a later pull request). Everything here is derived from the genome, so nothing about a body is saved or hashed beyond the genes.
+How an organism's body works. The decisions are in [ADR 0012](../decisions/0012-anatomy.md) (the vision is [ADR 0004](../decisions/0004-dynamic-evolvable-anatomy-and-morphology.md)); the genes are in [genome.md](../genetics/genome.md). Status: **the parts act** (ADR 0015): every system multiplies a quantity it already used by the body's founder-relative factor, and speed, turning, sensing and movement cost no longer have genes of their own.
 
 ```text
 genome.body (119 genes)  ->  developAnatomy()  ->  Anatomy  ->  capabilitiesOf()  ->  Capabilities
@@ -73,6 +73,25 @@ It uses the engine's own `cos` and `sin`, no randomness, and never modifies its 
 The consequences are the point: a flagellum pushing forward drives speed; pushing sideways it strafes; placed off the axis it turns the body; one at the rear on the axis cannot. Every part costs mass and upkeep, a dormant part costs them for nothing, and armor can reduce damage but never to zero.
 
 **Factors.** `capabilityFactors(capabilities, founder)` expresses each capability relative to the founder body plan (`anatomy.founder`): speed, strafe and turn are thrust per unit mass over the founder's; damage and toxin factors are multipliers (below 1 is better); `upkeepDelta` is extra energy per second. The founder compared with itself is **exactly 1** for every factor, so switching anatomy on cannot change behavior until a body differs. A capability the founder lacks entirely is compared as neutral (1) rather than dividing by zero.
+
+## What each factor does in the engine
+
+| Factor                 | Read by                              | Effect                                                 |
+| ---------------------- | ------------------------------------ | ------------------------------------------------------ |
+| `speed`, `strafe`      | movement, brain scaling              | top speed and the lateral limit follow thrust per mass |
+| `turn`                 | movement, brain                      | turn rate follows torque per mass                      |
+| `senseRange`           | perception, observation, sensor cost | sensor radius and what it costs to run                 |
+| `foodDetection[k]`     | perception                           | a sniffer finds food of kind `k` from further          |
+| `reach`                | interaction                          | contact radius to food                                 |
+| `digestion`            | interaction                          | energy gained per unit of food                         |
+| `energyCapacity`       | `maxEnergyOf`                        | how much a body holds                                  |
+| `toxinDamage`          | interaction, health                  | damage from toxic food                                 |
+| `damageTaken`          | health                               | hazard damage (armor never reduces it to zero)         |
+| `temperatureTolerance` | ecology                              | the comfortable temperature range                      |
+| `regeneration`         | health                               | healing rate                                           |
+| `upkeepDelta`          | metabolism                           | energy per second; every part costs, dormant ones too  |
+
+The baselines are `organisms.maxSpeed`, `maxTurnRate`, `sensorRadius`, `movementCost` and `turningCost`; a founder body delivers exactly the baseline. Factors are cached per immutable body-gene array (`organisms/bodyFactors.ts`), so reading one in a system is a lookup. Mass is the outline's area relative to the founder's, so a bigger body is slower for the same thrust.
 
 ## Using it
 

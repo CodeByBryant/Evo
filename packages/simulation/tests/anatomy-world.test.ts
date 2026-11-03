@@ -14,7 +14,10 @@ import { deriveStreamWords } from '../src/random/streams'
  */
 const SEED = 7
 const BUSY: WorldConfigOverrides = {
-  anatomy: { mutation: { presenceRate: 0.3, typeRate: 0.3, continuousRate: 0.5, visualRate: 0.5 } },
+  anatomy: {
+    enabled: false,
+    mutation: { presenceRate: 0.3, typeRate: 0.3, continuousRate: 0.5, visualRate: 0.5 }
+  },
   genetics: { mutationRateScale: 4 }
 }
 /** Paint genes mutate with anatomy on (they have no effect on the dynamics), so snapshots are compared without them. */
@@ -54,11 +57,15 @@ describe('anatomy off', () => {
 })
 
 describe('anatomy on', () => {
-  // Parts do not act yet (PR 4), but the outline does (ADR 0013), so a body with a changing outline
-  // is a different organism. With the outline frozen, every other body gene is invisible.
-  const FROZEN_OUTLINE = { anatomy: { mutation: { outlineRate: 0 } } }
+  // Parts and the outline act (ADR 0013, 0015), so a body that changes is a different organism. With
+  // every body gene that matters frozen, only the paint genes still mutate, and they are invisible.
+  const FROZEN_OUTLINE = {
+    anatomy: {
+      mutation: { outlineRate: 0, presenceRate: 0, typeRate: 0, continuousRate: 0 }
+    }
+  }
 
-  it('does not change the existing dynamics while the outline stays the founder outline', () => {
+  it('does not change the existing dynamics while the body stays the founder body', () => {
     const off = World.create({ seed: SEED, config: BUSY })
     const live = World.create({ seed: SEED, config: on(FROZEN_OUTLINE) })
     for (let tick = 1; tick <= 3000; tick++) {
@@ -85,7 +92,7 @@ describe('anatomy on', () => {
     expect(live.stateHash()).not.toBe(off.stateHash())
   })
 
-  it('lets an evolving outline change the dynamics: size, energy and drag follow the shape', () => {
+  it('lets an evolving body change the dynamics: size, parts, energy and drag follow it', () => {
     const off = World.create({ seed: SEED, config: BUSY })
     const live = World.create({ seed: SEED, config: on() })
     off.run(3000)

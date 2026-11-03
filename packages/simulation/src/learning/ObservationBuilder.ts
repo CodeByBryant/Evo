@@ -45,6 +45,12 @@ export interface ObservationInput {
   readonly movementScale?: number
   /** The nearest eligible partner, seen only while the organism is itself ready (default none). */
   readonly mate?: Sighting | null
+  /** The way back to the cluster's centre (cluster layout only; omitted in the field). */
+  readonly home?: {
+    readonly present: number
+    readonly bearingCos: number
+    readonly bearingSin: number
+  }
 }
 
 /** A hazard sensed: the vector to its centre and its radius. */
@@ -103,7 +109,7 @@ function writeHazard(
 }
 
 /**
- * Builds the 37-number observation in the fixed order of `OBSERVATION_LABELS`
+ * Builds the 40-number observation in the fixed order of `OBSERVATION_LABELS`
  * (docs/learning/brain.md). Pure; every value is bounded to `[-1, 1]`.
  */
 export function buildObservation(input: ObservationInput): Observation {
@@ -135,6 +141,14 @@ export function buildObservation(input: ObservationInput): Observation {
     clamp(input.movementScale ?? 1, 0, 1)
   )
   writeSighting(out, input.mate ?? null, cosHeading, sinHeading, input.sensorRadius)
+  // The way home in the cluster layout (ADR 0015): how far out of its cluster the organism is and
+  // the bearing to the cluster's centre; zeros in the field.
+  const home = input.home ?? null
+  out.push(
+    home === null ? 0 : clamp(home.present, 0, 1),
+    home === null ? 0 : clamp(home.bearingCos, -1, 1),
+    home === null ? 0 : clamp(home.bearingSin, -1, 1)
+  )
   if (out.length !== OBSERVATION_SIZE) {
     throw new Error(`observation has ${out.length} values, expected ${OBSERVATION_SIZE}`)
   }

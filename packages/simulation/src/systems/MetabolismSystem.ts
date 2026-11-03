@@ -4,6 +4,7 @@ import type { EcologyModel } from '../ecology/EcologyModel'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { factorsOf } from '../organisms/bodyFactors'
 import { basalCostOf, learningCostOf, outlineDragFactor, sensorCostOf } from '../organisms/traits'
 
 /**
@@ -37,15 +38,22 @@ export class MetabolismSystem {
       const stage = lifeStageFor(organism.age, genome.physical)
       const scale = stage === 'juvenile' ? juvenileMetabolicScale : 1
       const drag = outlineDragFactor(genome, this.config)
+      const body = factorsOf(genome, this.config)
       const cost =
         (basalCostOf(genome, this.config) +
-          genome.metabolic.movementCost * speedSquared * drag +
-          genome.metabolic.turningCost * turnSquared * drag +
+          this.config.organisms.movementCost * speedSquared * drag +
+          this.config.organisms.turningCost * turnSquared * drag +
           sensorCostOf(genome, this.config) +
+          body.upkeepDelta +
           learningCostOf(genome, this.config) +
           (this.ecology === null
             ? 0
-            : this.ecology.environmentalCost(organism.x, organism.y, tick))) *
+            : this.ecology.environmentalCost(
+                organism.x,
+                organism.y,
+                tick,
+                body.temperatureTolerance
+              ))) *
         scale *
         dt
       const previous = organism.energy

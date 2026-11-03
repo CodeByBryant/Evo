@@ -5,13 +5,14 @@ import type { EventLog } from '../events/EventLog'
 import { clamp, wrapAngle } from '../math/scalar'
 import { cos, sin } from '../math/trig'
 import type { EcologyModel } from '../ecology/EcologyModel'
+import { factorsOf } from '../organisms/bodyFactors'
 import { lifeStageFor } from '../organisms/lifeStage'
 
 const NO_INTENT: OrganismIntent = { turn: 0, thrust: 0, strafe: 0, interact: false }
 
 /**
- * Applies each organism's intent: turns it (bounded by `maxTurnRate`), sets its speed (bounded by
- * the organism's `maxSpeed` gene, scaled down for juveniles), adds any lateral `strafe` velocity, and moves it,
+ * Applies each organism's intent: turns it (bounded by `organisms.maxTurnRate` scaled by the body's torque), sets its speed (bounded by
+ * the baseline `organisms.maxSpeed` scaled by the body's thrust and, for juveniles, down), adds any lateral `strafe` velocity, and moves it,
  * clamped to the world rectangle. Velocity is always derived from heading, speed and strafe, never set
  * independently. Also records the turn
  * actually applied as `lastTurnMagnitude`, which `MetabolismSystem` reads afterward.
@@ -41,20 +42,25 @@ export class MovementSystem {
 
     for (const organism of this.organisms.values()) {
       const genes = organism.genome.physical
-      const maxTurn = genes.maxTurnRate * dt
+      const body = factorsOf(organism.genome, this.config)
+      const maxTurn = this.config.organisms.maxTurnRate * dt * body.turn
       const intent = this.intentBuffer.get(organism.id) ?? NO_INTENT
       const turn = clamp(intent.turn, -maxTurn, maxTurn)
       const heading = wrapAngle(organism.heading + turn)
       const stage = lifeStageFor(organism.age, genes)
       const baseMaxSpeed =
-        stage === 'juvenile' ? genes.maxSpeed * juvenileSpeedScale : genes.maxSpeed
-      const scaledMaxSpeed = this.terrainSlows
+        stage === 'juvenile'
+          ? this.config.organisms.maxSpeed * juvenileSpeedScale
+          : this.config.organisms.maxSpeed
+      const terrainSpeed = this.terrainSlows
         ? baseMaxSpeed * (this.ecology as EcologyModel).movementScale(organism.x, organism.y, tick)
         : baseMaxSpeed
+      // The parts decide how much of that speed forward and sideways thrust can deliver.
+      const scaledMaxSpeed = terrainSpeed * body.speed
       const speed = clamp(intent.thrust, 0, 1) * scaledMaxSpeed
       let vx = cos(heading) * speed
       let vy = sin(heading) * speed
-      const lateral = clamp(intent.strafe, -1, 1) * scaledMaxSpeed
+      const lateral = clamp(intent.strafe, -1, 1) * terrainSpeed * body.strafe
       if (lateral !== 0) {
         // Strafing adds velocity across the heading (positive is to the left); the combined
         // speed is limited to the organism's own top speed so strafing is never a free boost.

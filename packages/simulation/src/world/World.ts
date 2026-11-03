@@ -43,9 +43,9 @@ import { ReproductionReadiness } from '../organisms/reproductionReadiness'
 import {
   bodyRadiusOf,
   drawnOutlineOf,
+  drawnPartsOf,
   maxEnergyOf,
-  maxHealthOf,
-  sizeFactor
+  maxHealthOf
 } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
@@ -55,6 +55,7 @@ import { developAnatomy } from '../development/develop'
 import { buildBodySpecs, founderBodyVector } from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
+import { massScaleOf } from '../organisms/bodyFactors'
 import { planClusterFounders } from '../genetics/ClusterFounders'
 import type { FounderPlan } from '../genetics/ClusterFounders'
 import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
@@ -97,8 +98,12 @@ export interface WorldCreateOptions extends WorldOptions {
   validateEveryTicks?: number
 }
 
+/** Founders start within this fraction of their cluster's radius (ADR 0015). */
+const FOUNDER_CORE = 0.8
+
 /** How far beyond the clusters a camera may look, in world units. */
-const CLUSTER_VIEW_MARGIN = 150
+/** The camera may look this fraction of a cluster's radius beyond the clusters. */
+const CLUSTER_VIEW_MARGIN = 0.6
 
 /**
  * A headless, seeded, fixed-timestep world. `step()`/`run()` are the only ways state changes;
@@ -183,7 +188,8 @@ export class World {
     // Grid cell sizes are the upper bound of the gene ranges: a query is correct for any cell
     // size, so this only affects efficiency, and it must not depend on an individual genome.
     this.resourceIndex = new SpatialHash<ResourceState>(
-      geneRangeMax(this.geneSpecs, 'sensory.sensorRadius'),
+      // Eyes can double the sensor range, and a query is correct for any cell size.
+      2 * this.config.organisms.sensorRadius,
       (resource) => resource
     )
     this.organismIndex = new SpatialHash<OrganismState>(
@@ -252,6 +258,7 @@ export class World {
     )
     this.brainLayout = brainLayoutOf(architectureOf(this.config.genetics.brain))
     this.perceptionSystem = new PerceptionSystem(
+      this.config,
       this.organisms,
       this.resourceIndex,
       this.perceptionBuffer,
@@ -395,7 +402,12 @@ export class World {
       let x: number
       let y: number
       if (clusters !== null && plan !== undefined) {
-        const point = clusters.pointIn(plan.cluster, worldRandom.float(), worldRandom.float())
+        const point = clusters.pointIn(
+          plan.cluster,
+          worldRandom.float(),
+          worldRandom.float(),
+          FOUNDER_CORE
+        )
         x = point.x
         y = point.y
       } else {
@@ -496,8 +508,9 @@ export class World {
   /** The cluster layout for drawing, or `null` in the field layout. A copy; it never changes during a run. */
   clusterLayout(): ClusterLayoutSnapshot | null {
     if (this.clusters === null) return null
-    if (this.clusterTerrain !== null) return this.clusterTerrain.toSnapshot(CLUSTER_VIEW_MARGIN)
-    const b = this.clusters.bounds(CLUSTER_VIEW_MARGIN)
+    const margin = CLUSTER_VIEW_MARGIN * this.clusters.radius
+    if (this.clusterTerrain !== null) return this.clusterTerrain.toSnapshot(margin)
+    const b = this.clusters.bounds(margin)
     return {
       radius: this.clusters.radius,
       bounds: b,
@@ -601,7 +614,7 @@ export class World {
       developAnatomy(organism.genome.body.genes, this.config.anatomy),
       this.founderCapabilities,
       this.config.anatomy,
-      sizeFactor(organism.genome, this.config),
+      massScaleOf(organism.genome.body.genes, this.config.anatomy),
       Math.max(1, this.ecology.kindCount)
     )
   }
@@ -725,6 +738,7 @@ export class World {
         heading: organism.heading,
         radius: bodyRadiusOf(organism.genome, this.config),
         outline: drawnOutlineOf(organism.genome, this.config),
+        parts: drawnPartsOf(organism.genome, this.config),
         hue: organism.genome.physical.hue,
         pattern: organism.genome.body.genes[visualGeneIndex('pattern')] as number,
         accentHue: organism.genome.body.genes[visualGeneIndex('accentHue')] as number,

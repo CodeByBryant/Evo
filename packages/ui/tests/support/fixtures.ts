@@ -87,9 +87,10 @@ export function inspector(overrides: Partial<InspectorView> = {}): InspectorView
     },
     genome: [
       { group: 'physical', name: 'radius', value: 5.2 },
-      { group: 'physical', name: 'maxSpeed', value: 20 },
-      { group: 'sensory', name: 'sensorRadius', value: 60 }
+      { group: 'physical', name: 'maturityAge', value: 90 },
+      { group: 'metabolic', name: 'basalCost', value: 0.5 }
     ],
+    anatomy: null,
     brain: {
       inputs: [
         { label: 'energy', value: 0.55 },

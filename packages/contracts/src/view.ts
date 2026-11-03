@@ -1,3 +1,4 @@
+import type { PartType } from './anatomy'
 import type { EntityId } from './entity'
 import type { LifeStage } from './organism'
 import type { ClusterReport, MigrationSummary, RegionType, Season } from './ecology'
@@ -61,6 +62,30 @@ export interface InspectorBrain {
   readonly weightChange: number
 }
 
+/** One part in the inspector's anatomy tab; positions are in body-radius units (front along +x). */
+export interface InspectorPart {
+  readonly slot: number
+  readonly type: PartType
+  readonly size: number
+  readonly x: number
+  readonly y: number
+  readonly orientation: number
+  readonly functional: boolean
+}
+
+/** The selected organism's body: its outline, parts and what they do (ADR 0015). */
+export interface InspectorAnatomy {
+  /** The outline as `x0, y0, x1, y1, ...` in body-radius units. */
+  readonly outline: readonly number[]
+  readonly parts: readonly InspectorPart[]
+  /** Slots that carry a part that did not develop because the structural budget was spent. */
+  readonly undeveloped: readonly number[]
+  readonly sizeUsed: number
+  readonly budget: number
+  /** What the body does relative to the founder body (1 is the founder), and what it costs. */
+  readonly capabilities: readonly LabelledValue[]
+}
+
 /** One selected organism, as the inspector tabs show it. */
 export interface InspectorView {
   readonly id: EntityId
@@ -79,6 +104,8 @@ export interface InspectorView {
     readonly cooldown: number
   }
   readonly genome: readonly GeneRow[]
+  /** The body, or `null` when the organism is not known to the world. */
+  readonly anatomy: InspectorAnatomy | null
   /** `null` under the reflex controller. */
   readonly brain: InspectorBrain | null
   readonly lineage: {

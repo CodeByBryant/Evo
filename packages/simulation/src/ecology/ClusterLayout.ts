@@ -72,10 +72,13 @@ export class ClusterLayout {
     return best
   }
 
-  /** A point uniformly distributed in a cluster's disc from two uniform values in `[0, 1)`. */
-  pointIn(cluster: number, u: number, v: number): Point {
+  /**
+   * A point uniformly distributed in a cluster's disc from two uniform values in `[0, 1)`, or in
+   * its inner `reach` fraction (founders start in the core, away from the void).
+   */
+  pointIn(cluster: number, u: number, v: number, reach = 1): Point {
     const centre = this.centres[cluster] as Point
-    const distance = this.radius * Math.sqrt(u)
+    const distance = this.radius * reach * Math.sqrt(u)
     const angle = TWO_PI * v
     return { x: centre.x + distance * cos(angle), y: centre.y + distance * sin(angle) }
   }

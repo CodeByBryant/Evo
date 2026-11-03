@@ -11,7 +11,6 @@ const SPECIES_KEYS = [
 ]
 export const DISTANCE_WEIGHT_KEYS = [
   'physical',
-  'sensory',
   'metabolic',
   'behavioral',
   'reproduction',

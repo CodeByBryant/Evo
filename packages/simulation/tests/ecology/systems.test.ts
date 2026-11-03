@@ -554,7 +554,7 @@ describe('PerceptionSystem with the ecology', () => {
     const index = new SpatialHash<ResourceState>(60, (r) => r)
     index.rebuild(store.values())
     const buffer = new Map()
-    new PerceptionSystem(organisms, index, buffer, undefined, eco).update(tick)
+    new PerceptionSystem(cfg, organisms, index, buffer, undefined, eco).update(tick)
     return buffer.get(1) as { resourceId: number; kind: number } | null
   }
   const kinds = [
@@ -580,7 +580,7 @@ describe('PerceptionSystem with the ecology', () => {
 
   it('sees a low-detectability kind only within its share of the sensor radius', () => {
     const cfg = config({ resourceKinds: { enabled: true, kinds } })
-    const radius = organismFor(cfg, 1).genome.sensory.sensorRadius
+    const radius = cfg.organisms.sensorRadius
     const eco = modelFor(cfg)
     expect(
       perceive(cfg, eco, [resource(1, { x: 100 + radius * 0.4, kind: 1, y: 100 })])
@@ -593,7 +593,7 @@ describe('PerceptionSystem with the ecology', () => {
 
   it('skips a hidden near resource for a visible farther one', () => {
     const cfg = config({ resourceKinds: { enabled: true, kinds } })
-    const radius = organismFor(cfg, 1).genome.sensory.sensorRadius
+    const radius = cfg.organisms.sensorRadius
     const found = perceive(cfg, modelFor(cfg), [
       resource(1, { x: 100 + radius * 0.7, kind: 1, y: 100 }),
       resource(2, { x: 100 + radius * 0.9, kind: 0, y: 100 })
@@ -603,7 +603,7 @@ describe('PerceptionSystem with the ecology', () => {
 
   it('shrinks the range with the region and season visibility', () => {
     const cfg = config(oneRegion({ seasons: { enabled: true } }))
-    const radius = organismFor(cfg, 1).genome.sensory.sensorRadius
+    const radius = cfg.organisms.sensorRadius
     const cave = cfg.ecology.regions.types.cave.visibility
     const winter = cfg.ecology.seasons.seasons.winter.visibility
     // a target just inside the meadow-in-spring range but outside the cave's and winter's
@@ -662,15 +662,24 @@ describe('PerceptionSystem with the ecology', () => {
     const buffer: HazardBuffer = new Map()
     const index = new SpatialHash<ResourceState>(60, (r) => r)
     index.rebuild([])
-    new PerceptionSystem(organisms, index, new Map(), undefined, eco, { hazards, buffer }).update(0)
+    new PerceptionSystem(cfg, organisms, index, new Map(), undefined, eco, {
+      hazards,
+      buffer
+    }).update(0)
     // edge distances: first = 60 - 5 = 55, second = 70 - 40 = 30, third is out of range
     expect(buffer.get(1)).toMatchObject({ hazardId: 1, radius: 40 })
     o.y = 135 // now inside the second hazard: edge distance 0
-    new PerceptionSystem(organisms, index, new Map(), undefined, eco, { hazards, buffer }).update(0)
+    new PerceptionSystem(cfg, organisms, index, new Map(), undefined, eco, {
+      hazards,
+      buffer
+    }).update(0)
     expect(buffer.get(1)).toMatchObject({ hazardId: 1 })
     o.x = 900
     o.y = 400
-    new PerceptionSystem(organisms, index, new Map(), undefined, eco, { hazards, buffer }).update(0)
+    new PerceptionSystem(cfg, organisms, index, new Map(), undefined, eco, {
+      hazards,
+      buffer
+    }).update(0)
     expect(buffer.get(1)).toBeNull()
   })
 })
@@ -849,8 +858,8 @@ describe('the brain inputs and reward terms', () => {
     previousAction: [0, 0, 0, 0, 0]
   }
 
-  it('has thirty-seven labelled slots in the documented order', () => {
-    expect(OBSERVATION_SIZE).toBe(37)
+  it('has forty labelled slots in the documented order', () => {
+    expect(OBSERVATION_SIZE).toBe(40)
     expect(OBSERVATION_LABELS.slice(23, 33)).toEqual([
       'ownHealth',
       'hazardPresent',
@@ -867,15 +876,18 @@ describe('the brain inputs and reward terms', () => {
       'matePresent',
       'mateBearingCos',
       'mateBearingSin',
-      'mateProximity'
+      'mateProximity',
+      'homePresent',
+      'homeBearingCos',
+      'homeBearingSin'
     ])
   })
 
   it('appends neutral values by default and leaves the first 23 slots untouched', () => {
     const plain = buildObservation(base)
-    expect(plain).toHaveLength(37)
+    expect(plain).toHaveLength(40)
     expect(plain.slice(23, 33)).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0, 1])
-    expect(plain.slice(33)).toEqual([0, 0, 0, 0])
+    expect(plain.slice(33)).toEqual([0, 0, 0, 0, 0, 0, 0])
     const rich = buildObservation({
       ...base,
       health: 0.4,
@@ -923,16 +935,16 @@ describe('the brain inputs and reward terms', () => {
 
   it('encodes an eligible partner like any other sighting, and zeros without one', () => {
     const none = buildObservation(base)
-    expect(none.slice(33)).toEqual([0, 0, 0, 0])
+    expect(none.slice(33, 37)).toEqual([0, 0, 0, 0])
     const ahead = buildObservation({ ...base, mate: { dx: 40, dy: 0, distanceSquared: 1600 } })
-    expect(ahead.slice(33)).toEqual([1, 1, 0, 1 - 40 / 60])
+    expect(ahead.slice(33, 37)).toEqual([1, 1, 0, 1 - 40 / 60])
     const left = buildObservation({ ...base, mate: { dx: 0, dy: 30, distanceSquared: 900 } })
     expect(left[33]).toBe(1)
     expect(left[34]).toBeCloseTo(0, 12)
     expect(left[35]).toBeCloseTo(1, 12)
     // a partner beyond the sensor radius (the mating signal is longer-ranged) has no proximity
     const far = buildObservation({ ...base, mate: { dx: 200, dy: 0, distanceSquared: 40000 } })
-    expect(far.slice(33)).toEqual([1, 1, 0, 0])
+    expect(far.slice(33, 37)).toEqual([1, 1, 0, 0])
     // the first 33 slots are unaffected by a mate
     expect(ahead.slice(0, 33)).toEqual(none.slice(0, 33))
   })
@@ -982,5 +994,56 @@ describe('the brain inputs and reward terms', () => {
       weights
     )
     expect(reward.total).toBeCloseTo(0.3 + 0.5 - 0.0025, 12)
+  })
+})
+
+describe('the way home (cluster layout)', () => {
+  const base2 = buildObservation({
+    energy: 1,
+    age: 0,
+    x: 10,
+    y: 10,
+    vx: 0,
+    vy: 0,
+    heading: 0,
+    maxSpeed: 20,
+    sensorRadius: 60,
+    worldWidth: 100,
+    worldHeight: 100,
+    food: null,
+    peer: null,
+    timeSinceFood: 0,
+    previousReward: 0,
+    previousAction: [0, 0, 0, 0, 0]
+  })
+
+  it('is zero in the field, where there is no home', () => {
+    expect(base2.slice(37)).toEqual([0, 0, 0])
+  })
+
+  it('encodes how far out an organism is and the bearing to the centre, clamped', () => {
+    const home = buildObservation({
+      ...{
+        energy: 1,
+        age: 0,
+        x: 10,
+        y: 10,
+        vx: 0,
+        vy: 0,
+        heading: 0,
+        maxSpeed: 20,
+        sensorRadius: 60,
+        worldWidth: 100,
+        worldHeight: 100,
+        food: null,
+        peer: null,
+        timeSinceFood: 0,
+        previousReward: 0,
+        previousAction: [0, 0, 0, 0, 0]
+      },
+      home: { present: 5, bearingCos: -3, bearingSin: 0.25 }
+    })
+    expect(home.slice(37)).toEqual([1, -1, 0.25])
+    expect(home).toHaveLength(OBSERVATION_SIZE)
   })
 })

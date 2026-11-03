@@ -107,12 +107,14 @@ describe('effectiveConfig', () => {
   it('scales food and population to the clusters, sets the founder count, and caps the mate signal', () => {
     const config = resolveWorldConfig({ environment: { layout: 'clusters' } })
     const scaled = effectiveConfig(config)
-    const scale = (6 * Math.PI * 250 * 250) / (500 * 500)
-    expect(scaled.organisms.initialCount).toBe(6 * 3 * 6)
+    const scale = (6 * Math.PI * 500 * 500) / (500 * 500)
+    expect(scaled.organisms.initialCount).toBe(6 * 3 * 24)
     expect(scaled.resources.maxCount).toBe(Math.round(config.resources.maxCount * scale))
     expect(scaled.resources.spawnRate).toBeCloseTo(config.resources.spawnRate * scale, 9)
     expect(scaled.maxPopulation).toBe(Math.round(config.maxPopulation * scale))
     expect(scaled.reproduction.mateSenseRadius).toBe(200)
-    expect(scaled.reproduction.mateSenseRadius).toBeLessThan(750 - 2 * 250)
+    expect(scaled.species.threshold).toBe(0.12)
+    expect(config.species.threshold).toBe(0.06) // the field's threshold is untouched
+    expect(scaled.reproduction.mateSenseRadius).toBeLessThan(2500 - 2 * 500)
   })
 })

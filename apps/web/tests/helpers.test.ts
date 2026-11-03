@@ -122,14 +122,7 @@ describe('view-state builders', () => {
     expect(view?.lineage.parentIds).toEqual(target.parentIds)
     expect(view?.lineage.ancestorGenomes).toBe(counts.ancestors)
     const groups = new Set(view?.genome.map((g) => g.group))
-    for (const g of [
-      'physical',
-      'sensory',
-      'metabolic',
-      'behavioral',
-      'reproduction',
-      'learning'
-    ]) {
+    for (const g of ['physical', 'metabolic', 'behavioral', 'reproduction', 'learning']) {
       expect(groups.has(g)).toBe(true)
     }
     expect(view?.genome.every((row) => Number.isFinite(row.value))).toBe(true)
@@ -151,5 +144,22 @@ describe('view-state builders', () => {
     if (!first) throw new Error('expected a population')
     const view = buildInspector(reflex, snap, first.id, { ancestors: 0, descendants: 0 })
     expect(view?.brain).toBeNull()
+  })
+})
+
+describe('buildAnatomy', () => {
+  it('describes the body of a living organism and nothing for one that is gone', async () => {
+    const { World } = await import('@evo/simulation')
+    const { buildAnatomy } = await import('../src/host/viewState')
+    const world = World.create({ seed: 5 })
+    const id = world.snapshot().organisms[0]!.id
+    const anatomy = buildAnatomy(world, id)
+    expect(anatomy?.parts).toHaveLength(7)
+    expect(anatomy?.outline.length).toBeGreaterThanOrEqual(10)
+    expect((anatomy?.outline.length ?? 1) % 2).toBe(0)
+    expect(anatomy?.budget).toBe(world.config.anatomy.structuralBudget)
+    const speed = anatomy?.capabilities.find((c) => c.label === 'speed')
+    expect(speed?.value).toBe(1) // a founder is exactly the baseline
+    expect(buildAnatomy(world, 987654321)).toBeNull()
   })
 })

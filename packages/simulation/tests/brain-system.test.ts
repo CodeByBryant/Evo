@@ -296,14 +296,17 @@ describe('PerceptionSystem peers', () => {
     organismIndex.rebuild(organisms.values())
     const buffer: PeerBuffer = new Map()
 
-    new PerceptionSystem(organisms, resources, new Map(), { organismIndex, buffer }).update()
+    new PerceptionSystem(config, organisms, resources, new Map(), {
+      organismIndex,
+      buffer
+    }).update()
     expect(buffer.get(1)?.organismId).toBe(3)
     expect(buffer.get(2)?.organismId).toBe(3)
     expect(buffer.get(3)?.organismId).toBe(1)
     expect(buffer.get(4)).toBeNull()
 
     const none: PeerBuffer = new Map()
-    new PerceptionSystem(organisms, resources, new Map()).update()
+    new PerceptionSystem(config, organisms, resources, new Map()).update()
     expect(none.size).toBe(0)
   })
 })
@@ -462,7 +465,7 @@ describe('children and learning inheritance', () => {
 
   it('does not alter the non-learnable weights, whatever the mode', () => {
     const { child, layout, parentTails } = birth('lamarckian')
-    expect(child.genome.brain.weights.slice(0, layout.learnOffset)).toHaveLength(372)
+    expect(child.genome.brain.weights.slice(0, layout.learnOffset)).toHaveLength(396)
     expect(parentTails[0]).toHaveLength(54)
   })
 })

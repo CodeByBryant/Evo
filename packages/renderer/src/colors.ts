@@ -1,4 +1,4 @@
-import type { RegionType, SpeciesId } from '@evo/contracts'
+import type { PartType, RegionType, SpeciesId } from '@evo/contracts'
 
 /** The hue step that spreads consecutive ids as far apart as possible (the golden angle). */
 const GOLDEN_ANGLE = 137.50776405003785
@@ -32,6 +32,20 @@ export function hslToHex(hue: number, saturation = 0.78, lightness = 0.62): stri
       .toString(16)
       .padStart(2, '0')
   return `#${channel(r1)}${channel(g1)}${channel(b1)}`
+}
+
+/** The colour of each part type's glyph (drawn only at high zoom). */
+export const PART_COLORS: Readonly<Record<PartType, string>> = {
+  flagellum: '#ffb347',
+  cilia: '#ffd98a',
+  eye: '#ffffff',
+  sniffer: '#c792ea',
+  mouth: '#ff6b6b',
+  intestine: '#e58a6e',
+  stomach: '#f0a8a8',
+  armor: '#9fb3c8',
+  membrane: '#7dd3fc',
+  mender: '#7dffb0'
 }
 
 export function speciesColor(id: SpeciesId | null): string {

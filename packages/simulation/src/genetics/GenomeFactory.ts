@@ -68,7 +68,6 @@ export interface GenomeParts {
 export function genomeFromParts(parts: GenomeParts): Genome {
   const groups: GroupedGenes = {
     physical: {},
-    sensory: {},
     metabolic: {},
     behavioral: {},
     reproduction: {},
@@ -79,7 +78,7 @@ export function genomeFromParts(parts: GenomeParts): Genome {
     ;(groups[group] as Record<string, number>)[name] = parts.vector[index] as number
   })
   const genome = {
-    version: 2,
+    version: 3,
     id: parts.id,
     parentIds: [...parts.parentIds],
     ...groups,
@@ -93,7 +92,6 @@ export function genomeFromParts(parts: GenomeParts): Genome {
 function freezeGenome(genome: Genome): Genome {
   Object.freeze(genome.parentIds)
   Object.freeze(genome.physical)
-  Object.freeze(genome.sensory)
   Object.freeze(genome.metabolic)
   Object.freeze(genome.behavioral)
   Object.freeze(genome.reproduction)

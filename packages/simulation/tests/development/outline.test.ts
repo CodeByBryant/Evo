@@ -164,3 +164,24 @@ describe('the drawn outline in a snapshot', () => {
     expect(counts.size).toBeGreaterThan(1)
   })
 })
+
+describe('the drawn parts in a snapshot', () => {
+  it('gives every founder its seven parts, working, on the same scale as the outline', () => {
+    const world = World.create({ seed: 2 })
+    for (const o of world.snapshot().organisms) {
+      expect(o.parts).toHaveLength(7)
+      expect(o.parts.every((p) => p.functional)).toBe(true)
+      const reach = Math.max(...o.parts.map((p) => Math.hypot(p.x, p.y)))
+      expect(reach).toBeLessThanOrEqual(o.radius * 1.6) // inside the body's own scale
+      expect(o.parts.every((p) => p.radius > 0)).toBe(true)
+    }
+  })
+
+  it('shares one array between snapshots of the same organism, so frames do not allocate', () => {
+    const world = World.create({ seed: 2 })
+    const first = world.snapshot().organisms[0]
+    world.run(5)
+    const again = world.snapshot().organisms.find((o) => o.id === first?.id)
+    if (again !== undefined) expect(again.parts).toBe(first?.parts)
+  })
+})

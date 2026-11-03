@@ -1,5 +1,7 @@
-import type { Genome, WorldConfig } from '@evo/contracts'
+import type { Genome, PartSnapshot, WorldConfig } from '@evo/contracts'
 import { outlineDragOf, outlineOf, outlineScaleOf } from '../development/outline'
+import { developAnatomy } from '../development/develop'
+import { factorsOf } from './bodyFactors'
 
 /**
  * Quantities derived from an organism's genes rather than stored as genes, so that no capability
@@ -31,7 +33,16 @@ export function sizeFactor(genome: Genome, config: WorldConfig): number {
 
 /** Energy capacity of a fully grown organism. */
 export function maxEnergyOf(genome: Genome, config: WorldConfig): number {
-  return config.organisms.maxEnergy * sizeFactor(genome, config)
+  return (
+    config.organisms.maxEnergy *
+    sizeFactor(genome, config) *
+    factorsOf(genome, config).energyCapacity
+  )
+}
+
+/** The sensor radius: the baseline range scaled by the eyes (docs/decisions/0015). */
+export function sensorRadiusOf(genome: Genome, config: WorldConfig): number {
+  return config.organisms.sensorRadius * factorsOf(genome, config).senseRange
 }
 
 /** Energy per second just for being alive; grows with body size. */
@@ -41,7 +52,7 @@ export function basalCostOf(genome: Genome, config: WorldConfig): number {
 
 /** Energy per second for maintaining senses; grows with sensor radius. */
 export function sensorCostOf(genome: Genome, config: WorldConfig): number {
-  return config.organisms.sensorCost * (genome.sensory.sensorRadius / config.organisms.sensorRadius)
+  return config.organisms.sensorCost * factorsOf(genome, config).senseRange
 }
 
 /**
@@ -91,4 +102,31 @@ export function drawnOutlineOf(genome: Genome, config: WorldConfig): readonly nu
   for (const point of outline.points) flat.push(point.x * factor, point.y * factor)
   drawn.set(genome.body.genes, { radius, flat })
   return flat
+}
+
+const drawnParts = new WeakMap<
+  readonly number[],
+  { radius: number; parts: readonly PartSnapshot[] }
+>()
+
+/**
+ * The developed parts for drawing, in world units relative to the centre and on the same scale as
+ * the drawn outline, so a part sits where it was placed on the body. Remembered per body-gene
+ * array, so every snapshot of one organism shares one array.
+ */
+export function drawnPartsOf(genome: Genome, config: WorldConfig): readonly PartSnapshot[] {
+  const radius = bodyRadiusOf(genome, config)
+  const known = drawnParts.get(genome.body.genes)
+  if (known !== undefined && known.radius === radius) return known.parts
+  const factor = radius / outlineOf(genome.body.genes).areaRadius
+  const parts = developAnatomy(genome.body.genes, config.anatomy).parts.map((part) => ({
+    type: part.type,
+    x: part.x * factor,
+    y: part.y * factor,
+    radius: 0.2 * radius * Math.sqrt(part.size),
+    orientation: part.orientation,
+    functional: part.functional
+  }))
+  drawnParts.set(genome.body.genes, { radius, parts })
+  return parts
 }

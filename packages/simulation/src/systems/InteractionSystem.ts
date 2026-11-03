@@ -5,6 +5,7 @@ import type { OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { factorsOf } from '../organisms/bodyFactors'
 import { bodyRadiusOf, maxEnergyOf } from '../organisms/traits'
 import type { SpatialHash } from '../spatial/SpatialHash'
 
@@ -53,7 +54,9 @@ export class InteractionSystem {
       if (this.intents && this.intents.get(organism.id)?.interact === false) continue
       const stage = lifeStageFor(organism.age, organism.genome.physical)
       const sizeScale = stage === 'juvenile' ? juvenileSizeScale : 1
-      const bodyRadius = bodyRadiusOf(organism.genome, this.config) * sizeScale
+      const body = factorsOf(organism.genome, this.config)
+      // Mouths extend how far from its body an organism can eat.
+      const bodyRadius = bodyRadiusOf(organism.genome, this.config) * sizeScale * body.reach
       const captureRadius = bodyRadius + this.largestResourceRadius
       const effectiveMaxEnergy = maxEnergyOf(organism.genome, this.config) * sizeScale
 
@@ -72,8 +75,10 @@ export class InteractionSystem {
 
       const amount = resource.remaining
       const capacity = Math.max(0, effectiveMaxEnergy - organism.energy)
-      const energyGained = Math.min(amount, capacity)
-      const energyWasted = amount - energyGained
+      // Intestines extract more (or less) from the same food.
+      const usable = amount * body.digestion
+      const energyGained = Math.min(usable, capacity)
+      const energyWasted = usable - energyGained
       const previous = organism.energy
       organism.energy = previous + energyGained
 
@@ -91,7 +96,7 @@ export class InteractionSystem {
 
       if (this.kindsOn && this.damage) {
         const toxicity = (this.ecology as EcologyModel).kind(resource.kind).toxicity
-        if (toxicity > 0) this.damage.set(organism.id, toxicity)
+        if (toxicity > 0) this.damage.set(organism.id, toxicity * body.toxinDamage)
       }
 
       if (this.emitVerbose) {

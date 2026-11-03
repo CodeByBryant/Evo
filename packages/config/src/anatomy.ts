@@ -18,7 +18,7 @@ const TWO_PI = Math.PI * 2
  * and a stomach: seven parts with a total size of 3.5, so a budget of 6 leaves room to grow.
  */
 export const DEFAULT_ANATOMY: AnatomyConfig = {
-  enabled: false,
+  enabled: true,
   structuralBudget: 6,
   bodyMass: 1,
   senseFloor: 0.25,

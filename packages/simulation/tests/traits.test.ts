@@ -61,11 +61,9 @@ describe('capability is not free', () => {
     expect(maxEnergyOf(small, config)).toBe(config.organisms.maxEnergy / 4)
   })
 
-  it('a longer sensor costs proportionally more to run', () => {
-    const far = withGenes(organismFor(config, 1), { 'sensory.sensorRadius': 120 }).genome
-    expect(sensorCostOf(far, config)).toBe(2 * config.organisms.sensorCost)
-    const near = withGenes(organismFor(config, 1), { 'sensory.sensorRadius': 30 }).genome
-    expect(sensorCostOf(near, config)).toBe(0.5 * config.organisms.sensorCost)
+  it('the founder sensor costs the configured sensorCost (eyes scale it; see the anatomy tests)', () => {
+    const founderEyes = organismFor(config, 1).genome
+    expect(sensorCostOf(founderEyes, config)).toBe(config.organisms.sensorCost)
   })
 
   it('a parent pays its own investment plus the transfer overhead', () => {

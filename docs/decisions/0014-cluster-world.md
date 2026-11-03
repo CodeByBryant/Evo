@@ -90,3 +90,7 @@ The cluster layout therefore ships **off by default**. Making it the default nee
 - Persistence per cluster becomes the main risk: six small ecosystems each need a viable population (the Allee effect that mate seeking only partly fixed). The cluster layout therefore ships off by default with the measured numbers; the tuning PR decides whether it can become the default.
 - Cost per tick rises with about five times the organisms; the web host's frame budget is checked with a Playwright measurement.
 - Brains trained on `x / width` positions are not comparable between layouts; the layouts are separate worlds.
+
+## Revisions
+
+- **Scale (2026-11-03, owner request, in the anatomy-consequences pull request).** The clusters are four times the area (radius 500, not 250) with the same food and population density (resources and founders scale with area: 432 founders, about 18.85 times the reference food), and first six times the spacing (4,500). The owner then asked for a smaller void, so the default spacing is **2,500** (a void 1,500 wide, still far above the 200 mating-signal cap). The numbers above (250, 750, 108, 4.71) describe the first version. At the larger scale with the way-home sense (ADR 0015), 16 of 16 worlds kept all six clusters populated at 20,000 ticks with almost nothing stranded in the void (at the 4,500 spacing).

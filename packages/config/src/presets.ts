@@ -51,11 +51,11 @@ export const PRESETS: readonly WorldPreset[] = [
     overrides: { environment: { layout: 'clusters' } }
   },
   {
-    name: 'creatures',
-    label: 'Evolving bodies',
+    name: 'fixed-bodies',
+    label: 'Fixed bodies',
     description:
-      'Bodies evolve: the number of points, their length and spread. Size and spikiness change what a creature eats and burns.',
-    overrides: { anatomy: { enabled: true } }
+      'Every creature keeps the founder body: no part, outline or colour ever changes, so only brains and the other genes evolve.',
+    overrides: { anatomy: { enabled: false } }
   },
   {
     name: 'classic',

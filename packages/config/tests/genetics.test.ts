@@ -45,24 +45,23 @@ describe('gene ranges', () => {
 
   it('maps each gene to the config field it replaces', () => {
     const config = resolveWorldConfig({
-      organisms: { radius: 4, maxSpeed: 11, hue: 0.2, sensorRadius: 70 },
+      organisms: { radius: 4, basalCost: 0.6, hue: 0.2 },
       reproduction: { minEnergy: 70, cooldown: 20 },
       genetics: { learning: { learningRate: 0.2 } }
     })
     const baselines = geneBaselines(config)
     expect(baselines['physical.radius']).toBe(4)
-    expect(baselines['physical.maxSpeed']).toBe(11)
+    expect(baselines['metabolic.basalCost']).toBe(0.6)
     expect(baselines['physical.hue']).toBe(0.2)
-    expect(baselines['sensory.sensorRadius']).toBe(70)
     expect(baselines['reproduction.minEnergy']).toBe(70)
     expect(baselines['reproduction.cooldown']).toBe(20)
     expect(baselines['learning.learningRate']).toBe(0.2)
   })
 
   it('merges per-gene overrides field by field onto the defaults', () => {
-    const ranges = resolveGeneRanges({ 'physical.maxSpeed': { max: 50, mutationRate: 0.5 } })
-    expect(ranges['physical.maxSpeed']).toEqual({
-      ...DEFAULT_GENE_RANGES['physical.maxSpeed'],
+    const ranges = resolveGeneRanges({ 'metabolic.basalCost': { max: 50, mutationRate: 0.5 } })
+    expect(ranges['metabolic.basalCost']).toEqual({
+      ...DEFAULT_GENE_RANGES['metabolic.basalCost'],
       max: 50,
       mutationRate: 0.5
     })
@@ -70,20 +69,20 @@ describe('gene ranges', () => {
   })
 
   it('widens a default edge to include a changed founder baseline', () => {
-    const baselines = { 'physical.maxSpeed': 0, 'physical.radius': 50 }
+    const baselines = { 'metabolic.basalCost': 0, 'physical.radius': 50 }
     const ranges = resolveGeneRanges({}, baselines)
-    expect(ranges['physical.maxSpeed'].min).toBe(0)
-    expect(ranges['physical.maxSpeed'].max).toBe(DEFAULT_GENE_RANGES['physical.maxSpeed'].max)
+    expect(ranges['metabolic.basalCost'].min).toBe(0)
+    expect(ranges['metabolic.basalCost'].max).toBe(DEFAULT_GENE_RANGES['metabolic.basalCost'].max)
     expect(ranges['physical.radius'].max).toBe(50)
     expect(ranges['physical.radius'].min).toBe(DEFAULT_GENE_RANGES['physical.radius'].min)
   })
 
   it('never moves an edge set explicitly by an override', () => {
     const ranges = resolveGeneRanges(
-      { 'physical.maxSpeed': { min: 25 } },
-      { 'physical.maxSpeed': 20 }
+      { 'metabolic.basalCost': { min: 0.6 } },
+      { 'metabolic.basalCost': 0.5 }
     )
-    expect(ranges['physical.maxSpeed'].min).toBe(25)
+    expect(ranges['metabolic.basalCost'].min).toBe(0.6)
   })
 
   it('declares the life-stage ages as ordered genes', () => {
@@ -197,21 +196,21 @@ describe('genetics validation', () => {
 
   it('validates the effective range of an overridden gene', () => {
     expect(
-      errorsFor((c) => (c.genetics.genes['physical.maxSpeed'] = { min: 30, max: 30 }))
-    ).toContain('genetics.genes.physical.maxSpeed: min must be less than max')
+      errorsFor((c) => (c.genetics.genes['metabolic.basalCost'] = { min: 0.5, max: 0.5 }))
+    ).toContain('genetics.genes.metabolic.basalCost: min must be less than max')
     expect(
-      errorsFor((c) => (c.genetics.genes['physical.maxSpeed'] = { mutationRate: 2 }))
-    ).toContain('genetics.genes.physical.maxSpeed: mutationRate must be between zero and one')
+      errorsFor((c) => (c.genetics.genes['metabolic.basalCost'] = { mutationRate: 2 }))
+    ).toContain('genetics.genes.metabolic.basalCost: mutationRate must be between zero and one')
     expect(
-      errorsFor((c) => (c.genetics.genes['physical.maxSpeed'] = { mutationStd: -1 }))
-    ).toContain('genetics.genes.physical.maxSpeed: mutationStd must be nonnegative')
+      errorsFor((c) => (c.genetics.genes['metabolic.basalCost'] = { mutationStd: -1 }))
+    ).toContain('genetics.genes.metabolic.basalCost: mutationStd must be nonnegative')
   })
 
   it('requires the founder baseline to lie inside the gene range', () => {
     expect(
-      errorsFor((c) => (c.genetics.genes['physical.maxSpeed'] = { min: 25, max: 40 }))
+      errorsFor((c) => (c.genetics.genes['metabolic.basalCost'] = { min: 0.6, max: 0.9 }))
     ).toContain(
-      'genetics.genes.physical.maxSpeed: the founder baseline (20) must lie within [min, max]'
+      'genetics.genes.metabolic.basalCost: the founder baseline (0.5) must lie within [min, max]'
     )
   })
 
@@ -274,7 +273,7 @@ describe('genetics merging', () => {
         brain: { hiddenSize: 12 },
         learning: { explorationRate: 0.3 },
         learningInheritance: { mode: 'lamarckian' },
-        genes: { 'physical.maxSpeed': { max: 50 } }
+        genes: { 'metabolic.basalCost': { max: 50 } }
       }
     })
     expect(config.genetics.mutationRateScale).toBe(2)
@@ -284,7 +283,7 @@ describe('genetics merging', () => {
     expect(config.genetics.learning.explorationRate).toBe(0.3)
     expect(config.genetics.learning.persistence).toBe(0.5)
     expect(config.genetics.learningInheritance).toEqual({ mode: 'lamarckian', fraction: 0.15 })
-    expect(config.genetics.genes).toEqual({ 'physical.maxSpeed': { max: 50 } })
+    expect(config.genetics.genes).toEqual({ 'metabolic.basalCost': { max: 50 } })
   })
 
   it('does not mutate the shared frozen defaults', () => {

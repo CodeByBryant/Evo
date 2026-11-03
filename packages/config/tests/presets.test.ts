@@ -35,7 +35,8 @@ describe('presets', () => {
       'clusters'
     )
     expect(base.environment.layout).toBe('field')
-    expect(resolveWorldConfig(presetByName('creatures')?.overrides).anatomy.enabled).toBe(true)
+    expect(resolveWorldConfig(presetByName('fixed-bodies')?.overrides).anatomy.enabled).toBe(false)
+    expect(base.anatomy.enabled).toBe(true)
     const classic = resolveWorldConfig(presetByName('classic')?.overrides)
     expect(classic.ecology.regions.enabled).toBe(false)
     expect(classic.ecology.seasons.enabled).toBe(false)

@@ -193,9 +193,10 @@ export class EcologyModel {
   }
 
   /** Energy per second for being outside the comfortable temperature range. */
-  environmentalCost(x: number, y: number, tick: number): number {
+  environmentalCost(x: number, y: number, tick: number, tolerance = 1): number {
     if (!this.regionsOn && !this.seasonsOn) return 0
-    const excess = Math.max(0, Math.abs(this.temperature(x, y, tick)) - this.tolerance)
+    // `tolerance` is the body's temperature factor: membranes widen the comfortable range.
+    const excess = Math.max(0, Math.abs(this.temperature(x, y, tick)) - this.tolerance * tolerance)
     return this.temperatureCost * excess * excess
   }
 

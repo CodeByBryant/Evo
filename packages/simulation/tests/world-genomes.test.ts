@@ -33,7 +33,7 @@ describe('founders carry genomes', () => {
     }
     const brains = new Set(genomes.map((g) => g.brain.weights.join(',')))
     expect(brains.size).toBe(5)
-    expect(genomes[0]?.brain.weights).toHaveLength(426)
+    expect(genomes[0]?.brain.weights).toHaveLength(450)
   })
 
   it('records the founder genome on its birth event', () => {
@@ -45,7 +45,7 @@ describe('founders carry genomes', () => {
     const genome = world.genomeOf(snapshot.organisms[0]!.id)!
     expect(Object.isFrozen(genome)).toBe(true)
     expect(() => {
-      ;(genome.physical as { maxSpeed: number }).maxSpeed = 1
+      ;(genome.physical as { radius: number }).radius = 1
     }).toThrow(TypeError)
   })
 })
@@ -55,14 +55,13 @@ describe('config baselines reach the genes', () => {
     const world = World.create({
       seed: 3,
       config: {
-        organisms: { initialCount: 4, maxSpeed: 27, sensorRadius: 90, radius: 3, hue: 0.2 },
+        organisms: { initialCount: 4, basalCost: 0.6, radius: 3, hue: 0.2 },
         reproduction: { cooldown: 12, offspringInvestment: 9 }
       }
     })
     for (const organism of world.snapshot().organisms) {
       const genome = world.genomeOf(organism.id)!
-      expect(genome.physical.maxSpeed).toBe(27)
-      expect(genome.sensory.sensorRadius).toBe(90)
+      expect(genome.metabolic.basalCost).toBe(0.6)
       expect(genome.physical.radius).toBe(3)
       expect(genome.physical.hue).toBe(0.2)
       expect(genome.reproduction.cooldown).toBe(12)

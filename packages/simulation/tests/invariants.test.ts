@@ -275,11 +275,11 @@ describe('genome invariants', () => {
   })
 
   it('reports a gene outside its range, naming the organism and the gene', () => {
-    const broken = withGenes(organism(1), { 'physical.maxSpeed': 1000 })
+    const broken = withGenes(organism(1), { 'physical.radius': 1000 })
     const result = checkInvariants(baseContext({ organisms: [broken] }))
     expect(result.ok).toBe(false)
     expect(result.errors).toContain(
-      'organism 1: genome: physical.maxSpeed (1000) is outside its range [10, 40]'
+      'organism 1: genome: physical.radius (1000) is outside its range [2.5, 10]'
     )
   })
 

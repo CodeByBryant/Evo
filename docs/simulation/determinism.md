@@ -183,9 +183,13 @@ Introduced with body-plan genes (ADR 0012). The header carries the new version, 
 
 An anatomy (the developed body) is a pure function of the body genes and the configuration, so it is derived and **not** hashed, like the species registry. With `anatomy.enabled: false` the body genes are the founder body in every genome and the `anatomy` stream never advances; with it on, body genes recombine and mutate by drawing only from the `anatomy` stream, which is why the `genetics` stream (and so every other gene and every brain weight) is drawn exactly as before.
 
-#### Version 7 (current, creature bodies)
+#### Version 7 (creature bodies; superseded by version 8)
 
 Introduced with the evolvable body outline (ADR 0013). Only the body genes change: the vector is **119** genes instead of 87. The canonical order is slot 0's seven genes ... slot 11's, then `pattern`, `accentHue` (the `shape` gene is gone), then `outline.count`, `outline.radius0..15`, `outline.angle0..15`. The body gene count written before them is now 119. The header carries the new version, so every hash differs from version 6. With anatomy off, equivalence is shown as before by the harness against the previous commit (20 of 20 scenarios identical): the outline factors are exactly 1 for the founder outline every genome carries.
+
+#### Version 8 (current, parts act)
+
+Introduced when the five scalar genes were retired (ADR 0015). The scalar gene table has **18** genes instead of 23, so each organism's genes in section 6 lose five values (`physical.maxSpeed`, `physical.maxTurnRate`, `sensory.sensorRadius`, `metabolic.movementCost`, `metabolic.turningCost`) and the remaining ones keep their relative order; the body genes are unchanged (119). The header carries the new version, so every hash differs from version 7. Because mutation and recombination draw a fixed number of values per gene, five fewer genes also shift the `genetics` stream after the first birth: world dynamics before the first birth are identical to version 7 with mutation off (shown by an equivalence harness over 16 scenarios, thousands of per-organism snapshots), and diverge afterwards only through that shift.
 
 `WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
@@ -228,8 +232,8 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(7)`                                            | `32c0e0b014946d71161095ca39a1e91c` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `fea638393866a7242045a98cdf6e6dad` |
+| header only: `"EVOH"`, `writeUint32(8)`                                            | `6e9dec34b5818477e575cc324c03a68b` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `49cfd2e6608aae0f1e36adeb1809cc3f` |
 | same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `e3fef3c99039366808f5456325b9750f` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):

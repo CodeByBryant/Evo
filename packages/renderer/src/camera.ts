@@ -36,7 +36,7 @@ export class Camera {
   /** The top-left corner of the world: `(0, 0)` for the field, the layout's bounds for clusters. */
   private originX = 0
   private originY = 0
-  private readonly minZoom: number
+  private minZoom: number
   private readonly maxZoom: number
 
   constructor(options: CameraOptions) {
@@ -62,6 +62,12 @@ export class Camera {
     this.originX = originX
     this.originY = originY
     this.clampCentre()
+  }
+
+  /** Lets the camera zoom out further, for a world much larger than the field (the cluster layout). */
+  setMinZoom(zoom: number): void {
+    this.minZoom = zoom
+    this.z = clamp(this.z, this.minZoom, this.maxZoom)
   }
 
   setViewport(width: number, height: number): void {

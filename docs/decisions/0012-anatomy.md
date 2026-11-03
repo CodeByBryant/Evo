@@ -4,7 +4,7 @@ Status: **Accepted** (approved by the project owner with the "dynamic bodies" pl
 
 This is the concrete design that [ADR 0004](0004-dynamic-evolvable-anatomy-and-morphology.md) said every anatomy phase would need. 0004 remains the vision; where this ADR chooses differently it says so under "Deviations from 0004".
 
-Anatomy is delivered in three pull requests (owner decision): **PR 1** (this ADR): the data model, genome encoding, deterministic development and the capability formulas, with anatomy **switched off and proven not to change behavior**. **PR 2** (changed during the work): creature bodies, an evolvable point outline with physics ([ADR 0013](0013-creature-bodies.md)). **PR 3**: the infinite cluster world and founder species (ADR 0014). **PR 4**: systems read capabilities, the redundant scalar genes are retired, everything is tuned and the cluster world becomes the default.
+Anatomy is delivered in three pull requests (owner decision): **PR 1** (this ADR): the data model, genome encoding, deterministic development and the capability formulas, with anatomy **switched off and proven not to change behavior**. **PR 2** (changed during the work): creature bodies, an evolvable point outline with physics ([ADR 0013](0013-creature-bodies.md)). **PR 3**: the infinite cluster world and founder species (ADR 0014). **PR 4**: systems read capabilities, the redundant scalar genes are retired, bodies and (if tuned) clusters become the default ([ADR 0015](0015-anatomy-consequences.md)).
 
 ## Problem
 

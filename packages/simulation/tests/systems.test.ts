@@ -136,7 +136,7 @@ describe('PerceptionSystem', () => {
     index.rebuild(resources.values())
     const buffer: PerceptionBuffer = new Map()
 
-    new PerceptionSystem(organisms, index, buffer).update()
+    new PerceptionSystem(config, organisms, index, buffer).update()
 
     expect(buffer.get(1)?.resourceId).toBe(2)
     expect(buffer.get(2)).toBeNull()
@@ -150,7 +150,7 @@ describe('PerceptionSystem', () => {
     index.rebuild([])
     const buffer: PerceptionBuffer = new Map([[99, null]])
 
-    new PerceptionSystem(organisms, index, buffer).update()
+    new PerceptionSystem(config, organisms, index, buffer).update()
 
     expect(buffer.has(99)).toBe(false)
     expect(buffer.has(1)).toBe(true)

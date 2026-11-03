@@ -7,7 +7,6 @@ export type SpeciesId = number
  */
 export interface SpeciesDistanceWeights {
   physical: number
-  sensory: number
   metabolic: number
   behavioral: number
   reproduction: number

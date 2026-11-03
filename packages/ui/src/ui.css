@@ -445,3 +445,39 @@
     animation: none !important;
   }
 }
+
+.evo-anatomy {
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+
+.evo-anatomy svg {
+  width: 100%;
+  max-width: 14rem;
+  height: auto;
+  background: rgba(127, 147, 191, 0.06);
+  border-radius: 8px;
+}
+
+.evo-anatomy-body {
+  fill: rgba(125, 211, 252, 0.18);
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 0.03;
+}
+
+.evo-anatomy figcaption {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.evo-swatch {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+}
+
+.evo-table td + td {
+  padding-left: 0.75rem;
+}

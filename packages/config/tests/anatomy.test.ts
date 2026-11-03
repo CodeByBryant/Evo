@@ -13,10 +13,10 @@ function errorsFor(change: (config: Loose) => void): string[] {
 }
 
 describe('anatomy config', () => {
-  it('defaults are valid, anatomy is off, and the founder fits its budget', () => {
+  it('defaults are valid, bodies evolve, and the founder fits its budget', () => {
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
     const { anatomy } = DEFAULT_WORLD_CONFIG
-    expect(anatomy.enabled).toBe(false)
+    expect(anatomy.enabled).toBe(true)
     expect(anatomy.founder).toHaveLength(7)
     const total = anatomy.founder.reduce((sum, part) => sum + part.size, 0)
     expect(total).toBeCloseTo(3.5, 12)
@@ -45,7 +45,7 @@ describe('anatomy config', () => {
 
   it('does not change the shared defaults', () => {
     resolveWorldConfig({ anatomy: { enabled: true, parts: { eye: { strength: 9 } } } })
-    expect(DEFAULT_WORLD_CONFIG.anatomy.enabled).toBe(false)
+    expect(DEFAULT_WORLD_CONFIG.anatomy.enabled).toBe(true)
     expect(DEFAULT_WORLD_CONFIG.anatomy.parts.eye.strength).toBe(1)
   })
 

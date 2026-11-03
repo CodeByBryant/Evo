@@ -65,16 +65,11 @@ export function geneBaselines(config: WorldConfig): Record<GenePath, number> {
   const { organisms, reproduction, genetics } = config
   return {
     'physical.radius': organisms.radius,
-    'physical.maxSpeed': organisms.maxSpeed,
-    'physical.maxTurnRate': organisms.maxTurnRate,
     'physical.maturityAge': organisms.maturityAge,
     'physical.senescenceAge': organisms.senescenceAge,
     'physical.maxAge': organisms.maxAge,
     'physical.hue': organisms.hue,
-    'sensory.sensorRadius': organisms.sensorRadius,
     'metabolic.basalCost': organisms.basalCost,
-    'metabolic.movementCost': organisms.movementCost,
-    'metabolic.turningCost': organisms.turningCost,
     'behavioral.wanderJitter': organisms.wanderJitter,
     'reproduction.minEnergy': reproduction.minEnergy,
     'reproduction.offspringInvestment': reproduction.offspringInvestment,
@@ -208,16 +203,11 @@ function baselineValues(root: PlainObject): Partial<Record<GenePath, number>> {
     if (value !== undefined) values[path] = value
   }
   set('physical.radius', numberAt(organisms, 'radius'))
-  set('physical.maxSpeed', numberAt(organisms, 'maxSpeed'))
-  set('physical.maxTurnRate', numberAt(organisms, 'maxTurnRate'))
   set('physical.maturityAge', numberAt(organisms, 'maturityAge'))
   set('physical.senescenceAge', numberAt(organisms, 'senescenceAge'))
   set('physical.maxAge', numberAt(organisms, 'maxAge'))
   set('physical.hue', numberAt(organisms, 'hue'))
-  set('sensory.sensorRadius', numberAt(organisms, 'sensorRadius'))
   set('metabolic.basalCost', numberAt(organisms, 'basalCost'))
-  set('metabolic.movementCost', numberAt(organisms, 'movementCost'))
-  set('metabolic.turningCost', numberAt(organisms, 'turningCost'))
   set('behavioral.wanderJitter', numberAt(organisms, 'wanderJitter'))
   set('reproduction.minEnergy', numberAt(reproduction, 'minEnergy'))
   set('reproduction.offspringInvestment', numberAt(reproduction, 'offspringInvestment'))

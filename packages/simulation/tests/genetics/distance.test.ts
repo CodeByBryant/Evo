@@ -32,7 +32,6 @@ describe('genomeDistance', () => {
     expect(distance(a, copy)).toEqual({
       total: 0,
       physical: 0,
-      sensory: 0,
       metabolic: 0,
       behavioral: 0,
       reproduction: 0,
@@ -59,21 +58,20 @@ describe('genomeDistance', () => {
   })
 
   it('measures a physical difference as a share of the gene range', () => {
-    const range = f.specs.find((s) => s.path === 'physical.maxSpeed')
-    const b = withGenes(a, { 'physical.maxSpeed': (range?.baseline ?? 0) + 15 })
-    const physicalGenes = 7
-    const expected = 15 / ((range?.max ?? 0) - (range?.min ?? 0)) / physicalGenes
+    const range = f.specs.find((s) => s.path === 'physical.radius')
+    const b = withGenes(a, { 'physical.radius': (range?.baseline ?? 0) + 3 })
+    const physicalGenes = 5
+    const expected = 3 / ((range?.max ?? 0) - (range?.min ?? 0)) / physicalGenes
     expect(distance(a, b).physical).toBeCloseTo(expected, 12)
-    expect(distance(a, b).sensory).toBe(0)
+    expect(distance(a, b).metabolic).toBe(0)
     expect(distance(a, b).brain).toBe(0)
   })
 
   it('attributes a change to the group that owns the gene', () => {
-    const b = withGenes(a, { 'sensory.sensorRadius': 100 })
+    const b = withGenes(a, { 'metabolic.basalCost': 0.7 })
     const result = distance(a, b)
-    expect(result.sensory).toBeGreaterThan(0)
+    expect(result.metabolic).toBeGreaterThan(0)
     expect(result.physical).toBe(0)
-    expect(result.metabolic).toBe(0)
     expect(result.behavioral).toBe(0)
     expect(result.reproduction).toBe(0)
     expect(result.learning).toBe(0)
@@ -87,7 +85,7 @@ describe('genomeDistance', () => {
     const close = distance(near0, near1).physical
     const far = distance(near0, opposite).physical
     expect(close).toBeLessThan(far)
-    expect(close).toBeCloseTo(0.08 / 7, 9)
+    expect(close).toBeCloseTo(0.08 / 5, 9)
   })
 
   it('measures brain difference as RMS weight difference over two initial standard deviations', () => {
@@ -98,18 +96,11 @@ describe('genomeDistance', () => {
     expect(distance(base, far).brain).toBe(1)
   })
 
-  it('takes the total as the unweighted mean of the seven groups', () => {
-    const b = withGenes(founder(f, 1, 2), { 'physical.maxSpeed': 35, 'metabolic.basalCost': 0.7 })
+  it('takes the total as the unweighted mean of the six groups', () => {
+    const b = withGenes(founder(f, 1, 2), { 'physical.radius': 8, 'metabolic.basalCost': 0.7 })
     const r = distance(a, b)
     const mean =
-      (r.physical +
-        r.sensory +
-        r.metabolic +
-        r.behavioral +
-        r.reproduction +
-        r.brain +
-        r.learning) /
-      7
+      (r.physical + r.metabolic + r.behavioral + r.reproduction + r.brain + r.learning) / 6
     expect(r.total).toBeCloseTo(mean, 12)
   })
 

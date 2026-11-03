@@ -15,6 +15,12 @@ const MATE_BEARING_COS = 34
 const MATE_BEARING_SIN = 35
 const MATE_STEER = 3
 const MATE_THRUST = 20
+// The way home in the cluster layout (ADR 0015): zero in the field and inside the cluster's core.
+const HOME_PRESENT = 37
+const HOME_BEARING_COS = 38
+const HOME_BEARING_SIN = 39
+const HOME_STEER = 4
+const HOME_THRUST = 6
 
 // Output indices.
 const THRUST = 0
@@ -63,6 +69,15 @@ export function innatePriorWeights(architecture: BrainArchitecture): number[] {
     input(steering, MATE_BEARING_COS, -MATE_STEER * 0.05)
   }
   input(2, MATE_PRESENT, MATE_THRUST)
+  // Homing: out beyond the cluster's core the same two steering units turn toward its centre, and
+  // a presence unit keeps the organism moving while it does. The slots are zero in the field and
+  // in the core, so these terms never act where there is nothing to come home from.
+  for (const steering of [0, 1]) {
+    input(steering, HOME_BEARING_SIN, HOME_STEER)
+    input(steering, HOME_PRESENT, HOME_STEER * 0.05)
+    input(steering, HOME_BEARING_COS, -HOME_STEER * 0.05)
+  }
+  input(3, HOME_PRESENT, HOME_THRUST)
 
   const output = (out: number, hidden: number, value: number): void => {
     weights[layout.hiddenToOutput.offset + out * hiddenSize + hidden] = value

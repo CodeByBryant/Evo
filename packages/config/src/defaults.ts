@@ -27,14 +27,15 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     layout: 'field',
     clusters: {
       count: 6,
-      radius: 250,
-      spacing: 750,
+      radius: 500,
+      spacing: 2500,
       speciesPerCluster: 3,
-      organismsPerSpecies: 6,
-      patches: 6,
+      organismsPerSpecies: 24,
+      patches: 12,
       voidSpeedScale: 0.7,
       voidVisibility: 0.5,
       mateSignalCap: 200,
+      speciesThreshold: 0.12,
       clusterSpread: 0.08,
       speciesSpread: 0.03
     }
@@ -117,7 +118,6 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     threshold: 0.06,
     distanceWeights: {
       physical: 0.2,
-      sensory: 0.2,
       metabolic: 0.2,
       behavioral: 0.1,
       reproduction: 0.05,
@@ -300,16 +300,11 @@ const range = (min: number, max: number, mutationStd = 0.05): GeneRange => ({
  */
 export const DEFAULT_GENE_RANGES: Readonly<Record<GenePath, Readonly<GeneRange>>> = deepFreeze({
   'physical.radius': range(2.5, 10),
-  'physical.maxSpeed': range(10, 40),
-  'physical.maxTurnRate': range(1.5, 6),
   'physical.maturityAge': range(45, 180),
   'physical.senescenceAge': range(255, 560),
   'physical.maxAge': range(570, 1200),
   'physical.hue': range(0, 1),
-  'sensory.sensorRadius': range(30, 120),
   'metabolic.basalCost': range(0.3, 0.8),
-  'metabolic.movementCost': range(0.003, 0.008),
-  'metabolic.turningCost': range(0.03, 0.08),
   'behavioral.wanderJitter': range(0.75, 3),
   'reproduction.minEnergy': range(40, 90),
   'reproduction.offspringInvestment': range(6, 25),

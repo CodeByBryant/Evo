@@ -28,6 +28,10 @@ export function effectiveConfig(config: WorldConfig): WorldConfig {
       maxCount: Math.max(1, Math.round(config.resources.maxCount * scale)),
       spawnRate: config.resources.spawnRate * scale
     },
+    species: {
+      ...config.species,
+      threshold: Math.max(config.species.threshold, clusters.speciesThreshold)
+    },
     reproduction: {
       ...config.reproduction,
       mateSenseRadius: Math.min(config.reproduction.mateSenseRadius, clusters.mateSignalCap)
