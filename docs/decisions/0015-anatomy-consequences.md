@@ -52,3 +52,11 @@ At high zoom each part is drawn over the body (type, size, placement, orientatio
 - Hash schema 8 and regenerated goldens (twice if both defaults flip in separate commits); each is proven by an equivalence harness first.
 - Brains change shape (two more observation slots), so brain weights from before cannot be loaded; there are no saves yet.
 - A part that becomes dormant or lost can be lethal; mutation rates are tuned for that, and extreme-mutation tests keep every value finite.
+
+## Results
+
+- **Parts act.** Equivalence harness against the previous commit, anatomy off: 20 of 20 scenarios identical; per-part tests with negatives (dormant parts add nothing but cost, armor never reaches zero, factors stay finite).
+- **Genes retired (hash 8).** With mutation off, per-organism snapshots are identical to the previous commit up to the first birth in all 16 scenarios; after it the runs diverge only because five fewer genes draw five fewer values.
+- **Bodies are the default.** Probe, bodies on, default world, 50,000 ticks: 32 seeds then 128 held-out seeds, 0 extinct worlds; final population mean 34.9 (band 14 to 52) against 38.2 (19 to 59) with bodies off; 5.5 distinct part layouts per world and a mean speed factor of 1.14 (bodies really evolve). The "Fixed bodies" preset keeps the old behavior of an unchanging body.
+- **Cluster persistence.** With the larger world (radius 500), founders in the core and the way-home sense, 16 of 16 worlds kept all six clusters populated at 20,000 ticks (96 of 96 clusters), about 496 organisms, almost none in the void, purity 0.997 (bodies off, spacing 4,500). At the field's species threshold a cluster world splits into 80 to 140 species; the cluster layout therefore uses 0.12 (about 18 species).
+- **The cluster layout is not the default yet.** The stop condition asks for the final configuration (bodies on, spacing 2,500, threshold 0.12) over 128 seeds at 50,000 ticks; that probe costs hours (a cluster world runs at about 13.5 ms a tick), and only the 16-seed, 20,000-tick measurement above exists. The layout stays the "Clusters" preset; making it the default is one config value once the full probe is run.
