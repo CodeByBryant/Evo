@@ -1,3 +1,4 @@
+import type { WorldConfig } from '@evo/contracts'
 import type {
   HazardBuffer,
   MateBuffer,
@@ -10,6 +11,7 @@ import type { EcologyModel } from '../ecology/EcologyModel'
 import type { HazardStore } from '../ecology/HazardStore'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
+import { factorsOf } from '../organisms/bodyFactors'
 import type { ReproductionReadiness } from '../organisms/reproductionReadiness'
 import type { SpatialHash } from '../spatial/SpatialHash'
 
@@ -55,7 +57,9 @@ export class PerceptionSystem {
     private readonly peers?: PeerSensing,
     private readonly ecology: EcologyModel | null = null,
     private readonly hazardSensing?: HazardSensing,
-    private readonly mateSensing?: MateSensing
+    private readonly mateSensing?: MateSensing,
+    /** With it, the eyes and sniffers of each body scale its senses (docs/decisions/0015). */
+    private readonly config?: WorldConfig
   ) {}
 
   update(tick = 0): void {
@@ -68,7 +72,8 @@ export class PerceptionSystem {
     const zones = this.hazardSensing ? this.hazardSensing.hazards.values() : []
 
     for (const organism of this.organisms.values()) {
-      const sensor = organism.genome.sensory.sensorRadius
+      const body = this.config === undefined ? null : factorsOf(organism.genome, this.config)
+      const sensor = organism.genome.sensory.sensorRadius * (body === null ? 1 : body.senseRange)
       const radius = modified ? sensor * eco.visibilityScale(organism.x, organism.y, tick) : sensor
       const origin = { x: organism.x, y: organism.y }
 
@@ -87,7 +92,8 @@ export class PerceptionSystem {
         )
       } else {
         const hit = this.resourceIndex.queryRadius(origin, radius).find((candidate) => {
-          const reach = radius * eco.kind(candidate.item.kind).detectability
+          const detection = body === null ? 1 : (body.foodDetection[candidate.item.kind] ?? 1)
+          const reach = radius * eco.kind(candidate.item.kind).detectability * detection
           return candidate.distanceSquared <= reach * reach
         })
         this.perceptionBuffer.set(

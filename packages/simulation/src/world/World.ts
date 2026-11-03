@@ -40,13 +40,7 @@ import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { ReproductionReadiness } from '../organisms/reproductionReadiness'
-import {
-  bodyRadiusOf,
-  drawnOutlineOf,
-  maxEnergyOf,
-  maxHealthOf,
-  sizeFactor
-} from '../organisms/traits'
+import { bodyRadiusOf, drawnOutlineOf, maxEnergyOf, maxHealthOf } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
@@ -55,6 +49,7 @@ import { developAnatomy } from '../development/develop'
 import { buildBodySpecs, founderBodyVector } from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
+import { massScaleOf } from '../organisms/bodyFactors'
 import { planClusterFounders } from '../genetics/ClusterFounders'
 import type { FounderPlan } from '../genetics/ClusterFounders'
 import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
@@ -269,7 +264,8 @@ export class World {
               !this.config.species.reproductiveIsolation ||
               this.speciesRegistry.speciesOf(a.id) === this.speciesRegistry.speciesOf(b.id)
           }
-        : undefined
+        : undefined,
+      this.config
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
@@ -601,7 +597,7 @@ export class World {
       developAnatomy(organism.genome.body.genes, this.config.anatomy),
       this.founderCapabilities,
       this.config.anatomy,
-      sizeFactor(organism.genome, this.config),
+      massScaleOf(organism.genome.body.genes, this.config.anatomy),
       Math.max(1, this.ecology.kindCount)
     )
   }

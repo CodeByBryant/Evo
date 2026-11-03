@@ -48,13 +48,22 @@ describe('anatomy long run', () => {
     }
   }, 300_000)
 
-  it('anatomy on with a frozen outline leaves the legacy dynamics alone: birth for birth', () => {
+  it('anatomy on with a frozen body leaves the legacy dynamics alone: birth for birth', () => {
     const off = World.create({ seed: 23, config: { genetics: BUSY.genetics ?? {} } })
     const on = World.create({
       seed: 23,
       config: {
         ...BUSY,
-        anatomy: { ...BUSY.anatomy, mutation: { ...BUSY.anatomy?.mutation, outlineRate: 0 } }
+        anatomy: {
+          ...BUSY.anatomy,
+          mutation: {
+            ...BUSY.anatomy?.mutation,
+            outlineRate: 0,
+            presenceRate: 0,
+            typeRate: 0,
+            continuousRate: 0
+          }
+        }
       }
     })
     off.run(30_000)

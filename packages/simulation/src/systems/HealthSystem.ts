@@ -4,6 +4,7 @@ import type { EcologyModel } from '../ecology/EcologyModel'
 import type { HazardStore } from '../ecology/HazardStore'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
+import { factorsOf } from '../organisms/bodyFactors'
 import { maxEnergyOf, maxHealthOf } from '../organisms/traits'
 
 /**
@@ -40,6 +41,7 @@ export class HealthSystem {
     const intensity = this.ecology.hazardIntensity(tick)
 
     for (const organism of this.organisms.values()) {
+      const body = factorsOf(organism.genome, this.config)
       let fromHazards = 0
       if (zones.length > 0) {
         const exposure = this.ecology.hazardExposure(organism.x, organism.y)
@@ -47,7 +49,7 @@ export class HealthSystem {
           const dx = zone.x - organism.x
           const dy = zone.y - organism.y
           if (dx * dx + dy * dy <= zone.radius * zone.radius) {
-            fromHazards += zone.damagePerSecond * exposure * intensity * dt
+            fromHazards += zone.damagePerSecond * exposure * intensity * dt * body.damageTaken
           }
         }
       }
@@ -75,7 +77,10 @@ export class HealthSystem {
         organism.energy >=
           settings.regenMinEnergyFraction * maxEnergyOf(organism.genome, this.config)
       ) {
-        const healed = Math.min(settings.regenRate * dt, maxHealth - organism.health)
+        const healed = Math.min(
+          settings.regenRate * dt * body.regeneration,
+          maxHealth - organism.health
+        )
         if (healed > 0) {
           organism.health += healed
           this.regen.set(organism.id, healed * settings.regenEnergyCost)

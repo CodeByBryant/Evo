@@ -497,7 +497,7 @@
         }
       },
       "steps": 6000,
-      "expectedHash": "5be6ea6b1f02b10e0554fb7e416defa4"
+      "expectedHash": "b3cf341c2bb59e73140eb3101ec7d977"
     },
     {
       "name": "anatomy-on-reflex-4k",
@@ -520,7 +520,7 @@
         }
       },
       "steps": 4000,
-      "expectedHash": "969ce04871823a94545c1719e89797b5"
+      "expectedHash": "c8f1b6424a1d9d5f6c0c82912d9b9bea"
     },
     {
       "name": "clusters-default-6k",
@@ -531,7 +531,7 @@
         }
       },
       "steps": 6000,
-      "expectedHash": "006c16a283cac4de67f6d302a8cc7bfe"
+      "expectedHash": "c27f0fc27b9441100679554472b40ce6"
     },
     {
       "name": "clusters-reflex-4k",
@@ -545,7 +545,7 @@
         }
       },
       "steps": 4000,
-      "expectedHash": "7d8056b3118c8963b739afe48ad26d0e"
+      "expectedHash": "480546c15f4e1d3a3f63713078291a49"
     }
   ]
 }

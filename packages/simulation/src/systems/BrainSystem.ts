@@ -22,7 +22,8 @@ import { TWO_PI } from '../math/scalar'
 import { cos, sin } from '../math/trig'
 import { computeReward } from '../learning/RewardModel'
 import { lifeStageFor } from '../organisms/lifeStage'
-import { maxEnergyOf, maxHealthOf, reproductionCostOf } from '../organisms/traits'
+import { factorsOf } from '../organisms/bodyFactors'
+import { maxEnergyOf, maxHealthOf, reproductionCostOf, sensorRadiusOf } from '../organisms/traits'
 import type { SeededRandom } from '../random/SeededRandom'
 
 const THRUST = 0
@@ -76,7 +77,10 @@ export class BrainSystem {
     const juvenile = lifeStageFor(organism.age, organism.genome.physical) === 'juvenile'
     return {
       capacity: maxEnergyOf(organism.genome, this.config) * (juvenile ? juvenileSizeScale : 1),
-      maxSpeed: organism.genome.physical.maxSpeed * (juvenile ? juvenileSpeedScale : 1)
+      maxSpeed:
+        organism.genome.physical.maxSpeed *
+        (juvenile ? juvenileSpeedScale : 1) *
+        factorsOf(organism.genome, this.config).speed
     }
   }
 
@@ -170,7 +174,7 @@ export class BrainSystem {
         vy: organism.vy,
         heading: organism.heading,
         maxSpeed,
-        sensorRadius: genome.sensory.sensorRadius,
+        sensorRadius: sensorRadiusOf(genome, this.config),
         worldWidth: place.width,
         worldHeight: place.height,
         food: sight(food),
@@ -206,7 +210,11 @@ export class BrainSystem {
       brain.energyAtDecision = organism.energy
       this.intentBuffer.set(organism.id, {
         thrust: Math.max(0, action[THRUST] as number),
-        turn: (action[TURN] as number) * genome.physical.maxTurnRate * dt,
+        turn:
+          (action[TURN] as number) *
+          genome.physical.maxTurnRate *
+          dt *
+          factorsOf(genome, this.config).turn,
         strafe: action[STRAFE] as number,
         interact: (action[INTERACT] as number) > 0
       })

@@ -1,5 +1,6 @@
 import type { Genome, WorldConfig } from '@evo/contracts'
 import { outlineDragOf, outlineOf, outlineScaleOf } from '../development/outline'
+import { factorsOf } from './bodyFactors'
 
 /**
  * Quantities derived from an organism's genes rather than stored as genes, so that no capability
@@ -31,7 +32,16 @@ export function sizeFactor(genome: Genome, config: WorldConfig): number {
 
 /** Energy capacity of a fully grown organism. */
 export function maxEnergyOf(genome: Genome, config: WorldConfig): number {
-  return config.organisms.maxEnergy * sizeFactor(genome, config)
+  return (
+    config.organisms.maxEnergy *
+    sizeFactor(genome, config) *
+    factorsOf(genome, config).energyCapacity
+  )
+}
+
+/** The sensor radius: the gene scaled by the eyes (docs/decisions/0015). */
+export function sensorRadiusOf(genome: Genome, config: WorldConfig): number {
+  return genome.sensory.sensorRadius * factorsOf(genome, config).senseRange
 }
 
 /** Energy per second just for being alive; grows with body size. */
@@ -41,7 +51,9 @@ export function basalCostOf(genome: Genome, config: WorldConfig): number {
 
 /** Energy per second for maintaining senses; grows with sensor radius. */
 export function sensorCostOf(genome: Genome, config: WorldConfig): number {
-  return config.organisms.sensorCost * (genome.sensory.sensorRadius / config.organisms.sensorRadius)
+  return (
+    config.organisms.sensorCost * (sensorRadiusOf(genome, config) / config.organisms.sensorRadius)
+  )
 }
 
 /**
