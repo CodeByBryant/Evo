@@ -354,3 +354,60 @@ describe('SpeciesRegistry.problems', () => {
     )
   })
 })
+
+describe('founder groups (the cluster layout)', () => {
+  const near = (id: number): Genome => genome(id, 0.001 * id)
+
+  it('found one species per group even when the genomes are closer than the threshold', () => {
+    const r = registry({ threshold: 0.5 })
+    const a1 = r.assign({
+      organismId: 1,
+      genome: near(1),
+      parentOrganismId: null,
+      tick: 0,
+      founderGroup: 0
+    })
+    const b1 = r.assign({
+      organismId: 2,
+      genome: near(2),
+      parentOrganismId: null,
+      tick: 0,
+      founderGroup: 1
+    })
+    expect(a1).not.toBe(b1)
+    expect(r.active()).toHaveLength(2)
+  })
+
+  it('keep a group together: later members join it, however far they are from it', () => {
+    const r = registry({ threshold: 0.0001 })
+    const first = r.assign({
+      organismId: 1,
+      genome: genome(1, 0),
+      parentOrganismId: null,
+      tick: 0,
+      founderGroup: 7
+    })
+    const second = r.assign({
+      organismId: 2,
+      genome: genome(2, 0.4),
+      parentOrganismId: null,
+      tick: 0,
+      founderGroup: 7
+    })
+    expect(second).toBe(first)
+    expect(r.get(first as number)?.memberCount).toBe(2)
+  })
+
+  it('leave ordinary births alone: without a group the nearest species within the threshold wins', () => {
+    const r = registry({ threshold: 0.5 })
+    const a = r.assign({
+      organismId: 1,
+      genome: near(1),
+      parentOrganismId: null,
+      tick: 0,
+      founderGroup: 0
+    })
+    const child = r.assign({ organismId: 3, genome: near(3), parentOrganismId: 1, tick: 1 })
+    expect(child).toBe(a)
+  })
+})

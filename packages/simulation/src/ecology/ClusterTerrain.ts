@@ -1,7 +1,7 @@
 import { REGION_TYPES } from '@evo/contracts'
 import type { ClusterLayoutSnapshot, RegionType } from '@evo/contracts'
 import type { RandomSource } from '../random/RandomSource'
-import type { ClusterLayout } from '../world/ClusterLayout'
+import type { ClusterLayout } from './ClusterLayout'
 import type { Terrain } from './Terrain'
 
 export interface Patch {

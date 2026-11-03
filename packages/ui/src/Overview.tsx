@@ -158,3 +158,30 @@ export function ExtinctionBanner({
     </div>
   )
 }
+
+/** Per-cluster populations and how well each species stays at home (the cluster layout only). */
+export function ClusterPanel({ view }: { view: ViewState }): React.JSX.Element | null {
+  const report = view.clusters
+  if (report === null) return null
+  return (
+    <section className="evo-panel" aria-labelledby="evo-clusters-title">
+      <h2 id="evo-clusters-title">Clusters</h2>
+      <dl className="evo-stats">
+        {report.clusters.map((cluster) => (
+          <div key={cluster.index}>
+            <dt>Cluster {cluster.index + 1}</dt>
+            <dd>
+              {formatCount(cluster.alive)}
+              {cluster.inVoid > 0 && <small className="evo-hint"> {cluster.inVoid} in void</small>}
+              {cluster.alive === 0 && <small className="evo-hint"> empty</small>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="evo-hint">
+        Purity {Math.round(report.meanPurity * 100)}%: how much of each species still lives in its
+        home cluster.
+      </p>
+    </section>
+  )
+}

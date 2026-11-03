@@ -6,7 +6,7 @@ import type {
   SeasonConfig,
   WorldConfig
 } from '@evo/contracts'
-import type { ClusterLayout } from '../world/ClusterLayout'
+import type { ClusterLayout } from './ClusterLayout'
 import type { Terrain } from './Terrain'
 import { SeasonModel } from './SeasonModel'
 

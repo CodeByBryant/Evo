@@ -59,6 +59,7 @@ export function view(overrides: Partial<ViewState> = {}): ViewState {
     ],
     activeSpecies: 2,
     extinctSpecies: 1,
+    clusters: null,
     layers: DEFAULT_RENDER_LAYERS,
     following: false,
     selected: null,

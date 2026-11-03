@@ -33,6 +33,9 @@ export class Camera {
   private viewHeight = 1
   private worldWidth: number
   private worldHeight: number
+  /** The top-left corner of the world: `(0, 0)` for the field, the layout's bounds for clusters. */
+  private originX = 0
+  private originY = 0
   private readonly minZoom: number
   private readonly maxZoom: number
 
@@ -53,9 +56,11 @@ export class Camera {
     return { width: this.viewWidth, height: this.viewHeight }
   }
 
-  setWorld(worldWidth: number, worldHeight: number): void {
+  setWorld(worldWidth: number, worldHeight: number, originX = 0, originY = 0): void {
     this.worldWidth = worldWidth
     this.worldHeight = worldHeight
+    this.originX = originX
+    this.originY = originY
     this.clampCentre()
   }
 
@@ -112,8 +117,8 @@ export class Camera {
       this.minZoom,
       this.maxZoom
     )
-    this.cx = this.worldWidth / 2
-    this.cy = this.worldHeight / 2
+    this.cx = this.originX + this.worldWidth / 2
+    this.cy = this.originY + this.worldHeight / 2
   }
 
   /** The visible part of the world. */
@@ -129,8 +134,8 @@ export class Camera {
   }
 
   private clampCentre(): void {
-    this.cx = clamp(this.cx, 0, this.worldWidth)
-    this.cy = clamp(this.cy, 0, this.worldHeight)
+    this.cx = clamp(this.cx, this.originX, this.originX + this.worldWidth)
+    this.cy = clamp(this.cy, this.originY, this.originY + this.worldHeight)
   }
 }
 

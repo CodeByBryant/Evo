@@ -45,6 +45,12 @@ const IDENTITY_GENES: ReadonlySet<string> = new Set([
   'learning.persistence'
 ])
 
+/**
+ * The body outline moves this many times further than the scalar genes: outline differences are
+ * what a viewer sees, while big scalar offsets (speed, senses, costs) endanger the founders.
+ */
+const OUTLINE_SPREAD_FACTOR = 2
+
 /** Distance between species of one cluster on the colour wheel, in turns. */
 const SPECIES_HUE_STEP = 0.04
 
@@ -96,7 +102,11 @@ export function planClusterFounders(
       const spec = bodySpecs[index] as GeneSpec
       const direction = random.float() < 0.5 ? -1 : 1
       return (
-        direction * clusters.clusterSpread * (0.5 + 0.5 * random.float()) * (spec.max - spec.min)
+        direction *
+        clusters.clusterSpread *
+        OUTLINE_SPREAD_FACTOR *
+        (0.5 + 0.5 * random.float()) *
+        (spec.max - spec.min)
       )
     })
 
@@ -115,7 +125,11 @@ export function planClusterFounders(
       const body = [...founderBody]
       outlineIndices.forEach((index, k) => {
         const spec = bodySpecs[index] as GeneSpec
-        const wiggle = (random.float() * 2 - 1) * clusters.speciesSpread * (spec.max - spec.min)
+        const wiggle =
+          (random.float() * 2 - 1) *
+          clusters.speciesSpread *
+          OUTLINE_SPREAD_FACTOR *
+          (spec.max - spec.min)
         body[index] = fit(
           spec,
           (founderBody[index] as number) + (bodyArchetype[k] as number) + wiggle

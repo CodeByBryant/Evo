@@ -1,5 +1,6 @@
 import { ACTION_LABELS, OBSERVATION_LABELS } from '@evo/contracts'
 import type {
+  ClusterReport,
   EntityId,
   GeneRow,
   InspectorBrain,
@@ -143,6 +144,7 @@ export interface ViewInputs {
   readonly achievedTicksPerSecond: number
   readonly populationHistory: readonly PopulationPoint[]
   readonly species: { rows: readonly SpeciesRow[]; extinct: number }
+  readonly clusters: ClusterReport | null
   readonly layers: RenderLayers
   readonly following: boolean
   readonly selected: InspectorView | null
@@ -170,6 +172,7 @@ export function buildViewState(inputs: ViewInputs): ViewState {
     species: inputs.species.rows,
     activeSpecies: inputs.species.rows.length,
     extinctSpecies: inputs.species.extinct,
+    clusters: inputs.clusters,
     layers: inputs.layers,
     following: inputs.following,
     selected: inputs.selected,

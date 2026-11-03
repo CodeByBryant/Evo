@@ -84,7 +84,7 @@ import { MetabolismSystem } from '../systems/MetabolismSystem'
 import { MovementSystem } from '../systems/MovementSystem'
 import { PerceptionSystem } from '../systems/PerceptionSystem'
 import { ReproductionSystem } from '../systems/ReproductionSystem'
-import { ClusterLayout } from './ClusterLayout'
+import { ClusterLayout } from '../ecology/ClusterLayout'
 import { effectiveConfig } from './clusterScaling'
 import { checkInvariants } from './invariants'
 
@@ -725,6 +725,7 @@ export class World {
         heading: organism.heading,
         radius: bodyRadiusOf(organism.genome, this.config),
         outline: drawnOutlineOf(organism.genome, this.config),
+        hue: organism.genome.physical.hue,
         pattern: organism.genome.body.genes[visualGeneIndex('pattern')] as number,
         accentHue: organism.genome.body.genes[visualGeneIndex('accentHue')] as number,
         age: organism.age,

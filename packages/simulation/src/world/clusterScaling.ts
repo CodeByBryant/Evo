@@ -1,5 +1,5 @@
 import type { WorldConfig } from '@evo/contracts'
-import { ClusterLayout } from './ClusterLayout'
+import { ClusterLayout } from '../ecology/ClusterLayout'
 
 /**
  * The configuration a world actually runs with (docs/decisions/0014). The field layout is returned

@@ -8,6 +8,7 @@ Welcome to the Evo documentation! This guide will help you understand how to use
 - [Architecture](./architecture.md) - Technical overview of the codebase
 - [The web application](./architecture/web-app.md) - How the browser app is built and deployed
 - [Anatomy](./anatomy/anatomy.md) - Organism bodies: parts, development and capabilities
+- [The cluster world](./simulation/clusters.md) - Six circular clusters with biomes, void between them, 18 founder species
 - [User Guide](./user-guide.md) - How to use the simulation
 - [Development](./development.md) - Contributing and development setup
 

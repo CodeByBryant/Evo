@@ -22,7 +22,7 @@ The world has **no walls**: positions are unbounded numbers, movement and newbor
 
 ### Biomes inside a cluster
 
-Each cluster has **several biomes** and its own **signature mix**. A cluster `i` is made of `patches` (default 6) Voronoi patches inside its circle: patch points are drawn from the `terrain` stream, uniformly in the disc, and each patch's region type is drawn from the cluster's **weight table**: its primary type (`REGION_TYPES[i]`) 0.50, its secondary type (`REGION_TYPES[(i + 1) % 6]`) 0.30, the other four 0.05 each. So every cluster mixes all biomes but each feels different: a meadow-and-forest cluster, a forest-and-wetland cluster, and so on. A position's region is the type of the nearest patch of the cluster whose circle contains it; outside every circle it is **void**. The lookup is analytic (point-in-circle, then nearest of a handful of points), built once from the `terrain` stream and **not hashed**, like today's region map.
+Each cluster has **several biomes** and its own **signature mix**. A cluster `i` is made of `patches` (default 6) Voronoi patches inside its circle: patch points are drawn from the `terrain` stream, uniformly in the disc, and each patch's region type is drawn from the cluster's **weight table**. Meadow, forest and wetland are habitable and get a floor of 0.15 each; desert, cave and volcanic are harsh and get 0.05 each; the cluster's primary biome (`REGION_TYPES[i]`) gains 0.25 and its secondary (`REGION_TYPES[(i + 1) % 6]`) 0.15. So every cluster mixes all biomes and each has a different signature. (The first design, 0.50 primary and 0.30 secondary, made the volcanic, cave and desert clusters unlivable: they died out in most seeds. The floor of habitable ground came from that measurement.) A position's region is the type of the nearest patch of the cluster whose circle contains it; outside every circle it is **void**. The lookup is analytic (point-in-circle, then nearest of a handful of points), built once from the `terrain` stream and **not hashed**, like today's region map.
 
 `RegionMap` and the new `ClusterTerrain` share a small `Terrain` interface (`typeAt`, `indexAt`, `typeOf`, `toSnapshot`); `typeAt` returns `null` for void. `REGION_TYPES` is **not** extended: the field map picks types by `REGION_TYPES.length`, so adding a seventh type would change every field world.
 
@@ -42,11 +42,14 @@ There is no reproductive isolation between clusters beyond the void. The **matin
 
 Cluster mode starts `count * speciesPerCluster * organismsPerSpecies` organisms (6 x 3 x 6 = 108, matching today's tuned density of 20 organisms on the 500x500 field scaled by area) instead of `organisms.initialCount`. Founders get **identity offsets** on top of the usual founder genome:
 
-- each cluster `c` draws one offset per identity gene, up to `clusters.clusterSpread` (0.25) of the gene's range, from the `genetics` stream: this is the cluster's **archetype**;
-- each species `s` of that cluster draws a smaller offset, up to `clusters.speciesSpread` (0.08) of the range, around the archetype;
+- each cluster `c` draws one offset per identity gene, `clusterSpread` (0.08) of the gene's range in a random direction, from the `genetics` stream: this is the cluster's **archetype**;
+- each species `s` of that cluster draws a smaller offset, up to `speciesSpread` (0.03) of the range, around the archetype;
+- the body outline genes (point count, radii, angles) move twice as far, since outline differences are what a viewer sees;
 - all organisms of one species share that offset and differ only by their random brains.
 
-Identity genes are the scalar genes that mutate (movement, sensing, metabolism, reproduction and the hue gene), plus the body outline genes (point count, radii, angles) and the paint genes, so clusters differ in **look and body shape** as well as behavior. Offsets are clamped to each gene's range. The cluster's hue family comes from the **hue gene**: cluster `c` centres on `c / 6` of the colour wheel and each species sits a fixed step beside it, so a cluster reads as one colour family and its three species as its shades. A test asserts the founder registry shows **18 species, 3 per cluster**, with the largest within-cluster distance below and the smallest between-cluster distance far above `species.threshold`.
+Identity genes are the movement, sensing, metabolism, behavior and learning genes (life stages and reproduction stay at the baseline so every founder is a viable animal), plus the outline and paint genes: clusters differ in **look and body shape** as well as a little in behavior. Offsets are clamped to each gene's range. The cluster's hue family comes from the **hue gene**: cluster `c` centres on `c / 6` of the colour wheel and each species sits 0.04 beside it, so a cluster reads as one colour family and its three species as its shades; the pattern gene differs by species and the accent hue is the complement.
+
+**Species are designated, not inferred.** The species registry joins a genome to the nearest species within `species.threshold` (0.06), and offsets this small are far below it: left alone, the 18 founder groups would collapse into a handful of species. So the registry gets one small addition, a `founderGroup` on the assignment: the first member of a group founds its species whatever its distance to the others, and the rest of the group join it. Ordinary births are untouched and still join the nearest species within the threshold. The offsets are kept small because larger ones endanger the founders (see Measured results).
 
 ### Observation and novelty
 
@@ -54,7 +57,7 @@ Identity genes are the scalar genes that mutate (movement, sensing, metabolism, 
 
 ### Measuring blur
 
-`World.clusterReport()` (derived, not hashed) returns per cluster the living count and, per species, **purity**: the share of its living members that are in the cluster the species was founded in (nearest-centre classification, void counted by nearest centre). Births whose parents were in different clusters are counted as **crossings** in the metrics. Every probe reports extinction, per-cluster persistence, purity and crossings.
+`World.clusterReport()` (derived, not hashed) returns per cluster the living count and how many of those are in the void, and, per species, its dominant cluster and **purity**: the share of its living members in that cluster (nearest-centre classification, so an organism in the void counts for its nearest cluster), plus the living-weighted mean purity. The "Clusters" panel in the application shows it. Every probe reports extinction, per-cluster persistence and purity.
 
 ### Rendering
 
@@ -63,6 +66,17 @@ The renderer is told the cluster layout (`ClusterLayoutSnapshot`: centres, radiu
 ### Hash
 
 No new hashed state: terrain is derived from the `terrain` stream like the field's, founders are placed from existing streams, and cluster ids are derived. Hash schema stays **7**, and the field goldens do not change; cluster goldens are added.
+
+## Measured results (this PR)
+
+Probes use 8 seeds x 12,000 ticks (a first look, not a gate; the 128-seed measurement is the tuning PR's job):
+
+- **Founders:** exactly 18 species, 3 per cluster, 6 founders each, 18 organisms per cluster, at tick 0.
+- **Persistence is the open problem.** With the default settings about 70-90% of clusters are still populated at 12,000 ticks (45 of 48 in the best run, 29 to 38 of 48 in others; the spread between runs is as large as any effect of the settings tried). Whole worlds do die in some seeds. Founder offsets of 0.15 and above lost whole worlds, which is why the defaults are 0.08 and 0.03.
+- **The void is a leak, not a wall.** Early on about 40% of founders are in the void, where they cannot eat. A slower void did **not** help (void speed 1.0, 0.85, 0.7 and 0.5 gave 44, 36, 45 and 40 of 48 clusters alive: noise, not a trend), and a slower void traps the organisms that wandered out.
+- Mean species purity stays high (0.85 to 1.0 at 12,000 ticks): clusters do not blur much in that time, mostly because few organisms cross.
+
+The cluster layout therefore ships **off by default**. Making it the default needs the tuning work (the next pull request): keeping organisms home, per-cluster persistence over 128 seeds, and the anatomy changes that interact with it.
 
 ## Alternatives considered
 

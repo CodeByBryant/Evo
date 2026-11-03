@@ -2,6 +2,7 @@ import { DEFAULT_PRESET, PRESETS } from '@evo/config'
 import type { WorldPreset } from '@evo/config'
 import { DEFAULT_RENDER_LAYERS } from '@evo/contracts'
 import type {
+  ClusterLayoutSnapshot,
   EntityId,
   InspectorView,
   PopulationPoint,
@@ -52,6 +53,8 @@ export interface WorldInfo {
   readonly width: number
   readonly height: number
   readonly terrain: TerrainSnapshot | null
+  /** The cluster layout (ADR 0014), or `null` in the field layout. */
+  readonly clusters: ClusterLayoutSnapshot | null
 }
 
 export interface HostOptions {
@@ -345,8 +348,17 @@ export class SimulationHost implements SimulationControls {
       this.env.cancelFrame(this.frameHandle)
       this.frameHandle = null
     }
-    const { width, height } = this.world.config.environment
-    this.worldInfo = { width, height, terrain: this.world.terrain() }
+    const clusters = this.world.clusterLayout()
+    // In the cluster layout the world is unbounded: its "size" is the bounds of the clusters.
+    const width =
+      clusters === null
+        ? this.world.config.environment.width
+        : clusters.bounds.maxX - clusters.bounds.minX
+    const height =
+      clusters === null
+        ? this.world.config.environment.height
+        : clusters.bounds.maxY - clusters.bounds.minY
+    this.worldInfo = { width, height, terrain: this.world.terrain(), clusters }
     for (const listener of this.worldListeners) listener(this.worldInfo)
     this.publishFrame(true)
     this.onWorldChange?.(this.seed, this.preset)
@@ -477,6 +489,7 @@ export class SimulationHost implements SimulationControls {
       worldHeight: this.worldInfo.height,
       season: this.world.season,
       selectedId: this.selectedId,
+      colorByHue: this.worldInfo.clusters !== null,
       effects: this.effects.slice()
     })
     for (const listener of this.frameListeners) listener(this.latestFrame)
@@ -518,6 +531,7 @@ export class SimulationHost implements SimulationControls {
       achievedTicksPerSecond: this.achieved,
       populationHistory: this.history,
       species: this.speciesCache,
+      clusters: this.world.clusterReport(),
       layers: this.layers,
       following: this.following,
       selected: this.inspector,

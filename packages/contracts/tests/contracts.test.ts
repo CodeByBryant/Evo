@@ -137,6 +137,7 @@ describe('contracts', () => {
       radius: 5,
       outline: [1, 0, 0, 1, -1, 0, 0, -1],
       pattern: 0,
+      hue: 0.55,
       accentHue: 0.1,
       age: 0,
       maxAge: 600,
