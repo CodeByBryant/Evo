@@ -38,6 +38,8 @@ type PoolHost = { container: Container; pool: Sprite[] }
 
 /** One creature's drawn body: its shape never changes, so it is built once and only moved afterwards. */
 interface BodyDrawing {
+  /** Moves, turns and fades the whole creature; holds the body and, near, its parts. */
+  readonly container: Container
   readonly graphics: Graphics
   /** What the picture depends on besides the outline; a change rebuilds it. */
   key: string
@@ -517,9 +519,11 @@ export class PixiRenderer implements Renderer {
     const key = `${o.speciesColor}|${o.accentColor}|${o.pattern}`
     let drawing = this.bodyDrawings.get(o.id)
     if (drawing === undefined) {
+      const container = new Container()
       const graphics = new Graphics()
-      this.bodies.container.addChild(graphics)
-      drawing = { graphics, key: '', seen: 0, parts: null }
+      container.addChild(graphics)
+      this.bodies.container.addChild(container)
+      drawing = { container, graphics, key: '', seen: 0, parts: null }
       this.bodyDrawings.set(o.id, drawing)
     }
     drawing.seen = this.sceneStamp
@@ -659,7 +663,7 @@ export class PixiRenderer implements Renderer {
   private dropGoneBodies(): void {
     for (const [id, drawing] of this.bodyDrawings) {
       if (drawing.seen === this.sceneStamp) continue
-      drawing.graphics.destroy()
+      drawing.container.destroy({ children: true })
       this.bodyDrawings.delete(id)
     }
   }
@@ -693,10 +697,10 @@ export class PixiRenderer implements Renderer {
       const drawing = this.bodyOf(o)
       if (this.partsVisible && drawing.parts === null && o.parts.length > 0) {
         drawing.parts = this.paintParts(o)
-        drawing.graphics.addChild(drawing.parts)
+        drawing.container.addChild(drawing.parts)
       }
       if (drawing.parts !== null) drawing.parts.visible = this.partsVisible
-      const body = drawing.graphics
+      const body = drawing.container
       body.position.set(o.x, o.y)
       body.rotation = o.rotation
       body.scale.set(o.lifeStage === 'juvenile' ? 0.75 : 1)

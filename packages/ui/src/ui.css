@@ -477,3 +477,7 @@
   height: 0.7em;
   border-radius: 50%;
 }
+
+.evo-table td + td {
+  padding-left: 0.75rem;
+}
