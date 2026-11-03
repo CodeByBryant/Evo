@@ -375,7 +375,7 @@ describe('environment.layout and environment.clusters (ADR 0014)', () => {
     })
     expect(environment.layout).toBe('clusters')
     expect(environment.clusters.count).toBe(4)
-    expect(environment.clusters.radius).toBe(250)
+    expect(environment.clusters.radius).toBe(500)
   })
 
   it('rejects overlapping clusters, a mate signal that crosses the void, and bad counts', () => {

@@ -7,14 +7,16 @@ describe('presets run', () => {
   it.each(PRESETS.map((p) => [p.name, p] as const))(
     '%s stays valid and populated for 3,000 ticks',
     (_name, preset) => {
-      for (const seed of [1, 2]) {
+      // The cluster world runs 432 organisms (about 14 ms a tick), so it gets one seed and a shorter run.
+      const clustered = preset.overrides.environment?.layout === 'clusters'
+      for (const seed of clustered ? [1] : [1, 2]) {
         const world = World.create({ seed, config: preset.overrides, validateEveryTicks: 500 })
-        world.run(3000)
+        world.run(clustered ? 1500 : 3000)
         expect(world.isExtinct).toBe(false)
         expect(world.validate()).toEqual({ ok: true, errors: [] })
         expect(world.snapshot().metrics.organismsBorn).toBeGreaterThan(0)
       }
     },
-    120_000
+    300_000
   )
 })

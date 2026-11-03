@@ -188,10 +188,11 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     // with mutation off the result is still 26/47/21 after the Phase 6 and 7 genome growth. They
     // moved again when the five scalar genes were retired (ADR 0015): fewer genes mutate, so
     // fewer draws, and speed, turning and sensing no longer evolve in a world without anatomy. They
-    // moved once more when the brain gained three way-home inputs: founders draw 24 more weights.)
-    expect(snapshot.population.active).toBe(22)
-    expect(snapshot.metrics.organismsBorn).toBe(43)
-    expect(snapshot.metrics.deathsByStarvation).toBe(21)
+    // moved once more when the brain gained three way-home inputs (founders draw 24 more weights)
+    // and again when bodies became evolvable by default.)
+    expect(snapshot.population.active).toBe(30)
+    expect(snapshot.metrics.organismsBorn).toBe(48)
+    expect(snapshot.metrics.deathsByStarvation).toBe(18)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 

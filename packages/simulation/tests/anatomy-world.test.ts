@@ -14,7 +14,10 @@ import { deriveStreamWords } from '../src/random/streams'
  */
 const SEED = 7
 const BUSY: WorldConfigOverrides = {
-  anatomy: { mutation: { presenceRate: 0.3, typeRate: 0.3, continuousRate: 0.5, visualRate: 0.5 } },
+  anatomy: {
+    enabled: false,
+    mutation: { presenceRate: 0.3, typeRate: 0.3, continuousRate: 0.5, visualRate: 0.5 }
+  },
   genetics: { mutationRateScale: 4 }
 }
 /** Paint genes mutate with anatomy on (they have no effect on the dynamics), so snapshots are compared without them. */
