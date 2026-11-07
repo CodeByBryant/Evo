@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { RenderLayers } from '@evo/contracts'
-import type { Renderer } from '@evo/renderer'
+import type { Renderer, ViewInsets } from '@evo/renderer'
 import type { SimulationHost } from './host/SimulationHost'
 
 /**
@@ -10,15 +10,20 @@ import type { SimulationHost } from './host/SimulationHost'
  */
 export function Viewport({
   host,
-  layers
+  layers,
+  insets
 }: {
   host: SimulationHost
   layers: RenderLayers
+  /** The edges floating interface covers; the world is fitted clear of them. */
+  insets: ViewInsets
 }): React.JSX.Element {
   const container = useRef<HTMLDivElement>(null)
   const renderer = useRef<Renderer | null>(null)
   const latestLayers = useRef(layers)
   latestLayers.current = layers
+  const latestInsets = useRef(insets)
+  latestInsets.current = insets
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -43,6 +48,7 @@ export function Viewport({
         }
         renderer.current = instance
         const info = host.getWorldInfo()
+        instance.setInsets(latestInsets.current)
         instance.setWorld(info.width, info.height, info.terrain, info.clusters)
         instance.setLayers(latestLayers.current)
         instance.render(host.getFrame())
@@ -77,6 +83,11 @@ export function Viewport({
   useEffect(() => {
     renderer.current?.setLayers(layers)
   }, [layers])
+
+  const { left, right, top, bottom } = insets
+  useEffect(() => {
+    renderer.current?.setInsets({ left, right, top, bottom })
+  }, [left, right, top, bottom])
 
   return (
     <div ref={container} className="viewport" role="img" aria-label="Simulation viewport">

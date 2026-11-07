@@ -35,6 +35,8 @@ export interface RenderOrganism {
   readonly energyRatio: number
   /** Health over its maximum, in `[0, 1]`. */
   readonly healthRatio: number
+  /** How fast it moves relative to the founder's top speed (about 1 at full speed): the beat of its tails and cilia. */
+  readonly speedRatio: number
   readonly selected: boolean
 }
 
@@ -89,6 +91,7 @@ export const RENDER_LAYERS = [
   'organisms',
   'trails',
   'selection',
+  'motion',
   'debug'
 ] as const
 export type RenderLayerName = (typeof RENDER_LAYERS)[number]
@@ -103,5 +106,6 @@ export const DEFAULT_RENDER_LAYERS: RenderLayers = {
   organisms: true,
   trails: false,
   selection: true,
+  motion: true,
   debug: false
 }

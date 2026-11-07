@@ -2,14 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import {
   ClusterPanel,
-  ControlPanel,
+  Dock,
   ExtinctionBanner,
+  Hud,
   Inspector,
   LayerPanel,
   PopulationChart,
   SpeciesPanel,
   StatsPanel,
   TopBar,
+  WorldPanel,
   barWidth,
   formatCount,
   formatNumber,
@@ -89,32 +91,50 @@ describe('components render', () => {
     expect(renderToStaticMarkup(<TopBar view={view({ season: null })} />)).not.toContain('Season')
   })
 
-  it('control panel reflects state and wires its buttons', () => {
+  it('dock reflects state and wires its buttons', () => {
     const { controls } = recorder()
-    const running = renderToStaticMarkup(<ControlPanel view={view()} controls={controls} />)
+    const running = renderToStaticMarkup(<Dock view={view()} controls={controls} />)
     expect(running).toContain('>Pause<')
     expect(running).toMatch(/<button[^>]*aria-pressed="true"[^>]*>25×/)
     expect(running).toMatch(/<button[^>]*disabled=""[^>]*>Step/)
-    expect(running).toContain('249 ticks/s achieved')
-    expect(running).toContain('Harsh')
+    expect(running).toContain('<b>249</b> ticks/s')
     const paused = renderToStaticMarkup(
-      <ControlPanel view={view({ status: 'paused' })} controls={controls} />
+      <Dock view={view({ status: 'paused' })} controls={controls} />
     )
     expect(paused).toContain('>Start<')
+    expect(paused).toContain('paused')
     expect(paused).not.toMatch(/<button[^>]*disabled=""[^>]*>Step/)
     const extinct = renderToStaticMarkup(
-      <ControlPanel view={view({ status: 'extinct' })} controls={controls} />
+      <Dock view={view({ status: 'extinct' })} controls={controls} />
     )
     expect(extinct).toMatch(/<button[^>]*disabled=""[^>]*>Start/)
   })
 
-  it('stats panel shows population numbers and the chart', () => {
-    const html = renderToStaticMarkup(<StatsPanel view={view()} />)
+  it('world panel offers the preset, the seed and a fresh start', () => {
+    const { controls } = recorder()
+    const html = renderToStaticMarkup(<WorldPanel view={view()} controls={controls} />)
+    expect(html).toContain('Harsh')
+    expect(html).toContain('The default world.')
+    expect(html).toContain('Same seed and preset, same world, every time.')
+    expect(html).toContain('>New seed<')
+    expect(html).toContain('>Reset<')
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Go/)
+  })
+
+  it('hud shows the three headline numbers and the population line', () => {
+    const html = renderToStaticMarkup(<Hud view={view()} />)
     expect(html).toContain('>31<')
-    expect(html).toContain('25%')
+    expect(html).toContain('>120<')
     expect(html).toContain('+1 extinct')
-    expect(html).toContain('<svg')
     expect(html).toContain('Population over time: now 31, highest 31, lowest 20')
+  })
+
+  it('statistics folds the births, deaths and mating numbers with the chart', () => {
+    const html = renderToStaticMarkup(<StatsPanel view={view()} />)
+    expect(html).toContain('<details')
+    expect(html).toContain('25%')
+    expect(html).toContain('>400<')
+    expect(html).toContain('<svg')
   })
 
   it('population chart explains an empty history', () => {
@@ -134,7 +154,7 @@ describe('components render', () => {
   it('layer panel has a checkbox per layer and disables camera actions without a selection', () => {
     const { controls } = recorder()
     const html = renderToStaticMarkup(<LayerPanel view={view()} controls={controls} />)
-    expect(html.match(/type="checkbox"/g)).toHaveLength(9)
+    expect(html.match(/type="checkbox"/g)).toHaveLength(10)
     expect(html).toContain('Debug overlay')
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Focus/)
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Follow/)

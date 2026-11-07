@@ -499,6 +499,7 @@ export class SimulationHost implements SimulationControls {
       season: this.world.season,
       selectedId: this.selectedId,
       colorByHue: this.worldInfo.clusters !== null,
+      baselineSpeed: this.world.config.organisms.maxSpeed,
       effects: this.effects.slice()
     })
     for (const listener of this.frameListeners) listener(this.latestFrame)
