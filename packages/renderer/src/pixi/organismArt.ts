@@ -160,12 +160,12 @@ function drawBack(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number):
     const alpha = part.functional ? 1 : 0.35
     const t = part.functional ? time : 0
     if (part.type === 'flagellum') {
-      const dirX = Math.cos(part.orientation + Math.PI)
-      const dirY = Math.sin(part.orientation + Math.PI)
-      const base = exitPoint(o.outline, part.x, part.y, dirX, dirY)
+      // The part is anchored on the outline and points outward; its tail trails along that axis.
+      const dirX = Math.cos(part.orientation)
+      const dirY = Math.sin(part.orientation)
       const polygon = tailPolygon({
-        baseX: base.x - dirX * r * 0.05,
-        baseY: base.y - dirY * r * 0.05,
+        baseX: part.x - dirX * r * 0.05,
+        baseY: part.y - dirY * r * 0.05,
         dirX,
         dirY,
         length: r * 1.5 + part.radius * 5,
@@ -280,9 +280,8 @@ function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number)
           break
         }
         case 'sniffer': {
-          const dirX = Math.cos(part.orientation)
-          const dirY = Math.sin(part.orientation)
-          const base = exitPoint(o.outline, part.x, part.y, dirX, dirY)
+          // Anchored on the outline: the feelers start at the part itself.
+          const base = { x: part.x, y: part.y }
           for (const side of [-1, 1]) {
             const angle = part.orientation + side * 0.3
             const points = feelerPoints(
@@ -309,15 +308,8 @@ function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number)
           break
         }
         case 'mouth': {
-          const rim = exitPoint(
-            o.outline,
-            part.x,
-            part.y,
-            Math.cos(part.orientation),
-            Math.sin(part.orientation)
-          )
           const open = mouthOpen(t, offset)
-          g.circle(rim.x * 0.96, rim.y * 0.96, Math.max(0.25, r * 0.09 * open)).fill({
+          g.circle(part.x * 0.97, part.y * 0.97, Math.max(0.25, r * 0.09 * open)).fill({
             color: DARK,
             alpha: 0.85 * alpha
           })

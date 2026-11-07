@@ -67,7 +67,7 @@ export interface Genome {
    * 3 since the parts act (ADR 0015): speed, turning, sensing and movement cost left the scalar
    * genes and come from the body. 2 added the `body` section (ADR 0012).
    */
-  readonly version: 3
+  readonly version: 4
   readonly id: GenomeId
   /** Empty for founders; otherwise the two parents' genome ids, ascending. */
   readonly parentIds: readonly GenomeId[]

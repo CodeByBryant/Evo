@@ -124,7 +124,7 @@ export function drawnPartsOf(genome: Genome, config: WorldConfig): readonly Part
     x: part.x * factor,
     y: part.y * factor,
     radius: 0.2 * radius * Math.sqrt(part.size),
-    orientation: part.orientation,
+    orientation: part.axis,
     functional: part.functional
   }))
   drawnParts.set(genome.body.genes, { radius, parts })

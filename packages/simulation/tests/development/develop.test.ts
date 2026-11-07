@@ -1,17 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import { resolveWorldConfig } from '@evo/config'
-import { BODY_SLOT_COUNT, PART_TYPES, slotGeneIndex, visualGeneIndex } from '@evo/contracts'
-import type { AnatomyConfig, FounderPart, PartType } from '@evo/contracts'
+import {
+  BODY_SLOT_COUNT,
+  OUTLINE_COUNT_INDEX,
+  PART_STATS,
+  PART_TYPES,
+  outlineAngleIndex,
+  outlineRadiusIndex,
+  slotGeneIndex,
+  visualGeneIndex
+} from '@evo/contracts'
+import type { AnatomyConfig, AnatomyPart, FounderPart, PartType } from '@evo/contracts'
 import { developAnatomy, resolveFunctional } from '../../src/development/develop'
+import { developOutline, rimAt } from '../../src/development/outline'
 import { founderBodyVector } from '../../src/genetics/BodyGenes'
 
-const part = (type: PartType, extra: Partial<FounderPart> = {}): FounderPart => ({
+export const part = (type: PartType, extra: Partial<FounderPart> = {}): FounderPart => ({
   type,
+  parent: 0,
   size: 0.5,
   angle: 0,
   offset: 0.5,
   orientation: 0,
-  param: 0.5,
+  integrity: 1,
+  stats: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
   ...extra
 })
 
@@ -44,30 +56,169 @@ describe('developAnatomy', () => {
     expect(anatomy.look).toEqual(defaults.founderLook)
   })
 
-  it('places parts in polar coordinates in the body frame (x forward, y left)', () => {
-    const front = grow(configWith([part('mouth', { angle: 0, offset: 1 })])).parts[0]
-    expect(front?.x).toBeCloseTo(1, 12)
-    expect(front?.y).toBeCloseTo(0, 12)
-    const left = grow(configWith([part('eye', { angle: Math.PI / 2, offset: 0.5 })])).parts[0]
-    expect(left?.x).toBeCloseTo(0, 12)
-    expect(left?.y).toBeCloseTo(0.5, 12)
-    const rear = grow(configWith([part('armor', { angle: Math.PI, offset: 0.4 })])).parts[0]
-    expect(rear?.x).toBeCloseTo(-0.4, 12)
-    const centre = grow(configWith([part('armor', { offset: 0 })])).parts[0]
+  it('anchors a surface part exactly on the outline at its angle', () => {
+    const body = founderBodyVector(defaults)
+    const outline = developOutline(body)
+    for (const angle of [0, 0.7, Math.PI / 2, 2.6, Math.PI, 4.4, 5.9]) {
+      // offset is ignored for surface parts: it must not move a mouth off the rim
+      const grown = grow(configWith([part('mouth', { angle, offset: 0.2 })])).parts[0]
+      const rim = rimAt(outline, angle)
+      expect(grown?.x).toBeCloseTo(rim.x, 12)
+      expect(grown?.y).toBeCloseTo(rim.y, 12)
+    }
+  })
+
+  it('places an interior part at offset times the outline radius at its angle', () => {
+    const body = founderBodyVector(defaults)
+    const outline = developOutline(body)
+    const rim = rimAt(outline, Math.PI / 2)
+    const eye = grow(configWith([part('eye', { angle: Math.PI / 2, offset: 0.5 })])).parts[0]
+    expect(eye?.x).toBeCloseTo(0.5 * rim.x, 12)
+    expect(eye?.y).toBeCloseTo(0.5 * rim.y, 12)
+    const centre = grow(configWith([part('stomach', { offset: 0 })])).parts[0]
     expect([centre?.x, centre?.y]).toEqual([0, 0])
   })
 
-  it('carries every part parameter through unchanged', () => {
-    const p = part('sniffer', { size: 0.77, angle: 2, offset: 0.9, orientation: 4, param: 0.33 })
+  it('never puts a part outside the body outline, whatever the genes (random bodies)', () => {
+    let state = 12345
+    const next = (): number => {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0
+      return state / 4294967296
+    }
+    for (let trial = 0; trial < 60; trial++) {
+      const vector = founderBodyVector(defaults)
+      // a random outline and random part genes
+      for (let i = 0; i < 16; i++) {
+        vector[outlineRadiusIndex(i)] = 0.35 + 0.65 * next()
+        vector[outlineAngleIndex(i)] = next()
+      }
+      vector[OUTLINE_COUNT_INDEX] = 5 + Math.floor(next() * 12)
+      for (let slot = 0; slot < BODY_SLOT_COUNT; slot++) {
+        vector[slotGeneIndex(slot, 'present')] = 1
+        vector[slotGeneIndex(slot, 'type')] = Math.floor(next() * PART_TYPES.length)
+        vector[slotGeneIndex(slot, 'size')] = 0.1 + 0.2 * next()
+        vector[slotGeneIndex(slot, 'angle')] = next() * 2 * Math.PI
+        vector[slotGeneIndex(slot, 'offset')] = next()
+        vector[slotGeneIndex(slot, 'orientation')] = next() * 2 * Math.PI
+        vector[slotGeneIndex(slot, 'parent')] = 0
+      }
+      const grown = developAnatomy(vector, { ...defaults, structuralBudget: 12 })
+      const outline = developOutline(vector)
+      for (const p of grown.parts) {
+        const rim = rimAt(outline, Math.atan2(p.y, p.x))
+        const distance = Math.hypot(p.x, p.y)
+        // inside (or on) the outline, with only float rounding to spare
+        expect(distance).toBeLessThanOrEqual(Math.hypot(rim.x, rim.y) + 1e-9)
+      }
+    }
+  })
+
+  it('points a body part along the outward direction, turned by its orientation', () => {
+    // the mouth at the front, orientation 0: the axis is straight outward, about +x
+    const mouth = grow(configWith([part('mouth', { angle: 0, orientation: 0 })])).parts[0]
+    expect(Math.cos(mouth?.axis ?? NaN)).toBeGreaterThan(0.9)
+    const turned = grow(configWith([part('mouth', { angle: 0, orientation: Math.PI })])).parts[0]
+    expect(Math.cos(turned?.axis ?? NaN)).toBeLessThan(-0.9)
+  })
+
+  it('carries size, integrity and the stats through, decoding them to real units', () => {
+    const stats = [1, 0, 0.25, 0.5, 0.5, 0.5]
+    const p = part('flagellum', { size: 0.77, integrity: 0.4, stats })
     const grown = grow(configWith([p])).parts[0]
-    expect(grown).toMatchObject({
-      type: 'sniffer',
-      size: 0.77,
-      angle: 2,
-      offset: 0.9,
-      orientation: 4,
-      param: 0.33,
-      slot: 0
+    expect(grown).toMatchObject({ type: 'flagellum', size: 0.77, integrity: 0.4, stats, slot: 0 })
+    // length gene 1 is the top of its range, thickness gene 0 the bottom
+    expect(grown?.statValues['length']).toBeCloseTo(PART_STATS.flagellum[0]?.max ?? NaN, 12)
+    expect(grown?.statValues['thickness']).toBeCloseTo(PART_STATS.flagellum[1]?.min ?? NaN, 12)
+    expect(Object.keys(grown?.statValues ?? {})).toEqual([
+      'length',
+      'thickness',
+      'force',
+      'efficiency'
+    ])
+  })
+
+  describe('parents', () => {
+    const flagellumWithChild = (child: Partial<FounderPart>, parent: Partial<FounderPart> = {}) =>
+      grow(
+        configWith([
+          part('flagellum', { angle: Math.PI, stats: [1, 0.5, 0.5, 0.5, 0.5, 0.5], ...parent }),
+          part('eye', { parent: 1, offset: 0.5, ...child })
+        ])
+      ).parts
+
+    it("hangs a child along its parent's axis, offset being the fraction of its length", () => {
+      const [parent, child] = flagellumWithChild({ offset: 1 }) as [AnatomyPart, AnatomyPart]
+      expect(child.parent).toBe(0)
+      expect(child.x).toBeCloseTo(parent.tipX, 12)
+      expect(child.y).toBeCloseTo(parent.tipY, 12)
+      const half = flagellumWithChild({ offset: 0.5 })[1] as AnatomyPart
+      expect(half.x).toBeCloseTo((parent.x + parent.tipX) / 2, 12)
+      expect(half.y).toBeCloseTo((parent.y + parent.tipY) / 2, 12)
+      // a flagellum at its longest reaches well beyond the body
+      expect(Math.hypot(parent.tipX - parent.x, parent.tipY - parent.y)).toBeGreaterThan(1)
+    })
+
+    it("points a child relative to its parent's axis", () => {
+      const [parent, straight, turned] = grow(
+        configWith([
+          part('flagellum', { angle: Math.PI }),
+          part('eye', { parent: 1, orientation: 0 }),
+          part('eye', { parent: 1, orientation: Math.PI / 2 })
+        ])
+      ).parts as [AnatomyPart, AnatomyPart, AnatomyPart]
+      expect(straight.axis).toBeCloseTo(parent.axis, 12)
+      const difference = Math.abs(
+        Math.atan2(Math.sin(turned.axis - parent.axis), Math.cos(turned.axis - parent.axis))
+      )
+      expect(difference).toBeCloseTo(Math.PI / 2, 9)
+    })
+
+    it('attaches a part to the body when its parent is not an earlier developed part', () => {
+      // parent 3 names slot 2, which is not before slot 1 (the config would refuse it; mutation can make it)
+      const vector = founderBodyVector(configWith([part('eye'), part('eye')]))
+      vector[slotGeneIndex(1, 'parent')] = 3
+      const parts = developAnatomy(vector, defaults).parts
+      expect(parts.map((p) => p.parent)).toEqual([-1, -1])
+      // parent 1 on the first slot would be itself
+      const solo = developAnatomy(
+        (() => {
+          const vector = founderBodyVector(configWith([part('eye')]))
+          vector[slotGeneIndex(0, 'parent')] = 1
+          return vector
+        })(),
+        defaults
+      ).parts
+      expect(solo[0]?.parent).toBe(-1)
+    })
+
+    it('attaches to the body when the parent did not develop (the budget was spent)', () => {
+      const vector = founderBodyVector(
+        configWith(
+          [
+            part('armor', { size: 1 }),
+            part('flagellum', { size: 1 }),
+            part('eye', { size: 0.1, parent: 2 })
+          ],
+          6
+        )
+      )
+      // slot 1 (the flagellum) does not fit; the eye that named it as parent hangs from the body
+      const grown = developAnatomy(vector, { ...defaults, structuralBudget: 1.5 })
+      expect(grown.undeveloped).toContain(1)
+      expect(grown.parts.map((p) => [p.slot, p.parent])).toEqual([
+        [0, -1],
+        [2, -1]
+      ])
+    })
+
+    it('makes a child dormant when its parent does not work (and not otherwise)', () => {
+      // a stomach with no mouth is dormant, so the eye hanging from it is too
+      const dormantParent = grow(configWith([part('stomach'), part('eye', { parent: 1 })])).parts
+      expect(dormantParent.map((p) => p.functional)).toEqual([false, false])
+      const working = grow(
+        configWith([part('mouth'), part('stomach', { parent: 0 }), part('eye', { parent: 2 })])
+      ).parts
+      expect(working.map((p) => p.functional)).toEqual([true, true, true])
     })
   })
 

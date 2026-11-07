@@ -148,12 +148,19 @@ export {
   OUTLINE_MIN_POINTS,
   OUTLINE_MIN_RADIUS,
   PART_DEFINITIONS,
+  PART_EXTENT_STAT,
+  PART_STATS,
+  PART_STAT_COUNT,
   PART_TYPES,
   SLOT_FIELDS,
+  STAT_FIELDS,
+  SURFACE_PARTS,
   VISUAL_FIELDS,
   outlineAngleIndex,
   outlineRadiusIndex,
   slotGeneIndex,
+  statMultiplier,
+  statValue,
   visualGeneIndex
 } from './anatomy'
 export type {
@@ -173,7 +180,9 @@ export type {
   FounderPart,
   PartConfig,
   PartDefinition,
+  PartStatSpec,
   PartType,
   SlotField,
+  StatField,
   VisualField
 } from './anatomy'

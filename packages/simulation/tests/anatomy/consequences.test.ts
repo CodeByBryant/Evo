@@ -43,8 +43,8 @@ const part = (
   angle = 0,
   offset = 0.5,
   orientation = 0,
-  param = 0.5
-): FounderPart => ({ type, size, angle, offset, orientation, param })
+  stats: readonly number[] = []
+): FounderPart => ({ type, parent: 0, size, angle, offset, orientation, integrity: 1, stats })
 
 const founderParts = (config: WorldConfig): Parts => config.anatomy.founder.map((p) => ({ ...p }))
 const without = (parts: Parts, ...types: FounderPart['type'][]): Parts =>
@@ -190,7 +190,7 @@ describe('senses: eyes set the range', () => {
     const org = organismFor(config, 1)
     const kinds = config.ecology.resourceKinds.kinds.length
     const f = factorsOf(
-      withBody(org, config, [...founder, part('sniffer', 1, 0, 0.5, 0, 0)]).genome,
+      withBody(org, config, [...founder, part('sniffer', 1, 0, 0.5, 0, [0.5, 0.5, 0])]).genome,
       config
     )
     expect(f.foodDetection).toHaveLength(kinds)
@@ -389,7 +389,7 @@ describe('extreme bodies stay finite', () => {
             next() * 6.28,
             next(),
             next() * 6.28,
-            next()
+            [next(), next(), next()]
           )
         )
       }

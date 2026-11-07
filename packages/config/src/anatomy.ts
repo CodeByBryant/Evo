@@ -3,6 +3,7 @@ import {
   OUTLINE_MAX_POINTS,
   OUTLINE_MIN_POINTS,
   OUTLINE_MIN_RADIUS,
+  PART_STAT_COUNT,
   PART_TYPES
 } from '@evo/contracts'
 import type { AnatomyConfig } from '@evo/contracts'
@@ -17,6 +18,8 @@ const TWO_PI = Math.PI * 2
  * thrust, and torque because they sit off the axis), two side cilia (strafing), an eye, a mouth
  * and a stomach: seven parts with a total size of 3.5, so a budget of 6 leaves room to grow.
  */
+const MID = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+
 export const DEFAULT_ANATOMY: AnatomyConfig = {
   enabled: true,
   structuralBudget: 6,
@@ -25,6 +28,7 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
   mutation: {
     presenceRate: 0.004,
     typeRate: 0.004,
+    parentRate: 0.004,
     continuousRate: 0.05,
     continuousStd: 0.05,
     visualRate: 0.02,
@@ -42,28 +46,83 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     membrane: { mass: 0.1, upkeep: 0.005, strength: 1 },
     mender: { mass: 0.15, upkeep: 0.012, strength: 1 }
   },
+  // Every stat sits at the middle (0.5, a multiplier of 1) and every part has full integrity, so
+  // the founder is the reference all capabilities are measured against. Surface parts sit on the
+  // outline at `angle`; the eye, stomach (and other interior parts) sit at `offset` times the
+  // outline radius there. `orientation` is relative to the anchor's outward direction.
   founder: [
-    { type: 'flagellum', size: 0.6, angle: 2.6, offset: 0.8, orientation: 0, param: 0.5 },
-    { type: 'flagellum', size: 0.6, angle: TWO_PI - 2.6, offset: 0.8, orientation: 0, param: 0.5 },
+    {
+      type: 'flagellum',
+      parent: 0,
+      size: 0.6,
+      angle: 2.6,
+      offset: 0.8,
+      // turned so the push points straight forward from this off-axis anchor (the outline's
+      // outward direction there is 121 degrees, so the tail is turned by 1.0223 radians)
+      orientation: 1.0223,
+      integrity: 1,
+      stats: MID
+    },
+    {
+      type: 'flagellum',
+      parent: 0,
+      size: 0.6,
+      angle: TWO_PI - 2.6,
+      offset: 0.8,
+      orientation: 5.2609,
+      integrity: 1,
+      stats: MID
+    },
     {
       type: 'cilia',
+      parent: 0,
       size: 0.4,
       angle: Math.PI / 2,
       offset: 1,
-      orientation: Math.PI / 2,
-      param: 0.5
+      orientation: 6.1576,
+      integrity: 1,
+      stats: MID
     },
     {
       type: 'cilia',
+      parent: 0,
       size: 0.4,
       angle: (3 * Math.PI) / 2,
       offset: 1,
-      orientation: (3 * Math.PI) / 2,
-      param: 0.5
+      orientation: 0.1256,
+      integrity: 1,
+      stats: MID
     },
-    { type: 'eye', size: 0.5, angle: 0, offset: 0.5, orientation: 0, param: 0.5 },
-    { type: 'mouth', size: 0.5, angle: 0, offset: 1, orientation: 0, param: 0.5 },
-    { type: 'stomach', size: 0.5, angle: Math.PI, offset: 0.2, orientation: 0, param: 0.5 }
+    {
+      type: 'eye',
+      parent: 0,
+      size: 0.5,
+      angle: 0.5,
+      offset: 0.8,
+      orientation: 0,
+      integrity: 1,
+      stats: MID
+    },
+    {
+      type: 'mouth',
+      parent: 0,
+      size: 0.5,
+      angle: 0,
+      offset: 1,
+      orientation: 0,
+      integrity: 1,
+      stats: MID
+    },
+    {
+      type: 'stomach',
+      parent: 0,
+      size: 0.5,
+      angle: Math.PI,
+      offset: 0.2,
+      orientation: 0,
+      integrity: 1,
+      stats: MID
+    }
   ],
   founderLook: { pattern: 0, accentHue: 0.1 },
   // Eight points, each in the middle of its sector, mirrored left to right: a snout at the front,
@@ -101,13 +160,23 @@ const ANATOMY_KEYS = [
 const MUTATION_KEYS = [
   'presenceRate',
   'typeRate',
+  'parentRate',
   'continuousRate',
   'continuousStd',
   'visualRate',
   'outlineRate'
 ]
 const PART_KEYS = ['mass', 'upkeep', 'strength']
-const FOUNDER_PART_KEYS = ['type', 'size', 'angle', 'offset', 'orientation', 'param']
+const FOUNDER_PART_KEYS = [
+  'type',
+  'parent',
+  'size',
+  'angle',
+  'offset',
+  'orientation',
+  'integrity',
+  'stats'
+]
 const LOOK_KEYS = ['pattern', 'accentHue']
 const OUTLINE_KEYS = ['count', 'radii', 'angles']
 
@@ -153,7 +222,14 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
 
   const mutation = checkSection(anatomy, 'mutation', MUTATION_KEYS, errors, 'anatomy.mutation')
   if (mutation) {
-    for (const key of ['presenceRate', 'typeRate', 'continuousRate', 'visualRate', 'outlineRate']) {
+    for (const key of [
+      'presenceRate',
+      'typeRate',
+      'parentRate',
+      'continuousRate',
+      'visualRate',
+      'outlineRate'
+    ]) {
       checkRange(mutation, key, `anatomy.mutation.${key}`, 0, 1, true, errors)
     }
     checkNumber(
@@ -204,7 +280,23 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
       checkRange(entry, 'angle', `${path}.angle`, 0, TWO_PI, false, errors)
       checkRange(entry, 'orientation', `${path}.orientation`, 0, TWO_PI, false, errors)
       checkRange(entry, 'offset', `${path}.offset`, 0, 1, true, errors)
-      checkRange(entry, 'param', `${path}.param`, 0, 1, true, errors)
+      checkRange(entry, 'integrity', `${path}.integrity`, 0.1, 1, true, errors)
+      const parent = checkNumber(entry, 'parent', `${path}.parent`, { integer: true }, errors)
+      if (parent !== undefined && (parent < 0 || parent > index)) {
+        errors.push(
+          `${path}.parent must be 0 (the body) or the number of an earlier part, 1 to ${index}`
+        )
+      }
+      const stats = entry['stats']
+      if (!Array.isArray(stats) || stats.length > PART_STAT_COUNT) {
+        errors.push(`${path}.stats must be an array of at most ${PART_STAT_COUNT} numbers`)
+      } else {
+        stats.forEach((value: unknown, statIndex: number) => {
+          if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+            errors.push(`${path}.stats[${statIndex}] must be a number from 0 to 1`)
+          }
+        })
+      }
     })
     if (allSizes && budget !== undefined && total > budget) {
       errors.push(
