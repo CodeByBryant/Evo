@@ -17,6 +17,8 @@ export interface RenderContext {
   readonly selectedId: EntityId | null
   /** Color creatures by their `hue` gene (the cluster layout's colour families) instead of by species. */
   readonly colorByHue?: boolean
+  /** The founder's top speed, so a creature's `speedRatio` is its speed over it (default 1: raw speed). */
+  readonly baselineSpeed?: number
   readonly effects?: readonly RenderEffect[]
 }
 
@@ -26,7 +28,8 @@ const ratio = (value: number, capacity: number): number =>
 function organismOf(
   organism: OrganismSnapshot,
   selectedId: EntityId | null,
-  colorByHue: boolean
+  colorByHue: boolean,
+  baselineSpeed: number
 ): RenderOrganism {
   const hue = colorByHue ? organism.hue * 360 : speciesHue(organism.speciesId)
   return {
@@ -45,6 +48,8 @@ function organismOf(
     lifeStage: organism.lifeStage,
     energyRatio: ratio(organism.energy, organism.maxEnergy),
     healthRatio: ratio(organism.health, organism.maxHealth),
+    speedRatio:
+      baselineSpeed > 0 ? Math.hypot(organism.velocity.x, organism.velocity.y) / baselineSpeed : 0,
     selected: organism.id === selectedId
   }
 }
@@ -61,7 +66,12 @@ export function buildRenderSnapshot(world: WorldSnapshot, context: RenderContext
     worldHeight: context.worldHeight,
     season: context.season,
     organisms: world.organisms.map((organism) =>
-      organismOf(organism, context.selectedId, context.colorByHue === true)
+      organismOf(
+        organism,
+        context.selectedId,
+        context.colorByHue === true,
+        context.baselineSpeed ?? 1
+      )
     ),
     resources: world.resources.map((resource) => ({
       id: resource.id,

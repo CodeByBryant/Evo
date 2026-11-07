@@ -18,6 +18,7 @@ const at = (id: number, x: number, y: number): RenderOrganism => ({
   lifeStage: 'mature',
   energyRatio: 1,
   healthRatio: 1,
+  speedRatio: 0,
   selected: false
 })
 

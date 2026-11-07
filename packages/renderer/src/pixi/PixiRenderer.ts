@@ -8,16 +8,25 @@ import type {
   TerrainSnapshot
 } from '@evo/contracts'
 import { Camera } from '../camera'
-import { PART_COLORS, REGION_COLORS, hexToNumber, resourceColor } from '../colors'
+import type { ViewInsets } from '../camera'
+import { REGION_COLORS, hexToNumber, resourceColor } from '../colors'
 import { GestureTracker } from '../gestures'
 import type { GestureAction } from '../gestures'
 import { pickOrganism } from '../pick'
 import type { Renderer, RendererCallbacks, RendererStats } from '../renderer'
 import { TrailBuffer } from '../trails'
+import { drawParts, paintBodyArt, paletteOf } from './organismArt'
 
 /** How long (in ticks) a birth, death or damage marker stays visible. */
 const EFFECT_TICKS = 14
 const GRID_SPACING = 50
+/**
+ * When zoomed far out (the cluster layout's world is thousands of units across) a creature or a
+ * piece of food would shrink below a pixel and vanish. They are drawn no smaller than this many
+ * screen pixels in radius, so the world stays readable; close up nothing changes.
+ */
+const MIN_ORGANISM_PX = 2.6
+const MIN_FOOD_PX = 1.3
 /** The grid of the cluster layout is coarser: its world is about a hundred times wider than the field. */
 const CLUSTER_GRID_SPACING = 250
 /** The camera's lowest zoom in the field and in the (far larger) cluster layout. */
@@ -25,10 +34,20 @@ const DEFAULT_MIN_ZOOM = 0.15
 const CLUSTER_MIN_ZOOM = 0.01
 /** From this zoom (screen pixels per world unit) each creature's parts are drawn over its body. */
 const PARTS_ZOOM = 3
+/**
+ * Below this zoom (the cluster layout fitted whole) creatures are a few pixels wide and a glow
+ * adds almost nothing, but 400 overlapping additive sprites cost real fill rate (about a fifth of
+ * the simulation's throughput in a software renderer), so the glow starts at this zoom.
+ */
+const GLOW_MIN_ZOOM = 0.3
+/** Creatures animated at once; beyond this the nearest-to-the-front ones animate and the rest hold a pose. */
+const MAX_ANIMATED = 220
+/** The shortest gap, in milliseconds, between two animation frames drawn by the renderer's own loop. */
+const ANIMATION_GAP_MS = 14
 /** How far the cluster layout's grid runs past the clusters, in world units. */
 const CLUSTER_GRID_PAD = 8000
 /** Pixels per side of a cluster's biome picture. */
-const CLUSTER_TEXTURE = 192
+const CLUSTER_TEXTURE = 512
 const BACKGROUND = 0x070b14
 const FIELD = 0x0e1524
 
@@ -38,14 +57,18 @@ type PoolHost = { container: Container; pool: Sprite[] }
 
 /** One creature's drawn body: its shape never changes, so it is built once and only moved afterwards. */
 interface BodyDrawing {
-  /** Moves, turns and fades the whole creature; holds the body and, near, its parts. */
+  /** Moves, turns and fades the whole creature; holds the body and, near, its moving parts. */
   readonly container: Container
   readonly graphics: Graphics
   /** What the picture depends on besides the outline; a change rebuilds it. */
   key: string
   seen: number
-  /** The part glyphs, built the first time the camera is close enough to need them. */
-  parts: Graphics | null
+  /** Tails and halo, behind the body; built the first time the camera is close enough to need them. */
+  back: Graphics | null
+  /** Plates, gut, cilia, feelers, mouth and eyes, over the body. */
+  front: Graphics | null
+  /** The creature as of the latest scene, so an animation frame can redraw its parts. */
+  organism: RenderOrganism | null
 }
 
 /**
@@ -70,8 +93,12 @@ export class PixiRenderer implements Renderer {
   private follow = false
   private sceneDirty = true
   private partsVisible = false
+  /** The zoom the scene was last sized for (minimum screen sizes depend on it). */
+  private sceneZoom = 1
   private cameraDirty = true
   private fitted = false
+  /** True once the user has panned or zoomed, so a layout change must not move their view. */
+  private userMoved = false
   private worldWidth = 500
   private worldHeight = 500
 
@@ -87,12 +114,19 @@ export class PixiRenderer implements Renderer {
   private selectionG = new Graphics()
   private resources: PoolHost = { container: new Container(), pool: [] }
   private shadows: PoolHost = { container: new Container(), pool: [] }
+  private glows: PoolHost = { container: new Container(), pool: [] }
   private bodies: PoolHost = { container: new Container(), pool: [] }
   private readonly bodyDrawings = new Map<number, BodyDrawing>()
   /** Counts scene updates, so a creature missing from the latest one can be recognized. */
   private sceneStamp = 0
   private debugText: Text | null = null
   private dotTexture: Texture | null = null
+  private glowTexture: Texture | null = null
+  /** Whether creatures move: the Motion layer, unless the viewer asked their system for less motion. */
+  private motionOn = true
+  private reducedMotion = false
+  private animationFrame = 0
+  private lastRenderAt = 0
   private readonly colorCache = new Map<string, number>()
 
   private frameCount = 0
@@ -133,6 +167,11 @@ export class PixiRenderer implements Renderer {
     app.canvas.style.touchAction = 'none'
 
     this.dotTexture = this.makeDotTexture(app)
+    this.glowTexture = this.makeGlowTexture()
+    this.glows.container.blendMode = 'add'
+    this.reducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     this.terrainSprite.visible = false
     this.world.addChild(
@@ -142,6 +181,7 @@ export class PixiRenderer implements Renderer {
       this.gridG,
       this.hazardG,
       this.resources.container,
+      this.glows.container,
       this.shadows.container,
       this.bodies.container,
       this.trailG,
@@ -184,6 +224,7 @@ export class PixiRenderer implements Renderer {
     this.buildClusterTerrain(clusters)
     this.camera.fit()
     this.fitted = true
+    this.userMoved = false
     this.follow = false
     this.cameraDirty = true
     this.sceneDirty = true
@@ -196,7 +237,10 @@ export class PixiRenderer implements Renderer {
       this.partsVisible = near
       this.sceneDirty = true
     }
-    if (frame === this.drawnFrame && !this.cameraDirty && !this.sceneDirty) return
+    const zoom = this.camera.state.zoom
+    if (Math.abs(zoom / this.sceneZoom - 1) > 0.04) this.sceneDirty = true
+    const animating = this.isAnimating()
+    if (frame === this.drawnFrame && !this.cameraDirty && !this.sceneDirty && !animating) return
     const started = performance.now()
     if (frame !== this.drawnFrame || this.sceneDirty) {
       if (this.layers.trails) this.trails.record(frame.organisms)
@@ -206,11 +250,57 @@ export class PixiRenderer implements Renderer {
       this.drawnFrame = frame
       this.sceneDirty = false
     }
+    if (this.partsVisible) this.animateParts(started)
     this.applyCamera()
     this.app?.render()
     this.cameraDirty = false
     this.frameCount++
+    this.lastRenderAt = started
     this.lastMs = performance.now() - started
+    if (animating) this.keepAnimating()
+  }
+
+  /** Whether creatures are being drawn moving: close enough to see parts, with Motion on. */
+  private isAnimating(): boolean {
+    return this.partsVisible && this.motionOn && !this.reducedMotion && this.frame !== null
+  }
+
+  /**
+   * While creatures animate the picture changes every frame even when the world is paused, so the
+   * renderer keeps its own animation loop going, and stops it as soon as nothing needs it.
+   */
+  private keepAnimating(): void {
+    if (this.animationFrame !== 0) return
+    const step = (): void => {
+      this.animationFrame = 0
+      const frame = this.frame
+      if (frame === null || !this.isAnimating()) return
+      if (performance.now() - this.lastRenderAt >= ANIMATION_GAP_MS) this.render(frame)
+      this.animationFrame = requestAnimationFrame(step)
+    }
+    this.animationFrame = requestAnimationFrame(step)
+  }
+
+  /** Redraws the moving parts of every creature in view (at most `MAX_ANIMATED`) at the current time. */
+  private animateParts(now: number): void {
+    const bounds = this.camera.visibleBounds()
+    const animate = this.isAnimating()
+    const time = animate ? now / 1000 : 0
+    let animated = 0
+    for (const drawing of this.bodyDrawings.values()) {
+      const o = drawing.organism
+      if (o === null || drawing.back === null || drawing.front === null) continue
+      const pad = o.radius * 4
+      const visible =
+        o.x >= bounds.left - pad &&
+        o.x <= bounds.right + pad &&
+        o.y >= bounds.top - pad &&
+        o.y <= bounds.bottom + pad
+      if (!visible) continue
+      if (animated >= MAX_ANIMATED) break
+      animated++
+      drawParts(drawing.back, drawing.front, o, paletteOf(o.hue), time)
+    }
   }
 
   setLayers(layers: RenderLayers): void {
@@ -223,6 +313,8 @@ export class PixiRenderer implements Renderer {
     this.resources.container.visible = layers.resources
     this.shadows.container.visible = layers.shadows
     this.bodies.container.visible = layers.organisms
+    this.glows.container.visible = layers.organisms
+    this.motionOn = layers.motion
     this.trailG.visible = layers.trails
     this.selectionG.visible = layers.selection
     if (this.debugText) this.debugText.visible = layers.debug
@@ -244,10 +336,21 @@ export class PixiRenderer implements Renderer {
 
   fitWorld(): void {
     this.camera.fit()
+    this.userMoved = false
     this.cameraDirty = true
   }
 
+  setInsets(insets: ViewInsets): void {
+    this.camera.setInsets(insets)
+    if (!this.userMoved && !this.follow && this.fitted) {
+      this.camera.fit()
+      this.cameraDirty = true
+    }
+  }
+
   destroy(): void {
+    if (this.animationFrame !== 0) cancelAnimationFrame(this.animationFrame)
+    this.animationFrame = 0
     this.removeListeners?.()
     this.removeListeners = null
     this.resizeObserver?.disconnect()
@@ -308,12 +411,14 @@ export class PixiRenderer implements Renderer {
   private handle(actions: readonly GestureAction[]): void {
     for (const action of actions) {
       if (action.type === 'pan') {
+        this.userMoved = true
         this.camera.panBy(action.dx, action.dy)
         if (this.follow) {
           this.follow = false
           this.callbacks?.onFollowChange?.(false)
         }
       } else if (action.type === 'zoom') {
+        this.userMoved = true
         this.camera.zoomAt(action.factor, action.x, action.y)
       } else if (this.frame !== null) {
         const world = this.camera.screenToWorld(action.x, action.y)
@@ -423,7 +528,8 @@ export class PixiRenderer implements Renderer {
         for (let column = 0; column < size; column++) {
           const dx = ((column + 0.5) / size) * diameter - clusters.radius
           const dy = ((row + 0.5) / size) * diameter - clusters.radius
-          if (dx * dx + dy * dy > clusters.radius * clusters.radius) continue
+          const edge = clusters.radius - Math.sqrt(dx * dx + dy * dy)
+          if (edge < 0) continue
           let best = 0
           let bestDistance = Infinity
           for (let i = 0; i < cluster.patches.length; i++) {
@@ -442,7 +548,8 @@ export class PixiRenderer implements Renderer {
           image.data[at] = (rgb >> 16) & 255
           image.data[at + 1] = (rgb >> 8) & 255
           image.data[at + 2] = rgb & 255
-          image.data[at + 3] = 255
+          // A soft edge (about two texture pixels) so the circle does not look stair-stepped.
+          image.data[at + 3] = Math.round(255 * Math.min(1, edge / ((diameter / size) * 2)))
         }
       }
       context.putImageData(image, 0, 0)
@@ -484,6 +591,30 @@ export class PixiRenderer implements Renderer {
     this.terrainSprite.visible = this.layers.terrain
   }
 
+  /** A soft round glow: white in the middle, fading to nothing, tinted per creature. */
+  private makeGlowTexture(): Texture {
+    const size = 128
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const context = canvas.getContext('2d')
+    if (context === null) return Texture.WHITE
+    const gradient = context.createRadialGradient(
+      size / 2,
+      size / 2,
+      0,
+      size / 2,
+      size / 2,
+      size / 2
+    )
+    gradient.addColorStop(0, 'rgba(255,255,255,1)')
+    gradient.addColorStop(0.35, 'rgba(255,255,255,0.35)')
+    gradient.addColorStop(1, 'rgba(255,255,255,0)')
+    context.fillStyle = gradient
+    context.fillRect(0, 0, size, size)
+    return Texture.from(canvas)
+  }
+
   private makeDotTexture(app: Application): Texture {
     const g = new Graphics().circle(32, 32, 32).fill(0xffffff)
     return app.renderer.generateTexture(g)
@@ -516,147 +647,32 @@ export class PixiRenderer implements Renderer {
 
   /** The graphics of a creature, built the first time it is seen and again only if its colors change. */
   private bodyOf(o: RenderOrganism): BodyDrawing {
-    const key = `${o.speciesColor}|${o.accentColor}|${o.pattern}`
+    const key = `${Math.round(o.hue)}|${o.accentColor}|${o.pattern}`
     let drawing = this.bodyDrawings.get(o.id)
     if (drawing === undefined) {
       const container = new Container()
       const graphics = new Graphics()
       container.addChild(graphics)
       this.bodies.container.addChild(container)
-      drawing = { container, graphics, key: '', seen: 0, parts: null }
+      drawing = { container, graphics, key: '', seen: 0, back: null, front: null, organism: null }
       this.bodyDrawings.set(o.id, drawing)
     }
     drawing.seen = this.sceneStamp
+    drawing.organism = o
     if (drawing.key !== key) {
       drawing.key = key
-      this.paintBody(drawing.graphics, o)
-      if (drawing.parts !== null) {
-        drawing.parts.destroy()
-        drawing.parts = null
-      }
+      paintBodyArt(drawing.graphics, o, paletteOf(o.hue))
     }
     return drawing
   }
 
-  /** One small glyph per developed part, in the body's own frame (so it turns with the creature). */
-  private paintParts(o: RenderOrganism): Graphics {
-    const g = new Graphics()
-    for (const part of o.parts) {
-      const color = this.numberOf(PART_COLORS[part.type])
-      const alpha = part.functional ? 1 : 0.35
-      const r = part.radius
-      const dx = Math.cos(part.orientation)
-      const dy = Math.sin(part.orientation)
-      switch (part.type) {
-        case 'flagellum':
-          g.moveTo(part.x, part.y)
-            .lineTo(part.x - dx * r * 3, part.y - dy * r * 3)
-            .stroke({ width: Math.max(0.3, r * 0.5), color, alpha })
-          g.circle(part.x, part.y, r * 0.7).fill({ color, alpha })
-          break
-        case 'cilia':
-          for (const tilt of [-0.5, 0, 0.5]) {
-            const cx = Math.cos(part.orientation + tilt)
-            const cy = Math.sin(part.orientation + tilt)
-            g.moveTo(part.x, part.y)
-              .lineTo(part.x + cx * r * 1.8, part.y + cy * r * 1.8)
-              .stroke({ width: Math.max(0.25, r * 0.25), color, alpha })
-          }
-          break
-        case 'eye':
-          g.circle(part.x, part.y, r).fill({ color, alpha })
-          g.circle(part.x + dx * r * 0.3, part.y + dy * r * 0.3, r * 0.5).fill({
-            color: 0x0b1020,
-            alpha
-          })
-          break
-        case 'sniffer':
-          g.poly([
-            part.x + dx * r,
-            part.y + dy * r,
-            part.x - dy * r,
-            part.y + dx * r,
-            part.x + dy * r,
-            part.y - dx * r
-          ]).fill({ color, alpha })
-          break
-        case 'mouth':
-          g.circle(part.x, part.y, r).fill({ color, alpha })
-          g.circle(part.x, part.y, r * 0.5).fill({ color: 0x0b1020, alpha })
-          break
-        case 'intestine':
-          g.circle(part.x, part.y, r).stroke({ width: Math.max(0.3, r * 0.4), color, alpha })
-          break
-        case 'stomach':
-          g.circle(part.x, part.y, r).fill({ color, alpha: alpha * 0.8 })
-          g.circle(part.x, part.y, r * 0.4).fill({ color: 0x0b1020, alpha: alpha * 0.5 })
-          break
-        case 'armor':
-          g.rect(part.x - r, part.y - r, r * 2, r * 2).fill({ color, alpha })
-          break
-        case 'membrane':
-          g.circle(part.x, part.y, r * 1.2).stroke({ width: Math.max(0.2, r * 0.2), color, alpha })
-          break
-        case 'mender':
-          g.rect(part.x - r, part.y - r * 0.3, r * 2, r * 0.6).fill({ color, alpha })
-          g.rect(part.x - r * 0.3, part.y - r, r * 0.6, r * 2).fill({ color, alpha })
-          break
-      }
-    }
-    return g
-  }
-
-  /**
-   * Traces the outline as a smooth closed curve through its points (Catmull-Rom segments turned
-   * into Beziers), so a body of `n` points reads as a soft creature and not as a polygon.
-   */
-  private traceBody(g: Graphics, points: readonly number[], scale: number): void {
-    const n = points.length / 2
-    const at = (i: number, axis: 0 | 1): number =>
-      (points[(((i % n) + n) % n) * 2 + axis] as number) * scale
-    g.moveTo(at(0, 0), at(0, 1))
-    for (let i = 0; i < n; i++) {
-      g.bezierCurveTo(
-        at(i, 0) + (at(i + 1, 0) - at(i - 1, 0)) / 6,
-        at(i, 1) + (at(i + 1, 1) - at(i - 1, 1)) / 6,
-        at(i + 1, 0) - (at(i + 2, 0) - at(i, 0)) / 6,
-        at(i + 1, 1) - (at(i + 2, 1) - at(i, 1)) / 6,
-        at(i + 1, 0),
-        at(i + 1, 1)
-      )
-    }
-    g.closePath()
-  }
-
-  /** Draws the soft body, a highlight edge, the pattern in the accent color, and two eyes at the front. */
-  private paintBody(g: Graphics, o: RenderOrganism): void {
-    const accent = this.numberOf(o.accentColor)
-    const r = o.radius
-    g.clear()
-    this.traceBody(g, o.outline, 1)
-    g.fill({ color: this.numberOf(o.speciesColor) })
-    if (o.pattern === 1) {
-      this.traceBody(g, o.outline, 0.55)
-      g.fill({ color: accent, alpha: 0.85 })
-    } else if (o.pattern === 2) {
-      for (let i = 0; i + 1 < o.outline.length; i += 2) {
-        g.circle(
-          (o.outline[i] as number) * 0.78,
-          (o.outline[i + 1] as number) * 0.78,
-          r * 0.13
-        ).fill({
-          color: accent
-        })
-      }
-    } else if (o.pattern === 3) {
-      g.circle(-r * 0.2, 0, r * 0.34).fill({ color: accent, alpha: 0.9 })
-    }
-    this.traceBody(g, o.outline, 1)
-    g.stroke({ width: Math.max(0.5, r * 0.09), color: 0xffffff, alpha: 0.4 })
-    for (const side of [-1, 1]) {
-      g.circle(r * 0.5, side * r * 0.3, r * 0.2).fill({ color: 0xffffff })
-      g.circle(r * 0.56, side * r * 0.3, r * 0.1).fill({ color: 0x0b1020 })
-    }
+  /** Gives a creature the layers its parts are drawn into, behind and over its body. */
+  private ensurePartLayers(drawing: BodyDrawing): void {
+    if (drawing.back !== null) return
+    drawing.back = new Graphics()
+    drawing.front = new Graphics()
+    drawing.container.addChildAt(drawing.back, 0)
+    drawing.container.addChild(drawing.front)
   }
 
   /** Removes the graphics of creatures that are no longer in the frame. */
@@ -673,37 +689,49 @@ export class PixiRenderer implements Renderer {
     this.organismCount = frame.organisms.length
     this.resourceCount = frame.resources.length
 
+    const zoom = this.camera.state.zoom
+    this.sceneZoom = zoom
     // resources
     this.sync(this.resources, frame.resources.length, this.dotTexture)
     for (let i = 0; i < frame.resources.length; i++) {
       const r = frame.resources[i]!
       const sprite = this.resources.pool[i] as Sprite
       sprite.position.set(r.x, r.y)
-      sprite.scale.set((r.radius * 2 * (0.6 + 0.4 * r.remainingRatio)) / 64)
+      sprite.scale.set(
+        Math.max(r.radius * 2 * (0.6 + 0.4 * r.remainingRatio), (MIN_FOOD_PX * 2) / zoom) / 64
+      )
       sprite.tint = this.numberOf(resourceColor(r.kind))
       sprite.alpha = 0.95
     }
 
-    // organisms and their shadows
+    // organisms: a glow, a faint shadow and the body
+    this.glows.container.visible = this.layers.organisms && zoom >= GLOW_MIN_ZOOM
+    this.sync(this.glows, frame.organisms.length, this.glowTexture)
     this.sync(this.shadows, frame.organisms.length, this.dotTexture)
+    const glowAlpha = this.partsVisible ? 0.12 : 0.3
     for (let i = 0; i < frame.organisms.length; i++) {
       const o = frame.organisms[i]!
-      const scale = (o.radius * 2 * (o.lifeStage === 'juvenile' ? 0.75 : 1)) / 64
+      // Far out, a creature is drawn at least MIN_ORGANISM_PX wide; close up the boost is 1.
+      const boost = Math.max(1, MIN_ORGANISM_PX / (zoom * o.radius))
+      const size = o.radius * 2 * (o.lifeStage === 'juvenile' ? 0.75 : 1) * boost
+      const glow = this.glows.pool[i] as Sprite
+      glow.position.set(o.x, o.y)
+      glow.scale.set((size * 3.2) / 128)
+      glow.tint = this.numberOf(o.speciesColor)
+      glow.alpha = glowAlpha * (0.5 + 0.5 * o.energyRatio)
       const shadow = this.shadows.pool[i] as Sprite
-      shadow.position.set(o.x + o.radius * 0.25, o.y + o.radius * 0.35)
-      shadow.scale.set(scale * 1.05)
+      shadow.position.set(o.x + o.radius * boost * 0.25, o.y + o.radius * boost * 0.35)
+      shadow.scale.set((size * 1.05) / 64)
       shadow.tint = 0x000000
-      shadow.alpha = 0.35
+      shadow.alpha = 0.25
       const drawing = this.bodyOf(o)
-      if (this.partsVisible && drawing.parts === null && o.parts.length > 0) {
-        drawing.parts = this.paintParts(o)
-        drawing.container.addChild(drawing.parts)
-      }
-      if (drawing.parts !== null) drawing.parts.visible = this.partsVisible
+      if (this.partsVisible && o.parts.length > 0) this.ensurePartLayers(drawing)
+      if (drawing.back !== null) drawing.back.visible = this.partsVisible
+      if (drawing.front !== null) drawing.front.visible = this.partsVisible
       const body = drawing.container
       body.position.set(o.x, o.y)
       body.rotation = o.rotation
-      body.scale.set(o.lifeStage === 'juvenile' ? 0.75 : 1)
+      body.scale.set((o.lifeStage === 'juvenile' ? 0.75 : 1) * boost)
       body.alpha = (0.68 + 0.32 * o.energyRatio) * (o.lifeStage === 'senescent' ? 0.85 : 1)
     }
     this.dropGoneBodies()

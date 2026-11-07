@@ -81,6 +81,31 @@ describe('Camera', () => {
     expect(c.state.zoom).toBeCloseTo((600 * 0.8) / 500, 9)
   })
 
+  it('fits the world into the part of the viewport no interface covers', () => {
+    const c = camera() // 1000 x 600 viewport, 500 x 500 world
+    c.setInsets({ left: 200, right: 0, top: 0, bottom: 100 })
+    c.fit(0)
+    // the free part is 800 x 500, so the world fills its height
+    expect(c.state.zoom).toBeCloseTo(1, 9)
+    const centre = c.worldToScreen(250, 250)
+    expect(centre.x).toBeCloseTo(200 + 800 / 2, 6)
+    expect(centre.y).toBeCloseTo(500 / 2, 6)
+    // the whole world stays clear of the covered edges
+    const topLeft = c.worldToScreen(0, 0)
+    expect(topLeft.x).toBeGreaterThanOrEqual(200)
+    expect(c.worldToScreen(500, 500).y).toBeLessThanOrEqual(500)
+    // clearing the insets restores the plain fit
+    c.setInsets({ left: 0, right: 0, top: 0, bottom: 0 })
+    c.fit(0)
+    expect(c.state.x).toBe(250)
+    expect(c.state.y).toBe(250)
+    // nonsense insets cannot produce a negative or empty area
+    c.setInsets({ left: -50, right: 5000, top: 0, bottom: 0 })
+    c.fit(0)
+    expect(Number.isFinite(c.state.zoom)).toBe(true)
+    expect(c.state.zoom).toBeGreaterThan(0)
+  })
+
   it('reports the visible bounds', () => {
     const c = camera()
     c.focus(250, 250, 2)

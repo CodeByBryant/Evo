@@ -44,7 +44,7 @@ The world is paused at extinction. The app shows an alert with **New world** and
 | `@evo/ui`         | Presentational React components and formatting helpers, typed only from contracts                                                                                                                             |
 | `apps/web`        | `SimulationHost`, the view-state builders, the URL hash and preferences helpers, the keyboard map, `App` and `Viewport`                                                                                       |
 
-Layers, in drawing order: grid, terrain (regions), hazards, food, shadows, organisms, trails, selection and event markers, debug overlay. Each can be switched on and off from the **View** panel and the choice is remembered in `localStorage` (guarded, so private windows and blocked storage just forget it).
+Layers, in drawing order: grid, terrain (regions), hazards, food, shadows, organisms, trails, selection and event markers, motion, debug overlay. Each can be switched on and off from the **View** section (Motion switches creature animation off; the system's reduced-motion setting does the same) and the choice is remembered in `localStorage` (guarded, so private windows and blocked storage just forget it).
 
 ## Using it
 
@@ -52,7 +52,8 @@ Layers, in drawing order: grid, terrain (regions), hazards, food, shadows, organ
 - **Pointer:** one pointer drags to pan, two pinch to zoom, the wheel zooms toward the cursor, and a press that barely moves selects the nearest organism (a larger tolerance for touch). Dragging while following stops following.
 - **Address:** `#seed=7&preset=balanced` is rewritten whenever a world starts, and read on load. Malformed values are ignored.
 - **Inspector** (click an organism): Overview (energy, health, age, stage, mating cooldown), Genome (every gene by group), Brain (chosen action, last reward, what it senses), Lineage (parents, ancestor and descendant genomes, species line), Environment (region, season, migration).
-- **Phones:** the panels stack under the viewport and start collapsed; the inspector becomes a bottom sheet.
+- **Layout:** the world fills the window and the interface floats over it (see [interface design](./interface-design.md)): status and counts at the top, world settings, species, layers and statistics in a left column, the inspector on the right and a playback dock at the bottom. The camera fits the world clear of the left column and the dock.
+- **Phones:** the left column hides behind a Panels button and opens as a sheet; the inspector becomes a bottom sheet and the dock spans the width.
 
 ## Deployment
 

@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import type { PopulationPoint } from '@evo/contracts'
 import { formatCount } from './format'
 
@@ -21,23 +22,32 @@ export function polylinePoints(
     .join(' ')
 }
 
-/** The population over the run. A single polyline with its range, readable without hovering. */
+/**
+ * The population over the run: a line with a soft glow under it, readable without hovering. The
+ * `compact` form drops the caption, for the heads-up display.
+ */
 export function PopulationChart({
   points,
   width = 280,
-  height = 72
+  height = 72,
+  compact = false
 }: {
   points: readonly PopulationPoint[]
   width?: number
   height?: number
+  compact?: boolean
 }): React.JSX.Element {
+  const gradientId = useId()
   const counts = points.map((p) => p.count)
   const max = Math.max(10, ...counts)
   const latest = counts[counts.length - 1]
+  const line = polylinePoints(counts, width, height, max)
+  const area = counts.length === 0 ? '' : `${line} ${width - 2},${height} 2,${height}`
   return (
-    <figure className="evo-chart">
+    <figure className={compact ? 'evo-chart evo-chart-compact' : 'evo-chart'}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
         role="img"
         aria-label={
           counts.length === 0
@@ -45,17 +55,22 @@ export function PopulationChart({
             : `Population over time: now ${latest}, highest ${Math.max(...counts)}, lowest ${Math.min(...counts)}`
         }
       >
-        <line className="evo-chart-axis" x1="0" y1={height - 2} x2={width} y2={height - 2} />
-        <polyline
-          className="evo-chart-line"
-          fill="none"
-          points={polylinePoints(counts, width, height, max)}
-        />
+        <defs>
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor="var(--evo-cyan)" stopOpacity="0.28" />
+            <stop offset="1" stopColor="var(--evo-violet)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <line className="evo-chart-axis" x1="0" y1={height - 1} x2={width} y2={height - 1} />
+        {area !== '' && <polygon fill={`url(#${gradientId})`} points={area} />}
+        <polyline className="evo-chart-line" fill="none" points={line} />
       </svg>
-      <figcaption>
-        <span>0</span>
-        <span>peak {formatCount(max)}</span>
-      </figcaption>
+      {!compact && (
+        <figcaption>
+          <span>0</span>
+          <span>peak {formatCount(max)}</span>
+        </figcaption>
+      )}
     </figure>
   )
 }
