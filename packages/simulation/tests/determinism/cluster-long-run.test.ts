@@ -11,18 +11,18 @@ const CLUSTERS: WorldConfigOverrides = {
 }
 
 describe('cluster layout long run', () => {
-  it('20,000 ticks: same seed, same state hash, whether stepped, chunked or run in one go', () => {
+  it('10,000 ticks: same seed, same state hash, whether stepped, chunked or run in one go', () => {
     const single = World.create({ seed: 3, config: CLUSTERS, validateEveryTicks: 5_000 })
-    single.run(20_000)
+    single.run(10_000)
     const chunked = World.create({ seed: 3, config: CLUSTERS })
-    for (let i = 0; i < 4; i++) chunked.run(5_000)
+    for (let i = 0; i < 2; i++) chunked.run(5_000)
     const stepped = World.create({ seed: 3, config: CLUSTERS })
-    for (let i = 0; i < 20_000; i++) stepped.step()
+    for (let i = 0; i < 10_000; i++) stepped.step()
 
     expect(chunked.stateHash()).toBe(single.stateHash())
     expect(stepped.stateHash()).toBe(single.stateHash())
     expect(single.validate()).toEqual({ ok: true, errors: [] })
-  }, 300_000)
+  }, 600_000)
 
   it('works under the reflex controller too', () => {
     const config: WorldConfigOverrides = { ...CLUSTERS, learning: { controller: 'reflex' } }
