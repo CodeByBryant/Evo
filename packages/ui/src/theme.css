@@ -1,0 +1,31 @@
+/* Evo design tokens. Every color, radius and type choice in the interface comes from here. */
+:root {
+  --evo-ink: #07090f;
+  --evo-ink-2: #0a0d17;
+  --evo-glass: rgb(14 18 31 / 0.66);
+  --evo-glass-solid: #0e121f;
+  --evo-line: rgb(160 180 255 / 0.12);
+  --evo-line-2: rgb(160 180 255 / 0.26);
+  --evo-text: #e7ecff;
+  --evo-muted: #8d97bb;
+  --evo-dim: #565f7f;
+  --evo-cyan: #5ee1ff;
+  --evo-violet: #9b7bff;
+  --evo-grad: linear-gradient(90deg, #5ee1ff, #9b7bff);
+  --evo-good: #6df0b4;
+  --evo-warn: #ffc866;
+  --evo-bad: #ff7d8a;
+  --evo-radius-sm: 4px;
+  --evo-radius: 6px;
+  --evo-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --evo-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  --evo-ease: 140ms ease-out;
+
+  /* Older names still used by a few rules, mapped onto the tokens above. */
+  --evo-bg: var(--evo-ink);
+  --evo-panel: var(--evo-ink-2);
+  --evo-panel-2: var(--evo-ink-2);
+  --evo-accent: var(--evo-cyan);
+  --evo-focus: var(--evo-cyan);
+}
