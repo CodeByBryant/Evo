@@ -1,6 +1,6 @@
 # 0012: Anatomy (body-plan genes, deterministic development, derived capabilities)
 
-Status: **Accepted** (approved by the project owner with the "dynamic bodies" plan, 2026-11-02)
+Status: **Accepted** (approved by the project owner with the "dynamic bodies" plan, 2026-11-02). **Refined by [ADR 0016](0016-part-stats-and-attachment.md)**: the generic `param` gene is replaced by per-type stat tables, parts are anchored to the outline and may have a part parent; the gene counts and placement rule below describe the original design.
 
 This is the concrete design that [ADR 0004](0004-dynamic-evolvable-anatomy-and-morphology.md) said every anatomy phase would need. 0004 remains the vision; where this ADR chooses differently it says so under "Deviations from 0004".
 
