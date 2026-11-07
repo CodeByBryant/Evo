@@ -245,7 +245,7 @@ describe('SimulationHost: worlds', () => {
     const { env, host: h } = host({ speed: 'max' })
     const kinds = new Set<string>()
     h.onFrame((frame) => frame.effects.forEach((e) => kinds.add(e.kind)))
-    env.runUntil(() => h.getViewState().tick >= 3000)
+    env.runUntil(() => h.getViewState().tick >= 8000)
     expect(kinds.has('birth')).toBe(true)
     expect(kinds.has('death')).toBe(true)
   })

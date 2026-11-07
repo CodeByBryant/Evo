@@ -24,6 +24,9 @@ import { buildInspector, buildSpeciesRows, buildViewState, lineageCounts } from 
 
 /** Real time is 10 ticks a second (`timestep` 0.1 s), so `1x` means 10 ticks per second. */
 export const TICKS_PER_SECOND_AT_1X = 10
+
+/** The stepping budget of one frame at 25x and above, in milliseconds (10 below that). */
+const HIGH_SPEED_BUDGET_MS = 13
 /** Ticks a birth, death or damage marker stays in the render snapshot. */
 const EFFECT_TICKS = 14
 const MAX_EFFECTS = 300
@@ -83,7 +86,8 @@ export interface HostOptions {
  */
 export class SimulationHost implements SimulationControls {
   private readonly env: HostEnvironment
-  private readonly stepBudgetMs: number
+  /** The time one animation frame may spend stepping; `null` lets it grow with the speed setting. */
+  private readonly stepBudgetOption: number | null
   private readonly viewIntervalMs: number
   private readonly speciesIntervalMs: number
   private readonly onWorldChange: ((seed: number, preset: string) => void) | undefined
@@ -135,7 +139,7 @@ export class SimulationHost implements SimulationControls {
 
   constructor(options: HostOptions) {
     this.env = options.env
-    this.stepBudgetMs = options.stepBudgetMs ?? 10
+    this.stepBudgetOption = options.stepBudgetMs ?? null
     this.viewIntervalMs = options.viewIntervalMs ?? 125
     this.speciesIntervalMs = options.speciesIntervalMs ?? 1000
     this.onWorldChange = options.onWorldChange
@@ -145,12 +149,12 @@ export class SimulationHost implements SimulationControls {
       label: p.label,
       description: p.description
     }))
-    this.speed = options.speed ?? 5
     this.layers = options.layers ?? DEFAULT_RENDER_LAYERS
     const preset =
       options.preset !== undefined && this.findPreset(options.preset)
         ? options.preset
         : DEFAULT_PRESET
+    this.speed = options.speed ?? 5
     // The interface hands these out as plain callbacks (`onClick={controls.toggle}`), so they must
     // not depend on how they are called.
     this.start = this.start.bind(this)
@@ -391,7 +395,12 @@ export class SimulationHost implements SimulationControls {
   private advance(elapsedMs: number): number {
     const perSecond = this.speed === 'max' ? Infinity : this.speed * TICKS_PER_SECOND_AT_1X
     if (this.speed !== 'max') this.accumulator += (elapsedMs / 1000) * perSecond
-    const budgetEnd = this.env.now() + this.stepBudgetMs
+    // At high speeds stepping gets more of the frame (a frame is about 16 ms at 60 fps); rendering
+    // a snapshot costs a couple of milliseconds, so 13 ms still leaves room.
+    const budget =
+      this.stepBudgetOption ??
+      (this.speed === 'max' || (this.speed as number) >= 25 ? HIGH_SPEED_BUDGET_MS : 10)
+    const budgetEnd = this.env.now() + budget
     let steps = 0
     while (!this.world.isExtinct) {
       if (this.speed !== 'max') {
