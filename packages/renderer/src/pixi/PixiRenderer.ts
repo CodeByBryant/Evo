@@ -34,6 +34,12 @@ const DEFAULT_MIN_ZOOM = 0.15
 const CLUSTER_MIN_ZOOM = 0.01
 /** From this zoom (screen pixels per world unit) each creature's parts are drawn over its body. */
 const PARTS_ZOOM = 3
+/**
+ * Below this zoom (the cluster layout fitted whole) creatures are a few pixels wide and a glow
+ * adds almost nothing, but 400 overlapping additive sprites cost real fill rate (about a fifth of
+ * the simulation's throughput in a software renderer), so the glow starts at this zoom.
+ */
+const GLOW_MIN_ZOOM = 0.3
 /** Creatures animated at once; beyond this the nearest-to-the-front ones animate and the rest hold a pose. */
 const MAX_ANIMATED = 220
 /** The shortest gap, in milliseconds, between two animation frames drawn by the renderer's own loop. */
@@ -699,6 +705,7 @@ export class PixiRenderer implements Renderer {
     }
 
     // organisms: a glow, a faint shadow and the body
+    this.glows.container.visible = this.layers.organisms && zoom >= GLOW_MIN_ZOOM
     this.sync(this.glows, frame.organisms.length, this.glowTexture)
     this.sync(this.shadows, frame.organisms.length, this.dotTexture)
     const glowAlpha = this.partsVisible ? 0.12 : 0.3
