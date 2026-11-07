@@ -7,6 +7,7 @@ Welcome to the Evo documentation! This guide will help you understand how to use
 - [Getting Started](./getting-started.md) - Installation and first steps
 - [Architecture](./architecture.md) - Technical overview of the codebase
 - [The web application](./architecture/web-app.md) - How the browser app is built and deployed
+- [Interface and organism design](./architecture/interface-design.md) - The dark interface, its tokens and how creatures are drawn
 - [Anatomy](./anatomy/anatomy.md) - Organism bodies: parts, development and capabilities
 - [The cluster world](./simulation/clusters.md) - Six circular clusters with biomes, void between them, 18 founder species
 - [User Guide](./user-guide.md) - How to use the simulation
