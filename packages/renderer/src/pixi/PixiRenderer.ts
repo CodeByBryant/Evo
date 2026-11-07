@@ -18,6 +18,13 @@ import { TrailBuffer } from '../trails'
 /** How long (in ticks) a birth, death or damage marker stays visible. */
 const EFFECT_TICKS = 14
 const GRID_SPACING = 50
+/**
+ * When zoomed far out (the cluster layout's world is thousands of units across) a creature or a
+ * piece of food would shrink below a pixel and vanish. They are drawn no smaller than this many
+ * screen pixels in radius, so the world stays readable; close up nothing changes.
+ */
+const MIN_ORGANISM_PX = 2.6
+const MIN_FOOD_PX = 1.3
 /** The grid of the cluster layout is coarser: its world is about a hundred times wider than the field. */
 const CLUSTER_GRID_SPACING = 250
 /** The camera's lowest zoom in the field and in the (far larger) cluster layout. */
@@ -28,7 +35,7 @@ const PARTS_ZOOM = 3
 /** How far the cluster layout's grid runs past the clusters, in world units. */
 const CLUSTER_GRID_PAD = 8000
 /** Pixels per side of a cluster's biome picture. */
-const CLUSTER_TEXTURE = 192
+const CLUSTER_TEXTURE = 512
 const BACKGROUND = 0x070b14
 const FIELD = 0x0e1524
 
@@ -70,6 +77,8 @@ export class PixiRenderer implements Renderer {
   private follow = false
   private sceneDirty = true
   private partsVisible = false
+  /** The zoom the scene was last sized for (minimum screen sizes depend on it). */
+  private sceneZoom = 1
   private cameraDirty = true
   private fitted = false
   private worldWidth = 500
@@ -196,6 +205,8 @@ export class PixiRenderer implements Renderer {
       this.partsVisible = near
       this.sceneDirty = true
     }
+    const zoom = this.camera.state.zoom
+    if (Math.abs(zoom / this.sceneZoom - 1) > 0.04) this.sceneDirty = true
     if (frame === this.drawnFrame && !this.cameraDirty && !this.sceneDirty) return
     const started = performance.now()
     if (frame !== this.drawnFrame || this.sceneDirty) {
@@ -423,7 +434,8 @@ export class PixiRenderer implements Renderer {
         for (let column = 0; column < size; column++) {
           const dx = ((column + 0.5) / size) * diameter - clusters.radius
           const dy = ((row + 0.5) / size) * diameter - clusters.radius
-          if (dx * dx + dy * dy > clusters.radius * clusters.radius) continue
+          const edge = clusters.radius - Math.sqrt(dx * dx + dy * dy)
+          if (edge < 0) continue
           let best = 0
           let bestDistance = Infinity
           for (let i = 0; i < cluster.patches.length; i++) {
@@ -442,7 +454,8 @@ export class PixiRenderer implements Renderer {
           image.data[at] = (rgb >> 16) & 255
           image.data[at + 1] = (rgb >> 8) & 255
           image.data[at + 2] = rgb & 255
-          image.data[at + 3] = 255
+          // A soft edge (about two texture pixels) so the circle does not look stair-stepped.
+          image.data[at + 3] = Math.round(255 * Math.min(1, edge / ((diameter / size) * 2)))
         }
       }
       context.putImageData(image, 0, 0)
@@ -673,13 +686,17 @@ export class PixiRenderer implements Renderer {
     this.organismCount = frame.organisms.length
     this.resourceCount = frame.resources.length
 
+    const zoom = this.camera.state.zoom
+    this.sceneZoom = zoom
     // resources
     this.sync(this.resources, frame.resources.length, this.dotTexture)
     for (let i = 0; i < frame.resources.length; i++) {
       const r = frame.resources[i]!
       const sprite = this.resources.pool[i] as Sprite
       sprite.position.set(r.x, r.y)
-      sprite.scale.set((r.radius * 2 * (0.6 + 0.4 * r.remainingRatio)) / 64)
+      sprite.scale.set(
+        Math.max(r.radius * 2 * (0.6 + 0.4 * r.remainingRatio), (MIN_FOOD_PX * 2) / zoom) / 64
+      )
       sprite.tint = this.numberOf(resourceColor(r.kind))
       sprite.alpha = 0.95
     }
@@ -688,9 +705,11 @@ export class PixiRenderer implements Renderer {
     this.sync(this.shadows, frame.organisms.length, this.dotTexture)
     for (let i = 0; i < frame.organisms.length; i++) {
       const o = frame.organisms[i]!
-      const scale = (o.radius * 2 * (o.lifeStage === 'juvenile' ? 0.75 : 1)) / 64
+      // Far out, a creature is drawn at least MIN_ORGANISM_PX wide; close up the boost is 1.
+      const boost = Math.max(1, MIN_ORGANISM_PX / (zoom * o.radius))
+      const scale = (o.radius * 2 * (o.lifeStage === 'juvenile' ? 0.75 : 1) * boost) / 64
       const shadow = this.shadows.pool[i] as Sprite
-      shadow.position.set(o.x + o.radius * 0.25, o.y + o.radius * 0.35)
+      shadow.position.set(o.x + o.radius * boost * 0.25, o.y + o.radius * boost * 0.35)
       shadow.scale.set(scale * 1.05)
       shadow.tint = 0x000000
       shadow.alpha = 0.35
@@ -703,7 +722,7 @@ export class PixiRenderer implements Renderer {
       const body = drawing.container
       body.position.set(o.x, o.y)
       body.rotation = o.rotation
-      body.scale.set(o.lifeStage === 'juvenile' ? 0.75 : 1)
+      body.scale.set((o.lifeStage === 'juvenile' ? 0.75 : 1) * boost)
       body.alpha = (0.68 + 0.32 * o.energyRatio) * (o.lifeStage === 'senescent' ? 0.85 : 1)
     }
     this.dropGoneBodies()
