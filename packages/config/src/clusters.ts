@@ -13,7 +13,9 @@ const CLUSTER_KEYS = [
   'mateSignalCap',
   'speciesThreshold',
   'clusterSpread',
-  'speciesSpread'
+  'speciesSpread',
+  'foodFloor',
+  'strandedFoodPerTick'
 ]
 
 /** The most clusters a layout can hold (a regular polygon; more would be a crowd, not a map). */
@@ -105,4 +107,12 @@ export function checkClusters(environment: PlainObject, errors: string[]): void 
       'environment.clusters.speciesSpread must not exceed environment.clusters.clusterSpread'
     )
   }
+  unit('foodFloor', false)
+  checkNumber(
+    clusters,
+    'strandedFoodPerTick',
+    'environment.clusters.strandedFoodPerTick',
+    { integer: true, nonnegative: true },
+    errors
+  )
 }

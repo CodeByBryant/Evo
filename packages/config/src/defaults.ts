@@ -37,7 +37,9 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       mateSignalCap: 200,
       speciesThreshold: 0.12,
       clusterSpread: 0.08,
-      speciesSpread: 0.03
+      speciesSpread: 0.03,
+      foodFloor: 0.05,
+      strandedFoodPerTick: 4
     }
   },
   organisms: {

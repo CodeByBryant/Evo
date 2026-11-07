@@ -254,7 +254,8 @@ export class World {
       this.events,
       this.ecology,
       this.hazardStore,
-      this.randomStreams.get('events')
+      this.randomStreams.get('events'),
+      this.clusters === null ? null : () => this.livingPerCluster()
     )
     this.brainLayout = brainLayoutOf(architectureOf(this.config.genetics.brain))
     this.perceptionSystem = new PerceptionSystem(
@@ -516,6 +517,17 @@ export class World {
       bounds: b,
       clusters: this.clusters.centres.map((centre) => ({ x: centre.x, y: centre.y, patches: [] }))
     }
+  }
+
+  /** Living organisms per cluster (nearest centre; the void counts for its nearest cluster). */
+  private livingPerCluster(): number[] {
+    const layout = this.clusters as ClusterLayout
+    const alive = layout.centres.map(() => 0)
+    for (const organism of this.organisms.values()) {
+      const cluster = layout.nearestCluster(organism.x, organism.y)
+      alive[cluster] = (alive[cluster] as number) + 1
+    }
+    return alive
   }
 
   /**
