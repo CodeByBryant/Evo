@@ -15,18 +15,19 @@ Evo is being rebuilt as a pnpm workspace around a headless simulation engine (se
 
 Run from the repository root:
 
-| Command                      | Description                                                         |
-| ---------------------------- | ------------------------------------------------------------------- |
-| `pnpm install`               | Install all workspace dependencies                                  |
-| `pnpm check`                 | Typecheck, lint (including dependency rules), and test              |
-| `pnpm build`                 | Compile-check every package and build the web app                   |
-| `pnpm typecheck`             | TypeScript checks for every package                                 |
-| `pnpm lint`                  | Dependency-rule check plus ESLint                                   |
-| `pnpm test`                  | Tool tests plus every package's Vitest suite                        |
-| `pnpm format`                | Format with Prettier (`pnpm format:check` verifies without writing) |
-| `pnpm lint:deps`             | Only the workspace dependency-rule check                            |
-| `pnpm test:determinism`      | The slow suite: 100,000-tick runs and pinned state hashes           |
-| `pnpm --filter @evo/web dev` | The web app with hot reload (`preview` serves a build)              |
+| Command                               | Description                                                                            |
+| ------------------------------------- | -------------------------------------------------------------------------------------- |
+| `pnpm install`                        | Install all workspace dependencies                                                     |
+| `pnpm check`                          | Typecheck, lint (including dependency rules), and test                                 |
+| `pnpm build`                          | Compile-check every package and build the web app                                      |
+| `pnpm typecheck`                      | TypeScript checks for every package                                                    |
+| `pnpm lint`                           | Dependency-rule check plus ESLint                                                      |
+| `pnpm test`                           | Tool tests plus every package's Vitest suite                                           |
+| `pnpm format`                         | Format with Prettier (`pnpm format:check` verifies without writing)                    |
+| `pnpm lint:deps`                      | Only the workspace dependency-rule check                                               |
+| `pnpm test:determinism`               | The slow suite: 100,000-tick runs and pinned state hashes                              |
+| `pnpm --filter @evo/simulation probe` | A measurement, not a test: runs presets over many seeds and writes a table (see below) |
+| `pnpm --filter @evo/web dev`          | The web app with hot reload (`preview` serves a build)                                 |
 
 ### The web app
 
@@ -313,6 +314,19 @@ npm run build:mac
 npm run build:linux
 # Output in ./release/
 ```
+
+## Measuring ecology (the preset probe)
+
+Tuning food, births and deaths is done from measurements. `packages/simulation/tests/probe/presets.probe.ts` runs each preset over several seeds and writes a table and a JSON file with, per preset: worlds that went extinct, population mean and range, the share of deaths that were starvation (against age and damage), the food stock against its cap, the share of food energy wasted (eaten beyond an organism's capacity), and, in cluster worlds, how many clusters ended empty.
+
+```bash
+# one preset per process uses several cores; settings are environment variables
+PROBE_PRESETS=balanced,lush PROBE_SEEDS=8 PROBE_TICKS=20000 PROBE_OUT=/tmp/probe \
+  pnpm --filter @evo/simulation probe
+cat /tmp/probe.md
+```
+
+Use at least 20,000 ticks: a creature's lifespan is 6,000 ticks, so shorter runs report almost every death as starvation. The probe is never part of `pnpm test`, the determinism suite or CI.
 
 ## Getting Help
 
