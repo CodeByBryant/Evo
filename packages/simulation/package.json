@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
-    "test:determinism": "vitest run --config vitest.determinism.config.ts"
+    "test:determinism": "vitest run --config vitest.determinism.config.ts",
+    "probe": "vitest run --config vitest.probe.config.ts"
   },
   "dependencies": {
     "@evo/contracts": "workspace:*",
