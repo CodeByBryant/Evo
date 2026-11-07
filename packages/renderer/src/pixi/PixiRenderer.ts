@@ -8,6 +8,7 @@ import type {
   TerrainSnapshot
 } from '@evo/contracts'
 import { Camera } from '../camera'
+import type { ViewInsets } from '../camera'
 import { PART_COLORS, REGION_COLORS, hexToNumber, resourceColor } from '../colors'
 import { GestureTracker } from '../gestures'
 import type { GestureAction } from '../gestures'
@@ -81,6 +82,8 @@ export class PixiRenderer implements Renderer {
   private sceneZoom = 1
   private cameraDirty = true
   private fitted = false
+  /** True once the user has panned or zoomed, so a layout change must not move their view. */
+  private userMoved = false
   private worldWidth = 500
   private worldHeight = 500
 
@@ -193,6 +196,7 @@ export class PixiRenderer implements Renderer {
     this.buildClusterTerrain(clusters)
     this.camera.fit()
     this.fitted = true
+    this.userMoved = false
     this.follow = false
     this.cameraDirty = true
     this.sceneDirty = true
@@ -255,7 +259,16 @@ export class PixiRenderer implements Renderer {
 
   fitWorld(): void {
     this.camera.fit()
+    this.userMoved = false
     this.cameraDirty = true
+  }
+
+  setInsets(insets: ViewInsets): void {
+    this.camera.setInsets(insets)
+    if (!this.userMoved && !this.follow && this.fitted) {
+      this.camera.fit()
+      this.cameraDirty = true
+    }
   }
 
   destroy(): void {
@@ -319,12 +332,14 @@ export class PixiRenderer implements Renderer {
   private handle(actions: readonly GestureAction[]): void {
     for (const action of actions) {
       if (action.type === 'pan') {
+        this.userMoved = true
         this.camera.panBy(action.dx, action.dy)
         if (this.follow) {
           this.follow = false
           this.callbacks?.onFollowChange?.(false)
         }
       } else if (action.type === 'zoom') {
+        this.userMoved = true
         this.camera.zoomAt(action.factor, action.x, action.y)
       } else if (this.frame !== null) {
         const world = this.camera.screenToWorld(action.x, action.y)

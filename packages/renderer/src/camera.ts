@@ -11,6 +11,16 @@ export interface CameraState {
   readonly zoom: number
 }
 
+/** Pixels of the viewport covered by interface on each side. */
+export interface ViewInsets {
+  readonly left: number
+  readonly right: number
+  readonly top: number
+  readonly bottom: number
+}
+
+export const NO_INSETS: ViewInsets = { left: 0, right: 0, top: 0, bottom: 0 }
+
 export interface CameraOptions {
   readonly worldWidth: number
   readonly worldHeight: number
@@ -38,6 +48,8 @@ export class Camera {
   private originY = 0
   private minZoom: number
   private readonly maxZoom: number
+  /** Screen pixels covered by floating interface, so `fit` leaves the world clear of them. */
+  private insets: ViewInsets = NO_INSETS
 
   constructor(options: CameraOptions) {
     this.worldWidth = options.worldWidth
@@ -114,17 +126,34 @@ export class Camera {
     this.clampCentre()
   }
 
-  /** Shows the whole world, with a margin as a fraction of the viewport. */
+  /** Tells the camera which parts of the viewport are covered, so the next `fit` avoids them. */
+  setInsets(insets: ViewInsets): void {
+    this.insets = {
+      left: Math.max(0, insets.left),
+      right: Math.max(0, insets.right),
+      top: Math.max(0, insets.top),
+      bottom: Math.max(0, insets.bottom)
+    }
+  }
+
+  /**
+   * Shows the whole world in the part of the viewport no interface covers, with a margin as a
+   * fraction of that part.
+   */
   fit(margin = 0.04): void {
-    const usableWidth = this.viewWidth * (1 - 2 * margin)
-    const usableHeight = this.viewHeight * (1 - 2 * margin)
+    const { left, right, top, bottom } = this.insets
+    const freeWidth = Math.max(1, this.viewWidth - left - right)
+    const freeHeight = Math.max(1, this.viewHeight - top - bottom)
+    const usableWidth = freeWidth * (1 - 2 * margin)
+    const usableHeight = freeHeight * (1 - 2 * margin)
     this.z = clamp(
       Math.min(usableWidth / this.worldWidth, usableHeight / this.worldHeight),
       this.minZoom,
       this.maxZoom
     )
-    this.cx = this.originX + this.worldWidth / 2
-    this.cy = this.originY + this.worldHeight / 2
+    // The middle of the free part sits at a different screen point than the middle of the view.
+    this.cx = this.originX + this.worldWidth / 2 - (left - right) / 2 / this.z
+    this.cy = this.originY + this.worldHeight / 2 - (top - bottom) / 2 / this.z
   }
 
   /** The visible part of the world. */

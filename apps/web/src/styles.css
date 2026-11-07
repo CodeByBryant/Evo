@@ -6,51 +6,28 @@ body,
 }
 
 body {
-  background: var(--evo-bg, #0a101d);
-  color: var(--evo-text, #dbe4ff);
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
-  line-height: 1.4;
+  background: var(--evo-ink, #07090f);
+  color: var(--evo-text, #e7ecff);
+  font-family: var(--evo-sans, system-ui, sans-serif);
+  font-size: 13px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
   overflow: hidden;
 }
 
+/* The world fills the window; everything else floats over it. */
 .app {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   height: 100%;
-}
-
-.app-body {
-  flex: 1;
-  display: flex;
-  min-height: 0;
-}
-
-.app-sidebar {
-  width: 320px;
-  flex: none;
-  overflow: auto;
-  padding: 12px;
-  background: var(--evo-bg);
-  border-right: 1px solid var(--evo-line);
-}
-.app-sidebar[hidden] {
-  display: none;
-}
-
-.app-help {
-  font-size: 0.75rem;
-  color: var(--evo-muted);
-  margin: 0 0 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 520px at 70% 30%, rgb(120 90 255 / 0.12), transparent 60%),
+    radial-gradient(800px 500px at 20% 90%, rgb(40 200 255 / 0.07), transparent 60%), var(--evo-ink);
 }
 
 .app-stage {
-  position: relative;
-  flex: 1;
-  min-width: 0;
+  position: absolute;
+  inset: 0;
 }
 
 .viewport {
@@ -63,20 +40,64 @@ body {
   margin: 24px;
   padding: 16px;
   max-width: 420px;
-  background: var(--evo-panel);
   border: 1px solid var(--evo-bad);
   border-radius: var(--evo-radius);
 }
 
+.app-topleft {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+.app-topright {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* The left column scrolls; a soft scrim behind it keeps text readable without a box. */
+.app-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 264px;
+  z-index: 1;
+  padding: 84px 16px 84px;
+  overflow-y: auto;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(7 9 15 / 0.9) 58%, rgb(7 9 15 / 0));
+  scrollbar-width: thin;
+}
+.app-sidebar[hidden] {
+  display: none;
+}
+
+.app-help {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--evo-dim);
+  pointer-events: auto;
+}
+
 .app-panels-toggle {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  bottom: 64px;
+  left: 12px;
+  z-index: 3;
+  display: none;
+  background: var(--evo-glass);
+  backdrop-filter: blur(18px);
 }
 
 .app-overlay {
   position: absolute;
   inset: 0;
+  z-index: 4;
   display: grid;
   place-items: center;
   pointer-events: none;
@@ -86,43 +107,63 @@ body {
 }
 
 .app-inspector {
-  width: 340px;
-  flex: none;
+  position: absolute;
+  top: 130px;
+  right: 16px;
+  bottom: 84px;
+  width: 320px;
+  z-index: 2;
   display: flex;
-  padding: 10px 10px 10px 0;
+  align-items: flex-start;
   min-height: 0;
-  background: var(--evo-bg);
+  pointer-events: none;
 }
 .app-inspector > .evo-inspector {
-  flex: 1;
+  pointer-events: auto;
+  max-height: 100%;
+  width: 100%;
 }
 
-/* Phones and narrow windows: the panels stack under the viewport and the inspector becomes a sheet. */
+.app-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 3;
+  max-width: calc(100% - 24px);
+}
+
+/* Phones and narrow windows: the left column hides behind a button, the inspector becomes a sheet. */
 @media (max-width: 800px) {
-  .app-body {
-    flex-direction: column-reverse;
+  .app-panels-toggle {
+    display: inline-flex;
   }
   .app-sidebar {
-    width: auto;
-    max-height: 42vh;
-    border-right: 0;
-    border-top: 1px solid var(--evo-line);
+    width: min(300px, 86vw);
+    padding-top: 118px;
   }
-  .app-stage {
-    min-height: 40vh;
+  .app-topright {
+    top: auto;
+    bottom: 64px;
+    right: 12px;
   }
   .app-inspector {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 56px;
     width: auto;
-    max-height: 55vh;
-    padding: 8px;
+    max-height: 52vh;
     z-index: 5;
-    background: transparent;
   }
-  .evo-facts {
-    gap: 2px 10px;
+  .app-dock {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    max-width: none;
+    overflow-x: auto;
+  }
+  .app-dock > .evo-dock {
+    gap: 10px;
   }
 }

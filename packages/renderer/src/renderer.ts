@@ -5,6 +5,7 @@ import type {
   RenderSnapshot,
   TerrainSnapshot
 } from '@evo/contracts'
+import type { ViewInsets } from './camera'
 
 export interface RendererCallbacks {
   /** The user clicked an organism, or empty space (`null`). */
@@ -52,6 +53,11 @@ export interface Renderer {
   /** Keeps the selected organism centred as it moves. */
   setFollow(follow: boolean): void
   fitWorld(): void
+  /**
+   * Tells the renderer which edges of the viewport floating interface covers. The whole world is
+   * kept clear of them when it is fitted, and a view the user has not moved is refitted at once.
+   */
+  setInsets(insets: ViewInsets): void
   readonly stats: RendererStats
   destroy(): void
 }

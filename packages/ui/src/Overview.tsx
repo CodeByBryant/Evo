@@ -1,15 +1,23 @@
 import type { SimulationControls, ViewState } from '@evo/contracts'
-import { PopulationChart, Sparkline } from './Charts'
+import { PopulationChart } from './Charts'
+import { Section } from './Section'
 import { formatCount, formatNumber, formatTime, percent, statusLabel, totalDeaths } from './format'
 
+/** Top left: the brand, whether the world is running, and where in time it is. */
 export function TopBar({ view }: { view: ViewState }): React.JSX.Element {
   return (
     <header className="evo-topbar">
-      <strong className="evo-brand">Evo</strong>
-      <span className={`evo-status evo-status-${view.status}`}>{statusLabel(view.status)}</span>
+      <strong className="evo-brand">
+        Evo
+        <i className={`evo-dot evo-dot-${view.status}`} aria-hidden="true" />
+      </strong>
       <dl className="evo-facts">
+        <div className={`evo-status evo-status-${view.status}`}>
+          <dt className="evo-sr">Status</dt>
+          <dd>{statusLabel(view.status)}</dd>
+        </div>
         <div>
-          <dt>Time</dt>
+          <dt className="evo-sr">Time</dt>
           <dd>{formatTime(view.time)}</dd>
         </div>
         <div>
@@ -18,7 +26,7 @@ export function TopBar({ view }: { view: ViewState }): React.JSX.Element {
         </div>
         {view.season !== null && (
           <div>
-            <dt>Season</dt>
+            <dt className="evo-sr">Season</dt>
             <dd className="evo-capitalize">{view.season}</dd>
           </div>
         )}
@@ -31,13 +39,11 @@ export function TopBar({ view }: { view: ViewState }): React.JSX.Element {
   )
 }
 
-export function StatsPanel({ view }: { view: ViewState }): React.JSX.Element {
-  const { metrics } = view
-  const attempts = metrics.reproductionAttempts
+/** Top right: the three numbers that matter and the population line under them. */
+export function Hud({ view }: { view: ViewState }): React.JSX.Element {
   return (
-    <section className="evo-panel" aria-labelledby="evo-stats-title">
-      <h2 id="evo-stats-title">Population</h2>
-      <dl className="evo-stats">
+    <section className="evo-hud" aria-label="Population">
+      <dl className="evo-hud-rows">
         <div>
           <dt>Organisms</dt>
           <dd>{formatCount(view.population)}</dd>
@@ -55,40 +61,55 @@ export function StatsPanel({ view }: { view: ViewState }): React.JSX.Element {
             )}
           </dd>
         </div>
-        <div>
-          <dt>Born</dt>
-          <dd>{formatCount(metrics.organismsBorn)}</dd>
-        </div>
-        <div>
-          <dt>Died</dt>
-          <dd>{formatCount(totalDeaths(metrics))}</dd>
-        </div>
-        <div>
-          <dt>Mating success</dt>
-          <dd>{percent(metrics.reproductionSuccesses, attempts)}</dd>
-        </div>
-        <div>
-          <dt>Starved</dt>
-          <dd>{formatCount(metrics.deathsByStarvation)}</dd>
-        </div>
-        <div>
-          <dt>Old age</dt>
-          <dd>{formatCount(metrics.deathsByAge)}</dd>
-        </div>
-        <div>
-          <dt>Damage deaths</dt>
-          <dd>{formatCount(metrics.deathsByDamage)}</dd>
-        </div>
       </dl>
-      <PopulationChart points={view.populationHistory} />
+      <PopulationChart points={view.populationHistory} width={170} height={30} compact />
     </section>
+  )
+}
+
+/** The rest of the numbers, folded away until wanted. */
+export function StatsPanel({ view }: { view: ViewState }): React.JSX.Element {
+  const { metrics } = view
+  const attempts = metrics.reproductionAttempts
+  return (
+    <Section id="evo-stats" title="Statistics">
+      <details className="evo-fold">
+        <summary>Births, deaths and mating</summary>
+        <dl className="evo-rows">
+          <div>
+            <dt>Born</dt>
+            <dd>{formatCount(metrics.organismsBorn)}</dd>
+          </div>
+          <div>
+            <dt>Died</dt>
+            <dd>{formatCount(totalDeaths(metrics))}</dd>
+          </div>
+          <div>
+            <dt>Mating success</dt>
+            <dd>{percent(metrics.reproductionSuccesses, attempts)}</dd>
+          </div>
+          <div>
+            <dt>Starved</dt>
+            <dd>{formatCount(metrics.deathsByStarvation)}</dd>
+          </div>
+          <div>
+            <dt>Old age</dt>
+            <dd>{formatCount(metrics.deathsByAge)}</dd>
+          </div>
+          <div>
+            <dt>Damage deaths</dt>
+            <dd>{formatCount(metrics.deathsByDamage)}</dd>
+          </div>
+        </dl>
+        <PopulationChart points={view.populationHistory} />
+      </details>
+    </Section>
   )
 }
 
 export function SpeciesPanel({ view }: { view: ViewState }): React.JSX.Element {
   return (
-    <section className="evo-panel" aria-labelledby="evo-species-title">
-      <h2 id="evo-species-title">Species</h2>
+    <Section id="evo-species" title="Species" aside={view.activeSpecies}>
       {view.species.length === 0 ? (
         <p className="evo-hint">No living species.</p>
       ) : (
@@ -100,7 +121,7 @@ export function SpeciesPanel({ view }: { view: ViewState }): React.JSX.Element {
             >
               <span
                 className="evo-swatch"
-                style={{ background: species.color }}
+                style={{ background: species.color, color: species.color }}
                 aria-hidden="true"
               />
               <span className="evo-species-name">
@@ -109,7 +130,6 @@ export function SpeciesPanel({ view }: { view: ViewState }): React.JSX.Element {
                   <small className="evo-hint"> from #{species.ancestorId}</small>
                 )}
               </span>
-              <Sparkline values={species.history} color={species.color} />
               <span className="evo-species-count" title="living members">
                 {formatCount(species.members)}
               </span>
@@ -117,7 +137,7 @@ export function SpeciesPanel({ view }: { view: ViewState }): React.JSX.Element {
           ))}
         </ul>
       )}
-    </section>
+    </Section>
   )
 }
 
@@ -131,7 +151,7 @@ export function ExtinctionBanner({
 }): React.JSX.Element | null {
   if (view.status !== 'extinct') return null
   return (
-    <div className="evo-banner" role="alert">
+    <div className="evo-banner evo-glass" role="alert">
       <h2>Extinct</h2>
       <p>
         The last organism died at tick {formatCount(view.extinctionTick ?? view.tick)} (
@@ -164,9 +184,8 @@ export function ClusterPanel({ view }: { view: ViewState }): React.JSX.Element |
   const report = view.clusters
   if (report === null) return null
   return (
-    <section className="evo-panel" aria-labelledby="evo-clusters-title">
-      <h2 id="evo-clusters-title">Clusters</h2>
-      <dl className="evo-stats">
+    <Section id="evo-clusters" title="Clusters">
+      <dl className="evo-rows">
         {report.clusters.map((cluster) => (
           <div key={cluster.index}>
             <dt>Cluster {cluster.index + 1}</dt>
@@ -182,6 +201,6 @@ export function ClusterPanel({ view }: { view: ViewState }): React.JSX.Element |
         Purity {Math.round(report.meanPurity * 100)}%: how much of each species still lives in its
         home cluster.
       </p>
-    </section>
+    </Section>
   )
 }

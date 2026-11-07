@@ -1,5 +1,5 @@
 export { Camera, clamp } from './camera'
-export type { CameraOptions, CameraState, Point } from './camera'
+export type { CameraOptions, CameraState, Point, ViewInsets } from './camera'
 export { pickOrganism } from './pick'
 export {
   REGION_COLORS,
