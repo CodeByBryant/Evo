@@ -88,7 +88,7 @@ body {
   position: absolute;
   bottom: 64px;
   left: 12px;
-  z-index: 3;
+  z-index: 4;
   display: none;
   background: var(--evo-glass);
   backdrop-filter: blur(18px);
@@ -139,13 +139,22 @@ body {
     display: inline-flex;
   }
   .app-sidebar {
+    top: 62px;
     width: min(300px, 86vw);
-    padding-top: 118px;
+    padding-top: 16px;
+    z-index: 3;
+    pointer-events: auto;
+    background: rgb(7 9 15 / 0.95);
+    border-right: 1px solid var(--evo-line);
   }
   .app-topright {
     top: auto;
     bottom: 64px;
     right: 12px;
+  }
+  /* With the sheet open, the headline numbers would sit half behind it. */
+  .app:has(.app-sidebar:not([hidden])) .app-topright {
+    display: none;
   }
   .app-inspector {
     top: auto;
