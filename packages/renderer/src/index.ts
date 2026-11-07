@@ -11,6 +11,7 @@ export {
   speciesHue
 } from './colors'
 export { buildRenderSnapshot } from './snapshot'
+export * from './animation'
 export type { RenderContext } from './snapshot'
 export { TrailBuffer } from './trails'
 export { GestureTracker } from './gestures'

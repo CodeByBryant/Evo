@@ -13,6 +13,7 @@ const LAYER_LABELS: Readonly<Record<RenderLayerName, string>> = {
   organisms: 'Organisms',
   trails: 'Trails',
   selection: 'Selection and events',
+  motion: 'Motion',
   debug: 'Debug overlay'
 }
 

@@ -27,6 +27,7 @@ const organism = (id: number, x: number, y: number, radius = 5): RenderOrganism 
   lifeStage: 'mature',
   energyRatio: 1,
   healthRatio: 1,
+  speedRatio: 0,
   selected: false
 })
 
@@ -210,6 +211,7 @@ describe('buildRenderSnapshot', () => {
       lifeStage: 'juvenile',
       energyRatio: 0.25,
       healthRatio: 0.5,
+      speedRatio: 0,
       selected: false
     })
     expect(first.speciesColor).toBe(speciesColor(0))
@@ -288,6 +290,67 @@ describe('buildRenderSnapshot body data', () => {
     expect(o?.outline).toEqual([5, 0, 0, 5, -5, 0, 0, -5])
     expect(o?.pattern).toBe(2)
     expect(o?.accentColor).toMatch(/^#[0-9a-f]{6}$/)
+  })
+})
+
+describe('speedRatio', () => {
+  const at = (velocity: { x: number; y: number }, baselineSpeed?: number): number | undefined => {
+    const snapshot = buildRenderSnapshot(
+      {
+        seed: 1,
+        tick: 1,
+        time: 0.1,
+        population: { active: 1, extinctionTick: null },
+        organisms: [
+          {
+            id: 1,
+            genomeId: 1,
+            parentIds: [],
+            speciesId: 0,
+            position: { x: 0, y: 0 },
+            velocity,
+            heading: 0,
+            radius: 5,
+            outline: [5, 0, 0, 5, -5, 0, 0, -5],
+            parts: [],
+            hue: 0.3,
+            pattern: 0,
+            accentHue: 0.5,
+            age: 0,
+            maxAge: 100,
+            energy: 1,
+            maxEnergy: 1,
+            health: 1,
+            maxHealth: 1,
+            lifeStage: 'mature',
+            reproductionCooldownRemaining: 0
+          }
+        ],
+        resources: [],
+        hazards: [],
+        metrics: {} as never
+      },
+      {
+        worldWidth: 500,
+        worldHeight: 500,
+        season: null,
+        selectedId: null,
+        ...(baselineSpeed === undefined ? {} : { baselineSpeed })
+      }
+    )
+    return snapshot.organisms[0]?.speedRatio
+  }
+
+  it('is the creature speed over the founder top speed', () => {
+    expect(at({ x: 3, y: 4 }, 10)).toBeCloseTo(0.5, 9)
+    expect(at({ x: 0, y: 0 }, 10)).toBe(0)
+    expect(at({ x: 30, y: 40 }, 10)).toBeCloseTo(5, 9)
+  })
+
+  it('falls back to the raw speed without a baseline, and to zero for a nonsense one', () => {
+    expect(at({ x: 3, y: 4 })).toBeCloseTo(5, 9)
+    expect(at({ x: 3, y: 4 }, 0)).toBe(0)
+    expect(at({ x: 3, y: 4 }, -2)).toBe(0)
   })
 })
 

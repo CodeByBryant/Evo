@@ -179,6 +179,7 @@ describe('render and view contracts', () => {
       'organisms',
       'trails',
       'selection',
+      'motion',
       'debug'
     ])
     expect(Object.keys(DEFAULT_RENDER_LAYERS)).toEqual([...RENDER_LAYERS])
