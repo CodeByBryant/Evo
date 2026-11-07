@@ -5,7 +5,8 @@ import { World } from '../../src/world/World'
 /**
  * Evolving bodies over a long run (ADR 0012). Bodies are derived from genes that are hashed, and
  * development has no randomness, so replays must agree exactly however the run is sliced; and
- * because nothing reads a body yet, anatomy on must not change a single legacy dynamic.
+ * a body that cannot change is the founder body, whose capability factors are exactly 1 (ADR 0015),
+ * so anatomy on with a frozen body must not change a single dynamic against anatomy off.
  */
 const BUSY: WorldConfigOverrides = {
   anatomy: {
@@ -49,7 +50,11 @@ describe('anatomy long run', () => {
   }, 300_000)
 
   it('anatomy on with a frozen body leaves the legacy dynamics alone: birth for birth', () => {
-    const off = World.create({ seed: 23, config: { genetics: BUSY.genetics ?? {} } })
+    // Anatomy is on by default (ADR 0015), so the baseline must switch it off explicitly.
+    const off = World.create({
+      seed: 23,
+      config: { genetics: BUSY.genetics ?? {}, anatomy: { enabled: false } }
+    })
     const on = World.create({
       seed: 23,
       config: {
