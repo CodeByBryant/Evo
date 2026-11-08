@@ -45,7 +45,8 @@ import {
   drawnOutlineOf,
   drawnPartsOf,
   maxEnergyOf,
-  maxHealthOf
+  maxHealthOf,
+  gutCapacityOf
 } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
 import { ResourceStore } from '../entities/ResourceStore'
@@ -55,7 +56,7 @@ import { developAnatomy } from '../development/develop'
 import { buildBodySpecs, founderBodyVector } from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
-import { massScaleOf } from '../organisms/bodyFactors'
+import { kindNamesOf, massScaleOf } from '../organisms/bodyFactors'
 import { planClusterFounders } from '../genetics/ClusterFounders'
 import type { FounderPlan } from '../genetics/ClusterFounders'
 import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
@@ -80,6 +81,7 @@ import { DecisionSystem } from '../systems/DecisionSystem'
 import { EnvironmentSystem } from '../systems/EnvironmentSystem'
 import { HealthSystem } from '../systems/HealthSystem'
 import { MigrationSystem } from '../systems/MigrationSystem'
+import { DigestionSystem } from '../systems/DigestionSystem'
 import { InteractionSystem } from '../systems/InteractionSystem'
 import { MetabolismSystem } from '../systems/MetabolismSystem'
 import { MovementSystem } from '../systems/MovementSystem'
@@ -152,6 +154,7 @@ export class World {
   private readonly brainSystem: BrainSystem
   private readonly movementSystem: MovementSystem
   private readonly interactionSystem: InteractionSystem
+  private readonly digestionSystem: DigestionSystem
   private readonly metabolismSystem: MetabolismSystem
   private readonly healthSystem: HealthSystem
   private readonly migrationSystem: MigrationSystem
@@ -240,7 +243,8 @@ export class World {
       developAnatomy(this.founderBody, this.config.anatomy),
       this.config.anatomy,
       1,
-      Math.max(1, this.ecology.kindCount)
+      Math.max(1, this.ecology.kindCount),
+      kindNamesOf(this.config)
     )
     this.hazardStore = new HazardStore()
     this.migrationTracker = new MigrationTracker(this.config.ecology.migration.dwellTime)
@@ -321,6 +325,7 @@ export class World {
       this.ecology,
       this.damageBuffer
     )
+    this.digestionSystem = new DigestionSystem(this.config, this.organisms, this.events)
     this.healthSystem = new HealthSystem(
       this.config,
       this.organisms,
@@ -439,6 +444,8 @@ export class World {
         birthTick: 0,
         reproductionCooldownRemaining: 0,
         lastTurnMagnitude: 0,
+        gut: 0,
+        biteCooldown: 0,
         brain:
           this.config.learning.controller === 'brain'
             ? createBrainState(genome, this.brainLayout, this.config.organisms.initialEnergy)
@@ -627,7 +634,8 @@ export class World {
       this.founderCapabilities,
       this.config.anatomy,
       massScaleOf(organism.genome.body.genes, this.config.anatomy),
-      Math.max(1, this.ecology.kindCount)
+      Math.max(1, this.ecology.kindCount),
+      kindNamesOf(this.config)
     )
   }
 
@@ -684,6 +692,7 @@ export class World {
     this.movementSystem.update(tick)
     this.migrationSystem.update()
     this.interactionSystem.update(tick)
+    this.digestionSystem.update(tick)
     this.healthSystem.update(tick)
     this.metabolismSystem.update(tick)
     this.reproductionSystem.update(tick)
@@ -761,7 +770,9 @@ export class World {
         health: organism.health,
         maxHealth: maxHealthOf(organism.genome, this.config),
         lifeStage: lifeStageFor(organism.age, this.config.organisms),
-        reproductionCooldownRemaining: organism.reproductionCooldownRemaining
+        reproductionCooldownRemaining: organism.reproductionCooldownRemaining,
+        gut: organism.gut,
+        gutCapacity: this.config.feeding.enabled ? gutCapacityOf(organism.genome, this.config) : 0
       })),
       resources: this.resources.values().map((resource) => ({
         id: resource.id,
@@ -848,6 +859,8 @@ export class World {
       for (const gene of genome.body.genes) hasher.writeFloat64(gene)
       writeBrainState(hasher, organism.brain)
       hasher.writeFloat64(organism.health)
+      // Schema v10: the feeding state follows health (docs/decisions/0017).
+      hasher.writeFloat64(organism.gut).writeFloat64(organism.biteCooldown)
     }
 
     const resources = this.resources.values()

@@ -99,6 +99,8 @@ export interface ResourceKindConfig {
   detectability: number
   /** Health damage when eaten, `>= 0`. */
   toxicity: number
+  /** How many times harder it is to bite than the baseline, `> 0` (default 1): a bite removes `biteSize / hardness`. */
+  hardness?: number
   /** Region types it grows in; empty means everywhere. */
   regions: RegionType[]
 }

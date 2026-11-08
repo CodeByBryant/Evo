@@ -102,6 +102,10 @@ export interface InspectorView {
     readonly x: number
     readonly y: number
     readonly cooldown: number
+    /** Food bitten and not yet absorbed (ADR 0017). */
+    readonly gut: number
+    /** Gut capacity; zero when feeding is off, so the interface shows no gut. */
+    readonly gutCapacity: number
   }
   readonly genome: readonly GeneRow[]
   /** The body, or `null` when the organism is not known to the world. */

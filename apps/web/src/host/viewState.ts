@@ -148,7 +148,9 @@ export function buildInspector(
       maxHealth: organism.maxHealth,
       x: organism.position.x,
       y: organism.position.y,
-      cooldown: organism.reproductionCooldownRemaining
+      cooldown: organism.reproductionCooldownRemaining,
+      gut: organism.gut,
+      gutCapacity: organism.gutCapacity
     },
     genome: genes,
     anatomy: buildAnatomy(world, id),

@@ -14,6 +14,11 @@ import { World } from '../../src/index'
  * mating-signal range and the food supply. Measured then: means 25.9-41.3, minimum 15, maximum 57.
  * Across 128 seeds one world went extinct, so these are a guard against regressions of the
  * mate-seeking benefit (the baseline lost 2 of 64), not a proof that no world can.
+ *
+ * Bites (ADR 0017) stop food energy being wasted, so populations are larger: over these 12 seeds
+ * (same sampling) means are 57.0-68.7, minimum 41, maximum 85, and no world went extinct. The
+ * bounds were widened to match (mean 25-90, minimum 15, maximum 110); the starvation tuning
+ * decides where the population should settle.
  */
 const SEEDS = [5, 6, 7, 8, 33, 34, 35, 36, 37, 38, 39, 40]
 
@@ -29,10 +34,10 @@ describe('the default ecology keeps held-out worlds alive', () => {
       }
       const mean = samples.reduce((a, b) => a + b, 0) / samples.length
       expect(world.isExtinct).toBe(false)
-      expect(mean).toBeGreaterThan(15)
-      expect(mean).toBeLessThan(45)
-      expect(Math.min(...samples)).toBeGreaterThanOrEqual(5)
-      expect(Math.max(...samples)).toBeLessThanOrEqual(70)
+      expect(mean).toBeGreaterThan(25)
+      expect(mean).toBeLessThan(90)
+      expect(Math.min(...samples)).toBeGreaterThanOrEqual(15)
+      expect(Math.max(...samples)).toBeLessThanOrEqual(110)
       expect(world.validate()).toEqual({ ok: true, errors: [] })
       // the ecology was actually in play
       const { metrics, hazards } = world.snapshot()

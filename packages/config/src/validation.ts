@@ -15,6 +15,7 @@ import { checkLearning, checkRegion } from './learning'
 import { checkEcology } from './ecology'
 import { checkSpecies } from './species'
 import { checkAnatomy } from './anatomy'
+import { checkFeeding } from './feeding'
 import { checkClusters } from './clusters'
 
 const ROOT_KEYS = [
@@ -30,7 +31,8 @@ const ROOT_KEYS = [
   'learning',
   'species',
   'ecology',
-  'anatomy'
+  'anatomy',
+  'feeding'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height', 'layout', 'clusters']
 const ORGANISM_KEYS = [
@@ -299,6 +301,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   checkSpecies(value, errors)
   checkEcology(value, errors)
   checkAnatomy(value, errors)
+  checkFeeding(value, errors)
 
   return { ok: errors.length === 0, errors }
 }
@@ -416,7 +419,10 @@ function mergeAnatomy(base: object, override: unknown): unknown {
     founderOutline: mergeSection(defaults['founderOutline'] as object, override['founderOutline']),
     parts: isObject(parts)
       ? mergeNamed(defaults['parts'] as Record<string, object>, parts)
-      : mergeSection(defaults['parts'] as object, parts)
+      : mergeSection(defaults['parts'] as object, parts),
+    mouthForms: isObject(override['mouthForms'])
+      ? mergeNamed(defaults['mouthForms'] as Record<string, object>, override['mouthForms'])
+      : mergeSection(defaults['mouthForms'] as object, override['mouthForms'])
   }
 }
 
@@ -469,7 +475,8 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     learning: mergeLearning(base.learning, given['learning']),
     species: mergeSpecies(base.species, given['species']),
     ecology: mergeEcology(base.ecology, given['ecology']),
-    anatomy: mergeAnatomy(base.anatomy, given['anatomy'])
+    anatomy: mergeAnatomy(base.anatomy, given['anatomy']),
+    feeding: mergeSection(base.feeding, given['feeding'])
   }
   const result = validateWorldConfig(merged)
   if (!result.ok) throw new ConfigValidationError(result.errors)

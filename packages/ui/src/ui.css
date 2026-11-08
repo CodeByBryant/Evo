@@ -582,6 +582,9 @@ select.evo-input option {
 .evo-tone-health {
   background: var(--evo-good);
 }
+.evo-tone-gut {
+  background: var(--evo-muted);
+}
 .evo-tone-age {
   background: var(--evo-grad);
 }

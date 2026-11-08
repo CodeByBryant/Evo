@@ -18,6 +18,8 @@ export interface KindProperties {
   readonly spawnWeight: number
   readonly detectability: number
   readonly toxicity: number
+  /** How many times harder than the baseline it is to bite (1 when the kind sets none). */
+  readonly hardness: number
   /** Region types it grows in; empty means everywhere. */
   readonly regions: readonly RegionType[]
 }
@@ -86,6 +88,7 @@ export class EcologyModel {
           spawnWeight: kind.spawnWeight,
           detectability: kind.detectability,
           toxicity: kind.toxicity,
+          hardness: kind.hardness ?? 1,
           regions: kind.regions
         }))
       : [
@@ -96,6 +99,7 @@ export class EcologyModel {
             spawnWeight: 1,
             detectability: 1,
             toxicity: 0,
+            hardness: 1,
             regions: []
           }
         ]

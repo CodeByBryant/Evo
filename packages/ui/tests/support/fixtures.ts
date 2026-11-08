@@ -83,7 +83,9 @@ export function inspector(overrides: Partial<InspectorView> = {}): InspectorView
       maxHealth: 100,
       x: 100.4,
       y: 200.6,
-      cooldown: 0
+      cooldown: 0,
+      gut: 0,
+      gutCapacity: 0
     },
     genome: [
       { group: 'physical', name: 'radius', value: 5.2 },

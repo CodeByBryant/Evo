@@ -28,34 +28,37 @@ describe('100,000-tick runs', () => {
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })
 
-  it('the same seed produces an identical hash and snapshot after 100,000 ticks', () => {
+  // The replay tests below run each world twice. With bites (ADR 0017) populations are about 2.5
+  // times larger and a tick about 3 times slower, so they run 40,000 ticks (the same work as 100,000
+  // before); the single 100,000-tick run above is the milestone.
+  it('the same seed produces an identical hash and snapshot after 40,000 ticks', () => {
     const a = World.create({ seed: 55, validateEveryTicks: 1000 })
     const b = World.create({ seed: 55, validateEveryTicks: 1000 })
-    a.run(100_000)
-    b.run(100_000)
+    a.run(40_000)
+    b.run(40_000)
     expect(a.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(a.stateHash()).toBe(b.stateHash())
     expect(a.snapshot()).toEqual(b.snapshot())
   })
 
-  it('a different seed produces a different hash after 100,000 ticks', () => {
+  it('a different seed produces a different hash after 40,000 ticks', () => {
     const a = World.create({ seed: 55 })
     const b = World.create({ seed: 56 })
-    a.run(100_000)
-    b.run(100_000)
+    a.run(40_000)
+    b.run(40_000)
     expect(a.stateHash()).not.toBe(b.stateHash())
   })
 
   it('running in two uneven chunks matches a single run of the same total, at scale', () => {
     const chunked = World.create({ seed: 314159, config: { organisms: { initialCount: 30 } } })
-    chunked.run(37_412)
-    chunked.run(62_588)
+    chunked.run(14_965)
+    chunked.run(25_035)
 
     const direct = World.create({ seed: 314159, config: { organisms: { initialCount: 30 } } })
-    direct.run(100_000)
+    direct.run(40_000)
 
     // Reproduction allocates ids and draws from the 'reproduction' stream mid-run; this config
-    // reproduces heavily by 100,000 ticks, so a mismatched chunk boundary around a birth would
+    // reproduces heavily by 40,000 ticks, so a mismatched chunk boundary around a birth would
     // show up here as a hash divergence, not just a tick-count coincidence.
     expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(chunked.clock.tick).toBe(direct.clock.tick)
@@ -91,10 +94,10 @@ describe('100,000-tick runs', () => {
 
   it('running in many small chunks still matches a single run of the same total', () => {
     const chunked = World.create({ seed: 7, config: { organisms: { initialCount: 10 } } })
-    for (let i = 0; i < 100; i++) chunked.run(1000)
+    for (let i = 0; i < 40; i++) chunked.run(1000)
 
     const direct = World.create({ seed: 7, config: { organisms: { initialCount: 10 } } })
-    direct.run(100_000)
+    direct.run(40_000)
 
     expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(chunked.stateHash()).toBe(direct.stateHash())
@@ -116,9 +119,12 @@ describe('100,000-tick runs', () => {
     // is what "the engine can sustain a population for a long simulated period" (roadmap Phase 3
     // exit criteria) means in practice. This is the Phase 3/4 evidence, so it runs the reflex
     // controller; the brain controller's measured bands are in brain-long-run.test.ts.
+    // It is Phase 3/4 evidence, so it keeps Phase 3's way of eating (touch and take whole): the
+    // bites of ADR 0017 raise the population, and the default world's bands are in
+    // ecology-stability.test.ts and brain-long-run.test.ts.
     const world = World.create({
       seed: 1,
-      config: withoutEcology({ learning: { controller: 'reflex' } }),
+      config: withoutEcology({ learning: { controller: 'reflex' }, feeding: { enabled: false } }),
       validateEveryTicks: 1000
     })
     const samples: number[] = []
@@ -217,7 +223,9 @@ describe('100,000-tick runs', () => {
         // per-type stats and outline anchoring) only because the genome changes how many values the
         // genetics stream draws and what each body can do; the population hovers at 5-10
         // for a long time before the last animals die.
-        learning: { controller: 'reflex' }
+        learning: { controller: 'reflex' },
+        // Phase 3's way of eating: with bites (ADR 0017) nothing is wasted and this world no longer dies out.
+        feeding: { enabled: false }
       }),
       validateEveryTicks: 1000
     })
@@ -241,7 +249,9 @@ describe('100,000-tick runs', () => {
       validateEveryTicks: 1000,
       config: {
         organisms: { initialCount: 15 },
-        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 }
+        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
+        // Phase 3's way of eating: with bites (ADR 0017) nothing is wasted and this world no longer dies out.
+        feeding: { enabled: false }
       }
     })
     world.run(20_000)

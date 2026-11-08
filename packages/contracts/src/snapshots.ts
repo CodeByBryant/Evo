@@ -19,6 +19,8 @@ export interface PartSnapshot {
   readonly orientation: number
   /** `false` when a requirement is missing: the part is dead weight. */
   readonly functional: boolean
+  /** Which form of its type it is: a mouth's index in `MOUTH_FORMS` (sprout 0 to jaw 4); 0 for every other type. */
+  readonly form: number
 }
 
 export interface OrganismSnapshot {
@@ -58,6 +60,10 @@ export interface OrganismSnapshot {
   readonly maxHealth: number
   readonly lifeStage: LifeStage
   readonly reproductionCooldownRemaining: number
+  /** Food energy bitten but not yet absorbed (ADR 0017); zero when feeding is off. */
+  readonly gut: number
+  /** Gut capacity of this organism's body; zero when feeding is off. */
+  readonly gutCapacity: number
 }
 
 /** A compact, retained record of an organism after it dies (docs/decisions/0005). */

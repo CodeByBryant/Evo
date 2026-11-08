@@ -50,6 +50,8 @@ export function organismFor(
     birthTick: 0,
     reproductionCooldownRemaining: 0,
     lastTurnMagnitude: 0,
+    gut: 0,
+    biteCooldown: 0,
     brain: null,
     ...overrides
   }

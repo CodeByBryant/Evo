@@ -125,7 +125,9 @@ describe('buildRenderSnapshot', () => {
         health: 50,
         maxHealth: 100,
         lifeStage: 'juvenile',
-        reproductionCooldownRemaining: 0
+        reproductionCooldownRemaining: 0,
+        gut: 0,
+        gutCapacity: 0
       },
       {
         id: 2,
@@ -148,7 +150,9 @@ describe('buildRenderSnapshot', () => {
         health: 0,
         maxHealth: 0,
         lifeStage: 'mature',
-        reproductionCooldownRemaining: 0
+        reproductionCooldownRemaining: 0,
+        gut: 0,
+        gutCapacity: 0
       }
     ],
     resources: [
@@ -277,7 +281,9 @@ describe('buildRenderSnapshot body data', () => {
             health: 1,
             maxHealth: 1,
             lifeStage: 'mature',
-            reproductionCooldownRemaining: 0
+            reproductionCooldownRemaining: 0,
+            gut: 0,
+            gutCapacity: 0
           }
         ],
         resources: [],
@@ -323,7 +329,9 @@ describe('speedRatio', () => {
             health: 1,
             maxHealth: 1,
             lifeStage: 'mature',
-            reproductionCooldownRemaining: 0
+            reproductionCooldownRemaining: 0,
+            gut: 0,
+            gutCapacity: 0
           }
         ],
         resources: [],
@@ -383,7 +391,9 @@ describe('colorByHue', () => {
           health: 1,
           maxHealth: 1,
           lifeStage: 'mature' as const,
-          reproductionCooldownRemaining: 0
+          reproductionCooldownRemaining: 0,
+          gut: 0,
+          gutCapacity: 0
         }
       ],
       resources: [],

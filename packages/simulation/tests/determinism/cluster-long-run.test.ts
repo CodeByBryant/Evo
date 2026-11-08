@@ -37,8 +37,10 @@ describe('cluster layout long run', () => {
     const config: WorldConfigOverrides = { ...CLUSTERS, anatomy: { enabled: true } }
     const a = World.create({ seed: 6, config, validateEveryTicks: 5_000 })
     const b = World.create({ seed: 6, config })
-    a.run(15_000)
-    for (let i = 0; i < 3; i++) b.run(5_000)
+    // 15,000 ticks before bites (ADR 0017): a cluster world now grows to several times its size
+    // and runs about 4 times slower (35 against 146 ticks per second at 432 creatures).
+    a.run(5_000)
+    for (let i = 0; i < 2; i++) b.run(2_500)
     expect(b.stateHash()).toBe(a.stateHash())
-  }, 300_000)
+  }, 600_000)
 })

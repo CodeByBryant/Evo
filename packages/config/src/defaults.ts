@@ -248,6 +248,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
           spawnWeight: 5,
           detectability: 1,
           toxicity: 0,
+          hardness: 1,
           regions: ['meadow', 'forest', 'wetland', 'desert']
         },
         {
@@ -257,6 +258,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
           spawnWeight: 1.5,
           detectability: 1,
           toxicity: 0,
+          hardness: 1,
           regions: ['forest', 'wetland']
         },
         {
@@ -266,6 +268,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
           spawnWeight: 1.5,
           detectability: 0.85,
           toxicity: 6,
+          hardness: 1.5,
           regions: ['cave', 'wetland', 'forest', 'volcanic']
         },
         {
@@ -275,6 +278,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
           spawnWeight: 1.5,
           detectability: 1,
           toxicity: 0,
+          hardness: 0.6,
           regions: ['meadow', 'wetland', 'desert']
         }
       ]
@@ -284,7 +288,19 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       dwellTime: 20
     }
   },
-  anatomy: DEFAULT_ANATOMY
+  anatomy: DEFAULT_ANATOMY,
+  // Provisional, set by measurement in the starvation tuning (docs/decisions/0017). A grass item
+  // (30 energy) takes three bites, a founder gut holds about one item and empties in 7 seconds.
+  feeding: {
+    enabled: true,
+    biteRadius: 0.6,
+    biteCone: 1,
+    biteSize: 12,
+    biteInterval: 0.4,
+    gutCapacity: 40,
+    absorption: 6,
+    chewSlow: 0.15
+  }
 } satisfies WorldConfig)
 
 const range = (min: number, max: number, mutationStd = 0.05): GeneRange => ({

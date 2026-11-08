@@ -79,6 +79,7 @@ function Overview({ inspector }: { inspector: InspectorView }): React.JSX.Elemen
   return (
     <div>
       <Meter label="Energy" value={o.energy} max={o.maxEnergy} tone="energy" />
+      {o.gutCapacity > 0 && <Meter label="Gut" value={o.gut} max={o.gutCapacity} tone="gut" />}
       <Meter label="Health" value={o.health} max={o.maxHealth} tone="health" />
       <Meter label="Age" value={o.age} max={o.maxAge} tone="age" />
       <dl className="evo-stats evo-stats-compact">

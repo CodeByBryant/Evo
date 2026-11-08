@@ -68,6 +68,9 @@ const raw = (parts: FounderPart[]) => capabilitiesOf(bodyOf(parts), defaults, 1,
 const factors = (parts: FounderPart[], scale = 1) =>
   capabilityFactors(capabilitiesOf(bodyOf(parts), defaults, scale, KINDS), founder)
 
+/** The numeric values of a capability object (it also carries the boolean `hasMouth`). */
+const isNumber = (value: unknown): value is number => typeof value === 'number'
+
 describe('the founder body', () => {
   it('is exactly 1 against itself, for every factor', () => {
     const f = capabilityFactors(founder, founder)
@@ -84,7 +87,12 @@ describe('the founder body', () => {
       damageTaken: 1,
       temperatureTolerance: 1,
       regeneration: 1,
-      upkeepDelta: 0
+      upkeepDelta: 0,
+      biteSize: 1,
+      biteRate: 1,
+      absorption: 1,
+      dietEfficiency: [1, 1, 1, 1],
+      hasMouth: true
     })
   })
 
@@ -92,7 +100,8 @@ describe('the founder body', () => {
     expect(founder.forwardThrust).toBeGreaterThan(0)
     expect(founder.lateralThrust).toBeGreaterThan(0)
     expect(founder.torque).toBeGreaterThan(0)
-    for (const value of Object.values(founder).flat()) expect(Number.isFinite(value)).toBe(true)
+    for (const value of Object.values(founder).flat().filter(isNumber))
+      expect(Number.isFinite(value)).toBe(true)
     expect(founder.mass).toBeGreaterThan(defaults.bodyMass)
   })
 
@@ -425,9 +434,11 @@ describe('part stats (ADR 0016): every stat does something, and the strong ones 
     ] as PartType[]) {
       for (const gene of [0, 1]) {
         const c = raw([part('mouth'), part('stomach'), part(type, { stats: MID.map(() => gene) })])
-        for (const value of Object.values(c).flat()) expect(Number.isFinite(value)).toBe(true)
+        for (const value of Object.values(c).flat().filter(isNumber))
+          expect(Number.isFinite(value)).toBe(true)
         const f = capabilityFactors(c, founder)
-        for (const value of Object.values(f).flat()) expect(Number.isFinite(value)).toBe(true)
+        for (const value of Object.values(f).flat().filter(isNumber))
+          expect(Number.isFinite(value)).toBe(true)
       }
     }
   })
@@ -462,14 +473,16 @@ describe('under extreme mutation', () => {
       seen.add(grown.parts.map((p) => p.type).join())
       expect(grown.sizeUsed).toBeLessThanOrEqual(defaults.structuralBudget)
       const c = capabilitiesOf(grown, defaults, 1, KINDS)
-      for (const value of Object.values(c).flat()) expect(Number.isFinite(value)).toBe(true)
+      for (const value of Object.values(c).flat().filter(isNumber))
+        expect(Number.isFinite(value)).toBe(true)
       expect(c.mass).toBeGreaterThan(0)
       expect(c.damageTaken).toBeGreaterThan(0)
       expect(c.damageTaken).toBeLessThanOrEqual(1)
       expect(c.toxinTolerance).toBeGreaterThanOrEqual(0)
       expect(c.toxinTolerance).toBeLessThan(1)
       const f = capabilityFactors(c, founder)
-      for (const value of Object.values(f).flat()) expect(Number.isFinite(value)).toBe(true)
+      for (const value of Object.values(f).flat().filter(isNumber))
+        expect(Number.isFinite(value)).toBe(true)
       expect(f.speed).toBeGreaterThanOrEqual(0)
       expect(f.senseRange).toBeGreaterThan(0)
     }

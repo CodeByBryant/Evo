@@ -27,7 +27,8 @@ import { idsFrom, makeReproduction, organismFor, withGenes } from './support/org
  * (docs/decisions/0006), and from the config baseline times the body's factor where the old gene
  * was retired (docs/decisions/0015).
  */
-const config = resolveWorldConfig()
+// These tests are about the original way of eating (touch food and take it whole); bites are tested in feeding/.
+const config = resolveWorldConfig({ feeding: { enabled: false } })
 const MATURE = 200
 
 const mature = (id: number, overrides: Partial<OrganismState> = {}): OrganismState =>

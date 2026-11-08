@@ -19,6 +19,10 @@ export interface OrganismState {
   readonly birthTick: number
   reproductionCooldownRemaining: number
   lastTurnMagnitude: number
+  /** Food energy bitten but not yet absorbed (ADR 0017); stays 0 when feeding is off. */
+  gut: number
+  /** Seconds until the next bite is possible; stays 0 when feeding is off. */
+  biteCooldown: number
   /**
    * Runtime brain state: present for every organism under the `'brain'` controller and `null`
    * under `'reflex'`. The genome stays immutable; learning moves the overlay in here.

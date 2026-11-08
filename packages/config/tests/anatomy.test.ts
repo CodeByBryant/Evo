@@ -181,3 +181,69 @@ describe('anatomy config', () => {
     )
   })
 })
+
+describe('feeding config (ADR 0017)', () => {
+  it('defaults are valid, bites are on, and a preset can switch them off', () => {
+    expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
+    expect(DEFAULT_WORLD_CONFIG.feeding.enabled).toBe(true)
+    expect(resolveWorldConfig({ feeding: { enabled: false } }).feeding.enabled).toBe(false)
+    // overrides merge field by field
+    const merged = resolveWorldConfig({ feeding: { biteSize: 20 } }).feeding
+    expect(merged.biteSize).toBe(20)
+    expect(merged.gutCapacity).toBe(DEFAULT_WORLD_CONFIG.feeding.gutCapacity)
+  })
+
+  it('rejects numbers that are not positive, a cone wider than all around, and a chew speed above 1', () => {
+    for (const key of ['biteRadius', 'biteSize', 'biteInterval', 'gutCapacity', 'absorption']) {
+      expect(errorsFor((c) => (c.feeding[key] = 0)).join('\n')).toContain(`feeding.${key}`)
+      expect(errorsFor((c) => (c.feeding[key] = -1)).join('\n')).toContain(`feeding.${key}`)
+    }
+    expect(errorsFor((c) => (c.feeding.biteCone = 4)).join('\n')).toContain('feeding.biteCone')
+    expect(errorsFor((c) => (c.feeding.chewSlow = 1.5)).join('\n')).toContain('feeding.chewSlow')
+    expect(errorsFor((c) => (c.feeding.chewSlow = 0)).join('\n')).toContain('feeding.chewSlow')
+    expect(errorsFor((c) => (c.feeding.enabled = 'yes')).join('\n')).toContain('feeding.enabled')
+    expect(errorsFor((c) => (c.feeding.extra = 1)).join('\n')).toContain('feeding.extra')
+  })
+
+  it('a kind’s hardness must be positive when given', () => {
+    expect(errorsFor((c) => (c.ecology.resourceKinds.kinds[0].hardness = 0)).join('\n')).toContain(
+      'hardness'
+    )
+    expect(errorsFor((c) => delete c.ecology.resourceKinds.kinds[0].hardness)).toEqual([])
+  })
+})
+
+describe('mouth forms (ADR 0017)', () => {
+  it('the mandible is exactly 1 on every kind so the founder is the neutral reference', () => {
+    for (const value of Object.values(DEFAULT_WORLD_CONFIG.anatomy.mouthForms.mandible)) {
+      expect(value).toBe(1)
+    }
+    expect(errorsFor((c) => (c.anatomy.mouthForms.mandible.grass = 1.1)).join('\n')).toContain(
+      'mandible'
+    )
+  })
+
+  it('every form is needed, yields must be positive, and an override merges per form and kind', () => {
+    expect(errorsFor((c) => delete c.anatomy.mouthForms.jaw).join('\n')).toContain('jaw')
+    expect(errorsFor((c) => (c.anatomy.mouthForms.sprout.grass = 0)).join('\n')).toContain('sprout')
+    const merged = resolveWorldConfig({ anatomy: { mouthForms: { sprout: { grass: 2 } } } })
+    expect(merged.anatomy.mouthForms.sprout.grass).toBe(2)
+    expect(merged.anatomy.mouthForms.sprout.fruit).toBe(
+      DEFAULT_WORLD_CONFIG.anatomy.mouthForms.sprout.fruit
+    )
+    expect(merged.anatomy.mouthForms.jaw).toEqual(DEFAULT_WORLD_CONFIG.anatomy.mouthForms.jaw)
+  })
+
+  it('sorts the specialists by their own food and the generalist ahead of them elsewhere', () => {
+    const forms = DEFAULT_WORLD_CONFIG.anatomy.mouthForms
+    const yieldOf = (form: keyof typeof forms, kind: string): number => forms[form][kind] as number
+    expect(yieldOf('sprout', 'grass')).toBeGreaterThan(yieldOf('mandible', 'grass'))
+    expect(yieldOf('proboscis', 'nectar')).toBeGreaterThan(yieldOf('mandible', 'nectar'))
+    expect(yieldOf('radula', 'fungus')).toBeGreaterThan(yieldOf('mandible', 'fungus'))
+    expect(yieldOf('sprout', 'fungus')).toBeLessThan(yieldOf('mandible', 'fungus'))
+    // the jaw is worse than the generalist on every plant
+    for (const [kind, value] of Object.entries(forms.jaw)) {
+      expect(value).toBeLessThan(forms.mandible[kind] as number)
+    }
+  })
+})

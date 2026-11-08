@@ -27,10 +27,12 @@ describe('the brain controller keeps the ecology alive', () => {
       }
       const mean = samples.reduce((a, b) => a + b, 0) / samples.length
       expect(world.isExtinct).toBe(false)
-      expect(mean).toBeGreaterThan(15)
-      expect(mean).toBeLessThan(40)
-      expect(Math.min(...samples)).toBeGreaterThanOrEqual(5)
-      expect(Math.max(...samples)).toBeLessThanOrEqual(60)
+      // Bounds were 15-40 (mean), 5 and 60 until bites (ADR 0017): seeds 1-4 now give means
+      // 58.0-70.2, minimum 42, maximum 87, and none goes extinct.
+      expect(mean).toBeGreaterThan(25)
+      expect(mean).toBeLessThan(90)
+      expect(Math.min(...samples)).toBeGreaterThanOrEqual(15)
+      expect(Math.max(...samples)).toBeLessThanOrEqual(110)
       expect(world.validate()).toEqual({ ok: true, errors: [] })
     },
     300_000

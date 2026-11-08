@@ -52,6 +52,7 @@ const RESOURCE_KIND_KEYS = [
   'spawnWeight',
   'detectability',
   'toxicity',
+  'hardness',
   'regions'
 ]
 const MIGRATION_KEYS = ['enabled', 'dwellTime']
@@ -238,6 +239,9 @@ function checkResourceKinds(ecology: PlainObject, errors: string[]): void {
     if (weight !== undefined) totalWeight += weight
     checkUnitMultiplier(entry, 'detectability', `${path}.detectability`, errors)
     checkNumber(entry, 'toxicity', `${path}.toxicity`, { nonnegative: true }, errors)
+    if (entry['hardness'] !== undefined) {
+      checkNumber(entry, 'hardness', `${path}.hardness`, { positive: true }, errors)
+    }
     const regions = entry['regions']
     if (regions === undefined) errors.push(`${path}.regions is required`)
     else if (!Array.isArray(regions)) errors.push(`${path}.regions must be an array`)

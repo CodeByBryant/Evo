@@ -194,6 +194,8 @@ export class ReproductionSystem {
         birthTick: tick,
         reproductionCooldownRemaining: 0,
         lastTurnMagnitude: 0,
+        gut: 0,
+        biteCooldown: 0,
         brain:
           this.config.learning.controller === 'brain'
             ? createBrainState(childGenome, this.layout, childEnergy)

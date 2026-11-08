@@ -46,6 +46,11 @@ export class MetricsCollector {
         case 'resource-spawned':
           this.resourcesSpawned += 1
           break
+        case 'resource-bitten':
+          // Energy that entered a gut; what a poor mouth could not use is lost.
+          this.energyConsumed += event.intake
+          this.energyWasted += Math.max(0, event.chunk - event.intake)
+          break
         case 'resource-consumed':
           this.resourcesConsumed += 1
           this.energyConsumed += event.energyGained
