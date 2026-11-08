@@ -64,8 +64,12 @@ export const PRESETS: readonly WorldPreset[] = [
       'One kind of food on an even field: no regions, seasons, hazards or health, and creatures eat by touching food.',
     overrides: {
       resources: { spawnRate: 2 },
-      // The phase 3 way of eating: touch food and take it whole.
+      // The phase 3 world: touch food and take it whole, with the phase 3 breeding and lifespans.
+      // That way of eating wastes about a third of the food, so it cannot carry the restrained
+      // breeding and shorter lives of the default world (3 of 8 worlds went extinct).
       feeding: { enabled: false },
+      reproduction: { minEnergy: 60, cooldown: 30 },
+      organisms: { maxAge: 600, senescenceAge: 510 },
       ecology: {
         health: { enabled: false },
         regions: { enabled: false },

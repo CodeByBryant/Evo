@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { World, buildGeneSpecs, genomeToVector } from '../../src/index'
 import { withoutEcology } from '../support/ecology'
+import { PHASE3_ECONOMY } from '../support/phase3'
 
 /**
  * The roadmap's first-milestone check, at full scale: a seeded world can run 100,000 ticks
@@ -124,7 +125,12 @@ describe('100,000-tick runs', () => {
     // ecology-stability.test.ts and brain-long-run.test.ts.
     const world = World.create({
       seed: 1,
-      config: withoutEcology({ learning: { controller: 'reflex' }, feeding: { enabled: false } }),
+      // ...and the pre-tuning economy (ADR 0018), which is what this band was measured on.
+      config: withoutEcology({
+        ...PHASE3_ECONOMY,
+        learning: { controller: 'reflex' },
+        feeding: { enabled: false }
+      }),
       validateEveryTicks: 1000
     })
     const samples: number[] = []
@@ -215,7 +221,8 @@ describe('100,000-tick runs', () => {
     const world = World.create({
       seed: 5,
       config: withoutEcology({
-        organisms: { initialCount: 15 },
+        ...PHASE3_ECONOMY,
+        organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 15 },
         resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
         // Reflex controller, ecology off: this pin is about the Phase 4 forager. It moved from
         // 11,901 (Phase 4) to 18,482 (Phase 5) to 48,820 (Phase 6) to 8,913 (Phase 7) to 8,305

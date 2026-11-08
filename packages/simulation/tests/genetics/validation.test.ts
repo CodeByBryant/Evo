@@ -38,7 +38,7 @@ describe('validateGenome', () => {
   })
 
   it.each([
-    ['physical.maxAge', 5000, 'physical.maxAge (5000) is outside its range [570, 1200]'],
+    ['physical.maxAge', 5000, 'physical.maxAge (5000) is outside its range [270, 1200]'],
     ['physical.radius', -1, 'physical.radius (-1) is outside its range [2.5, 10]'],
     ['metabolic.basalCost', 5, 'metabolic.basalCost (5) is outside its range [0.3, 0.8]'],
     ['physical.hue', 1, 'physical.hue (1) is outside its range [0, 1]']

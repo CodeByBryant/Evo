@@ -7,18 +7,22 @@ import { developAnatomy } from '../src/development/develop'
 import { genomeToVector } from '../src/genetics/GenomeFactory'
 import { SeededRandom } from '../src/random/SeededRandom'
 import { deriveStreamWords } from '../src/random/streams'
+import { PHASE3_ECONOMY } from './support/phase3'
 
 /**
  * Body genes in a running world (docs/decisions/0012): inert with anatomy off, harmless to the
  * existing dynamics with it on (nothing reads a body yet), deterministic, and validated.
  */
 const SEED = 7
+// A stress test of body genes (rates of 0.3 to 0.5), which the restrained breeding of the default
+// economy cannot survive (ADR 0018), so it keeps the pre-tuning economy.
 const BUSY: WorldConfigOverrides = {
+  ...PHASE3_ECONOMY,
   anatomy: {
     enabled: false,
     mutation: { presenceRate: 0.3, typeRate: 0.3, continuousRate: 0.5, visualRate: 0.5 }
   },
-  genetics: { mutationRateScale: 4 }
+  genetics: { ...PHASE3_ECONOMY.genetics, mutationRateScale: 4 }
 }
 /** Paint genes mutate with anatomy on (they have no effect on the dynamics), so snapshots are compared without them. */
 const unpainted = (key: string, value: unknown): unknown =>

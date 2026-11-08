@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { WorldConfigOverrides } from '@evo/contracts'
 import { World } from '../../src/world/World'
+import { PHASE3_ECONOMY } from '../support/phase3'
 
 /**
  * Evolving bodies over a long run (ADR 0012). Bodies are derived from genes that are hashed, and
@@ -8,7 +9,10 @@ import { World } from '../../src/world/World'
  * a body that cannot change is the founder body, whose capability factors are exactly 1 (ADR 0015),
  * so anatomy on with a frozen body must not change a single dynamic against anatomy off.
  */
+// The pre-tuning economy (ADR 0018): this is a stress test of body genes, which the restrained
+// breeding of the default economy does not survive at these mutation rates.
 const BUSY: WorldConfigOverrides = {
+  ...PHASE3_ECONOMY,
   anatomy: {
     enabled: true,
     // A stress rate, not a default. Each slot now carries 14 genes (ADR 0016) against 9 before, so
@@ -17,7 +21,7 @@ const BUSY: WorldConfigOverrides = {
     // survives 50,000 ticks with 18 distinct plans among 19 organisms.
     mutation: { presenceRate: 0.05, typeRate: 0.05, continuousRate: 0.12, visualRate: 0.2 }
   },
-  genetics: { mutationRateScale: 2 }
+  genetics: { ...PHASE3_ECONOMY.genetics, mutationRateScale: 2 }
 }
 
 /** The part types of every living body, for a quick structural fingerprint of the population. */

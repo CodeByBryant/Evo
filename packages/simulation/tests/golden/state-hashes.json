@@ -1,13 +1,13 @@
 {
   "hashSchemaVersion": 10,
-  "engineVersion": "0.11.0",
+  "engineVersion": "0.12.0",
   "entries": [
     {
       "name": "default-1k",
       "seed": 12345,
       "config": {},
       "steps": 1000,
-      "expectedHash": "4fc3d039520143fa4c6c79ecd616a2cb"
+      "expectedHash": "36fb14e979aee1f1933de1d4d1390eca"
     },
     {
       "name": "default-instant-eating-3k",
@@ -18,7 +18,7 @@
         }
       },
       "steps": 3000,
-      "expectedHash": "8fabc7668779e99fe11146db3a849623"
+      "expectedHash": "0da3f091f76eb4022c95c0afe9495015"
     },
     {
       "name": "scenario-a-instant-eating-5k",
@@ -58,7 +58,7 @@
         }
       },
       "steps": 5000,
-      "expectedHash": "5a840c944eac4be899b1e961fed82d95"
+      "expectedHash": "a801e610cf1bdbc93050e94d9dcfa685"
     },
     {
       "name": "scenario-a-foraging-5k",
@@ -95,7 +95,7 @@
         }
       },
       "steps": 5000,
-      "expectedHash": "b181de4ca5012015740421ef085773c6"
+      "expectedHash": "1bb2755ac828f56985c918abf8b2ee1d"
     },
     {
       "name": "scenario-b-extinction-20k",
@@ -136,7 +136,7 @@
         }
       },
       "steps": 20000,
-      "expectedHash": "6428da6fea305eab0e5c3627561e29f3"
+      "expectedHash": "6b0a396a85211355e19542500ab50c04"
     },
     {
       "name": "verbose-events-200",
@@ -174,7 +174,7 @@
         }
       },
       "steps": 200,
-      "expectedHash": "5a12b4fd9764cf601606e9a4d12c6f89"
+      "expectedHash": "7187c0473b66e3e0d1e3d919a0f469f5"
     },
     {
       "name": "zero-population-100",
@@ -214,14 +214,14 @@
         }
       },
       "steps": 100,
-      "expectedHash": "c5cdd98ce3381b2fe2b4fba83a9aeb67"
+      "expectedHash": "a59f72fcafc46e213af390eef3ffecf9"
     },
     {
       "name": "long-run-100k",
       "seed": 999,
       "config": {},
       "steps": 100000,
-      "expectedHash": "5bffa94279e0da3a80bcace7f7d14290"
+      "expectedHash": "efd6d979f628fe41c7410c05c703eecb"
     },
     {
       "name": "reflex-default-1k",
@@ -256,7 +256,7 @@
         }
       },
       "steps": 1000,
-      "expectedHash": "7b079797399f43d24fde625a0fb86657"
+      "expectedHash": "d9a9a7608e2a8c266e1504b0b9e69917"
     },
     {
       "name": "reflex-scenario-a-5k",
@@ -294,7 +294,7 @@
         }
       },
       "steps": 5000,
-      "expectedHash": "ec317a484dc44b3a5af517283d894fb3"
+      "expectedHash": "a605acb229e59ca3b2f4ac97e1922a25"
     },
     {
       "name": "reflex-scenario-b-20k",
@@ -371,7 +371,7 @@
         }
       },
       "steps": 100000,
-      "expectedHash": "0df834da7d4738db28d566bf7245a5b2"
+      "expectedHash": "eb873c6111e04feddce26ac88a37cbd8"
     },
     {
       "name": "brain-hebbian-5k",
@@ -409,7 +409,7 @@
         }
       },
       "steps": 5000,
-      "expectedHash": "eec9bec57097e54846c64c15f5669b6d"
+      "expectedHash": "05ce6b18093ddb4742f9f96d949f0a4a"
     },
     {
       "name": "brain-learning-off-5k",
@@ -447,7 +447,7 @@
         }
       },
       "steps": 5000,
-      "expectedHash": "793ed786b061c160a5f53fb128e79ae3"
+      "expectedHash": "95d9b1ee13abfb4eba332673f648948d"
     },
     {
       "name": "brain-random-prior-off-5k",
@@ -489,14 +489,14 @@
         }
       },
       "steps": 5000,
-      "expectedHash": "7bcc2775522012195728c62b6f3226fd"
+      "expectedHash": "fd846f9ba913eea75a01d2e64ce0602f"
     },
     {
       "name": "ecology-default-12k",
       "seed": 7,
       "config": {},
       "steps": 12000,
-      "expectedHash": "3c3cb9a27e6d1aae2d56cbd4ad96d5cd"
+      "expectedHash": "d91ca22b2ea1e60bed97eb3516363fea"
     },
     {
       "name": "ecology-reflex-8k",
@@ -507,7 +507,7 @@
         }
       },
       "steps": 8000,
-      "expectedHash": "9516dc77a1d623def40b0467890a36d5"
+      "expectedHash": "a349ac4dcf6be9114355e96989bd8afd"
     },
     {
       "name": "ecology-lethal-hazards-3k",
@@ -528,7 +528,7 @@
         }
       },
       "steps": 3000,
-      "expectedHash": "59f86856c812bfbfad59643e75d3ae66"
+      "expectedHash": "217bc9351b5dd3aa28af69da088e86e7"
     },
     {
       "name": "anatomy-on-evolving-6k",
@@ -548,7 +548,7 @@
         }
       },
       "steps": 6000,
-      "expectedHash": "96ed67cd2f5669c6c17ca80fc05f4364"
+      "expectedHash": "759bb89754a2d96a94305533b29144fd"
     },
     {
       "name": "anatomy-on-reflex-4k",
@@ -571,7 +571,7 @@
         }
       },
       "steps": 4000,
-      "expectedHash": "970038c8812c7a7d8dda47a5acd1bedd"
+      "expectedHash": "cf36f66e1d4ed1ddad1f855cd5b9b9e0"
     },
     {
       "name": "clusters-small-6k",
@@ -585,7 +585,7 @@
         }
       },
       "steps": 6000,
-      "expectedHash": "a854e66432ababd8991861c7cb9e425a"
+      "expectedHash": "8a30d106d4c7c421e196fe067b86d91a"
     },
     {
       "name": "clusters-small-reflex-4k",
@@ -602,7 +602,7 @@
         }
       },
       "steps": 4000,
-      "expectedHash": "31849bcfabda7c4685d22777d0c34663"
+      "expectedHash": "6515b5d4d4cd48394aec00f84006d398"
     }
   ]
 }
