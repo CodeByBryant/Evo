@@ -65,7 +65,9 @@ describe('Phase 6A: species exit criteria', () => {
       }
     }
     expect(longLived).toBeGreaterThanOrEqual(1)
-  })
+    // Two 30,000-tick worlds; with bites (ADR 0017) they hold 2.5 times the creatures and CI runners
+    // are slower than a laptop (69 s against the old 60 s default).
+  }, 240_000)
 
   it('keeps the number of living species bounded, and below the population', () => {
     for (const seed of [1, 3]) {
