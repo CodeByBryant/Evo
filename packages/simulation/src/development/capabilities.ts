@@ -1,33 +1,56 @@
+import { PART_STATS, statMultiplier } from '@evo/contracts'
 import type {
   Anatomy,
   AnatomyConfig,
   AnatomyPart,
   AnatomyView,
   Capabilities,
-  CapabilityFactors
+  CapabilityFactors,
+  PartType
 } from '@evo/contracts'
 import { cos, sin } from '../math/trig'
 
-/** Which food kind a sniffer favors: its `param` spread over the kinds. */
-export function sniffedKind(param: number, kindCount: number): number {
-  return Math.min(kindCount - 1, Math.max(0, Math.floor(param * kindCount)))
+/** Which food kind a sniffer favors: its selectivity (a gene in `[0, 1]`) spread over the kinds. */
+export function sniffedKind(selectivity: number, kindCount: number): number {
+  return Math.min(kindCount - 1, Math.max(0, Math.floor(selectivity * kindCount)))
 }
 
-/** A functional part's contribution scale, `strength * size` (zero for a dormant part). */
-function power(part: AnatomyPart, config: AnatomyConfig): number {
-  return part.functional ? config.parts[part.type].strength * part.size : 0
+/** The position of a stat in its part type's table (the `sN` gene it is stored in). */
+function statIndex(type: PartType, key: string): number {
+  return PART_STATS[type].findIndex((spec) => spec.key === key)
 }
 
 /**
- * What a body can do (ADR 0012 "Capabilities"). Pure arithmetic on the developed parts.
+ * A stat's multiplier on its part's nominal behavior: `0.5 + gene`, so exactly 1 at the middle of
+ * its range (the founder's value) and between 0.5 and 1.5 at the ends. Stats the part type does
+ * not have count as 1.
+ */
+function mult(part: AnatomyPart, key: string): number {
+  const index = statIndex(part.type, key)
+  return index < 0 ? 1 : statMultiplier(part.stats[index] as number)
+}
+
+/**
+ * A functional part's contribution scale, `strength * size * integrity` (zero for a dormant part).
+ * Integrity is developmental quality: a deformed part delivers less but still weighs and costs.
+ */
+function power(part: AnatomyPart, config: AnatomyConfig): number {
+  return part.functional ? config.parts[part.type].strength * part.size * part.integrity : 0
+}
+
+/**
+ * What a body can do (ADR 0012 "Capabilities", ADR 0016 "Stats"). Pure arithmetic on the developed
+ * parts.
  *
  * - **Mass and upkeep** count every developed part, dormant ones included, so a useless part is a
- *   pure cost. `bodyScale` is the body's own size factor (radius squared over the baseline).
- * - **Thrust** comes from flagella and cilia and depends on where a part is and which way it
- *   pushes: forward is the part's force along the heading, lateral across it, and torque is the
- *   moment of the force about the centre, `|x * Fy - y * Fx|`.
+ *   pure cost; a part's own dimensions scale its mass (longer, thicker, bigger is heavier) and its
+ *   force, rate or range scale its upkeep, so every strong stat has a price. `bodyScale` is the
+ *   body's own size factor (radius squared over the baseline).
+ * - **Thrust** comes from flagella and cilia. A tail trails along the part's axis and the push is
+ *   the opposite way: forward is the force along the heading, lateral across it, and torque is the
+ *   moment of the force about the centre, `|x * Fy - y * Fx|`, taken at the part's anchor.
  * - Every other capability is a saturating or additive function of the functional parts of its
- *   type, weighted by `size` and, where it makes sense, `0.5 + param`.
+ *   type, weighted by `size`, `integrity` and the part's own stats.
  *
  * The functions use only `+ - * /` and `sqrt` plus the engine's own `cos` and `sin`, so the
  * result is identical on every platform.
@@ -44,6 +67,7 @@ export function capabilitiesOf(
   let lateralThrust = 0
   let torque = 0
   let eyes = 0
+  let resolution = 0
   const detection = new Array<number>(Math.max(1, kindCount)).fill(1)
   let reach = 1
   let digestion = 1
@@ -55,49 +79,103 @@ export function capabilitiesOf(
 
   for (const part of anatomy.parts) {
     const balance = config.parts[part.type]
-    mass += balance.mass * part.size
-    upkeep += balance.upkeep * part.size
+    let massScale = 1
+    let upkeepScale = 1
+    switch (part.type) {
+      case 'flagellum':
+        massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'thickness'))
+        upkeepScale = (mult(part, 'force') * mult(part, 'force')) / mult(part, 'efficiency')
+        break
+      case 'cilia':
+        massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'density'))
+        upkeepScale = mult(part, 'rate')
+        break
+      case 'eye':
+        upkeepScale = mult(part, 'range') * mult(part, 'resolution')
+        break
+      case 'sniffer':
+        upkeepScale = 0.5 * (mult(part, 'range') + mult(part, 'sensitivity'))
+        break
+      case 'mouth':
+        massScale = 0.5 + 0.5 * mult(part, 'gape')
+        break
+      case 'intestine':
+        massScale = 0.5 + 0.5 * mult(part, 'length')
+        break
+      case 'stomach':
+        massScale = 0.5 + 0.5 * mult(part, 'capacity')
+        break
+      case 'armor':
+        massScale = (0.5 + 0.5 * mult(part, 'thickness')) * (0.5 + 0.5 * mult(part, 'coverage'))
+        break
+      case 'membrane':
+        massScale = 0.5 + 0.5 * mult(part, 'thickness')
+        break
+      case 'mender':
+        upkeepScale = mult(part, 'rate') / mult(part, 'efficiency')
+        break
+    }
+    mass += balance.mass * part.size * massScale
+    upkeep += balance.upkeep * part.size * upkeepScale
     const p = power(part, config)
     if (p === 0) continue
-    const trait = 0.5 + part.param
     switch (part.type) {
       case 'flagellum':
       case 'cilia': {
-        const fx = cos(part.orientation)
-        const fy = sin(part.orientation)
-        forwardThrust += p * Math.max(0, fx)
-        lateralThrust += p * Math.abs(fy)
-        torque += p * Math.abs(part.x * fy - part.y * fx)
+        const strength =
+          part.type === 'flagellum'
+            ? p *
+              mult(part, 'force') *
+              Math.sqrt(mult(part, 'length')) *
+              (0.8 + 0.2 * mult(part, 'thickness'))
+            : p * mult(part, 'density') * Math.sqrt(mult(part, 'length') * mult(part, 'rate'))
+        // The tail trails along the axis, so the push is the other way.
+        const fx = -cos(part.axis)
+        const fy = -sin(part.axis)
+        forwardThrust += strength * Math.max(0, fx)
+        lateralThrust += strength * Math.abs(fy)
+        torque += strength * Math.abs(part.x * fy - part.y * fx)
         break
       }
       case 'eye':
-        eyes += p * trait
+        eyes += p * mult(part, 'range')
+        resolution += p * mult(part, 'resolution')
         break
       case 'sniffer': {
-        const kind = sniffedKind(part.param, detection.length)
-        detection[kind] = (detection[kind] as number) + p
+        const kind = sniffedKind(part.stats[2] as number, detection.length)
+        detection[kind] =
+          (detection[kind] as number) + p * 0.5 * (mult(part, 'range') + mult(part, 'sensitivity'))
         break
       }
       case 'mouth':
-        reach += p * trait
+        reach += p * mult(part, 'reach')
+        digestion += 0.5 * p * mult(part, 'gape')
         break
       case 'intestine':
-        digestion += p
-        toleranceSum += p * trait
+        digestion += p * 0.5 * (mult(part, 'absorption') + mult(part, 'length'))
+        toleranceSum += p * mult(part, 'filter')
         break
       case 'stomach':
-        energyCapacity += p
+        energyCapacity += p * mult(part, 'capacity')
+        digestion += 0.5 * p * mult(part, 'throughput')
         break
       case 'armor':
-        armor += p * trait
+        armor +=
+          (p * (mult(part, 'thickness') + mult(part, 'coverage') + mult(part, 'hardness'))) / 3
         break
       case 'membrane':
-        temperatureTolerance += p
+        temperatureTolerance += p * mult(part, 'insulation') * (0.8 + 0.2 * mult(part, 'thickness'))
         break
       case 'mender':
-        regeneration += p
+        regeneration += p * mult(part, 'rate')
         break
     }
+  }
+
+  // Eyes with better resolution make every food kind easier to pick out (the founder is the reference).
+  const acuity = 1 + 0.25 * resolution
+  for (let kind = 0; kind < detection.length; kind++) {
+    detection[kind] = (detection[kind] as number) * acuity
   }
 
   return {

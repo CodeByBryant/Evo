@@ -1,10 +1,12 @@
 import type { GeneKind } from './genome'
 
 /**
- * Anatomy (docs/decisions/0012-anatomy.md): a body is up to twelve parts of ten types, encoded as
- * a fixed set of genes, turned into an `Anatomy` by deterministic development, and from there into
- * capabilities. This file is the contract: the vocabulary, the gene layout, the data the engine
- * hands out, and the configuration.
+ * Anatomy (docs/decisions/0012-anatomy.md, 0016-part-stats-and-attachment.md): a body is up to
+ * twelve parts of ten types, encoded as a fixed set of genes, turned into an `Anatomy` by
+ * deterministic development, and from there into capabilities. Every part is anchored to the body
+ * outline (or to another part), has its own per-type stats, and a developmental `integrity`. This
+ * file is the contract: the vocabulary, the gene layout, the data the engine hands out, and the
+ * configuration.
  */
 
 /** The ten part types, in the fixed order of the `type` gene (a one-step mutation lands on a related part). */
@@ -48,17 +50,141 @@ export const PART_DEFINITIONS: readonly PartDefinition[] = [
 /** Number of part slots on a body. */
 export const BODY_SLOT_COUNT = 12
 
-/** The genes of one slot, in order. */
+/**
+ * Stats per slot. Every slot carries this many stat genes in `[0, 1]`; the part's type decides
+ * how many it uses and what they mean (`PART_STATS`). Unused ones stay in the genome as latent
+ * values, like an empty slot's genes, so a gene table never changes length with a part type and
+ * every birth draws the same number of random values.
+ */
+export const PART_STAT_COUNT = 6
+
+/** The stat genes of a slot, in order. */
+export const STAT_FIELDS = ['s0', 's1', 's2', 's3', 's4', 's5'] as const
+export type StatField = (typeof STAT_FIELDS)[number]
+
+/**
+ * The genes of one slot, in order. `parent` is 0 for the body or `k` for the part in slot `k - 1`
+ * (only a lower slot counts; anything else attaches to the body). `angle` is where on the parent's
+ * surface the part attaches, `offset` how far inside (or along the parent), `orientation` which
+ * way it points relative to its anchor's outward direction, `integrity` how well it developed.
+ */
 export const SLOT_FIELDS = [
   'present',
   'type',
+  'parent',
   'size',
   'angle',
   'offset',
   'orientation',
-  'param'
+  'integrity',
+  ...STAT_FIELDS
 ] as const
 export type SlotField = (typeof SLOT_FIELDS)[number]
+
+/** One named stat of a part type (ADR 0016): its gene `sN` maps to `min + gene * (max - min)`. */
+export interface PartStatSpec {
+  readonly key: string
+  readonly label: string
+  readonly min: number
+  readonly max: number
+  readonly unit: string
+}
+
+const stat = (
+  key: string,
+  label: string,
+  min: number,
+  max: number,
+  unit: string
+): PartStatSpec => ({
+  key,
+  label,
+  min,
+  max,
+  unit
+})
+
+/**
+ * The stats of each part type, in the order of the stat genes `s0, s1, ...` (at most
+ * `PART_STAT_COUNT`). All provisional; the mechanics that read them are in the engine's
+ * `development/capabilities.ts`.
+ */
+export const PART_STATS: Readonly<Record<PartType, readonly PartStatSpec[]>> = {
+  flagellum: [
+    stat('length', 'Length', 0.5, 2.5, 'radii'),
+    stat('thickness', 'Thickness', 0.05, 0.3, 'radii'),
+    stat('force', 'Force', 0.2, 2, 'x'),
+    stat('efficiency', 'Efficiency', 0.5, 1.5, 'x')
+  ],
+  cilia: [
+    stat('length', 'Length', 0.1, 0.6, 'radii'),
+    stat('density', 'Density', 0.2, 1.5, 'x'),
+    stat('rate', 'Beat rate', 0.5, 2, 'x')
+  ],
+  eye: [
+    stat('range', 'Range', 0.3, 2, 'x'),
+    stat('resolution', 'Resolution', 0.2, 2, 'x'),
+    stat('fieldOfView', 'Field of view', 0.5, 6.28, 'rad')
+  ],
+  sniffer: [
+    stat('range', 'Range', 0.3, 2, 'x'),
+    stat('sensitivity', 'Sensitivity', 0.2, 2, 'x'),
+    stat('selectivity', 'Food kind', 0, 1, 'kind')
+  ],
+  mouth: [stat('reach', 'Reach', 0.5, 2, 'x'), stat('gape', 'Gape', 0.3, 2, 'x')],
+  intestine: [
+    stat('length', 'Length', 0.2, 2, 'x'),
+    stat('absorption', 'Absorption', 0.2, 2, 'x'),
+    stat('filter', 'Toxin filter', 0.2, 2, 'x')
+  ],
+  stomach: [
+    stat('capacity', 'Capacity', 0.3, 2, 'x'),
+    stat('throughput', 'Throughput', 0.3, 2, 'x')
+  ],
+  armor: [
+    stat('thickness', 'Thickness', 0.05, 0.4, 'radii'),
+    stat('coverage', 'Coverage', 0.2, 1.5, 'x'),
+    stat('hardness', 'Hardness', 0.2, 2, 'x')
+  ],
+  membrane: [
+    stat('insulation', 'Insulation', 0.2, 2, 'x'),
+    stat('thickness', 'Thickness', 0.02, 0.2, 'radii')
+  ],
+  mender: [stat('rate', 'Rate', 0.3, 2, 'x'), stat('efficiency', 'Efficiency', 0.5, 1.5, 'x')]
+}
+
+/** The real-unit value of a stat gene. */
+export function statValue(spec: PartStatSpec, gene: number): number {
+  return spec.min + gene * (spec.max - spec.min)
+}
+
+/** The multiplier a stat gene applies to its part's nominal behavior: `0.5 + gene`, so 1 at the middle (the founder's value). */
+export function statMultiplier(gene: number): number {
+  return 0.5 + gene
+}
+
+/**
+ * Whether a part type sits on the body's surface (`true`: anchored exactly on the outline at its
+ * angle) or inside it (`false`: at `offset` times the outline radius at that angle).
+ */
+export const SURFACE_PARTS: Readonly<Record<PartType, boolean>> = {
+  flagellum: true,
+  cilia: true,
+  eye: false,
+  sniffer: true,
+  mouth: true,
+  intestine: false,
+  stomach: false,
+  armor: true,
+  membrane: true,
+  mender: false
+}
+
+/** The stat that gives a part a length along its axis, in body radii (children attach along it); parts without one have none. */
+export const PART_EXTENT_STAT: Readonly<Partial<Record<PartType, string>>> = {
+  flagellum: 'length',
+  cilia: 'length'
+}
 
 /** Genes that only change how a body is painted (no effect on fitness). */
 export const VISUAL_FIELDS = ['pattern', 'accentHue'] as const
@@ -74,7 +200,7 @@ export const OUTLINE_MIN_POINTS = 5
 export const OUTLINE_MAX_POINTS = 16
 export const OUTLINE_MIN_RADIUS = 0.35
 
-/** Total body genes: 12 slots x 7, the visual genes, the point count, then 16 radii and 16 angles. */
+/** Total body genes: 12 slots x 14, the visual genes, the point count, then 16 radii and 16 angles. */
 export const BODY_GENE_COUNT =
   BODY_SLOT_COUNT * SLOT_FIELDS.length + VISUAL_FIELDS.length + 1 + 2 * OUTLINE_MAX_POINTS
 
@@ -91,11 +217,18 @@ export interface BodyGeneDefinition {
 const SLOT_RANGES: Readonly<Record<SlotField, { kind: GeneKind; min: number; max: number }>> = {
   present: { kind: 'bool', min: 0, max: 1 },
   type: { kind: 'int', min: 0, max: PART_TYPES.length - 1 },
+  parent: { kind: 'int', min: 0, max: BODY_SLOT_COUNT },
   size: { kind: 'float', min: 0.1, max: 1 },
   angle: { kind: 'circular', min: 0, max: TWO_PI },
   offset: { kind: 'float', min: 0, max: 1 },
   orientation: { kind: 'circular', min: 0, max: TWO_PI },
-  param: { kind: 'float', min: 0, max: 1 }
+  integrity: { kind: 'float', min: 0.1, max: 1 },
+  s0: { kind: 'float', min: 0, max: 1 },
+  s1: { kind: 'float', min: 0, max: 1 },
+  s2: { kind: 'float', min: 0, max: 1 },
+  s3: { kind: 'float', min: 0, max: 1 },
+  s4: { kind: 'float', min: 0, max: 1 },
+  s5: { kind: 'float', min: 0, max: 1 }
 }
 
 const VISUAL_RANGES: Readonly<Record<VisualField, { kind: GeneKind; min: number; max: number }>> = {
@@ -162,18 +295,36 @@ export interface BodyGenome {
   readonly genes: readonly number[]
 }
 
-/** One developed part. Positions are in body-radius units, in the body frame (x forward, y left). */
+/**
+ * One developed part (ADR 0016). Positions are in outline units (the body outline's own scale), in
+ * the body frame (x forward, y left). The anchor is where the part attaches: on the outline, inside
+ * it, or along its parent part; the axis is the absolute direction the part points (a flagellum's
+ * tail trails along it, its force is the opposite way).
+ */
 export interface AnatomyPart {
   readonly slot: number
   readonly type: PartType
+  /** Slot index of the part this one hangs from, or `-1` when it attaches to the body. */
+  readonly parent: number
   readonly size: number
+  /** Developmental quality in `[0.1, 1]`: scales what the part delivers (never its mass or upkeep). */
+  readonly integrity: number
+  /** The gene values `angle`, `offset` and `orientation`, as encoded. */
   readonly angle: number
   readonly offset: number
   readonly orientation: number
-  readonly param: number
+  /** The stat genes in `[0, 1]`, `PART_STAT_COUNT` of them (only the first few mean something for a given type). */
+  readonly stats: readonly number[]
+  /** The named stats in real units (`PART_STATS`), by key. */
+  readonly statValues: Readonly<Record<string, number>>
   readonly x: number
   readonly y: number
-  /** `false` when a requirement is missing: the part has mass and upkeep but no capability. */
+  /** Absolute direction the part points, in radians from the front. */
+  readonly axis: number
+  /** The far end of the part along its axis (equal to the anchor for parts with no length). */
+  readonly tipX: number
+  readonly tipY: number
+  /** `false` when a requirement is missing (a token, or the parent): the part has mass and upkeep but no capability. */
   readonly functional: boolean
 }
 
@@ -274,11 +425,15 @@ export interface PartConfig {
 /** One part of the founder body plan; founder slot `i` is `founder[i]`. */
 export interface FounderPart {
   readonly type: PartType
+  /** 0 for the body, or `k` for the part in founder slot `k - 1` (a lower slot). */
+  readonly parent: number
   readonly size: number
   readonly angle: number
   readonly offset: number
   readonly orientation: number
-  readonly param: number
+  readonly integrity: number
+  /** Stat genes in `[0, 1]`; at most `PART_STAT_COUNT`, missing ones are 0.5 (the middle, a multiplier of 1). */
+  readonly stats: readonly number[]
 }
 
 export interface AnatomyMutationConfig {
@@ -286,6 +441,8 @@ export interface AnatomyMutationConfig {
   presenceRate: number
   /** Chance per slot per birth that `type` steps by one. */
   typeRate: number
+  /** Chance per slot per birth that `parent` steps by one (a part moves to another parent). */
+  parentRate: number
   /** Chance per continuous slot gene per birth. */
   continuousRate: number
   /** Gaussian step as a fraction of the gene's range. */

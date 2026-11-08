@@ -15,7 +15,7 @@ export interface PartSnapshot {
   readonly y: number
   /** The glyph's radius, from the part's `size`. */
   readonly radius: number
-  /** The direction of the part's force or axis, in radians from the front. */
+  /** The direction the part points (its axis), in radians from the front; a flagellum's tail trails along it. */
   readonly orientation: number
   /** `false` when a requirement is missing: the part is dead weight. */
   readonly functional: boolean

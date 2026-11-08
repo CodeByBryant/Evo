@@ -12,7 +12,8 @@ import {
   founderOutlineOf,
   outlineDragOf,
   outlineOf,
-  outlineScaleOf
+  outlineScaleOf,
+  rimAt
 } from '../../src/development/outline'
 import { bodyRadiusOf, outlineDragFactor, sizeFactor } from '../../src/organisms/traits'
 import { World } from '../../src/world/World'
@@ -183,5 +184,79 @@ describe('the drawn parts in a snapshot', () => {
     world.run(5)
     const again = world.snapshot().organisms.find((o) => o.id === first?.id)
     if (again !== undefined) expect(again.parts).toBe(first?.parts)
+  })
+})
+
+describe('rimAt', () => {
+  it('finds where a ray from the centre leaves the outline: on an edge, along the ray', () => {
+    const outline = developOutline(founder())
+    const points = outline.points
+    for (let k = 0; k < 72; k++) {
+      const angle = (k / 72) * 2 * Math.PI
+      const rim = rimAt(outline, angle)
+      // on the ray from the origin
+      expect(rim.x * Math.sin(angle) - rim.y * Math.cos(angle)).toBeCloseTo(0, 9)
+      expect(rim.x * Math.cos(angle) + rim.y * Math.sin(angle)).toBeGreaterThan(0)
+      // on some edge of the polygon
+      let onEdge = false
+      for (let i = 0; i < points.length; i++) {
+        const a = points[i] as { x: number; y: number }
+        const b = points[(i + 1) % points.length] as { x: number; y: number }
+        const cross = (b.x - a.x) * (rim.y - a.y) - (b.y - a.y) * (rim.x - a.x)
+        const dot = (rim.x - a.x) * (b.x - a.x) + (rim.y - a.y) * (b.y - a.y)
+        const length2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2
+        if (Math.abs(cross) < 1e-9 && dot >= -1e-9 && dot <= length2 + 1e-9) onEdge = true
+      }
+      expect(onEdge).toBe(true)
+    }
+  })
+
+  it('has a unit outward normal at every angle', () => {
+    const outline = developOutline(founder())
+    for (let k = 0; k < 72; k++) {
+      const angle = (k / 72) * 2 * Math.PI
+      const rim = rimAt(outline, angle)
+      expect(Math.hypot(rim.nx, rim.ny)).toBeCloseTo(1, 12)
+      // outward: it points the way the ray goes, never back toward the centre
+      expect(rim.nx * Math.cos(angle) + rim.ny * Math.sin(angle)).toBeGreaterThan(0)
+    }
+  })
+
+  it('is the circle for a round outline, at the radius of its points', () => {
+    const genes = withGenes((g) => {
+      g[OUTLINE_COUNT_INDEX] = 16
+      for (let i = 0; i < OUTLINE_MAX_POINTS; i++) {
+        g[outlineRadiusIndex(i)] = 0.8
+        g[outlineAngleIndex(i)] = 0.5
+      }
+    })
+    const outline = developOutline(genes)
+    for (let k = 0; k < 40; k++) {
+      const rim = rimAt(outline, (k / 40) * 2 * Math.PI)
+      const radius = Math.hypot(rim.x, rim.y)
+      // a regular 16-gon of circumradius 0.8: between the inradius and the circumradius
+      expect(radius).toBeGreaterThan(0.8 * Math.cos(Math.PI / 16) - 1e-9)
+      expect(radius).toBeLessThan(0.8 + 1e-9)
+    }
+  })
+
+  it('follows an irregular outline: a long spike reaches further in its own direction', () => {
+    const genes = withGenes((g) => {
+      g[OUTLINE_COUNT_INDEX] = 8
+      for (let i = 0; i < OUTLINE_MAX_POINTS; i++) g[outlineRadiusIndex(i)] = 0.4
+      g[outlineRadiusIndex(0)] = 1
+    })
+    const outline = developOutline(genes)
+    const front = rimAt(outline, 0)
+    const back = rimAt(outline, Math.PI)
+    expect(Math.hypot(front.x, front.y)).toBeGreaterThan(Math.hypot(back.x, back.y) + 0.1)
+  })
+
+  it('is deterministic and survives a degenerate outline', () => {
+    const outline = developOutline(founder())
+    expect(rimAt(outline, 1.234)).toEqual(rimAt(outline, 1.234))
+    const empty = { ...outline, points: [] }
+    const fallback = rimAt(empty, 0.5)
+    expect(Number.isFinite(fallback.x) && Number.isFinite(fallback.nx)).toBe(true)
   })
 })

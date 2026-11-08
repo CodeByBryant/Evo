@@ -187,9 +187,13 @@ An anatomy (the developed body) is a pure function of the body genes and the con
 
 Introduced with the evolvable body outline (ADR 0013). Only the body genes change: the vector is **119** genes instead of 87. The canonical order is slot 0's seven genes ... slot 11's, then `pattern`, `accentHue` (the `shape` gene is gone), then `outline.count`, `outline.radius0..15`, `outline.angle0..15`. The body gene count written before them is now 119. The header carries the new version, so every hash differs from version 6. With anatomy off, equivalence is shown as before by the harness against the previous commit (20 of 20 scenarios identical): the outline factors are exactly 1 for the founder outline every genome carries.
 
-#### Version 8 (current, parts act)
+#### Version 8 (parts act; superseded by version 9)
 
 Introduced when the five scalar genes were retired (ADR 0015). The scalar gene table has **18** genes instead of 23, so each organism's genes in section 6 lose five values (`physical.maxSpeed`, `physical.maxTurnRate`, `sensory.sensorRadius`, `metabolic.movementCost`, `metabolic.turningCost`) and the remaining ones keep their relative order; the body genes are unchanged (119). The header carries the new version, so every hash differs from version 7. Because mutation and recombination draw a fixed number of values per gene, five fewer genes also shift the `genetics` stream after the first birth: world dynamics before the first birth are identical to version 7 with mutation off (shown by an equivalence harness over 16 scenarios, thousands of per-organism snapshots), and diverge afterwards only through that shift.
+
+#### Version 9 (current, part stats and attachment)
+
+Introduced with per-type part stats, outline anchoring and part-to-part parents (ADR 0016). Only the body genes change: a slot has **14** genes instead of 7 (`present`, `type`, `parent`, `size`, `angle`, `offset`, `orientation`, `integrity`, then the six stat genes `s0..s5`; `param` is gone), so the vector is **203** genes: slot 0's fourteen genes ... slot 11's, then `pattern`, `accentHue`, `outline.count`, `outline.radius0..15`, `outline.angle0..15`. The body gene count written before them is now 203, and the genome `version` is 4. The header carries the new version, so every hash differs from version 8. Equivalence with anatomy off is shown by the harness against the previous commit: 22 of 22 field-layout scenarios (reflex and brain controllers, mutation on and off) give identical snapshots, events and records. The two cluster-layout scenarios differ even with anatomy off, on purpose: cluster founders have different outlines, and parts now follow the outline, so their thrust and turning differ from the founder's.
 
 `WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
@@ -232,9 +236,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(8)`                                            | `6e9dec34b5818477e575cc324c03a68b` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `49cfd2e6608aae0f1e36adeb1809cc3f` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `e3fef3c99039366808f5456325b9750f` |
+| header only: `"EVOH"`, `writeUint32(9)`                                            | `1b9b8d2e748776312debb8780bf0a1ce` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `c8f58abac36860fef79f891e7b9dd6bb` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `c8f58abac36860fef79f891e7b9dd6bb` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 

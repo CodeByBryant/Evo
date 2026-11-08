@@ -131,7 +131,10 @@ describe('100,000-tick runs', () => {
     const backHalf = samples.slice(25)
     for (const active of backHalf) {
       expect(active).toBeGreaterThanOrEqual(15)
-      expect(active).toBeLessThanOrEqual(40)
+      // 40 until ADR 0016: parts anchored to the outline changed every body's mass and thrust,
+      // and seed 1's back half moved from 15-40 to 25-46 (seeds 1 to 6 span 21-46). Still a
+      // bounded band far below maxPopulation, with no collapse, so the claim is unchanged.
+      expect(active).toBeLessThanOrEqual(50)
     }
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(world.validate()).toEqual({ ok: true, errors: [] })
@@ -210,8 +213,9 @@ describe('100,000-tick runs', () => {
         resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
         // Reflex controller, ecology off: this pin is about the Phase 4 forager. It moved from
         // 11,901 (Phase 4) to 18,482 (Phase 5) to 48,820 (Phase 6) to 8,913 (Phase 7) to 8,305
-        // (ADR 0015: bodies are on by default and five scalar genes retired) only because the
-        // genome changes how many values the genetics stream draws; the population hovers at 5-10
+        // (ADR 0015: bodies are on by default and five scalar genes retired) to 10,231 (ADR 0016:
+        // per-type stats and outline anchoring) only because the genome changes how many values the
+        // genetics stream draws and what each body can do; the population hovers at 5-10
         // for a long time before the last animals die.
         learning: { controller: 'reflex' }
       }),
@@ -220,13 +224,13 @@ describe('100,000-tick runs', () => {
 
     world.run(60_000)
     expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(8_305)
+    expect(world.snapshot().population.extinctionTick).toBe(10_231)
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
 
     world.run(40_000)
 
     expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(8_305)
+    expect(world.snapshot().population.extinctionTick).toBe(10_231)
     expect(world.snapshot().organisms).toEqual([])
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })

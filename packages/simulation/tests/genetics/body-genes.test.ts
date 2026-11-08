@@ -6,6 +6,7 @@ import {
   BODY_GENE_DEFINITIONS,
   BODY_SLOT_COUNT,
   PART_TYPES,
+  STAT_FIELDS,
   slotGeneIndex,
   visualGeneIndex
 } from '@evo/contracts'
@@ -71,7 +72,11 @@ describe('the founder body', () => {
       expect(vector[slotGeneIndex(slot, 'angle')]).toBe(part.angle)
       expect(vector[slotGeneIndex(slot, 'offset')]).toBe(part.offset)
       expect(vector[slotGeneIndex(slot, 'orientation')]).toBe(part.orientation)
-      expect(vector[slotGeneIndex(slot, 'param')]).toBe(part.param)
+      expect(vector[slotGeneIndex(slot, 'parent')]).toBe(part.parent)
+      expect(vector[slotGeneIndex(slot, 'integrity')]).toBe(part.integrity)
+      for (const [i, field] of STAT_FIELDS.entries()) {
+        expect(vector[slotGeneIndex(slot, field)]).toBe(part.stats[i] ?? 0.5)
+      }
     })
     for (let slot = config.founder.length; slot < BODY_SLOT_COUNT; slot++) {
       expect(vector[slotGeneIndex(slot, 'present')]).toBe(0)
@@ -84,11 +89,29 @@ describe('the founder body', () => {
   it('follows an overridden founder', () => {
     const custom = resolveWorldConfig({
       anatomy: {
-        founder: [{ type: 'armor', size: 0.9, angle: 1, offset: 0.3, orientation: 2, param: 0.1 }]
+        founder: [
+          {
+            type: 'armor',
+            parent: 0,
+            size: 0.9,
+            angle: 1,
+            offset: 0.3,
+            orientation: 2,
+            integrity: 0.7,
+            stats: [0.1, 0.9]
+          }
+        ]
       }
     }).anatomy
     const v = founderBodyVector(custom)
     expect(PART_TYPES[v[slotGeneIndex(0, 'type')] as number]).toBe('armor')
+    expect(v[slotGeneIndex(0, 'integrity')]).toBe(0.7)
+    // missing stats are the middle of their range
+    expect([
+      v[slotGeneIndex(0, 's0')],
+      v[slotGeneIndex(0, 's1')],
+      v[slotGeneIndex(0, 's2')]
+    ]).toEqual([0.1, 0.9, 0.5])
     expect(v[slotGeneIndex(1, 'present')]).toBe(0)
   })
 })
@@ -109,6 +132,9 @@ describe('the body gene table', () => {
     const rate = (index: number) => specs[index]?.mutationRate
     expect(rate(slotGeneIndex(3, 'present'))).toBe(config.mutation.presenceRate)
     expect(rate(slotGeneIndex(3, 'type'))).toBe(config.mutation.typeRate)
+    expect(rate(slotGeneIndex(3, 'parent'))).toBe(config.mutation.parentRate)
+    expect(rate(slotGeneIndex(3, 'integrity'))).toBe(config.mutation.continuousRate)
+    expect(rate(slotGeneIndex(3, 's4'))).toBe(config.mutation.continuousRate)
     expect(rate(slotGeneIndex(3, 'size'))).toBe(config.mutation.continuousRate)
     expect(rate(slotGeneIndex(3, 'orientation'))).toBe(config.mutation.continuousRate)
     expect(rate(visualGeneIndex('pattern'))).toBe(config.mutation.visualRate)

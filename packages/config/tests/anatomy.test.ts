@@ -30,7 +30,18 @@ describe('anatomy config', () => {
         enabled: true,
         mutation: { presenceRate: 0.5 },
         parts: { eye: { strength: 2 } },
-        founder: [{ type: 'mouth', size: 0.5, angle: 0, offset: 1, orientation: 0, param: 0.5 }],
+        founder: [
+          {
+            type: 'mouth',
+            parent: 0,
+            size: 0.5,
+            angle: 0,
+            offset: 1,
+            orientation: 0,
+            integrity: 1,
+            stats: [0.5, 0.5]
+          }
+        ],
         founderLook: { pattern: 2 }
       }
     })
@@ -95,7 +106,16 @@ describe('anatomy config', () => {
   it('rejects a bad founder, reporting every problem', () => {
     const errors = errorsFor((c) => {
       c.anatomy.founder = [
-        { type: 'wing', size: 5, angle: 7, offset: 2, orientation: -1, param: 3 },
+        {
+          type: 'wing',
+          parent: 3,
+          size: 5,
+          angle: 7,
+          offset: 2,
+          orientation: -1,
+          integrity: 0,
+          stats: [0.5, 2, 'x']
+        },
         'not an object'
       ]
     })
@@ -110,12 +130,26 @@ describe('anatomy config', () => {
     expect(errors).toContain(
       'anatomy.founder[0].orientation must be from 0 to 6.283185307179586 (exclusive)'
     )
-    expect(errors).toContain('anatomy.founder[0].param must be from 0 to 1')
+    expect(errors).toContain('anatomy.founder[0].integrity must be from 0.1 to 1')
+    expect(errors).toContain(
+      'anatomy.founder[0].parent must be 0 (the body) or the number of an earlier part, 1 to 0'
+    )
+    expect(errors).toContain('anatomy.founder[0].stats[1] must be a number from 0 to 1')
+    expect(errors).toContain('anatomy.founder[0].stats[2] must be a number from 0 to 1')
     expect(errors).toContain('anatomy.founder[1] must be an object')
   })
 
   it('rejects a founder with too many parts or too much size for its budget', () => {
-    const part = { type: 'eye', size: 1, angle: 0, offset: 0.5, orientation: 0, param: 0.5 }
+    const part = {
+      type: 'eye',
+      parent: 0,
+      size: 1,
+      angle: 0,
+      offset: 0.5,
+      orientation: 0,
+      integrity: 1,
+      stats: [0.5]
+    }
     expect(
       errorsFor((c) => (c.anatomy.founder = Array.from({ length: 13 }, () => part)))
     ).toContain('anatomy.founder has 13 parts but a body has 12 slots')

@@ -2,20 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { HASH_SCHEMA_VERSION, SimulationClock, StateHasher, utf8Encode } from '../src/index'
 
 /**
- * Test vectors from docs/simulation/determinism.md, section 10. The version 8 values (the header and
+ * Test vectors from docs/simulation/determinism.md, section 10. The version 9 values (the header and
  * the sample) were computed with an independent Python implementation of the hasher, which also
  * reproduces the version 5 values exactly.
  */
 describe('StateHasher', () => {
   it('matches the published vectors', () => {
     expect(new StateHasher().digest()).toBe('027ae52ecfc796215593990d4b41437c')
-    expect(StateHasher.withHeader().digest()).toBe('6e9dec34b5818477e575cc324c03a68b')
+    expect(StateHasher.withHeader().digest()).toBe('1b9b8d2e748776312debb8780bf0a1ce')
     const sample = StateHasher.withHeader()
       .writeUint32(7)
       .writeFloat64(-0)
       .writeFloat64(0.5)
       .writeUint8(1)
-    expect(sample.digest()).toBe('49cfd2e6608aae0f1e36adeb1809cc3f')
+    expect(sample.digest()).toBe('c8f58abac36860fef79f891e7b9dd6bb')
   })
 
   it('canonicalizes -0 to +0', () => {
@@ -89,7 +89,7 @@ describe('StateHasher', () => {
   })
 
   it('exposes the schema version written into the header', () => {
-    expect(HASH_SCHEMA_VERSION).toBe(8)
+    expect(HASH_SCHEMA_VERSION).toBe(9)
   })
 
   it('writes booleans as one byte', () => {

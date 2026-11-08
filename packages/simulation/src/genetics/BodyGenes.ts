@@ -17,7 +17,21 @@ import { DEFAULT_ANATOMY } from '@evo/config'
 import type { GeneSpec } from './GeneSpecs'
 
 /** Latent values for a slot with no founder part: harmless defaults that mutation can wake up. */
-const EMPTY_SLOT = { type: 0, size: 0.5, angle: 0, offset: 0.5, orientation: 0, param: 0.5 }
+const EMPTY_SLOT = {
+  type: 0,
+  parent: 0,
+  size: 0.5,
+  angle: 0,
+  offset: 0.5,
+  orientation: 0,
+  integrity: 1,
+  s0: 0.5,
+  s1: 0.5,
+  s2: 0.5,
+  s3: 0.5,
+  s4: 0.5,
+  s5: 0.5
+}
 
 /**
  * The body vector of a founder: slot `i` holds `founder[i]` (present), the remaining slots are
@@ -32,11 +46,18 @@ export function founderBodyVector(anatomy: AnatomyConfig): number[] {
       ? {
           present: 1,
           type: PART_TYPES.indexOf(part.type),
+          parent: part.parent,
           size: part.size,
           angle: part.angle,
           offset: part.offset,
           orientation: part.orientation,
-          param: part.param
+          integrity: part.integrity,
+          s0: part.stats[0] ?? 0.5,
+          s1: part.stats[1] ?? 0.5,
+          s2: part.stats[2] ?? 0.5,
+          s3: part.stats[3] ?? 0.5,
+          s4: part.stats[4] ?? 0.5,
+          s5: part.stats[5] ?? 0.5
         }
       : { present: 0, ...EMPTY_SLOT }
     for (const field of SLOT_FIELDS) out[slotGeneIndex(slot, field)] = values[field]
@@ -58,8 +79,9 @@ export const DEFAULT_BODY_GENES: readonly number[] = Object.freeze(
 
 /**
  * The body gene table in canonical order, in the same shape the generic mutation, recombination,
- * validation and distance code already uses for the scalar genes. Presence and type mutate at
- * their own rates; every other slot gene shares the continuous rate; the visual genes their own.
+ * validation and distance code already uses for the scalar genes. Presence, type and parent
+ * mutate at their own rates; every other slot gene (size, placement, integrity, stats) shares the
+ * continuous rate; the visual genes and the outline their own.
  */
 export function buildBodySpecs(anatomy: AnatomyConfig): GeneSpec[] {
   const baseline = founderBodyVector(anatomy)
@@ -75,7 +97,9 @@ export function buildBodySpecs(anatomy: AnatomyConfig): GeneSpec[] {
           ? mutation.presenceRate
           : field === 'type'
             ? mutation.typeRate
-            : mutation.continuousRate
+            : field === 'parent'
+              ? mutation.parentRate
+              : mutation.continuousRate
     return {
       path: definition.path,
       kind: definition.kind,
