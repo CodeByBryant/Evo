@@ -1,0 +1,72 @@
+# ADR 0016: Per-type part stats, outline anchoring and part parents
+
+Status: accepted. Refines [ADR 0012](0012-anatomy.md) and [ADR 0015](0015-anatomy-consequences.md) and brings the engine back toward the vision of [ADR 0004](0004-dynamic-evolvable-anatomy-and-morphology.md).
+
+## Why
+
+ADR 0012 reduced a part to `size` plus one generic `param` that most types ignored, and dropped the connections between parts. ADR 0004 (sections 4, 5, 9, 11, 17) asked for the opposite: every part type has several unique parameters (a flagellum has length, thickness, force and efficiency; an eye has range, resolution and field of view; armor has thickness, coverage and hardness) and parts relate to each other (a part has a parent). Two bugs followed from the shortcut:
+
+1. **Parts floated off the body.** Development placed a part at `offset * (cos, sin)` of the _unit_ circle and never looked at the evolved outline. The founder's mouth and cilia (offset 1) landed at 0.70 to 0.88 of the rim, so they were drawn off to the side of the body, and the renderer papered over it with a "nearest vertex" fallback.
+2. **Parts were interchangeable.** Six of the ten types read only `size`, so two flagella with different genes differed in nothing but size.
+
+## Decision
+
+### Slot genes
+
+A slot is 14 genes (was 9): `present`, `type`, `parent`, `size`, `angle`, `offset`, `orientation`, `integrity`, `s0..s5`. The body vector is 203 genes (12 slots x 14 + pattern, accent hue, outline count, 16 radii, 16 angles); `param` is gone.
+
+- **Stats `s0..s5`** are six genes in `[0, 1]`. Each part type has a **stat table** (`PART_STATS`) that names up to six of them and gives each a real-unit range; unused entries stay inert, like the latent genes of an empty slot. A fixed-width block (not variable-length tables) keeps the random draws per birth constant, so adding or reordering a table never shifts later draws.
+- `statValue(spec, gene) = min + gene * (max - min)`. The engine multiplies capabilities by `statMultiplier(gene) = 0.5 + gene`, so the founder (all stats 0.5) is exactly 1.
+- **`integrity`** (0.1 to 1) scales the capability a part delivers but not its mass or upkeep. A deformed or vestigial part keeps costing and delivers less, which makes non-functional attachments evolvable (used by the failure-state work later).
+- **`parent`** (integer 0 to 12): 0 is the body, `k` is slot `k - 1`. It must name a lower, developed slot; otherwise the part falls back to the body.
+
+| Type      | Stats                                |
+| --------- | ------------------------------------ |
+| flagellum | length, thickness, force, efficiency |
+| cilia     | length, density, rate                |
+| eye       | range, resolution, field of view     |
+| sniffer   | range, sensitivity, selectivity      |
+| mouth     | reach, gape                          |
+| intestine | length, absorption, filter           |
+| stomach   | capacity, throughput                 |
+| armor     | thickness, coverage, hardness        |
+| membrane  | insulation, thickness                |
+| mender    | rate, efficiency                     |
+
+The tables are provisional coefficients; the field of view is stored and displayed now and starts to act in its own change (directional sensing).
+
+### Attachment
+
+Development anchors every part to the actual outline (`rimAt(outline, angle)` returns the rim point and outward normal by ray-polygon intersection):
+
+- **Surface types** (flagellum, cilia, sniffer, mouth, armor, membrane) sit exactly on the rim at `angle`.
+- **Interior types** (eye, intestine, stomach, mender) sit at `offset` times the rim radius at that angle, so never outside the body.
+- `orientation` is relative to the anchor's outward normal. A flagellum or cilium pushes along `-axis`, so a tail trails behind where it is rooted.
+- **A child** (non-zero `parent`) is anchored along its parent's axis at `offset` times the parent's extent (`PART_EXTENT_STAT`: the `length` stat of flagella and cilia times the outline's area radius; every other type has extent 0, so a child of one sits at the parent's anchor); its orientation is relative to the parent's axis.
+- A child of a dormant parent is dormant: parent dependencies propagate through the same fixed-point resolver as capability tokens.
+
+Development outputs per part: anchor (`x`, `y`), `axis`, tip (`tipX`, `tipY`), resolved stat values, parent, integrity, mass, upkeep, functional or dormant.
+
+### Capabilities
+
+`capabilitiesOf` reads each type's stats instead of `param`: thrust from `size * integrity * force * ...` at the part's anchor and axis, torque from its lever arm, eye acuity from resolution, armor from thickness x coverage x hardness, and so on. Mass and upkeep per part scale with the same dimensions (a longer, thicker flagellum weighs and costs more) so there is no free lunch. The founder-relative factors stay, and the founder is exactly 1: the same expression is divided by itself.
+
+The founder plan was re-derived so its parts sit on the founder outline with the old thrust directions (flagella orientations 1.0223 and 5.2609, cilia 6.1576 and 0.1256 relative to the outward normal).
+
+### Hash and versions
+
+`Genome.version` 3 to 4, state hash schema 8 to 9, every golden regenerated once (20 entries, engine 0.10.0). Hash test vectors were cross-checked with an independent Python hasher (docs/simulation/determinism.md, Version 9).
+
+### Mutation
+
+`anatomy.mutation.parentRate` (default 0.004) mutates the parent gene as an integer, as rare as presence and type changes; stats, integrity and placement share the continuous rate.
+
+## What the equivalence harness showed
+
+With anatomy off the **field** layout is bit-identical to the previous commit in every scenario (founder factors are exactly 1 and the founder body is still the founder body). **Cluster** scenarios differ even with anatomy off, on purpose: cluster founders have varied outlines, and parts now follow the outline, so their thrust directions and masses differ from the old unit-circle placement. That is the bug fix, not drift.
+
+## Consequences
+
+- Bodies read as bodies: parts touch the rim, tails start where they are rooted, children hang off their parents.
+- Several existing pins moved (scenario A in `world.test.ts`: 27 active, 45 born, 18 starved; the heavy-mutation stress rate in the long anatomy test was lowered because slots now carry 14 genes). Statistical ecology gates will be re-pinned in the starvation-tuning change, with measurements attached.
+- Not in this change, in order: new part types (eyestalk, gyro, lipid, pheromone gland, skeleton, join) and mouth forms; directional eye field of view; renderer and inspector for anchors, stats and parents.

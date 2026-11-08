@@ -61,7 +61,13 @@ describe('anatomy on', () => {
   // every body gene that matters frozen, only the paint genes still mutate, and they are invisible.
   const FROZEN_OUTLINE = {
     anatomy: {
-      mutation: { outlineRate: 0, presenceRate: 0, typeRate: 0, continuousRate: 0 }
+      mutation: {
+        outlineRate: 0,
+        presenceRate: 0,
+        typeRate: 0,
+        parentRate: 0,
+        continuousRate: 0
+      }
     }
   }
 

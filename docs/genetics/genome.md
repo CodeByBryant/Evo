@@ -43,17 +43,19 @@ Five scalar genes were retired when the parts started to act ([ADR 0015](../deci
 
 ## Body genes (anatomy)
 
-Since the anatomy work (ADR 0012) a genome also carries a `body` section: **119 genes** in their own table, `BODY_GENE_DEFINITIONS` in `@evo/contracts`, kept beside the scalar genes above and not part of `GENE_DEFINITIONS`. They are a fixed number of part slots, not a variable-length list, so the generic operators work on them unchanged:
+Since the anatomy work (ADR 0012) a genome also carries a `body` section: **203 genes** in their own table, `BODY_GENE_DEFINITIONS` in `@evo/contracts`, kept beside the scalar genes above and not part of `GENE_DEFINITIONS`. They are a fixed number of part slots, not a variable-length list, so the generic operators work on them unchanged:
 
 | Genes                               | Kind              | Meaning                                                                                                                |
 | ----------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `body.slotN.present` (N = 0-11)     | bool              | whether the slot holds a part                                                                                          |
 | `body.slotN.type`                   | int 0-9           | the part type, in functional order: flagellum, cilia, eye, sniffer, mouth, intestine, stomach, armor, membrane, mender |
+| `body.slotN.parent`                 | int 0-12          | 0 attaches to the body, `k` to slot `k - 1` (a lower, developed slot, else the body)                                   |
 | `body.slotN.size`                   | float 0.1-1       | scales the part's effect, mass and upkeep                                                                              |
-| `body.slotN.angle`                  | circular 0-2pi    | where the part sits on the body (0 is the front)                                                                       |
-| `body.slotN.offset`                 | float 0-1         | distance from the centre as a fraction of the body radius                                                              |
-| `body.slotN.orientation`            | circular 0-2pi    | the direction of the part's force or axis in the body frame (0 is forward)                                             |
-| `body.slotN.param`                  | float 0-1         | the type-specific parameter (an eye's range, a sniffer's favored food kind, ...)                                       |
+| `body.slotN.angle`                  | circular 0-2pi    | where on the outline the part is rooted (0 is the front)                                                               |
+| `body.slotN.offset`                 | float 0-1         | interior parts: fraction of the rim radius; child parts: fraction along the parent's axis                              |
+| `body.slotN.orientation`            | circular 0-2pi    | the part's axis relative to its anchor's outward normal (or its parent's axis)                                         |
+| `body.slotN.integrity`              | float 0.1-1       | developmental quality: scales what the part delivers, not what it costs                                                |
+| `body.slotN.s0..s5`                 | float 0-1         | the part type's six stats (length, force, range, ... named per type in ADR 0016); unused entries are inert             |
 | `body.visual.pattern`, `.accentHue` | int 0-3, circular | how the body is painted; no effect on fitness                                                                          |
 | `body.outline.count`                | int 5-16          | how many points the body outline has                                                                                   |
 | `body.outline.radius0..15`          | float 0.35-1      | distance of each point from the centre                                                                                 |

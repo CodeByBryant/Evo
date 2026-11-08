@@ -11,7 +11,11 @@ import { World } from '../../src/world/World'
 const BUSY: WorldConfigOverrides = {
   anatomy: {
     enabled: true,
-    mutation: { presenceRate: 0.05, typeRate: 0.05, continuousRate: 0.2, visualRate: 0.2 }
+    // A stress rate, not a default. Each slot now carries 14 genes (ADR 0016) against 9 before, so
+    // the old 0.2 mutated about 50% more genes per birth and drove most seeds extinct (seeds 22 to
+    // 24 at 0.2: only 24 survives; at 0.12, seeds 22 to 26: only 22 and 25 survive). Seed 22 is pinned because it
+    // survives 50,000 ticks with 18 distinct plans among 19 organisms.
+    mutation: { presenceRate: 0.05, typeRate: 0.05, continuousRate: 0.12, visualRate: 0.2 }
   },
   genetics: { mutationRateScale: 2 }
 }
@@ -66,6 +70,7 @@ describe('anatomy long run', () => {
             outlineRate: 0,
             presenceRate: 0,
             typeRate: 0,
+            parentRate: 0,
             continuousRate: 0
           }
         }

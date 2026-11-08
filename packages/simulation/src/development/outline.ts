@@ -45,6 +45,47 @@ export function developOutline(body: readonly number[]): BodyOutline {
   return { points, area, areaRadius, perimeter, roughness: perimeter / (TWO_PI * areaRadius) }
 }
 
+/** A point on the outline and the outward direction there (outline units; the normal has length 1). */
+export interface RimPoint {
+  readonly x: number
+  readonly y: number
+  readonly nx: number
+  readonly ny: number
+}
+
+/**
+ * Where the outline is in direction `angle` from the centre (radians from the front), and which
+ * way is outward there. The outline is a star-shaped polygon around the origin, so a ray from the
+ * origin leaves it exactly once. Only `+ - * /` and `sqrt` plus the engine's `cos` and `sin`, so
+ * every platform agrees on the point.
+ */
+export function rimAt(outline: BodyOutline, angle: number): RimPoint {
+  const dx = cos(angle)
+  const dy = sin(angle)
+  const points = outline.points
+  const n = points.length
+  let best: RimPoint | null = null
+  let bestT = Infinity
+  for (let i = 0; i < n; i++) {
+    const a = points[i] as { x: number; y: number }
+    const b = points[(i + 1) % n] as { x: number; y: number }
+    const ex = b.x - a.x
+    const ey = b.y - a.y
+    const denominator = dx * ey - dy * ex
+    if (Math.abs(denominator) < 1e-12) continue
+    const t = (a.x * ey - a.y * ex) / denominator
+    const s = (a.x * dy - a.y * dx) / denominator
+    if (t > 0 && t < bestT && s >= -1e-9 && s <= 1 + 1e-9) {
+      const length = Math.sqrt(ex * ex + ey * ey)
+      bestT = t
+      // The polygon runs counter-clockwise, so the outward normal of an edge is (ey, -ex).
+      best = { x: t * dx, y: t * dy, nx: ey / length, ny: -ex / length }
+    }
+  }
+  // A ray always finds an edge of a simple polygon; this only guards against a degenerate outline.
+  return best ?? { x: 0.5 * dx, y: 0.5 * dy, nx: dx, ny: dy }
+}
+
 const profiles = new WeakMap<readonly number[], BodyOutline>()
 
 /** `developOutline`, remembered per body-gene array (genomes are frozen, so the array never changes). */

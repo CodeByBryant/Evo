@@ -77,7 +77,7 @@ describe('founder genomes', () => {
     const f = fixture()
     const genome = founder(f, 0, 1)
     expect(genomeToVector(genome)).toEqual(f.specs.map((spec) => spec.baseline))
-    expect(genome.version).toBe(3)
+    expect(genome.version).toBe(4)
     expect(genome.parentIds).toEqual([])
   })
 

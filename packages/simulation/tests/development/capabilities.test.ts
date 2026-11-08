@@ -8,6 +8,7 @@ import {
   viewOf
 } from '../../src/development/capabilities'
 import { developAnatomy } from '../../src/development/develop'
+import { rimAt } from '../../src/development/outline'
 import { buildBodySpecs, founderBodyVector } from '../../src/genetics/BodyGenes'
 import { crossoverVector } from '../../src/genetics/Recombination'
 import { mutateVector } from '../../src/genetics/Mutation'
@@ -17,24 +18,34 @@ import { deriveStreamWords } from '../../src/random/streams'
 const defaults = resolveWorldConfig().anatomy
 const KINDS = 4
 
+const MID = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+
 const part = (type: PartType, extra: Partial<FounderPart> = {}): FounderPart => ({
   type,
+  parent: 0,
   size: 0.5,
   angle: 0,
   offset: 0.5,
   orientation: 0,
-  param: 0.5,
+  integrity: 1,
+  stats: MID,
   ...extra
 })
+
+/** A part with a single stat set (the rest in the middle). */
+const withStat = (type: PartType, index: number, gene: number, extra: Partial<FounderPart> = {}) =>
+  part(type, { stats: MID.map((value, i) => (i === index ? gene : value)), ...extra })
 
 /** A developed part back as a founder part (only the fields a founder has). */
 const asFounder = (p: FounderPart, extra: Partial<FounderPart> = {}): FounderPart =>
   part(p.type, {
+    parent: p.parent < 0 ? 0 : p.parent + 1,
     size: p.size,
     angle: p.angle,
     offset: p.offset,
     orientation: p.orientation,
-    param: p.param,
+    integrity: p.integrity,
+    stats: p.stats,
     ...extra
   })
 
@@ -46,6 +57,12 @@ function bodyOf(parts: FounderPart[], overrides: Partial<AnatomyConfig> = {}) {
 }
 
 const founderAnatomy = developAnatomy(founderBodyVector(defaults), defaults)
+
+/** The orientation that makes a part at `angle` push straight forward: its tail points straight back. */
+const forwardOrientation = (angle: number): number => {
+  const rim = rimAt(founderAnatomy.outline, angle)
+  return (Math.PI - Math.atan2(rim.ny, rim.nx) + 2 * Math.PI) % (2 * Math.PI)
+}
 const founder = capabilitiesOf(founderAnatomy, defaults, 1, KINDS)
 const raw = (parts: FounderPart[]) => capabilitiesOf(bodyOf(parts), defaults, 1, KINDS)
 const factors = (parts: FounderPart[], scale = 1) =>
@@ -87,12 +104,14 @@ describe('the founder body', () => {
 })
 
 describe('thrust depends on where a part is and which way it pushes', () => {
-  const rear = { angle: Math.PI, offset: 0.8 }
+  // A part on the rear of the outline points outward (backward); its tail trails there and the
+  // push is the opposite way, so with orientation 0 it drives the body forward.
+  const rear = { angle: Math.PI }
 
-  it('a flagellum pushing forward drives forward speed but no strafing', () => {
+  it('a flagellum pushing forward drives forward speed and next to no strafing', () => {
     const c = raw([part('flagellum', { ...rear, orientation: 0 })])
     expect(c.forwardThrust).toBeGreaterThan(0)
-    expect(c.lateralThrust).toBeCloseTo(0, 12)
+    expect(c.lateralThrust).toBeLessThan(0.15 * c.forwardThrust)
   })
 
   it('pushing backward gives no forward thrust at all', () => {
@@ -100,38 +119,44 @@ describe('thrust depends on where a part is and which way it pushes', () => {
   })
 
   it('pushing sideways strafes instead, either side', () => {
+    const forward = raw([part('flagellum', { ...rear, orientation: 0 })]).forwardThrust
     for (const orientation of [Math.PI / 2, (3 * Math.PI) / 2]) {
       const c = raw([part('flagellum', { ...rear, orientation })])
-      expect(c.lateralThrust).toBeGreaterThan(0.99 * 0.5)
-      expect(c.forwardThrust).toBeCloseTo(0, 12)
+      expect(c.lateralThrust).toBeGreaterThan(0.9 * forward)
+      expect(c.forwardThrust).toBeLessThan(0.15 * forward)
     }
   })
 
-  it('a part off the axis can turn the body; one on the axis cannot', () => {
-    const onAxis = raw([part('flagellum', { angle: Math.PI, offset: 0.8, orientation: 0 })])
-    const offAxis = raw([part('flagellum', { angle: 2.6, offset: 0.8, orientation: 0 })])
-    expect(onAxis.torque).toBeCloseTo(0, 12)
+  it('a part off the axis can turn the body; one pushing through the centre cannot', () => {
+    // at 2.6 radians the outward direction is up and to the rear; turning the tail by pi minus
+    // that angle makes the push point straight forward from an anchor off the axis
+    const offAxis = raw([part('flagellum', { angle: 2.6, orientation: forwardOrientation(2.6) })])
+    const onAxis = raw([
+      part('flagellum', { angle: Math.PI, orientation: forwardOrientation(Math.PI) })
+    ])
     expect(offAxis.torque).toBeGreaterThan(0.1)
+    expect(onAxis.torque).toBeLessThan(0.01 * offAxis.torque)
   })
 
-  it('torque grows with distance from the centre', () => {
-    const near = raw([part('flagellum', { angle: Math.PI / 2, offset: 0.2, orientation: 0 })])
-    const far = raw([part('flagellum', { angle: Math.PI / 2, offset: 0.9, orientation: 0 })])
-    expect(far.torque).toBeGreaterThan(near.torque)
+  it('torque is the lever arm: the same forward push from further out turns harder', () => {
+    const forwardFrom = (angle: number) =>
+      raw([part('flagellum', { angle, orientation: forwardOrientation(angle) })]).torque
+    // straight out at the side (a long lever) against close to the rear (a short one)
+    expect(forwardFrom(Math.PI / 2)).toBeGreaterThan(forwardFrom(2.9))
   })
 
   it('cilia push like flagella but weaker (they are cheaper)', () => {
-    const flagellum = raw([part('flagellum')])
-    const cilia = raw([part('cilia')])
+    const flagellum = raw([part('flagellum', { ...rear })])
+    const cilia = raw([part('cilia', { ...rear })])
     expect(cilia.forwardThrust).toBeGreaterThan(0)
     expect(cilia.forwardThrust).toBeLessThan(flagellum.forwardThrust)
     expect(cilia.upkeep).toBeLessThan(flagellum.upkeep)
   })
 
   it('more flagella and bigger flagella push harder', () => {
-    const one = raw([part('flagellum')]).forwardThrust
-    const two = raw([part('flagellum'), part('flagellum')]).forwardThrust
-    const big = raw([part('flagellum', { size: 1 })]).forwardThrust
+    const one = raw([part('flagellum', { ...rear })]).forwardThrust
+    const two = raw([part('flagellum', { ...rear }), part('flagellum', { ...rear })]).forwardThrust
+    const big = raw([part('flagellum', { ...rear, size: 1 })]).forwardThrust
     expect(two).toBeCloseTo(2 * one, 12)
     expect(big).toBeCloseTo(2 * one, 12)
   })
@@ -139,8 +164,8 @@ describe('thrust depends on where a part is and which way it pushes', () => {
 
 describe('speed per mass: thrust is not free', () => {
   it('adding a flagellum raises speed; adding armor (mass, no thrust) lowers it', () => {
-    const base = [part('flagellum', { angle: Math.PI, offset: 0.8 }), part('mouth')]
-    const faster = factors([...base, part('flagellum', { angle: Math.PI, offset: 0.8 })])
+    const base = [part('flagellum', { angle: Math.PI }), part('mouth')]
+    const faster = factors([...base, part('flagellum', { angle: Math.PI })])
     const heavier = factors([...base, part('armor', { size: 1 })])
     const baseline = factors(base)
     expect(faster.speed).toBeGreaterThan(baseline.speed)
@@ -186,7 +211,7 @@ describe('every capability has a cost', () => {
   it('upkeepDelta is the extra energy per second against the founder', () => {
     const big = factors(founderAnatomy.parts.map((p) => asFounder(p, { size: 1 })))
     expect(big.upkeepDelta).toBeGreaterThan(0)
-    const lean = factors([part('flagellum', { angle: Math.PI, offset: 0.8 })])
+    const lean = factors([part('flagellum', { angle: Math.PI })])
     expect(lean.upkeepDelta).toBeLessThan(0)
   })
 })
@@ -205,9 +230,9 @@ describe('the other capabilities', () => {
     expect(three - two).toBeLessThan(two - one)
   })
 
-  it('eye param raises range', () => {
-    expect(raw([part('eye', { param: 1 })]).senseRange).toBeGreaterThan(
-      raw([part('eye', { param: 0 })]).senseRange
+  it('the eye range stat raises sense range', () => {
+    expect(raw([withStat('eye', 0, 1)]).senseRange).toBeGreaterThan(
+      raw([withStat('eye', 0, 0)]).senseRange
     )
   })
 
@@ -217,7 +242,7 @@ describe('the other capabilities', () => {
     expect(sniffedKind(0.99, 4)).toBe(3)
     expect(sniffedKind(1, 4)).toBe(3)
     expect(sniffedKind(0.5, 1)).toBe(0)
-    const c = raw([part('sniffer', { param: 0.3 })])
+    const c = raw([withStat('sniffer', 2, 0.3)])
     expect(c.foodDetection).toHaveLength(KINDS)
     expect(c.foodDetection[1]).toBeGreaterThan(1)
     expect([c.foodDetection[0], c.foodDetection[2], c.foodDetection[3]]).toEqual([1, 1, 1])
@@ -266,6 +291,145 @@ describe('the other capabilities', () => {
     const f = capabilityFactors(raw([part('flagellum')]), noThrust)
     expect(f.speed).toBe(1)
     expect(Number.isFinite(f.turn)).toBe(true)
+  })
+})
+
+describe('part stats (ADR 0016): every stat does something, and the strong ones cost something', () => {
+  const rear = { angle: Math.PI }
+  const forward = (index: number, gene: number) =>
+    raw([withStat('flagellum', index, gene, { ...rear, orientation: forwardOrientation(Math.PI) })])
+  const fed = (extra: FounderPart[]) => raw([part('mouth', { size: 0.1 }), ...extra])
+
+  it('flagellum: force raises thrust and upkeep; efficiency lowers upkeep but not thrust', () => {
+    expect(forward(2, 1).forwardThrust).toBeGreaterThan(forward(2, 0).forwardThrust)
+    expect(forward(2, 1).upkeep).toBeGreaterThan(forward(2, 0).upkeep)
+    expect(forward(3, 1).upkeep).toBeLessThan(forward(3, 0).upkeep)
+    expect(forward(3, 1).forwardThrust).toBe(forward(3, 0).forwardThrust)
+  })
+
+  it('flagellum: length and thickness add thrust, and make the part heavier (not free)', () => {
+    for (const index of [0, 1]) {
+      expect(forward(index, 1).forwardThrust).toBeGreaterThan(forward(index, 0).forwardThrust)
+      expect(forward(index, 1).mass).toBeGreaterThan(forward(index, 0).mass)
+    }
+  })
+
+  it('cilia: density and beat rate add thrust; the rate costs upkeep; length adds mass', () => {
+    const cilia = (index: number, gene: number) => raw([withStat('cilia', index, gene, rear)])
+    expect(cilia(1, 1).forwardThrust).toBeGreaterThan(cilia(1, 0).forwardThrust)
+    expect(cilia(2, 1).forwardThrust).toBeGreaterThan(cilia(2, 0).forwardThrust)
+    expect(cilia(2, 1).upkeep).toBeGreaterThan(cilia(2, 0).upkeep)
+    expect(cilia(0, 1).mass).toBeGreaterThan(cilia(0, 0).mass)
+  })
+
+  it('eye: range sets how far it sees, resolution how well it picks food out; field of view is stored for later', () => {
+    const eye = (index: number, gene: number) => raw([withStat('eye', index, gene)])
+    expect(eye(0, 1).senseRange).toBeGreaterThan(eye(0, 0).senseRange)
+    expect(eye(0, 1).upkeep).toBeGreaterThan(eye(0, 0).upkeep)
+    expect(eye(1, 1).senseRange).toBe(eye(1, 0).senseRange)
+    for (let kind = 0; kind < KINDS; kind++) {
+      expect(eye(1, 1).foodDetection[kind]).toBeGreaterThan(eye(1, 0).foodDetection[kind] as number)
+    }
+    expect(eye(2, 1)).toEqual(eye(2, 0))
+  })
+
+  it('sniffer: range and sensitivity both raise detection of its food kind and cost upkeep', () => {
+    const sniffer = (index: number, gene: number) =>
+      raw([part('sniffer', { stats: MID.map((v, i) => (i === 2 ? 0.3 : i === index ? gene : v)) })])
+    for (const index of [0, 1]) {
+      expect(sniffer(index, 1).foodDetection[1]).toBeGreaterThan(
+        sniffer(index, 0).foodDetection[1] as number
+      )
+      expect(sniffer(index, 1).upkeep).toBeGreaterThan(sniffer(index, 0).upkeep)
+    }
+  })
+
+  it('mouth: reach raises reach; gape raises digestion and weighs more', () => {
+    const mouth = (index: number, gene: number) => raw([withStat('mouth', index, gene)])
+    expect(mouth(0, 1).reach).toBeGreaterThan(mouth(0, 0).reach)
+    expect(mouth(1, 1).digestion).toBeGreaterThan(mouth(1, 0).digestion)
+    expect(mouth(1, 1).mass).toBeGreaterThan(mouth(1, 0).mass)
+  })
+
+  it('intestine: absorption and length raise digestion, the filter raises toxin tolerance', () => {
+    const gut = (index: number, gene: number) => fed([withStat('intestine', index, gene)])
+    expect(gut(1, 1).digestion).toBeGreaterThan(gut(1, 0).digestion)
+    expect(gut(0, 1).digestion).toBeGreaterThan(gut(0, 0).digestion)
+    expect(gut(0, 1).mass).toBeGreaterThan(gut(0, 0).mass)
+    expect(gut(2, 1).toxinTolerance).toBeGreaterThan(gut(2, 0).toxinTolerance)
+    expect(gut(2, 1).digestion).toBe(gut(2, 0).digestion)
+  })
+
+  it('stomach: capacity holds more energy (and weighs more); throughput raises digestion', () => {
+    const stomach = (index: number, gene: number) => fed([withStat('stomach', index, gene)])
+    expect(stomach(0, 1).energyCapacity).toBeGreaterThan(stomach(0, 0).energyCapacity)
+    expect(stomach(0, 1).mass).toBeGreaterThan(stomach(0, 0).mass)
+    expect(stomach(1, 1).digestion).toBeGreaterThan(stomach(1, 0).digestion)
+  })
+
+  it('armor: thickness, coverage and hardness each lower the damage taken', () => {
+    const armor = (index: number, gene: number) =>
+      raw([withStat('armor', index, gene, { size: 1 })])
+    for (const index of [0, 1, 2]) {
+      expect(armor(index, 1).damageTaken).toBeLessThan(armor(index, 0).damageTaken)
+    }
+    expect(armor(0, 1).mass).toBeGreaterThan(armor(0, 0).mass)
+  })
+
+  it('membrane: insulation raises temperature tolerance; a thicker membrane weighs more', () => {
+    const membrane = (index: number, gene: number) => raw([withStat('membrane', index, gene)])
+    expect(membrane(0, 1).temperatureTolerance).toBeGreaterThan(membrane(0, 0).temperatureTolerance)
+    expect(membrane(1, 1).mass).toBeGreaterThan(membrane(1, 0).mass)
+  })
+
+  it('mender: rate raises regeneration and upkeep; efficiency lowers upkeep, not regeneration', () => {
+    const mender = (index: number, gene: number) =>
+      raw([part('mouth'), part('stomach'), withStat('mender', index, gene)])
+    expect(mender(0, 1).regeneration).toBeGreaterThan(mender(0, 0).regeneration)
+    expect(mender(0, 1).upkeep).toBeGreaterThan(mender(0, 0).upkeep)
+    expect(mender(1, 1).upkeep).toBeLessThan(mender(1, 0).upkeep)
+    expect(mender(1, 1).regeneration).toBe(mender(1, 0).regeneration)
+  })
+
+  it('a stat the part type does not have changes nothing', () => {
+    expect(raw([withStat('mouth', 5, 1)])).toEqual(raw([withStat('mouth', 5, 0)]))
+    expect(raw([withStat('eye', 4, 1)])).toEqual(raw([withStat('eye', 4, 0)]))
+    expect(raw([withStat('armor', 3, 1)])).toEqual(raw([withStat('armor', 3, 0)]))
+  })
+
+  it('integrity scales what a part delivers but never what it weighs or costs', () => {
+    const whole = forward(0, 0.5)
+    const deformed = raw([
+      part('flagellum', { ...rear, orientation: forwardOrientation(Math.PI), integrity: 0.25 })
+    ])
+    expect(deformed.forwardThrust).toBeCloseTo(0.25 * whole.forwardThrust, 12)
+    expect(deformed.mass).toBe(whole.mass)
+    expect(deformed.upkeep).toBe(whole.upkeep)
+    const blind = raw([part('eye', { integrity: 0.1 })])
+    expect(blind.senseRange).toBeLessThan(raw([part('eye')]).senseRange)
+    expect(blind.senseRange).toBeGreaterThan(defaults.senseFloor)
+  })
+
+  it('a stat at its extremes keeps every capability finite and the founder-relative factors positive', () => {
+    for (const type of [
+      'flagellum',
+      'cilia',
+      'eye',
+      'sniffer',
+      'mouth',
+      'intestine',
+      'stomach',
+      'armor',
+      'membrane',
+      'mender'
+    ] as PartType[]) {
+      for (const gene of [0, 1]) {
+        const c = raw([part('mouth'), part('stomach'), part(type, { stats: MID.map(() => gene) })])
+        for (const value of Object.values(c).flat()) expect(Number.isFinite(value)).toBe(true)
+        const f = capabilityFactors(c, founder)
+        for (const value of Object.values(f).flat()) expect(Number.isFinite(value)).toBe(true)
+      }
+    }
   })
 })
 

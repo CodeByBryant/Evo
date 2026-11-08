@@ -73,7 +73,7 @@ export function validateGenome(
 ): ValidationResult {
   const errors: string[] = []
 
-  if (genome.version !== 3) errors.push(`unsupported genome version ${String(genome.version)}`)
+  if (genome.version !== 4) errors.push(`unsupported genome version ${String(genome.version)}`)
   if (!Number.isInteger(genome.id) || genome.id < 0) {
     errors.push(`genome id (${genome.id}) must be a nonnegative integer`)
   } else if (context.nextGenomeId !== undefined && genome.id >= context.nextGenomeId) {
