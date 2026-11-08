@@ -22,7 +22,7 @@ import {
 import type { PartStatSpec } from '../src/index'
 
 describe('anatomy contracts', () => {
-  it('fixes the vocabulary: ten part types in functional order, twelve slots', () => {
+  it('fixes the vocabulary: sixteen part types (the original ten first), twelve slots', () => {
     expect(PART_TYPES).toEqual([
       'flagellum',
       'cilia',
@@ -33,7 +33,13 @@ describe('anatomy contracts', () => {
       'stomach',
       'armor',
       'membrane',
-      'mender'
+      'mender',
+      'eyestalk',
+      'gyro',
+      'lipid',
+      'pheromone',
+      'skeleton',
+      'join'
     ])
     expect(BODY_SLOT_COUNT).toBe(12)
     expect(SLOT_FIELDS).toHaveLength(14)

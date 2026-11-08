@@ -8,6 +8,7 @@ import {
   STAT_FIELDS,
   SURFACE_PARTS,
   slotGeneIndex,
+  statMultiplier,
   statValue,
   visualGeneIndex
 } from '@evo/contracts'
@@ -101,16 +102,23 @@ export function developAnatomy(
   const draftOfSlot = new Map<number, number>()
   const undeveloped: number[] = []
   let sizeUsed = 0
+  // The budget grows as skeletons are admitted, so it helps only the slots after them (ADR 0016).
+  let budget = config.structuralBudget
   for (let slot = 0; slot < BODY_SLOT_COUNT; slot++) {
     if (body[slotGeneIndex(slot, 'present')] !== 1) continue
     const type = PART_TYPES[body[slotGeneIndex(slot, 'type')] as number]
     if (type === undefined) continue
     const size = body[slotGeneIndex(slot, 'size')] as number
-    if (sizeUsed + size > config.structuralBudget) {
+    if (sizeUsed + size > budget) {
       undeveloped.push(slot)
       continue
     }
     sizeUsed += size
+    if (type === 'skeleton') {
+      // rigidity is its first stat gene
+      budget +=
+        config.effects.skeletonBudget * statMultiplier(body[slotGeneIndex(slot, 's0')] as number)
+    }
     const angle = body[slotGeneIndex(slot, 'angle')] as number
     const offset = body[slotGeneIndex(slot, 'offset')] as number
     const orientation = body[slotGeneIndex(slot, 'orientation')] as number
@@ -188,6 +196,7 @@ export function developAnatomy(
     parts: drafts.map((draft, index) => ({ ...draft.part, functional: working[index] === true })),
     undeveloped,
     sizeUsed,
+    budget,
     outline,
     look: {
       pattern: body[visualGeneIndex('pattern')] as number,

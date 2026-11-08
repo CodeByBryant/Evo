@@ -127,14 +127,23 @@ export class PerceptionSystem {
       if (mating) {
         let mate: PerceivedPeer | null = null
         if (mating.readiness.isReady(organism, tick)) {
+          // A pheromone gland carries a creature's signal further (ADR 0016): the search reaches as
+          // far as the strongest signal possible and each candidate is held to its own. Without
+          // anatomy every signal is the baseline, so this is the plain search.
+          const signalCap = this.config.anatomy.enabled
+            ? this.config.anatomy.effects.pheromoneCap
+            : 1
           const hit = mating.organismIndex
-            .queryRadius(origin, mating.radius)
-            .find(
-              (candidate) =>
-                candidate.item.id !== organism.id &&
+            .queryRadius(origin, mating.radius * signalCap)
+            .find((candidate) => {
+              if (candidate.item.id === organism.id) return false
+              const reach = mating.radius * factorsOf(candidate.item.genome, this.config).mateSignal
+              return (
+                candidate.distanceSquared <= reach * reach &&
                 mating.compatible(organism, candidate.item) &&
                 mating.readiness.isReady(candidate.item, tick)
-            )
+              )
+            })
           if (hit) {
             mate = {
               organismId: hit.item.id,

@@ -45,7 +45,22 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     stomach: { mass: 0.25, upkeep: 0.006, strength: 1 },
     armor: { mass: 0.4, upkeep: 0.002, strength: 1 },
     membrane: { mass: 0.1, upkeep: 0.005, strength: 1 },
-    mender: { mass: 0.15, upkeep: 0.012, strength: 1 }
+    mender: { mass: 0.15, upkeep: 0.012, strength: 1 },
+    eyestalk: { mass: 0.1, upkeep: 0.004, strength: 1 },
+    gyro: { mass: 0.15, upkeep: 0.01, strength: 1 },
+    lipid: { mass: 0.35, upkeep: 0.002, strength: 1 },
+    pheromone: { mass: 0.08, upkeep: 0.008, strength: 1 },
+    skeleton: { mass: 0.3, upkeep: 0.002, strength: 1 },
+    join: { mass: 0.05, upkeep: 0.001, strength: 1 }
+  },
+  // Provisional; tuned by measurement with the rest of the ecology (docs/decisions/0016).
+  effects: {
+    eyestalkLift: 0.5,
+    gyroTorque: 1,
+    lipidCapacity: 1.5,
+    pheromoneSignal: 0.5,
+    pheromoneCap: 2,
+    skeletonBudget: 1
   },
   // Every stat sits at the middle (0.5, a multiplier of 1) and every part has full integrity, so
   // the founder is the reference all capabilities are measured against. Surface parts sit on the
@@ -164,6 +179,7 @@ const ANATOMY_KEYS = [
   'senseFloor',
   'mutation',
   'parts',
+  'effects',
   'founder',
   'founderLook',
   'founderOutline',
@@ -180,6 +196,14 @@ const MUTATION_KEYS = [
   'outlineRate'
 ]
 const PART_KEYS = ['mass', 'upkeep', 'strength']
+const EFFECT_KEYS = [
+  'eyestalkLift',
+  'gyroTorque',
+  'lipidCapacity',
+  'pheromoneSignal',
+  'pheromoneCap',
+  'skeletonBudget'
+]
 const FOUNDER_PART_KEYS = [
   'type',
   'parent',
@@ -263,6 +287,15 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
       checkNumber(part, 'upkeep', `anatomy.parts.${type}.upkeep`, { nonnegative: true }, errors)
       checkNumber(part, 'strength', `anatomy.parts.${type}.strength`, { positive: true }, errors)
     }
+  }
+
+  const effects = checkSection(anatomy, 'effects', EFFECT_KEYS, errors, 'anatomy.effects')
+  if (effects) {
+    for (const key of EFFECT_KEYS.filter((k) => k !== 'pheromoneCap')) {
+      checkNumber(effects, key, `anatomy.effects.${key}`, { nonnegative: true }, errors)
+    }
+    const cap = checkNumber(effects, 'pheromoneCap', 'anatomy.effects.pheromoneCap', {}, errors)
+    if (cap !== undefined && cap < 1) errors.push('anatomy.effects.pheromoneCap must be at least 1')
   }
 
   const founder = anatomy['founder']
