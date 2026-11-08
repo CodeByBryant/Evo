@@ -69,4 +69,24 @@ With anatomy off the **field** layout is bit-identical to the previous commit in
 
 - Bodies read as bodies: parts touch the rim, tails start where they are rooted, children hang off their parents.
 - Several existing pins moved (scenario A in `world.test.ts`: 27 active, 45 born, 18 starved; the heavy-mutation stress rate in the long anatomy test was lowered because slots now carry 14 genes). Statistical ecology gates will be re-pinned in the starvation-tuning change, with measurements attached.
-- Not in this change, in order: new part types (eyestalk, gyro, lipid, pheromone gland, skeleton, join) and mouth forms; directional eye field of view; renderer and inspector for anchors, stats and parents.
+- Not in this change, in order: new part types (eyestalk, gyro, lipid, pheromone gland, skeleton, join) and mouth forms (both came later, see the addendum); directional eye field of view; renderer and inspector for anchors, stats and parents.
+
+## Addendum: six more part types
+
+The `type` gene grows from 10 to 16 values; the six new types are **appended** so every earlier index and the founder stay put. Each ties to a mechanic that already exists, and none needs predation. Their numbers are `anatomy.effects` and the usual per-type `parts` entries, all provisional.
+
+| Type        | Stats               | What it does                                                                                                                                                                                                                         |
+| ----------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `eyestalk`  | length, stiffness   | an eye whose parent is a working eyestalk has its range multiplied by `1 + eyestalkLift * m(length)`; the eye hangs at the stalk's tip (a child anchors at `offset` along its parent's axis, and the stalk's extent is its `length`) |
+| `gyro`      | stability           | adds `gyroTorque * m(stability)` of torque and no thrust: turning without a push, for upkeep and mass                                                                                                                                |
+| `lipid`     | reserve             | requires `digestion`; adds `lipidCapacity * m(reserve)` of energy capacity; its mass scales with the reserve, so a fat body is slower (through thrust over mass)                                                                     |
+| `pheromone` | potency             | widens the signal a creature is heard by: a searcher finds a ready partner out to `mateSenseRadius * mateSignal` of the **partner**, capped at `pheromoneCap`; a gland on the searcher changes nothing                               |
+| `skeleton`  | rigidity, length    | raises the structural budget by `skeletonBudget * m(rigidity)` **for the slots after it** (development admits parts in slot order); a part before it gets no benefit. It has a length so children can hang along it                  |
+| `join`      | length, flexibility | a plain connector: its only effect is that parts can hang from it in chains, for mass and a little upkeep                                                                                                                            |
+
+Decisions worth stating:
+
+- **No `mount` token.** The first plan had the carriers provide a capability token, but nothing would require it: a child already works only when its parent does (development), so the token would have been noise. `lipid` is the only new part with a requirement (`digestion`).
+- `Anatomy.budget` reports the budget a body actually had (the configured one plus its skeletons'); `sizeUsed <= budget` is the invariant, not `sizeUsed <= structuralBudget`.
+- The mating-signal search reaches `pheromoneCap` times the baseline when anatomy is on and each candidate is held to its own signal; with no glands every signal is exactly the baseline, so a body without one searches exactly as before.
+- **Hash and goldens:** the gene layout is unchanged (14 genes per slot), only the `type` gene's maximum moves from 9 to 15. All 24 golden tests pass unchanged, and the equivalence harness against the previous commit gives 17 of 17 identical scenarios with anatomy mutation frozen.

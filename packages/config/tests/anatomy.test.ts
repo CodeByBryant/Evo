@@ -120,7 +120,7 @@ describe('anatomy config', () => {
       ]
     })
     expect(errors).toContain(
-      'anatomy.founder[0].type must be one of: flagellum, cilia, eye, sniffer, mouth, intestine, stomach, armor, membrane, mender'
+      'anatomy.founder[0].type must be one of: flagellum, cilia, eye, sniffer, mouth, intestine, stomach, armor, membrane, mender, eyestalk, gyro, lipid, pheromone, skeleton, join'
     )
     expect(errors).toContain('anatomy.founder[0].size must be from 0.1 to 1')
     expect(errors).toContain(
