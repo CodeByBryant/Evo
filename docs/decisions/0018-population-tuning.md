@@ -16,17 +16,17 @@ Evolution did not undo any tuning on this timescale: the evolved reproduction ge
 
 ## What changed (defaults)
 
-| setting | before | after |
-| --- | --- | --- |
-| `organisms.maxAge` | 600 s | **300 s** |
-| `organisms.senescenceAge` | 510 s | **250 s** |
-| `reproduction.minEnergy` | 60 | **75** |
-| `reproduction.cooldown` | 30 s | **45 s** |
-| `resources.spawnRate` | 1.6 / s | **2.0 / s** |
-| gene range `physical.maxAge` | 570 - 1200 | **270 - 1200** |
-| gene range `physical.senescenceAge` | 255 - 560 | **150 - 560** |
-| gene range `reproduction.minEnergy` | 40 - 90 | **40 - 98** |
-| gene range `reproduction.cooldown` | 15 - 60 | **15 - 120** |
+| setting                             | before     | after          |
+| ----------------------------------- | ---------- | -------------- |
+| `organisms.maxAge`                  | 600 s      | **300 s**      |
+| `organisms.senescenceAge`           | 510 s      | **250 s**      |
+| `reproduction.minEnergy`            | 60         | **75**         |
+| `reproduction.cooldown`             | 30 s       | **45 s**       |
+| `resources.spawnRate`               | 1.6 / s    | **2.0 / s**    |
+| gene range `physical.maxAge`        | 570 - 1200 | **270 - 1200** |
+| gene range `physical.senescenceAge` | 255 - 560  | **150 - 560**  |
+| gene range `reproduction.minEnergy` | 40 - 90    | **40 - 98**    |
+| gene range `reproduction.cooldown`  | 15 - 60    | **15 - 120**   |
 
 The lifespan was the strongest lever: a shorter life raises old-age deaths without touching births, and restrained breeding keeps adults fed. The food increase brings the population back to where bites left it (about 56) after the restraint lowered it. **The gene ranges had to move with the baselines**: mutation clamps a gene to its range, and a 300 s lifespan against a 570 s floor drifted up within one run (evolved mean 337 after 30,000 ticks), which would have undone the tuning. Mutation size is a fraction of the range width, so the wider ranges also make those four genes mutate in bigger steps.
 
