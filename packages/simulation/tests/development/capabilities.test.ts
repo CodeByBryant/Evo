@@ -92,7 +92,8 @@ describe('the founder body', () => {
       biteRate: 1,
       absorption: 1,
       dietEfficiency: [1, 1, 1, 1],
-      hasMouth: true
+      hasMouth: true,
+      mateSignal: 1
     })
   })
 
