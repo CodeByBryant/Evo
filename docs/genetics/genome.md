@@ -12,14 +12,14 @@ Founders start at the **baseline** (the existing `organisms.*` / `reproduction.*
 | ---------------------------------- | ---------------- | ----------------------------------------- | ------------ | ---- | ---- | ------------------------------------------------------------ |
 | `physical.radius`                  | float            | 5 (`organisms.radius`)                    | 2.5 - 10     | 0.1  | 0.05 | Interaction (capture radius), size-derived costs, snapshot   |
 | `physical.maturityAge`             | float            | 90 (`organisms.maturityAge`)              | 45 - 180     | 0.1  | 0.05 | life stage (Movement, Interaction, Metabolism, Reproduction) |
-| `physical.senescenceAge`           | float            | 510 (`organisms.senescenceAge`)           | 255 - 560    | 0.1  | 0.05 | life stage                                                   |
-| `physical.maxAge`                  | float            | 600 (`organisms.maxAge`)                  | 570 - 1200   | 0.1  | 0.05 | Death                                                        |
+| `physical.senescenceAge`           | float            | 250 (`organisms.senescenceAge`)           | 150 - 560    | 0.1  | 0.05 | life stage                                                   |
+| `physical.maxAge`                  | float            | 300 (`organisms.maxAge`)                  | 270 - 1200   | 0.1  | 0.05 | Death                                                        |
 | `physical.hue`                     | circular         | 0.55 (`organisms.hue`)                    | [0, 1) turns | 0.1  | 0.05 | carried (rendering, Phase 7)                                 |
 | `metabolic.basalCost`              | float            | 0.5 (`organisms.basalCost`)               | 0.3 - 0.8    | 0.1  | 0.05 | Metabolism (scaled by body size)                             |
 | `behavioral.wanderJitter`          | float            | 1.5 (`organisms.wanderJitter`)            | 0.75 - 3     | 0.1  | 0.05 | Decision                                                     |
-| `reproduction.minEnergy`           | float            | 60 (`reproduction.minEnergy`)             | 40 - 90      | 0.1  | 0.05 | Reproduction (eligibility)                                   |
+| `reproduction.minEnergy`           | float            | 75 (`reproduction.minEnergy`)             | 40 - 98      | 0.1  | 0.05 | Reproduction (eligibility)                                   |
 | `reproduction.offspringInvestment` | float            | 12.5 (`reproduction.offspringInvestment`) | 6 - 25       | 0.1  | 0.05 | Reproduction (energy given to the child)                     |
-| `reproduction.cooldown`            | float            | 30 (`reproduction.cooldown`)              | 15 - 60      | 0.1  | 0.05 | Reproduction                                                 |
+| `reproduction.cooldown`            | float            | 45 (`reproduction.cooldown`)              | 15 - 120     | 0.1  | 0.05 | Reproduction                                                 |
 | `reproduction.searchRadius`        | float            | 50 (`reproduction.searchRadius`)          | 25 - 100     | 0.1  | 0.05 | Reproduction (partner search)                                |
 | `learning.learningRate`            | float (relative) | 0.05 (`genetics.learning`)                | 0.001 - 0.5  | 0.1  | 0.05 | Brain (learning step size, learning cost)                    |
 | `learning.discountFactor`          | float            | 0.95 (`genetics.learning`)                | 0 - 1        | 0.1  | 0.05 | Brain (TD discount, trace decay)                             |
@@ -29,7 +29,7 @@ Founders start at the **baseline** (the existing `organisms.*` / `reproduction.*
 | `learning.noveltyPreference`       | float            | 0.5 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | scales the novelty reward (Phase 6)                          |
 | `learning.persistence`             | float            | 0.5 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | Brain (exploration annealing)                                |
 
-The ordering `maturityAge < senescenceAge < maxAge` is enforced by the operators: `senescenceAge` is declared `orderedAfter` `maturityAge`, and `maxAge` after `senescenceAge`, and mutation, recombination and repair raise such a gene's lower bound above the earlier gene (by a 1e-6 margin) even when the later gene itself did not mutate. Config validation requires each ordered gene's range maximum to exceed the earlier gene's, so there is always room. The default ranges happen not to overlap, but nothing relies on that.
+The ordering `maturityAge < senescenceAge < maxAge` is enforced by the operators: `senescenceAge` is declared `orderedAfter` `maturityAge`, and `maxAge` after `senescenceAge`, and mutation, recombination and repair raise such a gene's lower bound above the earlier gene (by a 1e-6 margin) even when the later gene itself did not mutate. Config validation requires each ordered gene's range maximum to exceed the earlier gene's, so there is always room. The default ranges of `maturityAge` and `senescenceAge` overlap (45 - 180 and 150 - 560) since ADR 0018, which nothing relies on being otherwise.
 
 If a default range edge excludes a changed founder baseline (for example `organisms.radius: 50`), that edge is widened to include it. An edge set explicitly in `genetics.genes` is never moved; config validation rejects a baseline outside it. For a relative gene (`learningRate`) the standard deviation is a fraction of the current value rather than of the range width.
 

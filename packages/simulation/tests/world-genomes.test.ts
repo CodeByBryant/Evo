@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { World } from '../src/index'
 import { genomeToVector } from '../src/genetics/GenomeFactory'
 import { withoutEcology } from './support/ecology'
+import { PHASE3_ECONOMY } from './support/phase3'
 
 /** The world wiring of genomes (docs/decisions/0006); Phase 3 behavior is pinned in world.test.ts. */
 describe('founders carry genomes', () => {
@@ -191,8 +192,9 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
     const world = World.create({
       seed: 1,
       config: withoutEcology({
-        organisms: { initialCount: 10 },
-        genetics: { mutationRateScale: 0 },
+        ...PHASE3_ECONOMY,
+        organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 10 },
+        genetics: { ...PHASE3_ECONOMY.genetics, mutationRateScale: 0 },
         learning: { controller: 'reflex' },
         // Phase 3 ate by touching and taking the whole item; bites came with ADR 0017.
         feeding: { enabled: false }

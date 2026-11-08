@@ -30,9 +30,9 @@ describe('derived traits at the founder baseline equal their Phase 3 values exac
     expect(sensorCostOf(founder, config)).toBe(config.organisms.sensorCost)
   })
 
-  it('reproduction cost is 20 and the threshold is the 60 minEnergy', () => {
+  it('reproduction cost is 20 and the threshold is the 75 minEnergy', () => {
     expect(reproductionCostOf(founder, config)).toBe(20)
-    expect(reproductionThresholdOf(founder, config)).toBe(60)
+    expect(reproductionThresholdOf(founder, config)).toBe(75)
   })
 
   it('stays exact for non-default baselines too', () => {

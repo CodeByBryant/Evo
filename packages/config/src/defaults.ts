@@ -57,9 +57,9 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     sensorCost: 0.1,
     learningCost: 0.02,
     hue: 0.55,
-    maxAge: 600,
+    maxAge: 300,
     maturityAge: 90,
-    senescenceAge: 510,
+    senescenceAge: 250,
     juvenileSizeScale: 0.5,
     juvenileSpeedScale: 0.7,
     juvenileMetabolicScale: 0.7
@@ -67,16 +67,16 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   resources: {
     initialCount: 100,
     maxCount: 200,
-    spawnRate: 1.6,
+    spawnRate: 2,
     energyValue: 30,
     radius: 3,
     region: null
   },
   reproduction: {
-    minEnergy: 60,
+    minEnergy: 75,
     offspringInvestment: 12.5,
     overheadFraction: 0.6,
-    cooldown: 30,
+    cooldown: 45,
     searchRadius: 50,
     mateSenseRadius: 250
   },
@@ -312,21 +312,25 @@ const range = (min: number, max: number, mutationStd = 0.05): GeneRange => ({
 
 /**
  * Default bounds and mutation parameters for every gene (docs/genetics/genome.md). The ranges of
- * `maturityAge`, `senescenceAge` and `maxAge` are disjoint and ordered so that
- * `maturityAge < senescenceAge < maxAge` holds for every genome by construction. Like the world
- * defaults these are provisional and tuned by the engine's scenario tests.
+ * `maturityAge`, `senescenceAge` and `maxAge` are kept ordered (`maturityAge < senescenceAge <
+ * maxAge`) by the operators, which raise a gene's lower bound above the earlier gene's value, and
+ * the upper edges strictly increase. The lifespan, `minEnergy` and `cooldown` ranges are wide
+ * enough that the founder baselines (300 s, 75, 45 s) sit well inside them: a baseline at the edge
+ * of its range is pulled back by mutation clamping (measured: a 300 s lifespan against a 570 s
+ * floor drifted up within one run). Like the world defaults these are provisional and tuned by
+ * measurement (docs/decisions/0018-population-tuning.md).
  */
 export const DEFAULT_GENE_RANGES: Readonly<Record<GenePath, Readonly<GeneRange>>> = deepFreeze({
   'physical.radius': range(2.5, 10),
   'physical.maturityAge': range(45, 180),
-  'physical.senescenceAge': range(255, 560),
-  'physical.maxAge': range(570, 1200),
+  'physical.senescenceAge': range(150, 560),
+  'physical.maxAge': range(270, 1200),
   'physical.hue': range(0, 1),
   'metabolic.basalCost': range(0.3, 0.8),
   'behavioral.wanderJitter': range(0.75, 3),
-  'reproduction.minEnergy': range(40, 90),
+  'reproduction.minEnergy': range(40, 98),
   'reproduction.offspringInvestment': range(6, 25),
-  'reproduction.cooldown': range(15, 60),
+  'reproduction.cooldown': range(15, 120),
   'reproduction.searchRadius': range(25, 100),
   'learning.learningRate': range(0.001, 0.5, 0.1),
   'learning.discountFactor': range(0, 1),

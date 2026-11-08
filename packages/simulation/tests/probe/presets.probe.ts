@@ -11,9 +11,12 @@ import { World } from '../../src/index'
  * guesses (docs/decisions/0015, the starvation work).
  *
  *   PROBE_PRESETS  comma-separated preset names (default: all)
- *   PROBE_SEEDS    how many seeds, 1..N (default 8)
+ *   PROBE_SEEDS    how many seeds (default 8)
+ *   PROBE_SEED_FROM first seed (default 1), to spread seeds over several processes
  *   PROBE_TICKS    ticks per world (default 20000)
  *   PROBE_OUT      output path without extension (default: the system temp directory)
+ *   PROBE_CONFIG   JSON merged over every preset's overrides, to sweep a setting, e.g.
+ *                  '{"reproduction":{"minEnergy":80}}' (sections merge field by field)
  *
  * Writes `<out>.json` (one row per world, one aggregate per preset) and `<out>.md` (a table). Run
  * one preset per process to use several cores:
@@ -24,9 +27,11 @@ const names = (process.env['PROBE_PRESETS'] ?? PRESETS.map((p) => p.name).join('
   .map((n) => n.trim())
   .filter((n) => n !== '')
 const seedCount = Number(process.env['PROBE_SEEDS'] ?? 8)
+const seedFrom = Number(process.env['PROBE_SEED_FROM'] ?? 1)
 const ticks = Number(process.env['PROBE_TICKS'] ?? 20_000)
 const SAMPLE_EVERY = 250
 const GENE_EVERY = 2_500
+const extra = JSON.parse(process.env['PROBE_CONFIG'] ?? '{}') as Record<string, unknown>
 const out = process.env['PROBE_OUT'] ?? join(tmpdir(), `evo-probe-${names.join('+')}`)
 
 interface Row {
@@ -68,6 +73,25 @@ interface Row {
   ticksPerSecond: number
 }
 
+/** Merges `b` over `a`, section by section (plain objects merge, everything else is replaced). */
+function mergeConfig(a: object, b: Record<string, unknown>): never {
+  const out: Record<string, unknown> = { ...(a as Record<string, unknown>) }
+  for (const [key, value] of Object.entries(b)) {
+    const current = out[key]
+    const bothObjects =
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value) &&
+      typeof current === 'object' &&
+      current !== null &&
+      !Array.isArray(current)
+    out[key] = bothObjects
+      ? mergeConfig(current as object, value as Record<string, unknown>)
+      : value
+  }
+  return out as never
+}
+
 function median(xs: number[]): number {
   if (xs.length === 0) return 0
   const sorted = [...xs].sort((a, b) => a - b)
@@ -77,7 +101,7 @@ function median(xs: number[]): number {
 function runWorld(presetName: string, seed: number): Row {
   const preset = presetByName(presetName)
   if (preset === undefined) throw new Error(`unknown preset ${presetName}`)
-  const world = World.create({ seed, config: preset.overrides })
+  const world = World.create({ seed, config: mergeConfig(preset.overrides, extra) })
   const dt = world.config.timestep
   const maturity = world.config.organisms.maturityAge
   const born = new Map<number, number>()
@@ -188,7 +212,7 @@ describe('preset probe', () => {
     ]
     for (const name of names) {
       const mine: Row[] = []
-      for (let seed = 1; seed <= seedCount; seed++) mine.push(runWorld(name, seed))
+      for (let seed = seedFrom; seed < seedFrom + seedCount; seed++) mine.push(runWorld(name, seed))
       rows.push(...mine)
       const deaths = mine.reduce((a, r) => a + r.starved + r.aged + r.damaged, 0)
       const starved = mine.reduce((a, r) => a + r.starved, 0)
