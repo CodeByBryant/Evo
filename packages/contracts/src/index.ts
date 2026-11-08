@@ -184,6 +184,7 @@ export type {
   FounderOutline,
   FounderPart,
   PartConfig,
+  PartEffectsConfig,
   PartDefinition,
   PartStatSpec,
   PartType,

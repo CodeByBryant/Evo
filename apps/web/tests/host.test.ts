@@ -137,7 +137,8 @@ describe('SimulationHost: the interface is not updated per tick', () => {
     // about 8 a second, plus a few forced ones; nowhere near one per tick
     expect(notifications).toBeLessThanOrEqual(Math.ceil(seconds * 8) + 6)
     expect(notifications * 20).toBeLessThan(ticks)
-  })
+    // 5,000 ticks run at 5.08 s against the 5 s default since bites made worlds larger (ADR 0017).
+  }, 30_000)
 
   it('hands React a stable object between updates', () => {
     const { host: h } = host()

@@ -37,6 +37,7 @@ export interface BodyPalette {
 const WHITE = 0xe9eee6
 const DARK = 0x0a0c12
 const LEAF = 0x8fdc72
+const FAT = 0xf2e08a
 const ARMOR = 0xb4b9bd
 const HEAL = 0x76c79d
 
@@ -294,11 +295,17 @@ function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number)
   const speedRate = beatRate(o.speedRatio)
   const order: readonly PartSnapshot['type'][] = [
     'armor',
+    'skeleton',
     'intestine',
     'stomach',
+    'lipid',
+    'gyro',
     'mender',
     'cilia',
     'sniffer',
+    'join',
+    'eyestalk',
+    'pheromone',
     'mouth',
     'eye'
   ]
@@ -364,6 +371,97 @@ function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number)
             color: HEAL,
             alpha: 0.9 * alpha
           })
+          break
+        }
+        case 'skeleton': {
+          // a spine along its axis with ribs across it
+          const end = {
+            x: part.x + Math.cos(part.orientation) * Math.max(part.length, r * 0.4),
+            y: part.y + Math.sin(part.orientation) * Math.max(part.length, r * 0.4)
+          }
+          g.moveTo(part.x, part.y)
+            .lineTo(end.x, end.y)
+            .stroke({
+              width: Math.max(0.4, r * 0.07),
+              color: p.light,
+              alpha: 0.7 * alpha,
+              cap: 'round'
+            })
+          for (const k of [0.3, 0.55, 0.8]) {
+            const cx = part.x + (end.x - part.x) * k
+            const cy = part.y + (end.y - part.y) * k
+            const nx = -Math.sin(part.orientation) * r * 0.16
+            const ny = Math.cos(part.orientation) * r * 0.16
+            g.moveTo(cx - nx, cy - ny)
+              .lineTo(cx + nx, cy + ny)
+              .stroke({
+                width: Math.max(0.3, r * 0.04),
+                color: p.light,
+                alpha: 0.6 * alpha,
+                cap: 'round'
+              })
+          }
+          break
+        }
+        case 'lipid': {
+          const radius = Math.max(part.radius * 1.2, r * 0.14)
+          g.circle(part.x, part.y, radius).fill({ color: FAT, alpha: 0.55 * alpha })
+          g.circle(part.x - radius * 0.3, part.y - radius * 0.3, radius * 0.3).fill({
+            color: 0xffffff,
+            alpha: 0.4 * alpha
+          })
+          break
+        }
+        case 'gyro': {
+          const radius = Math.max(part.radius, r * 0.12)
+          g.circle(part.x, part.y, radius).stroke({
+            width: Math.max(0.3, r * 0.04),
+            color: p.light,
+            alpha: 0.8 * alpha
+          })
+          for (const k of [0, 1]) {
+            const a = t * 3 + (k * Math.PI) / 2
+            g.moveTo(part.x - Math.cos(a) * radius, part.y - Math.sin(a) * radius)
+              .lineTo(part.x + Math.cos(a) * radius, part.y + Math.sin(a) * radius)
+              .stroke({ width: Math.max(0.3, r * 0.035), color: p.light, alpha: 0.8 * alpha })
+          }
+          break
+        }
+        case 'join':
+        case 'eyestalk': {
+          // a stalk from the rim along the axis; whatever hangs from it is drawn at its own anchor
+          const reach = Math.max(part.length, r * 0.15)
+          const tip = {
+            x: part.x + Math.cos(part.orientation) * reach,
+            y: part.y + Math.sin(part.orientation) * reach
+          }
+          g.moveTo(part.x, part.y)
+            .lineTo(tip.x, tip.y)
+            .stroke({
+              width: Math.max(0.4, r * (type === 'join' ? 0.12 : 0.07)),
+              color: p.tail,
+              alpha: 0.9 * alpha,
+              cap: 'round'
+            })
+          g.circle(tip.x, tip.y, Math.max(0.3, r * 0.05)).fill({
+            color: p.tail,
+            alpha: 0.9 * alpha
+          })
+          break
+        }
+        case 'pheromone': {
+          // three arcs of scent drifting outwards
+          const wave = pulse(t, offset, 1.2)
+          for (const k of [1, 2, 3]) {
+            const reach = r * (0.1 + 0.07 * k) * (0.8 + 0.4 * wave)
+            const a0 = part.orientation - 0.5
+            const a1 = part.orientation + 0.5
+            g.arc(part.x, part.y, reach, a0, a1).stroke({
+              width: Math.max(0.3, r * 0.03),
+              color: FAT,
+              alpha: (0.8 - 0.2 * k) * alpha
+            })
+          }
           break
         }
         case 'cilia': {

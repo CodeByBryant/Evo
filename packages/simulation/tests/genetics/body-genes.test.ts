@@ -281,7 +281,7 @@ describe('body distance and validation', () => {
     }
     expect(bad((g) => (g[slotGeneIndex(2, 'size')] = 5)).join()).toContain('body.slot2.size')
     expect(bad((g) => (g[slotGeneIndex(1, 'type')] = 2.5)).join()).toContain('body.slot1.type')
-    expect(bad((g) => (g[slotGeneIndex(1, 'type')] = 11)).join()).toContain('body.slot1.type')
+    expect(bad((g) => (g[slotGeneIndex(1, 'type')] = 16)).join()).toContain('body.slot1.type')
     expect(bad((g) => (g[slotGeneIndex(4, 'present')] = 0.5)).join()).toContain(
       'body.slot4.present must be 0 or 1'
     )

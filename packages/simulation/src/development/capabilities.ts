@@ -63,6 +63,7 @@ export function capabilitiesOf(
   /** The food kinds' names, to look up each mouth form's yield; a kind not named counts as 1. */
   kindNames: readonly string[] = []
 ): Capabilities {
+  const { effects } = config
   let mass = config.bodyMass * bodyScale
   let upkeep = 0
   let forwardThrust = 0
@@ -82,6 +83,7 @@ export function capabilitiesOf(
   let biteRate = 0
   let absorption = 1
   let mouthPower = 0
+  let signal = 0
   const dietSum = new Array<number>(Math.max(1, kindCount)).fill(0)
 
   for (const part of anatomy.parts) {
@@ -122,6 +124,25 @@ export function capabilitiesOf(
       case 'mender':
         upkeepScale = mult(part, 'rate') / mult(part, 'efficiency')
         break
+      case 'eyestalk':
+        massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'stiffness'))
+        break
+      case 'gyro':
+        upkeepScale = mult(part, 'stability')
+        break
+      case 'lipid':
+        // Fat is heavy: the more it stores the more it weighs, so it slows the body.
+        massScale = mult(part, 'reserve')
+        break
+      case 'pheromone':
+        upkeepScale = mult(part, 'potency')
+        break
+      case 'skeleton':
+        massScale = (0.5 + 0.5 * mult(part, 'rigidity')) * (0.5 + 0.5 * mult(part, 'length'))
+        break
+      case 'join':
+        massScale = 0.5 + 0.5 * mult(part, 'length')
+        break
     }
     mass += balance.mass * part.size * massScale
     upkeep += balance.upkeep * part.size * upkeepScale
@@ -145,9 +166,27 @@ export function capabilitiesOf(
         torque += strength * Math.abs(part.x * fy - part.y * fx)
         break
       }
-      case 'eye':
-        eyes += p * mult(part, 'range')
+      case 'eye': {
+        // An eye carried on a working eyestalk sees further, by the stalk's length.
+        const carrier =
+          part.parent < 0 ? undefined : anatomy.parts.find((q) => q.slot === part.parent)
+        const lift =
+          carrier !== undefined && carrier.type === 'eyestalk' && carrier.functional
+            ? 1 + effects.eyestalkLift * mult(carrier, 'length')
+            : 1
+        eyes += p * mult(part, 'range') * lift
         resolution += p * mult(part, 'resolution')
+        break
+      }
+      case 'gyro':
+        // Turning without thrust: the moment of a spinning mass, not of a push.
+        torque += p * mult(part, 'stability') * effects.gyroTorque
+        break
+      case 'lipid':
+        energyCapacity += p * mult(part, 'reserve') * effects.lipidCapacity
+        break
+      case 'pheromone':
+        signal += p * mult(part, 'potency') * effects.pheromoneSignal
         break
       case 'sniffer': {
         const kind = sniffedKind(part.stats[2] as number, detection.length)
@@ -218,7 +257,8 @@ export function capabilitiesOf(
     absorption,
     // The power-weighted mean of the mouths' yields: exactly 1 for the mandible (p / p).
     dietEfficiency: dietSum.map((sum) => (mouthPower > 0 ? sum / mouthPower : 1)),
-    hasMouth: mouthPower > 0
+    hasMouth: mouthPower > 0,
+    mateSignal: Math.min(effects.pheromoneCap, 1 + signal)
   }
 }
 
@@ -265,7 +305,8 @@ export function capabilityFactors(
     // Absolute, not relative to the founder: 1 is the generalist's yield, whatever form the
     // configured founder has (the default founder's mandible is exactly 1 on every kind).
     dietEfficiency: capabilities.dietEfficiency,
-    hasMouth: capabilities.hasMouth
+    hasMouth: capabilities.hasMouth,
+    mateSignal: relative(capabilities.mateSignal, founder.mateSignal)
   }
 }
 
