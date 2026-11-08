@@ -26,6 +26,7 @@ const names = (process.env['PROBE_PRESETS'] ?? PRESETS.map((p) => p.name).join('
 const seedCount = Number(process.env['PROBE_SEEDS'] ?? 8)
 const ticks = Number(process.env['PROBE_TICKS'] ?? 20_000)
 const SAMPLE_EVERY = 250
+const GENE_EVERY = 2_500
 const out = process.env['PROBE_OUT'] ?? join(tmpdir(), `evo-probe-${names.join('+')}`)
 
 interface Row {
@@ -48,24 +49,95 @@ interface Row {
   energyConsumed: number
   energyWasted: number
   clusterAlive: number[] | null
+  /** Deaths by cause and life stage (juvenile: younger than `organisms.maturityAge`). */
+  stages: Record<'juvenile' | 'mature', { starved: number; aged: number; damaged: number }>
+  /** Median age at death in seconds, by cause (0 when there were none). */
+  medianAgeStarved: number
+  medianAgeAged: number
+  /** Births per second per mature creature: compare with `1 / cooldown`, the most one can do. */
+  birthRate: number
+  /** The evolved reproduction and lifespan genes among the living, sampled over the run. */
+  genes: Array<{
+    tick: number
+    cooldown: number
+    minEnergy: number
+    offspringInvestment: number
+    maturityAge: number
+    maxAge: number
+  }>
+  ticksPerSecond: number
+}
+
+function median(xs: number[]): number {
+  if (xs.length === 0) return 0
+  const sorted = [...xs].sort((a, b) => a - b)
+  return sorted[Math.floor(sorted.length / 2)] as number
 }
 
 function runWorld(presetName: string, seed: number): Row {
   const preset = presetByName(presetName)
   if (preset === undefined) throw new Error(`unknown preset ${presetName}`)
   const world = World.create({ seed, config: preset.overrides })
+  const dt = world.config.timestep
+  const maturity = world.config.organisms.maturityAge
+  const born = new Map<number, number>()
+  for (const o of world.snapshot().organisms) born.set(o.id, 0)
+  const stages = {
+    juvenile: { starved: 0, aged: 0, damaged: 0 },
+    mature: { starved: 0, aged: 0, damaged: 0 }
+  }
+  const ageStarved: number[] = []
+  const ageAged: number[] = []
+  const genes: Row['genes'] = []
+  let birthCount = 0
+  let matureSeconds = 0
   let sum = 0
   let samples = 0
   let min = Infinity
   let max = 0
-  for (let done = 0; done < ticks && !world.isExtinct; done += SAMPLE_EVERY) {
-    world.run(Math.min(SAMPLE_EVERY, ticks - done))
-    const active = world.snapshot().population.active
-    sum += active
-    samples++
-    min = Math.min(min, active)
-    max = Math.max(max, active)
+  const started = performance.now()
+  for (let tick = 1; tick <= ticks && !world.isExtinct; tick++) {
+    world.step()
+    for (const event of world.events.eventsThisTick()) {
+      if (event.type === 'organism-born') {
+        born.set(event.organismId, event.tick)
+        birthCount += 1
+      } else if (event.type === 'organism-died') {
+        const age = (event.tick - (born.get(event.organismId) ?? 0)) * dt
+        const stage = age < maturity ? 'juvenile' : 'mature'
+        if (event.cause === 'starvation') {
+          stages[stage].starved += 1
+          ageStarved.push(age)
+        } else if (event.cause === 'age') {
+          stages[stage].aged += 1
+          ageAged.push(age)
+        } else stages[stage].damaged += 1
+        born.delete(event.organismId)
+      }
+    }
+    if (tick % SAMPLE_EVERY === 0) {
+      const snapshot = world.snapshot()
+      const active = snapshot.population.active
+      sum += active
+      samples++
+      min = Math.min(min, active)
+      max = Math.max(max, active)
+      matureSeconds +=
+        snapshot.organisms.filter((o) => o.lifeStage !== 'juvenile').length * SAMPLE_EVERY * dt
+      if (tick % GENE_EVERY === 0 && snapshot.organisms.length > 0) {
+        const g = snapshot.organisms.map((o) => world.genomeOf(o.id)!)
+        genes.push({
+          tick,
+          cooldown: mean(g.map((x) => x.reproduction.cooldown)),
+          minEnergy: mean(g.map((x) => x.reproduction.minEnergy)),
+          offspringInvestment: mean(g.map((x) => x.reproduction.offspringInvestment)),
+          maturityAge: mean(g.map((x) => x.physical.maturityAge)),
+          maxAge: mean(g.map((x) => x.physical.maxAge))
+        })
+      }
+    }
   }
+  const seconds = (performance.now() - started) / 1000
   const snapshot = world.snapshot()
   const m = snapshot.metrics
   const deaths = m.deathsByStarvation + m.deathsByAge + m.deathsByDamage
@@ -88,7 +160,13 @@ function runWorld(presetName: string, seed: number): Row {
     foodCap: world.config.resources.maxCount,
     energyConsumed: m.energyConsumed,
     energyWasted: m.energyWasted,
-    clusterAlive: world.clusterReport()?.clusters.map((c) => c.alive) ?? null
+    clusterAlive: world.clusterReport()?.clusters.map((c) => c.alive) ?? null,
+    stages,
+    medianAgeStarved: median(ageStarved),
+    medianAgeAged: median(ageAged),
+    birthRate: matureSeconds === 0 ? 0 : birthCount / matureSeconds,
+    genes,
+    ticksPerSecond: seconds === 0 ? 0 : snapshot.tick / seconds
   }
 }
 
@@ -103,6 +181,10 @@ describe('preset probe', () => {
     const table: string[] = [
       '| preset | worlds | extinct | pop mean | pop min..max | starved share | food / cap | energy wasted | clusters empty |',
       '| --- | --- | --- | --- | --- | --- | --- | --- | --- |'
+    ]
+    const detail: string[] = [
+      '| preset | juvenile starved | mature starved | aged | median age starved / aged (s) | births per mature creature per s | ticks/s | cooldown gene first..last | minEnergy | investment | maxAge |',
+      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
     ]
     for (const name of names) {
       const mine: Row[] = []
@@ -129,6 +211,18 @@ describe('preset probe', () => {
         emptyClusters: clustered ? empty : null
       }
       aggregates[name] = aggregate
+      const sum = (pick: (r: Row) => number): number => mine.reduce((a, r) => a + pick(r), 0)
+      const share = (n: number): string => (deaths === 0 ? '-' : `${fixed((n / deaths) * 100, 1)}%`)
+      const firstLast = (key: keyof Row['genes'][number]): string => {
+        const a = mean(mine.map((r) => (r.genes[0]?.[key] as number | undefined) ?? 0))
+        const b = mean(
+          mine.map((r) => (r.genes[r.genes.length - 1]?.[key] as number | undefined) ?? 0)
+        )
+        return `${fixed(a, 1)}..${fixed(b, 1)}`
+      }
+      detail.push(
+        `| ${name} | ${share(sum((r) => r.stages.juvenile.starved))} | ${share(sum((r) => r.stages.mature.starved))} | ${share(sum((r) => r.aged))} | ${fixed(mean(mine.map((r) => r.medianAgeStarved)), 0)} / ${fixed(mean(mine.map((r) => r.medianAgeAged)), 0)} | ${fixed(mean(mine.map((r) => r.birthRate)), 4)} | ${fixed(mean(mine.map((r) => r.ticksPerSecond)), 0)} | ${firstLast('cooldown')} | ${firstLast('minEnergy')} | ${firstLast('offspringInvestment')} | ${firstLast('maxAge')} |`
+      )
       table.push(
         `| ${name} | ${aggregate.worlds} | ${aggregate.extinct} | ${fixed(aggregate.popMean, 1)} | ${aggregate.popMin}..${aggregate.popMax} | ${fixed(aggregate.starvationShare * 100, 1)}% | ${fixed(aggregate.foodRatio * 100, 0)}% | ${fixed(aggregate.energyWastedShare * 100, 0)}% | ${aggregate.emptyClusters ?? '-'} |`
       )
@@ -138,6 +232,6 @@ describe('preset probe', () => {
       `${out}.json`,
       JSON.stringify({ ticks, seeds: seedCount, aggregates, rows }, null, 1)
     )
-    writeFileSync(`${out}.md`, `${table.join('\n')}\n`)
+    writeFileSync(`${out}.md`, `${table.join('\n')}\n\n${detail.join('\n')}\n`)
   })
 })
