@@ -29,7 +29,7 @@ A body has 12 slots; each is empty or holds one part. The types are in the order
 | `cilia`     | length, density, rate                                                                    |
 | `eye`       | range, resolution, field of view (stored and shown; acts when directional sensing lands) |
 | `sniffer`   | range, sensitivity, selectivity (which food kind)                                        |
-| `mouth`     | reach, gape                                                                              |
+| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw), bite rate                  |
 | `intestine` | length, absorption, filter                                                               |
 | `stomach`   | capacity, throughput                                                                     |
 | `armor`     | thickness, coverage, hardness                                                            |
@@ -66,22 +66,25 @@ It uses the engine's own `cos` and `sin`, no randomness, and never modifies its 
 
 `capabilitiesOf(anatomy, config, bodyScale, kindCount)`. Sums run over functional parts of the named type; `p = strength * size * integrity`; `m(stat)` is the stat's multiplier `0.5 + gene`, exactly 1 at the founder's value, so every line is the founder's at founder stats. Gene tables per type are in [ADR 0016](../decisions/0016-part-stats-and-attachment.md).
 
-| Capability               | Formula                                                                                                                                                         |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| mass                     | `bodyMass * bodyScale` + `sum(mass * size * massScale)` over **all** parts (`massScale` follows the part's own dimensions)                                      |
-| upkeep                   | `sum(upkeep * size * upkeepScale)` over **all** parts (`upkeepScale` follows force, rate or range; energy per second)                                           |
-| thrust strength          | flagellum `p * m(force) * sqrt(m(length)) * (0.8 + 0.2 m(thickness))`; cilia `p * m(density) * sqrt(m(length) * m(rate))`                                       |
-| forward / lateral thrust | `strength * max(0, fx)` / `strength * abs(fy)` with the push `(fx, fy) = -(cos axis, sin axis)` (a tail trails along its axis)                                  |
-| torque                   | `strength * abs(x * fy - y * fx)`: the moment of the force about the centre, from the part's anchor                                                             |
-| sense range              | `senseFloor + sqrt(sum(p * m(range)))` over eyes (so each extra eye adds less)                                                                                  |
-| food detection, kind `k` | `(1 + sum(p * (m(range) + m(sensitivity)) / 2)) * (1 + 0.25 * sum(p * m(resolution)))`; a sniffer's selectivity stat picks `k`; eye resolution lifts every kind |
-| reach                    | `1 + sum(p * m(reach))` over mouths                                                                                                                             |
-| digestion                | `1 + sum(p * (m(absorption) + m(length)) / 2)` over intestines `+ sum(p * m(gape) / 2)` over mouths `+ sum(p * m(throughput) / 2)` over stomachs                |
-| toxin tolerance          | `x / (1 + x)` with `x = sum(p * m(filter))` over intestines, in `[0, 1)`                                                                                        |
-| energy capacity          | `1 + sum(p * m(capacity))` over stomachs                                                                                                                        |
-| damage taken             | `1 / (1 + sum(p * (m(thickness) + m(coverage) + m(hardness)) / 3))` over armor, in `(0, 1]`                                                                     |
-| temperature tolerance    | `1 + sum(p * m(insulation) * (0.8 + 0.2 m(thickness)))` over membranes                                                                                          |
-| regeneration             | `1 + sum(p * m(rate))` over menders                                                                                                                             |
+| Capability                | Formula                                                                                                                                                         |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| mass                      | `bodyMass * bodyScale` + `sum(mass * size * massScale)` over **all** parts (`massScale` follows the part's own dimensions)                                      |
+| upkeep                    | `sum(upkeep * size * upkeepScale)` over **all** parts (`upkeepScale` follows force, rate or range; energy per second)                                           |
+| thrust strength           | flagellum `p * m(force) * sqrt(m(length)) * (0.8 + 0.2 m(thickness))`; cilia `p * m(density) * sqrt(m(length) * m(rate))`                                       |
+| forward / lateral thrust  | `strength * max(0, fx)` / `strength * abs(fy)` with the push `(fx, fy) = -(cos axis, sin axis)` (a tail trails along its axis)                                  |
+| torque                    | `strength * abs(x * fy - y * fx)`: the moment of the force about the centre, from the part's anchor                                                             |
+| sense range               | `senseFloor + sqrt(sum(p * m(range)))` over eyes (so each extra eye adds less)                                                                                  |
+| food detection, kind `k`  | `(1 + sum(p * (m(range) + m(sensitivity)) / 2)) * (1 + 0.25 * sum(p * m(resolution)))`; a sniffer's selectivity stat picks `k`; eye resolution lifts every kind |
+| reach                     | `1 + sum(p * m(reach))` over mouths                                                                                                                             |
+| bite size / bite rate     | `sum(p * m(gape))` / `sum(p * m(rate))` over mouths; zero without a working mouth, which then cannot bite (ADR 0017)                                            |
+| diet efficiency, kind `k` | power-weighted mean over mouths of the form's yield for that kind (config `anatomy.mouthForms`; the mandible is exactly 1)                                      |
+| absorption                | `1 + sum(p * (m(absorption) + m(length)) / 2)` over intestines `+ sum(p * m(throughput) / 2)` over stomachs: how fast the gut empties                           |
+| digestion                 | `1 + sum(p * (m(absorption) + m(length)) / 2)` over intestines `+ sum(p * m(gape) / 2)` over mouths `+ sum(p * m(throughput) / 2)` over stomachs                |
+| toxin tolerance           | `x / (1 + x)` with `x = sum(p * m(filter))` over intestines, in `[0, 1)`                                                                                        |
+| energy capacity           | `1 + sum(p * m(capacity))` over stomachs                                                                                                                        |
+| damage taken              | `1 / (1 + sum(p * (m(thickness) + m(coverage) + m(hardness)) / 3))` over armor, in `(0, 1]`                                                                     |
+| temperature tolerance     | `1 + sum(p * m(insulation) * (0.8 + 0.2 m(thickness)))` over membranes                                                                                          |
+| regeneration              | `1 + sum(p * m(rate))` over menders                                                                                                                             |
 
 The consequences are the point: a flagellum pushing forward drives speed; pushing sideways it strafes; placed off the axis it turns the body; one at the rear on the axis cannot. Every part costs mass and upkeep, a dormant part costs them for nothing, and armor can reduce damage but never to zero.
 
