@@ -27,7 +27,10 @@ describe('Phase 6A: species exit criteria', () => {
     const world = run(1, 30_000)
     const species = world.species.list()
     expect(species.length).toBeGreaterThanOrEqual(3)
-    expect(species.length).toBeLessThanOrEqual(80)
+    // 80 until bites (ADR 0017): with no food wasted the population peaks near 90 instead of 40,
+    // and species follow births. Seeds 1 to 4 end with 106, 163, 125 and 130 species (36, 22, 17
+    // and 46 before). Still bounded, which is the claim; the threshold is re-tuned with the ecology.
+    expect(species.length).toBeLessThanOrEqual(220)
     for (const s of species.slice(1)) {
       expect(s.ancestorSpeciesId).not.toBeNull()
       expect(s.ancestorSpeciesId as number).toBeLessThan(s.id)
@@ -62,7 +65,9 @@ describe('Phase 6A: species exit criteria', () => {
       }
     }
     expect(longLived).toBeGreaterThanOrEqual(1)
-  })
+    // Two 30,000-tick worlds; with bites (ADR 0017) they hold 2.5 times the creatures and CI runners
+    // are slower than a laptop (69 s against the old 60 s default).
+  }, 240_000)
 
   it('keeps the number of living species bounded, and below the population', () => {
     for (const seed of [1, 3]) {
@@ -74,7 +79,8 @@ describe('Phase 6A: species exit criteria', () => {
         maxActive = Math.max(maxActive, active)
         expect(active).toBeLessThanOrEqual(world.snapshot().population.active)
       }
-      expect(maxActive).toBeLessThanOrEqual(20)
+      // 20 before bites (ADR 0017); seeds 1 to 4 now reach 33, 37, 38 and 37 living species.
+      expect(maxActive).toBeLessThanOrEqual(50)
       expect(world.validate()).toEqual({ ok: true, errors: [] })
     }
   })

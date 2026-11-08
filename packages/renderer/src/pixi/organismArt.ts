@@ -36,6 +36,7 @@ export interface BodyPalette {
 
 const WHITE = 0xe9eee6
 const DARK = 0x0a0c12
+const LEAF = 0x8fdc72
 const ARMOR = 0xb4b9bd
 const HEAL = 0x76c79d
 
@@ -183,6 +184,108 @@ function drawBack(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number):
   }
 }
 
+/**
+ * A mouth, drawn by its form so the diet is readable at a glance (ADR 0017): a sprout's leafy tuft,
+ * a proboscis' thin tube, a mandible's pincers, a radula's toothed scraper and a jaw's hinged V.
+ * It sits on the rim and points along the part's axis; `open` in `[0.3, 1]` animates it.
+ */
+function drawMouth(
+  g: Graphics,
+  part: PartSnapshot,
+  r: number,
+  open: number,
+  alpha: number,
+  p: BodyPalette
+): void {
+  const s = Math.max(part.radius, r * 0.12) * 1.5
+  const ux = Math.cos(part.orientation)
+  const uy = Math.sin(part.orientation)
+  const vx = -uy
+  const vy = ux
+  const bx = part.x
+  const by = part.y
+  const at = (along: number, across: number): [number, number] => [
+    bx + ux * along + vx * across,
+    by + uy * along + vy * across
+  ]
+  const line = (
+    from: [number, number],
+    to: [number, number],
+    width: number,
+    color: number,
+    a: number
+  ): void => {
+    g.moveTo(from[0], from[1])
+      .lineTo(to[0], to[1])
+      .stroke({ width: Math.max(0.25, width), color, alpha: a * alpha, cap: 'round' })
+  }
+  switch (part.form) {
+    case 0: {
+      // sprout: a fan of three leaves
+      for (const k of [-1, 0, 1]) {
+        const reach = s * (1.5 + 0.4 * open) * (k === 0 ? 1.2 : 1)
+        line(at(0, 0), at(reach, k * s * 0.9), s * 0.45, LEAF, 0.95)
+        g.circle(...at(reach, k * s * 0.9), Math.max(0.25, s * 0.22)).fill({
+          color: LEAF,
+          alpha: 0.9 * alpha
+        })
+      }
+      break
+    }
+    case 1: {
+      // proboscis: a thin tube that extends and retracts
+      const length = s * (1.6 + 1.4 * open)
+      line(at(0, 0), at(length, 0), s * 0.32, DARK, 0.85)
+      g.circle(...at(length, 0), Math.max(0.25, s * 0.28)).fill({ color: DARK, alpha: 0.9 * alpha })
+      break
+    }
+    case 2: {
+      // mandible: two pincers that close on what they hold
+      for (const side of [-1, 1]) {
+        const gap = s * (1.0 - 0.55 * (1 - open))
+        const points = [
+          ...at(0, side * s * 0.5),
+          ...at(s * 1.2, side * gap),
+          ...at(s * 1.9, side * s * 0.2)
+        ]
+        g.poly(points, false).stroke({
+          width: Math.max(0.3, s * 0.42),
+          color: DARK,
+          alpha: 0.9 * alpha,
+          cap: 'round',
+          join: 'round'
+        })
+      }
+      break
+    }
+    case 3: {
+      // radula: a bar across the mouth with a row of rasping teeth
+      line(at(s * 0.5, -s), at(s * 0.5, s), s * 0.55, p.tail, 0.9)
+      for (const k of [-0.7, 0, 0.7]) {
+        line(at(s * 0.5, k * s), at(s * (1.2 + 0.4 * open), k * s), s * 0.2, DARK, 0.9)
+      }
+      break
+    }
+    default: {
+      // jaw: a hinge that opens and shuts, with teeth
+      const spread = 0.2 + 0.55 * open
+      for (const side of [-1, 1]) {
+        const a = part.orientation + side * spread
+        const tip: [number, number] = [bx + Math.cos(a) * s * 2.4, by + Math.sin(a) * s * 2.4]
+        line([bx, by], tip, s * 0.5, DARK, 0.92)
+        const mid: [number, number] = [bx + Math.cos(a) * s * 1.6, by + Math.sin(a) * s * 1.6]
+        const inward: [number, number] = [
+          mid[0] - Math.sin(a) * side * -s * 0.45,
+          mid[1] + Math.cos(a) * side * -s * 0.45
+        ]
+        line(mid, inward, s * 0.18, WHITE, 0.9)
+      }
+      break
+    }
+  }
+  g.circle(bx, by, Math.max(0.25, s * 0.4 * open)).fill({ color: DARK, alpha: 0.8 * alpha })
+}
+
 /** The parts on and in the body: plates, gut, cilia, feelers, mouth, eyes. Cleared first. */
 function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number): void {
   g.clear()
@@ -308,11 +411,7 @@ function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number)
           break
         }
         case 'mouth': {
-          const open = mouthOpen(t, offset)
-          g.circle(part.x * 0.97, part.y * 0.97, Math.max(0.25, r * 0.09 * open)).fill({
-            color: DARK,
-            alpha: 0.85 * alpha
-          })
+          drawMouth(g, part, r, mouthOpen(t, offset), alpha, p)
           break
         }
         case 'eye': {

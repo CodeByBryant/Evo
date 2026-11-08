@@ -1,3 +1,4 @@
+import { MOUTH_FORMS, mouthFormOf } from '@evo/contracts'
 import type { Genome, PartSnapshot, WorldConfig } from '@evo/contracts'
 import { outlineDragOf, outlineOf, outlineScaleOf } from '../development/outline'
 import { developAnatomy } from '../development/develop'
@@ -29,6 +30,18 @@ export function outlineDragFactor(genome: Genome, config: WorldConfig): number {
 export function sizeFactor(genome: Genome, config: WorldConfig): number {
   const ratio = bodyRadiusOf(genome, config) / config.organisms.radius
   return ratio * ratio
+}
+
+/**
+ * How much bitten food a fully grown gut holds (ADR 0017): the configured capacity, scaled by body
+ * size and by the stomachs (the same factor that sets the energy capacity).
+ */
+export function gutCapacityOf(genome: Genome, config: WorldConfig): number {
+  return (
+    config.feeding.gutCapacity *
+    sizeFactor(genome, config) *
+    factorsOf(genome, config).energyCapacity
+  )
 }
 
 /** Energy capacity of a fully grown organism. */
@@ -125,7 +138,8 @@ export function drawnPartsOf(genome: Genome, config: WorldConfig): readonly Part
     y: part.y * factor,
     radius: 0.2 * radius * Math.sqrt(part.size),
     orientation: part.axis,
-    functional: part.functional
+    functional: part.functional,
+    form: part.type === 'mouth' ? MOUTH_FORMS.indexOf(mouthFormOf(part.stats[2] as number)) : 0
   }))
   drawnParts.set(genome.body.genes, { radius, parts })
   return parts

@@ -19,6 +19,8 @@ function describeEvent(event: WorldEvent): string {
       return `died ${event.organismId} (${event.cause})`
     case 'resource-spawned':
       return `spawned ${event.resourceId}`
+    case 'resource-bitten':
+      return `bitten ${event.resourceId}`
     case 'resource-consumed':
       return `consumed ${event.resourceId}`
     case 'organism-moved':
@@ -59,6 +61,7 @@ describe('contracts', () => {
       'organism-born',
       'organism-died',
       'resource-spawned',
+      'resource-bitten',
       'resource-consumed',
       'organism-moved',
       'energy-changed',
@@ -69,7 +72,7 @@ describe('contracts', () => {
       'hazard-expired'
     ]
     const causes: DeathCause[] = ['starvation', 'age', 'damage', 'environment']
-    expect(new Set(types).size).toBe(11)
+    expect(new Set(types).size).toBe(12)
     expect(new Set(causes).size).toBe(4)
   })
 
@@ -147,7 +150,9 @@ describe('contracts', () => {
       health: 100,
       maxHealth: 100,
       lifeStage: 'mature',
-      reproductionCooldownRemaining: 0
+      reproductionCooldownRemaining: 0,
+      gut: 0,
+      gutCapacity: 0
     }
     const keys = Object.keys(snapshot)
     for (const forbidden of ['generation', 'genome', 'alive']) {

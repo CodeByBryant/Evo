@@ -170,9 +170,11 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
   it('some organisms find food, some starve, and the world stays valid throughout', () => {
     const world = World.create({
       seed: 1,
+      // Phase 3's way of eating (touch and take whole): bites are pinned in feeding/.
       config: withoutEcology({
         organisms: { initialCount: 10 },
-        learning: { controller: 'reflex' }
+        learning: { controller: 'reflex' },
+        feeding: { enabled: false }
       }),
       validateEveryTicks: 100
     })

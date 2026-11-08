@@ -92,6 +92,10 @@ describe('controlled experiment: learning to interact', () => {
           learningCost: 0
         },
         resources: { initialCount: 100, maxCount: 100, spawnRate: 2 },
+        // This experiment is about credit assignment, not eating: it needs the original way of
+        // feeding (touch and take whole), where a lone creature that starts full still meets
+        // plenty of reward. Under bites it hardly needs food and the signal is too sparse.
+        feeding: { enabled: false },
         learning: { enabled, algorithm },
         genetics: { learning: { learningRate: 0.05 } }
       })

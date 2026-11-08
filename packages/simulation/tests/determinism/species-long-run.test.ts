@@ -16,7 +16,8 @@ describe('species long run', () => {
     expect(chunked.stateHash()).toBe(single.stateHash())
     expect(single.validate()).toEqual({ ok: true, errors: [] })
     expect(single.species.size).toBeGreaterThan(1)
-    expect(single.species.active().length).toBeLessThanOrEqual(25)
+    // 25 until bites (ADR 0017); seed 11 now ends with 42 living species (population about 2.5 times larger).
+    expect(single.species.active().length).toBeLessThanOrEqual(60)
   })
 
   it('turning species off leaves the 50,000-tick state hash unchanged', () => {

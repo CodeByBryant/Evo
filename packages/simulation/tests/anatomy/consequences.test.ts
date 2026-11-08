@@ -33,8 +33,9 @@ import { withoutEcology } from '../support/ecology'
  * nothing but still costs, and nothing is ever free.
  */
 const cfg = (extra: WorldConfigOverrides = {}): WorldConfig => resolveWorldConfig(extra)
+// Eating tests here use the original way (touch food and take it whole); bites are tested in feeding/.
 const plain = (extra: WorldConfigOverrides = {}): WorldConfig =>
-  resolveWorldConfig(withoutEcology(extra))
+  resolveWorldConfig(withoutEcology({ feeding: { enabled: false }, ...extra }))
 
 type Parts = FounderPart[]
 const part = (

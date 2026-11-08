@@ -113,14 +113,14 @@ so `persistence = 1` keeps exploring for life and `persistence = 0` anneals to n
 
 Computed in `brain.settle` from the events and energy change of the tick that just finished (`RewardBreakdown`, roadmap 5.3):
 
-| Term           | Definition                                                                                             | Weight (`learning.rewardWeights`) |
-| -------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------- |
-| `feeding`      | energy gained from `resource-consumed` / effective `maxEnergy`                                         | `feeding`                         |
-| `reproduction` | 1 when the organism took part in a successful `reproduction-attempted` (initiator or partner)          | `reproduction`                    |
-| `energyCost`   | metabolic cost paid this tick / effective `maxEnergy` (exact: energy delta - gain + reproduction cost) | `energyCost` (subtracted)         |
-| `damage`       | health lost this tick / maximum health, times `1 - riskTolerance` (the gene)                           | `damage` (subtracted)             |
-| `exploration`  | `noveltyPreference` (the gene) the first time this life the organism enters a cell of an 8 x 8 grid    | `exploration`                     |
-| `total`        | `feeding*wf + reproduction*wr + exploration*we - energyCost*wc - damage*wd`, clamped to [-1, 1]        |                                   |
+| Term           | Definition                                                                                                                                | Weight (`learning.rewardWeights`) |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `feeding`      | energy gained from `resource-consumed` (feeding off) or entering the gut in a `resource-bitten` (bites, ADR 0017) / effective `maxEnergy` | `feeding`                         |
+| `reproduction` | 1 when the organism took part in a successful `reproduction-attempted` (initiator or partner)                                             | `reproduction`                    |
+| `energyCost`   | metabolic cost paid this tick / effective `maxEnergy` (exact: energy delta - gain + reproduction cost)                                    | `energyCost` (subtracted)         |
+| `damage`       | health lost this tick / maximum health, times `1 - riskTolerance` (the gene)                                                              | `damage` (subtracted)             |
+| `exploration`  | `noveltyPreference` (the gene) the first time this life the organism enters a cell of an 8 x 8 grid                                       | `exploration`                     |
+| `total`        | `feeding*wf + reproduction*wr + exploration*we - energyCost*wc - damage*wd`, clamped to [-1, 1]                                           |                                   |
 
 `survival` is intentionally absent (ADR 0007): rewarding survival rewards hiding. `damage` and `exploration` arrived in Phase 6 (ADR 0009) and are what give the `riskTolerance` and `noveltyPreference` genes a meaning. The organism's starting cell counts as visited, so the exploration reward is for entering new ground, and it is bounded (at most 64 per life). Health damage does not touch energy, so it never shows up in `energyCost`; the energy spent healing does. Everything the learner sees is derived from this, so `World.brainOf(id)` can show the same breakdown a human would.
 

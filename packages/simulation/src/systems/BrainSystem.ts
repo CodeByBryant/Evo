@@ -262,7 +262,9 @@ export class BrainSystem {
     const gained = new Map<EntityId, number>()
     const reproduced = new Set<EntityId>()
     for (const event of this.events.eventsThisTick()) {
-      if (event.type === 'resource-consumed') {
+      if (event.type === 'resource-bitten') {
+        gained.set(event.organismId, (gained.get(event.organismId) ?? 0) + event.intake)
+      } else if (event.type === 'resource-consumed') {
         gained.set(event.organismId, (gained.get(event.organismId) ?? 0) + event.energyGained)
       } else if (event.type === 'organism-damaged') {
         damaged.set(event.organismId, (damaged.get(event.organismId) ?? 0) + event.amount)

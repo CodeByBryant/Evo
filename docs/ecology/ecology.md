@@ -8,7 +8,7 @@ Every feature has an `ecology.<feature>.enabled` switch. A feature that is off d
 
 - `health` is stored per organism and hashed. `maxHealth = ecology.health.maxHealth * sizeFactor` (the same body-size factor as energy capacity). Organisms are born at full health.
 - `HealthSystem` runs after Interaction and before Metabolism. For each organism, in ascending id:
-  1. **Damage** = hazard damage + toxin damage. Hazard damage sums, over every hazard circle containing the organism, `damagePerSecond * regionExposure * seasonIntensity * dt` (the last two factors are 1 when regions or seasons are off). Toxin damage is the `toxicity` of the resource kind the organism ate this tick, written by `InteractionSystem` into the `DamageBuffer`.
+  1. **Damage** = hazard damage + toxin damage. Hazard damage sums, over every hazard circle containing the organism, `damagePerSecond * regionExposure * seasonIntensity * dt` (the last two factors are 1 when regions or seasons are off). Toxin damage is the `toxicity` of the resource kind the organism ate this tick, written by `InteractionSystem` into the `DamageBuffer` (with bites, in proportion to the share of the item the bite took, ADR 0017).
   2. If damage > 0: `health -= damage` and one `organism-damaged` event (`amount`, `source: 'hazard' | 'toxin' | 'both'`, `healthAfter`) is recorded.
   3. If there was no damage, `health < maxHealth` and `energy >= regenMinEnergyFraction * maxEnergy`: heal `min(regenRate * dt, maxHealth - health)`; the energy that costs (`healed * regenEnergyCost`) is written to the `RegenBuffer` and charged by Metabolism.
 - `DeathSystem`: `energy <= 0` is `starvation`; otherwise `health <= 0` is `damage`; otherwise `age >= maxAge` is `age`.

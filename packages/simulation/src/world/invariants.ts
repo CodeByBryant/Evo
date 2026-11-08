@@ -7,7 +7,7 @@ import { architectureOf } from '../genetics/GenomeFactory'
 import { brainLayoutOf } from '../learning/BrainLayout'
 import { brainStateProblems } from '../learning/BrainState'
 import { validateGenome } from '../genetics/GenomeValidation'
-import { maxHealthOf } from '../organisms/traits'
+import { gutCapacityOf, maxHealthOf } from '../organisms/traits'
 import type { LineageQueries } from '../lineage/LineageStore'
 
 export interface InvariantContext {
@@ -44,6 +44,7 @@ function checkOrganism(
   tick: number,
   nextEntityId: number,
   maxHealth: number,
+  maxGut: number,
   errors: string[]
 ): void {
   const label = `organism ${organism.id}`
@@ -61,6 +62,13 @@ function checkOrganism(
     organism.reproductionCooldownRemaining,
     errors
   )
+  checkFinite(label, 'gut', organism.gut, errors)
+  checkFinite(label, 'biteCooldown', organism.biteCooldown, errors)
+  if (organism.gut < 0) errors.push(`${label}: gut is negative`)
+  if (organism.gut > maxGut * (1 + 1e-9)) {
+    errors.push(`${label}: gut (${organism.gut}) exceeds its capacity (${maxGut})`)
+  }
+  if (organism.biteCooldown < 0) errors.push(`${label}: biteCooldown is negative`)
   if (organism.age < 0) errors.push(`${label}: age is negative`)
   if (organism.energy < 0) errors.push(`${label}: energy is negative`)
   if (organism.health <= 0) errors.push(`${label}: health is not positive`)
@@ -153,6 +161,7 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
       tick,
       nextEntityId,
       maxHealthOf(organism.genome, config),
+      gutCapacityOf(organism.genome, config),
       errors
     )
 

@@ -60,9 +60,12 @@ export const PRESETS: readonly WorldPreset[] = [
   {
     name: 'classic',
     label: 'Classic',
-    description: 'One kind of food on an even field: no regions, seasons, hazards or health.',
+    description:
+      'One kind of food on an even field: no regions, seasons, hazards or health, and creatures eat by touching food.',
     overrides: {
       resources: { spawnRate: 2 },
+      // The phase 3 way of eating: touch food and take it whole.
+      feeding: { enabled: false },
       ecology: {
         health: { enabled: false },
         regions: { enabled: false },

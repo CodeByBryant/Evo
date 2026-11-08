@@ -1,4 +1,4 @@
-import { PART_STATS, statMultiplier } from '@evo/contracts'
+import { PART_STATS, mouthFormOf, statMultiplier } from '@evo/contracts'
 import type {
   Anatomy,
   AnatomyConfig,
@@ -59,7 +59,9 @@ export function capabilitiesOf(
   anatomy: Anatomy,
   config: AnatomyConfig,
   bodyScale: number,
-  kindCount: number
+  kindCount: number,
+  /** The food kinds' names, to look up each mouth form's yield; a kind not named counts as 1. */
+  kindNames: readonly string[] = []
 ): Capabilities {
   let mass = config.bodyMass * bodyScale
   let upkeep = 0
@@ -76,6 +78,11 @@ export function capabilitiesOf(
   let armor = 0
   let temperatureTolerance = 1
   let regeneration = 1
+  let biteSize = 0
+  let biteRate = 0
+  let absorption = 1
+  let mouthPower = 0
+  const dietSum = new Array<number>(Math.max(1, kindCount)).fill(0)
 
   for (const part of anatomy.parts) {
     const balance = config.parts[part.type]
@@ -98,6 +105,7 @@ export function capabilitiesOf(
         break
       case 'mouth':
         massScale = 0.5 + 0.5 * mult(part, 'gape')
+        upkeepScale = mult(part, 'rate')
         break
       case 'intestine':
         massScale = 0.5 + 0.5 * mult(part, 'length')
@@ -147,17 +155,29 @@ export function capabilitiesOf(
           (detection[kind] as number) + p * 0.5 * (mult(part, 'range') + mult(part, 'sensitivity'))
         break
       }
-      case 'mouth':
+      case 'mouth': {
         reach += p * mult(part, 'reach')
         digestion += 0.5 * p * mult(part, 'gape')
+        biteSize += p * mult(part, 'gape')
+        biteRate += p * mult(part, 'rate')
+        mouthPower += p
+        const yields = config.mouthForms[mouthFormOf(part.stats[2] as number)]
+        for (let kind = 0; kind < dietSum.length; kind++) {
+          const name = kindNames[kind]
+          dietSum[kind] =
+            (dietSum[kind] as number) + p * (name === undefined ? 1 : (yields[name] ?? 1))
+        }
         break
+      }
       case 'intestine':
         digestion += p * 0.5 * (mult(part, 'absorption') + mult(part, 'length'))
+        absorption += p * 0.5 * (mult(part, 'absorption') + mult(part, 'length'))
         toleranceSum += p * mult(part, 'filter')
         break
       case 'stomach':
         energyCapacity += p * mult(part, 'capacity')
         digestion += 0.5 * p * mult(part, 'throughput')
+        absorption += 0.5 * p * mult(part, 'throughput')
         break
       case 'armor':
         armor +=
@@ -192,7 +212,13 @@ export function capabilitiesOf(
     energyCapacity,
     damageTaken: 1 / (1 + armor),
     temperatureTolerance,
-    regeneration
+    regeneration,
+    biteSize,
+    biteRate,
+    absorption,
+    // The power-weighted mean of the mouths' yields: exactly 1 for the mandible (p / p).
+    dietEfficiency: dietSum.map((sum) => (mouthPower > 0 ? sum / mouthPower : 1)),
+    hasMouth: mouthPower > 0
   }
 }
 
@@ -232,7 +258,14 @@ export function capabilityFactors(
     damageTaken: relative(capabilities.damageTaken, founder.damageTaken),
     temperatureTolerance: relative(capabilities.temperatureTolerance, founder.temperatureTolerance),
     regeneration: relative(capabilities.regeneration, founder.regeneration),
-    upkeepDelta: capabilities.upkeep - founder.upkeep
+    upkeepDelta: capabilities.upkeep - founder.upkeep,
+    biteSize: relative(capabilities.biteSize, founder.biteSize),
+    biteRate: relative(capabilities.biteRate, founder.biteRate),
+    absorption: relative(capabilities.absorption, founder.absorption),
+    // Absolute, not relative to the founder: 1 is the generalist's yield, whatever form the
+    // configured founder has (the default founder's mandible is exactly 1 on every kind).
+    dietEfficiency: capabilities.dietEfficiency,
+    hasMouth: capabilities.hasMouth
   }
 }
 
@@ -242,8 +275,9 @@ export function viewOf(
   founder: Capabilities,
   config: AnatomyConfig,
   bodyScale: number,
-  kindCount: number
+  kindCount: number,
+  kindNames: readonly string[] = []
 ): AnatomyView {
-  const capabilities = capabilitiesOf(anatomy, config, bodyScale, kindCount)
+  const capabilities = capabilitiesOf(anatomy, config, bodyScale, kindCount, kindNames)
   return { anatomy, capabilities, factors: capabilityFactors(capabilities, founder) }
 }

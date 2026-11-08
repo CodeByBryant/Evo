@@ -52,9 +52,13 @@ export class MovementSystem {
         stage === 'juvenile'
           ? this.config.organisms.maxSpeed * juvenileSpeedScale
           : this.config.organisms.maxSpeed
+      // Chewing slows the organism (ADR 0017); exactly 1 whenever feeding is off or no bite is pending.
+      const chew = organism.biteCooldown > 0 ? this.config.feeding.chewSlow : 1
       const terrainSpeed = this.terrainSlows
-        ? baseMaxSpeed * (this.ecology as EcologyModel).movementScale(organism.x, organism.y, tick)
-        : baseMaxSpeed
+        ? baseMaxSpeed *
+          (this.ecology as EcologyModel).movementScale(organism.x, organism.y, tick) *
+          chew
+        : baseMaxSpeed * chew
       // The parts decide how much of that speed forward and sideways thrust can deliver.
       const scaledMaxSpeed = terrainSpeed * body.speed
       const speed = clamp(intent.thrust, 0, 1) * scaledMaxSpeed

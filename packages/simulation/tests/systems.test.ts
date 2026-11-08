@@ -356,6 +356,7 @@ describe('MovementSystem', () => {
 describe('InteractionSystem', () => {
   it('consumes the nearest resource, gaining energy up to maxEnergy', () => {
     const config = resolveWorldConfig({
+      feeding: { enabled: false },
       organisms: { radius: 1, maxEnergy: 60 },
       resources: { radius: 1 }
     })
@@ -405,7 +406,11 @@ describe('InteractionSystem', () => {
   })
 
   it('never lets two organisms consume the same resource in one tick', () => {
-    const config = resolveWorldConfig({ organisms: { radius: 5 }, resources: { radius: 5 } })
+    const config = resolveWorldConfig({
+      feeding: { enabled: false },
+      organisms: { radius: 5 },
+      resources: { radius: 5 }
+    })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { x: 0, y: 0, energy: 10 }))
     organisms.add(organism(config, 2, { x: 1, y: 0, energy: 10 }))
@@ -447,6 +452,7 @@ describe('InteractionSystem', () => {
 
   it('emits energy-changed only when history.eventDetail is verbose', () => {
     const config = resolveWorldConfig({
+      feeding: { enabled: false },
       organisms: { radius: 1, maxEnergy: 1000 },
       resources: { radius: 1 },
       history: { maxEvents: 10, eventDetail: 'verbose' }

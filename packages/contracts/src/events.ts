@@ -36,6 +36,21 @@ export interface ResourceSpawnedEvent extends BaseEvent {
   readonly position: Readonly<Vec2>
 }
 
+/** One bite taken out of a resource; the resource stays until its last bite (ADR 0017). */
+export interface ResourceBittenEvent extends BaseEvent {
+  readonly type: 'resource-bitten'
+  readonly organismId: EntityId
+  readonly resourceId: EntityId
+  readonly kind: number
+  /** Food energy taken out of the resource by this bite. */
+  readonly chunk: number
+  /** Energy that entered the gut: `chunk` times the mouth form's yield for this kind. */
+  readonly intake: number
+  /** Food energy still on the resource after the bite. */
+  readonly remaining: number
+  readonly position: Readonly<Vec2>
+}
+
 export interface ResourceConsumedEvent extends BaseEvent {
   readonly type: 'resource-consumed'
   readonly organismId: EntityId
@@ -63,7 +78,7 @@ export interface EnergyChangedEvent extends BaseEvent {
   readonly organismId: EntityId
   readonly previous: number
   readonly current: number
-  readonly reason: 'consumption' | 'metabolism'
+  readonly reason: 'consumption' | 'metabolism' | 'digestion'
 }
 
 /**
@@ -122,6 +137,7 @@ export type WorldEvent =
   | OrganismBornEvent
   | OrganismDiedEvent
   | ResourceSpawnedEvent
+  | ResourceBittenEvent
   | ResourceConsumedEvent
   | OrganismMovedEvent
   | EnergyChangedEvent

@@ -191,9 +191,13 @@ Introduced with the evolvable body outline (ADR 0013). Only the body genes chang
 
 Introduced when the five scalar genes were retired (ADR 0015). The scalar gene table has **18** genes instead of 23, so each organism's genes in section 6 lose five values (`physical.maxSpeed`, `physical.maxTurnRate`, `sensory.sensorRadius`, `metabolic.movementCost`, `metabolic.turningCost`) and the remaining ones keep their relative order; the body genes are unchanged (119). The header carries the new version, so every hash differs from version 7. Because mutation and recombination draw a fixed number of values per gene, five fewer genes also shift the `genetics` stream after the first birth: world dynamics before the first birth are identical to version 7 with mutation off (shown by an equivalence harness over 16 scenarios, thousands of per-organism snapshots), and diverge afterwards only through that shift.
 
-#### Version 9 (current, part stats and attachment)
+#### Version 9 (part stats and attachment; superseded by version 10)
 
 Introduced with per-type part stats, outline anchoring and part-to-part parents (ADR 0016). Only the body genes change: a slot has **14** genes instead of 7 (`present`, `type`, `parent`, `size`, `angle`, `offset`, `orientation`, `integrity`, then the six stat genes `s0..s5`; `param` is gone), so the vector is **203** genes: slot 0's fourteen genes ... slot 11's, then `pattern`, `accentHue`, `outline.count`, `outline.radius0..15`, `outline.angle0..15`. The body gene count written before them is now 203, and the genome `version` is 4. The header carries the new version, so every hash differs from version 8. Equivalence with anatomy off is shown by the harness against the previous commit: 22 of 22 field-layout scenarios (reflex and brain controllers, mutation on and off) give identical snapshots, events and records. The two cluster-layout scenarios differ even with anatomy off, on purpose: cluster founders have different outlines, and parts now follow the outline, so their thrust and turning differ from the founder's.
+
+#### Version 10 (current, feeding)
+
+Introduced with bites, food health and the gut (ADR 0017). Each organism's record gains two values after `health`: `gut` (`writeFloat64`) and `biteCooldown` (`writeFloat64`), both zero for ever when `feeding.enabled` is false. Nothing else changes (food `remaining` was already hashed, it is simply no longer always the full amount). The header carries the new version, so every hash differs from version 9. Equivalence is shown by the harness against the previous commit with `feeding.enabled: false` and anatomy mutation frozen: 17 of 17 scenarios (every preset, both controllers, clusters, verbose events) give identical snapshots, events and records. With anatomy mutation on, worlds differ even with feeding off, on purpose: the mouth's `rate` stat now prices bite speed into upkeep, so a mutated rate changes a body's cost where it used to be inert.
 
 `WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
@@ -236,9 +240,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(9)`                                            | `1b9b8d2e748776312debb8780bf0a1ce` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `c8f58abac36860fef79f891e7b9dd6bb` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `c8f58abac36860fef79f891e7b9dd6bb` |
+| header only: `"EVOH"`, `writeUint32(10)`                                           | `21416a14c2a968d36736c1124a8e5f5b` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `65dbd07d43809c452c7561aab0636d1e` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `65dbd07d43809c452c7561aab0636d1e` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 

@@ -131,7 +131,12 @@ export const PART_STATS: Readonly<Record<PartType, readonly PartStatSpec[]>> = {
     stat('sensitivity', 'Sensitivity', 0.2, 2, 'x'),
     stat('selectivity', 'Food kind', 0, 1, 'kind')
   ],
-  mouth: [stat('reach', 'Reach', 0.5, 2, 'x'), stat('gape', 'Gape', 0.3, 2, 'x')],
+  mouth: [
+    stat('reach', 'Reach', 0.5, 2, 'x'),
+    stat('gape', 'Gape', 0.3, 2, 'x'),
+    stat('form', 'Form', 0, 1, 'form'),
+    stat('rate', 'Bite rate', 0.5, 2, 'x')
+  ],
   intestine: [
     stat('length', 'Length', 0.2, 2, 'x'),
     stat('absorption', 'Absorption', 0.2, 2, 'x'),
@@ -178,6 +183,20 @@ export const SURFACE_PARTS: Readonly<Record<PartType, boolean>> = {
   armor: true,
   membrane: true,
   mender: false
+}
+
+/**
+ * The mouth forms, ordered along a diet axis so that gene noise moves between neighbours: a grazer's
+ * sprout, a nectar-sipping proboscis, the generalist mandible (the founder's), a fungus-scraping
+ * radula and a carnivore's jaw. A mouth's `form` stat picks one by `floor(gene * 5)`.
+ */
+export const MOUTH_FORMS = ['sprout', 'proboscis', 'mandible', 'radula', 'jaw'] as const
+export type MouthForm = (typeof MOUTH_FORMS)[number]
+
+/** The form a `form` gene selects. */
+export function mouthFormOf(gene: number): MouthForm {
+  const index = Math.min(MOUTH_FORMS.length - 1, Math.max(0, Math.floor(gene * MOUTH_FORMS.length)))
+  return MOUTH_FORMS[index] as MouthForm
 }
 
 /** The stat that gives a part a length along its axis, in body radii (children attach along it); parts without one have none. */
@@ -389,6 +408,16 @@ export interface Capabilities {
   readonly damageTaken: number
   readonly temperatureTolerance: number
   readonly regeneration: number
+  /** Bite size: the sum over functional mouths of `power * gape`; zero without a mouth (ADR 0017). */
+  readonly biteSize: number
+  /** Bite rate: the sum over functional mouths of `power * rate`. */
+  readonly biteRate: number
+  /** How fast the gut empties into energy: intestines and stomachs (ADR 0017). */
+  readonly absorption: number
+  /** Energy yield per food kind: the power-weighted mean of the mouth forms' efficiencies (1 without a mouth). */
+  readonly dietEfficiency: readonly number[]
+  /** Whether any mouth works. A body without one cannot bite (ADR 0017). */
+  readonly hasMouth: boolean
 }
 
 /** Capabilities relative to the founder body plan: 1 means "exactly the founder". */
@@ -410,6 +439,12 @@ export interface CapabilityFactors {
   readonly regeneration: number
   /** Extra energy per second compared with the founder (negative for a cheaper body). */
   readonly upkeepDelta: number
+  readonly biteSize: number
+  readonly biteRate: number
+  readonly absorption: number
+  /** Energy yield of each food kind: 1 is the generalist's, the mouth form's diet scales it (not relative to the founder). */
+  readonly dietEfficiency: readonly number[]
+  readonly hasMouth: boolean
 }
 
 /** Balance numbers for one part type, per unit of `size`. */
@@ -478,6 +513,11 @@ export interface AnatomyConfig {
    * body drags. Zero turns the drag off; the founder outline itself always costs exactly nothing extra.
    */
   outlineDrag: number
+  /**
+   * Energy yield of each mouth form on each food kind, by kind name (a kind that is not listed
+   * counts as 1). The mandible is the generalist and must be 1 everywhere so the founder is exactly neutral.
+   */
+  mouthForms: Record<MouthForm, Record<string, number>>
 }
 
 /** Overrides merge field by field; `parts` merges per type and `founder` is replaced whole. */
@@ -492,6 +532,7 @@ export interface AnatomyConfigOverrides {
   founderLook?: Partial<BodyLook>
   founderOutline?: Partial<FounderOutline>
   outlineDrag?: number
+  mouthForms?: { [F in MouthForm]?: Record<string, number> }
 }
 
 /** What `World.anatomyOf` hands out: the developed body, its raw capabilities, and them relative to the founder. */

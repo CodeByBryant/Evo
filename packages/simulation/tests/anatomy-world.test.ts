@@ -200,7 +200,7 @@ describe('World.anatomyOf', () => {
     for (const view of views) {
       if (!view) throw new Error('expected a view')
       for (const value of Object.values(view.factors).flat())
-        expect(Number.isFinite(value)).toBe(true)
+        if (typeof value === 'number') expect(Number.isFinite(value)).toBe(true)
       if (
         view.factors.speed !== 1 ||
         view.factors.senseRange !== 1 ||

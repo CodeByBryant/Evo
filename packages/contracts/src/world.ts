@@ -124,6 +124,33 @@ export interface OrganismConfig {
   juvenileMetabolicScale: number
 }
 
+/**
+ * How organisms feed (docs/decisions/0017): they bite food with their mouth, bites take the food's
+ * health, and what is bitten goes into a gut that empties into energy at the speed of the
+ * digestion parts. With `enabled: false` the old behavior runs: touching food with the body eats
+ * it whole and credits the energy at once.
+ */
+export interface FeedingConfig {
+  enabled: boolean
+  /** A mouth reaches this many body radii from its anchor, times the mouth's `reach` stat. */
+  biteRadius: number
+  /** Half-angle in radians of the cone in front of the mouth in which food can be bitten. */
+  biteCone: number
+  /** Food energy removed by one bite at the founder's mouth, before the kind's `hardness`. */
+  biteSize: number
+  /** Seconds between bites at the founder's mouth. */
+  biteInterval: number
+  /** Energy a founder-sized gut holds. */
+  gutCapacity: number
+  /** Energy per second a founder's gut turns into body energy. */
+  absorption: number
+  /**
+   * Speed multiplier in `(0, 1]` while a bite is on cooldown (chewing): an organism that has just
+   * bitten stays at its food instead of leaving a half-eaten trail.
+   */
+  chewSlow: number
+}
+
 export interface ResourceConfig {
   initialCount: number
   /** Upper bound on simultaneously existing resources. */
@@ -187,6 +214,7 @@ export interface WorldConfig {
   species: SpeciesConfig
   ecology: EcologyConfig
   anatomy: AnatomyConfig
+  feeding: FeedingConfig
 }
 
 /** A partial configuration merged onto the defaults. */
@@ -204,6 +232,7 @@ export interface WorldConfigOverrides {
   species?: SpeciesConfigOverrides
   ecology?: EcologyConfigOverrides
   anatomy?: AnatomyConfigOverrides
+  feeding?: Partial<FeedingConfig>
 }
 
 export interface WorldOptions {

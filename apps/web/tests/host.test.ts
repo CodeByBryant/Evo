@@ -248,7 +248,8 @@ describe('SimulationHost: worlds', () => {
     env.runUntil(() => h.getViewState().tick >= 8000)
     expect(kinds.has('birth')).toBe(true)
     expect(kinds.has('death')).toBe(true)
-  })
+    // Bites double the population (ADR 0017), so 8,000 ticks take about three times as long.
+  }, 30_000)
 })
 
 describe('SimulationHost: selection and the inspector', () => {

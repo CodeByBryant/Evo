@@ -494,7 +494,11 @@ describe('InteractionSystem with resource kinds', () => {
       regions: []
     }
   ]
-  const cfg = config({ resourceKinds: { enabled: true, kinds }, health: { enabled: true } })
+  // The original way of eating (touch and take whole); bites are tested in feeding/.
+  const cfg = config(
+    { resourceKinds: { enabled: true, kinds }, health: { enabled: true } },
+    { feeding: { enabled: false } }
+  )
 
   function feed(placements: Array<{ kind: number; dx: number }>) {
     const eco = modelFor(cfg)

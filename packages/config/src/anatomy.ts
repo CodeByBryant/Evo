@@ -3,6 +3,7 @@ import {
   OUTLINE_MAX_POINTS,
   OUTLINE_MIN_POINTS,
   OUTLINE_MIN_RADIUS,
+  MOUTH_FORMS,
   PART_STAT_COUNT,
   PART_TYPES
 } from '@evo/contracts'
@@ -142,7 +143,18 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     ],
     angles: new Array<number>(OUTLINE_MAX_POINTS).fill(0.5)
   },
-  outlineDrag: 0.5
+  outlineDrag: 0.5,
+  // Energy yield of each mouth form on each kind of food (ADR 0017). The mandible is the
+  // generalist and exactly 1 everywhere, so the founder is the reference; the specialists beat it on
+  // their own food and lose on the rest. The jaw is a carnivore's: poor on plants, and a dead end
+  // until there is prey. All provisional.
+  mouthForms: {
+    sprout: { grass: 1.3, fruit: 1.1, fungus: 0.6, nectar: 0.9 },
+    proboscis: { grass: 0.6, fruit: 1.15, fungus: 0.7, nectar: 1.5 },
+    mandible: { grass: 1, fruit: 1, fungus: 1, nectar: 1 },
+    radula: { grass: 0.9, fruit: 0.8, fungus: 1.4, nectar: 0.5 },
+    jaw: { grass: 0.55, fruit: 0.55, fungus: 0.55, nectar: 0.55 }
+  }
 }
 
 const ANATOMY_KEYS = [
@@ -155,7 +167,8 @@ const ANATOMY_KEYS = [
   'founder',
   'founderLook',
   'founderOutline',
-  'outlineDrag'
+  'outlineDrag',
+  'mouthForms'
 ]
 const MUTATION_KEYS = [
   'presenceRate',
@@ -321,6 +334,34 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
   }
 
   checkNumber(anatomy, 'outlineDrag', 'anatomy.outlineDrag', { nonnegative: true }, errors)
+
+  const forms = checkSection(anatomy, 'mouthForms', [...MOUTH_FORMS], errors, 'anatomy.mouthForms')
+  if (forms) {
+    for (const form of MOUTH_FORMS) {
+      const kinds = forms[form]
+      if (kinds === undefined) {
+        errors.push(`anatomy.mouthForms.${form} is required`)
+      } else if (!isObject(kinds)) {
+        errors.push(`anatomy.mouthForms.${form} must be an object of food kind to yield`)
+      } else {
+        for (const [kind, value] of Object.entries(kinds)) {
+          if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+            errors.push(`anatomy.mouthForms.${form}.${kind} must be a number greater than zero`)
+          }
+        }
+      }
+    }
+    const mandible = forms['mandible']
+    if (isObject(mandible)) {
+      for (const [kind, value] of Object.entries(mandible)) {
+        if (value !== 1) {
+          errors.push(
+            `anatomy.mouthForms.mandible.${kind} must be exactly 1: the mandible is the founder's neutral generalist`
+          )
+        }
+      }
+    }
+  }
 
   const outline = checkSection(
     anatomy,

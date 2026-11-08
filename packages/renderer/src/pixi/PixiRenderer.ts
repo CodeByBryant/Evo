@@ -698,7 +698,7 @@ export class PixiRenderer implements Renderer {
       const sprite = this.resources.pool[i] as Sprite
       sprite.position.set(r.x, r.y)
       sprite.scale.set(
-        Math.max(r.radius * 2 * (0.6 + 0.4 * r.remainingRatio), (MIN_FOOD_PX * 2) / zoom) / 64
+        Math.max(r.radius * 2 * (0.4 + 0.6 * r.remainingRatio), (MIN_FOOD_PX * 2) / zoom) / 64
       )
       sprite.tint = this.numberOf(resourceColor(r.kind))
       sprite.alpha = 0.95

@@ -26,6 +26,12 @@ export function kindCountOf(config: WorldConfig): number {
   return kinds.enabled ? Math.max(1, kinds.kinds.length) : 1
 }
 
+/** The food kinds' names, in kind order (empty when kinds are off). */
+export function kindNamesOf(config: WorldConfig): readonly string[] {
+  const kinds = config.ecology.resourceKinds
+  return kinds.enabled ? kinds.kinds.map((kind) => kind.name) : []
+}
+
 interface FounderEntry {
   readonly kindCount: number
   readonly capabilities: Capabilities
@@ -42,7 +48,8 @@ export function founderCapabilitiesOf(config: WorldConfig): Capabilities {
     developAnatomy(founderBodyVector(config.anatomy), config.anatomy),
     config.anatomy,
     1,
-    kindCount
+    kindCount,
+    kindNamesOf(config)
   )
   founders.set(config.anatomy, { kindCount, capabilities })
   return capabilities
@@ -78,7 +85,8 @@ export function factorsOf(genome: Genome, config: WorldConfig): CapabilityFactor
     developAnatomy(genes, config.anatomy),
     config.anatomy,
     massScaleOf(genes, config.anatomy),
-    kindCount
+    kindCount,
+    kindNamesOf(config)
   )
   const factors = capabilityFactors(capabilities, founderCapabilitiesOf(config))
   bodies.set(genes, { config: config.anatomy, kindCount, factors })

@@ -193,7 +193,9 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
       config: withoutEcology({
         organisms: { initialCount: 10 },
         genetics: { mutationRateScale: 0 },
-        learning: { controller: 'reflex' }
+        learning: { controller: 'reflex' },
+        // Phase 3 ate by touching and taking the whole item; bites came with ADR 0017.
+        feeding: { enabled: false }
       }),
       validateEveryTicks: 100
     })
