@@ -326,6 +326,8 @@ PROBE_PRESETS=balanced,lush PROBE_SEEDS=8 PROBE_TICKS=20000 PROBE_OUT=/tmp/probe
 cat /tmp/probe.md
 ```
 
+The probe steps tick by tick and also reports **how creatures die**: deaths by cause and life stage (juvenile is younger than `organisms.maturityAge`), the median age at death, births per mature creature per second (compare with `1 / cooldown`, the most one can do), and the **evolved** `cooldown`, `minEnergy`, `offspringInvestment` and `maxAge` among the living, sampled every 2,500 ticks, so a tuning that evolution would undo shows up as drift. It also reports ticks per second.
+
 Use at least 20,000 ticks: a creature's lifespan is 6,000 ticks, so shorter runs report almost every death as starvation. The probe is never part of `pnpm test`, the determinism suite or CI.
 
 ## Getting Help
