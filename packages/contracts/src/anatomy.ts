@@ -2,14 +2,18 @@ import type { GeneKind } from './genome'
 
 /**
  * Anatomy (docs/decisions/0012-anatomy.md, 0016-part-stats-and-attachment.md): a body is up to
- * twelve parts of ten types, encoded as a fixed set of genes, turned into an `Anatomy` by
+ * twelve parts of sixteen types, encoded as a fixed set of genes, turned into an `Anatomy` by
  * deterministic development, and from there into capabilities. Every part is anchored to the body
  * outline (or to another part), has its own per-type stats, and a developmental `integrity`. This
  * file is the contract: the vocabulary, the gene layout, the data the engine hands out, and the
  * configuration.
  */
 
-/** The ten part types, in the fixed order of the `type` gene (a one-step mutation lands on a related part). */
+/**
+ * The part types, in the fixed order of the `type` gene (a one-step mutation lands on a related
+ * part). The first ten are the original parts; the six after them (eyestalk, gyro, lipid,
+ * pheromone, skeleton, join) were appended so every earlier index, and the founder, stay put.
+ */
 export const PART_TYPES = [
   'flagellum',
   'cilia',
@@ -20,7 +24,13 @@ export const PART_TYPES = [
   'stomach',
   'armor',
   'membrane',
-  'mender'
+  'mender',
+  'eyestalk',
+  'gyro',
+  'lipid',
+  'pheromone',
+  'skeleton',
+  'join'
 ] as const
 export type PartType = (typeof PART_TYPES)[number]
 
@@ -44,7 +54,14 @@ export const PART_DEFINITIONS: readonly PartDefinition[] = [
   { type: 'stomach', requires: ['intake'], provides: ['digestion'] },
   { type: 'armor', requires: [], provides: [] },
   { type: 'membrane', requires: [], provides: [] },
-  { type: 'mender', requires: ['digestion'], provides: [] }
+  { type: 'mender', requires: ['digestion'], provides: [] },
+  // A child works only when its parent does (development), so the carriers need no token.
+  { type: 'eyestalk', requires: [], provides: [] },
+  { type: 'gyro', requires: [], provides: [] },
+  { type: 'lipid', requires: ['digestion'], provides: [] },
+  { type: 'pheromone', requires: [], provides: [] },
+  { type: 'skeleton', requires: [], provides: [] },
+  { type: 'join', requires: [], provides: [] }
 ]
 
 /** Number of part slots on a body. */
@@ -155,7 +172,19 @@ export const PART_STATS: Readonly<Record<PartType, readonly PartStatSpec[]>> = {
     stat('insulation', 'Insulation', 0.2, 2, 'x'),
     stat('thickness', 'Thickness', 0.02, 0.2, 'radii')
   ],
-  mender: [stat('rate', 'Rate', 0.3, 2, 'x'), stat('efficiency', 'Efficiency', 0.5, 1.5, 'x')]
+  mender: [stat('rate', 'Rate', 0.3, 2, 'x'), stat('efficiency', 'Efficiency', 0.5, 1.5, 'x')],
+  eyestalk: [
+    stat('length', 'Length', 0.2, 1.2, 'radii'),
+    stat('stiffness', 'Stiffness', 0.2, 2, 'x')
+  ],
+  gyro: [stat('stability', 'Stability', 0.2, 2, 'x')],
+  lipid: [stat('reserve', 'Reserve', 0.3, 2, 'x')],
+  pheromone: [stat('potency', 'Potency', 0.3, 2, 'x')],
+  skeleton: [
+    stat('rigidity', 'Rigidity', 0.2, 2, 'x'),
+    stat('length', 'Length', 0.2, 1.2, 'radii')
+  ],
+  join: [stat('length', 'Length', 0.1, 1, 'radii'), stat('flexibility', 'Flexibility', 0.2, 2, 'x')]
 }
 
 /** The real-unit value of a stat gene. */
@@ -182,7 +211,13 @@ export const SURFACE_PARTS: Readonly<Record<PartType, boolean>> = {
   stomach: false,
   armor: true,
   membrane: true,
-  mender: false
+  mender: false,
+  eyestalk: true,
+  gyro: false,
+  lipid: false,
+  pheromone: true,
+  skeleton: false,
+  join: true
 }
 
 /**
@@ -202,7 +237,10 @@ export function mouthFormOf(gene: number): MouthForm {
 /** The stat that gives a part a length along its axis, in body radii (children attach along it); parts without one have none. */
 export const PART_EXTENT_STAT: Readonly<Partial<Record<PartType, string>>> = {
   flagellum: 'length',
-  cilia: 'length'
+  cilia: 'length',
+  eyestalk: 'length',
+  skeleton: 'length',
+  join: 'length'
 }
 
 /** Genes that only change how a body is painted (no effect on fitness). */
@@ -384,6 +422,8 @@ export interface Anatomy {
   readonly undeveloped: readonly number[]
   /** Total `size` of developed parts. */
   readonly sizeUsed: number
+  /** The structural budget this body had: the configured one plus what its skeletons added (ADR 0016). */
+  readonly budget: number
   readonly look: BodyLook
 }
 
@@ -418,6 +458,8 @@ export interface Capabilities {
   readonly dietEfficiency: readonly number[]
   /** Whether any mouth works. A body without one cannot bite (ADR 0017). */
   readonly hasMouth: boolean
+  /** How far this body's mating signal carries, as a multiple of the baseline: `1 + glands`, capped. */
+  readonly mateSignal: number
 }
 
 /** Capabilities relative to the founder body plan: 1 means "exactly the founder". */
@@ -445,6 +487,28 @@ export interface CapabilityFactors {
   /** Energy yield of each food kind: 1 is the generalist's, the mouth form's diet scales it (not relative to the founder). */
   readonly dietEfficiency: readonly number[]
   readonly hasMouth: boolean
+  /** Reach of this body's mating signal against the founder's (1 without a gland). */
+  readonly mateSignal: number
+}
+
+/**
+ * What the newer parts do (ADR 0016), each provisional: how much an eye on an eyestalk gains, the
+ * torque a gyro adds, the energy a lipid store holds, how far a pheromone gland carries the mating
+ * signal (and the most any body can reach), and the structural budget a skeleton adds.
+ */
+export interface PartEffectsConfig {
+  /** An eye on an eyestalk gains `eyestalkLift * m(length)` of range multiplier. */
+  readonly eyestalkLift: number
+  /** Torque added per unit of gyro power, with no thrust. */
+  readonly gyroTorque: number
+  /** Energy capacity added per unit of lipid power. */
+  readonly lipidCapacity: number
+  /** Mating signal range added per unit of pheromone power. */
+  readonly pheromoneSignal: number
+  /** The most a body's mating signal can reach, as a multiple of the baseline (`>= 1`). */
+  readonly pheromoneCap: number
+  /** Structural budget added per unit of skeleton rigidity, for the slots after it. */
+  readonly skeletonBudget: number
 }
 
 /** Balance numbers for one part type, per unit of `size`. */
@@ -502,6 +566,8 @@ export interface AnatomyConfig {
   senseFloor: number
   mutation: AnatomyMutationConfig
   parts: Record<PartType, PartConfig>
+  /** What the newer parts do. */
+  effects: PartEffectsConfig
   /** The body plan every founder starts with: slot `i` is `founder[i]`, the rest are empty. */
   founder: FounderPart[]
   /** The founders' painted genes. */
@@ -528,6 +594,7 @@ export interface AnatomyConfigOverrides {
   senseFloor?: number
   mutation?: Partial<AnatomyMutationConfig>
   parts?: { [K in PartType]?: Partial<PartConfig> }
+  effects?: Partial<PartEffectsConfig>
   founder?: FounderPart[]
   founderLook?: Partial<BodyLook>
   founderOutline?: Partial<FounderOutline>

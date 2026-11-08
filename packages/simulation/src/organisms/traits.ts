@@ -132,15 +132,20 @@ export function drawnPartsOf(genome: Genome, config: WorldConfig): readonly Part
   const known = drawnParts.get(genome.body.genes)
   if (known !== undefined && known.radius === radius) return known.parts
   const factor = radius / outlineOf(genome.body.genes).areaRadius
-  const parts = developAnatomy(genome.body.genes, config.anatomy).parts.map((part) => ({
-    type: part.type,
-    x: part.x * factor,
-    y: part.y * factor,
-    radius: 0.2 * radius * Math.sqrt(part.size),
-    orientation: part.axis,
-    functional: part.functional,
-    form: part.type === 'mouth' ? MOUTH_FORMS.indexOf(mouthFormOf(part.stats[2] as number)) : 0
-  }))
+  const parts = developAnatomy(genome.body.genes, config.anatomy).parts.map((part) => {
+    const dx = part.tipX - part.x
+    const dy = part.tipY - part.y
+    return {
+      type: part.type,
+      x: part.x * factor,
+      y: part.y * factor,
+      radius: 0.2 * radius * Math.sqrt(part.size),
+      orientation: part.axis,
+      functional: part.functional,
+      length: Math.sqrt(dx * dx + dy * dy) * factor,
+      form: part.type === 'mouth' ? MOUTH_FORMS.indexOf(mouthFormOf(part.stats[2] as number)) : 0
+    }
+  })
   drawnParts.set(genome.body.genes, { radius, parts })
   return parts
 }

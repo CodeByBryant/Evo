@@ -45,7 +45,13 @@ export const PART_COLORS: Readonly<Record<PartType, string>> = {
   stomach: '#f0a8a8',
   armor: '#9fb3c8',
   membrane: '#7dd3fc',
-  mender: '#7dffb0'
+  mender: '#7dffb0',
+  eyestalk: '#b8c4d0',
+  gyro: '#a4b9ff',
+  lipid: '#f2e08a',
+  pheromone: '#f5c542',
+  skeleton: '#d7dde6',
+  join: '#9aa6b5'
 }
 
 export function speciesColor(id: SpeciesId | null): string {
