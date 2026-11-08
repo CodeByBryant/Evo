@@ -391,6 +391,21 @@ describe('environment.layout and environment.clusters (ADR 0014)', () => {
     expect(errorsFor({ environment: { clusters: { speciesSpread: 0.5 } } }).join()).toContain(
       'speciesSpread must not exceed'
     )
+    expect(errorsFor({ environment: { clusters: { foodFloor: -1 } } }).join()).toContain(
+      'environment.clusters.foodFloor must be at least zero and at most one'
+    )
+    expect(errorsFor({ environment: { clusters: { foodFloor: 1.5 } } }).join()).toContain(
+      'environment.clusters.foodFloor must be at least zero and at most one'
+    )
+    expect(errorsFor({ environment: { clusters: { strandedFoodPerTick: 1.5 } } }).join()).toContain(
+      'environment.clusters.strandedFoodPerTick must be an integer'
+    )
+    expect(errorsFor({ environment: { clusters: { strandedFoodPerTick: -1 } } }).join()).toContain(
+      'environment.clusters.strandedFoodPerTick must be nonnegative'
+    )
+    expect(
+      errorsFor({ environment: { clusters: { foodFloor: 0, strandedFoodPerTick: 0 } } })
+    ).toEqual([])
     expect(errorsFor({ environment: { layout: 'ring' as never } }).join()).toContain(
       'environment.layout'
     )

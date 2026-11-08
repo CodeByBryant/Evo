@@ -38,8 +38,13 @@ export class EnvironmentSystem {
     private readonly events: EventLog,
     private readonly ecology: EcologyModel | null = null,
     private readonly hazards: HazardStore | null = null,
-    private readonly stormRandom: RandomSource | null = null
+    private readonly stormRandom: RandomSource | null = null,
+    /** Living organisms per cluster, for steering food toward them (cluster layout only). */
+    private readonly livingPerCluster: (() => readonly number[]) | null = null
   ) {}
+
+  /** Living organisms per cluster, read once a tick (`update`), so every spawn sees the same counts. */
+  private living: readonly number[] = []
 
   /** The carried fractional resource spawn; hashed, since it decides future spawns. */
   get spawnRemainder(): number {
@@ -58,6 +63,58 @@ export class EnvironmentSystem {
     return layout.pointIn(cluster, random.float(), random.float())
   }
 
+  /**
+   * A point inside a cluster chosen so that food is not stranded where nobody lives (ADR 0014
+   * revision): every cluster with a living organism has weight 1 and an empty one has weight
+   * `foodFloor`. It uses the same three draws as `clusterPoint`, and the same arithmetic as an
+   * even spread when nobody has been counted yet (the initial food, placed before the organisms
+   * exist).
+   */
+  private foodPoint(random: RandomSource): { x: number; y: number } {
+    const layout = (this.ecology as EcologyModel).clusters as ClusterLayout
+    const floor = this.config.environment.clusters.foodFloor
+    const draw = random.float()
+    const counted = this.living.length === layout.count
+    let total = 0
+    if (counted) {
+      for (let c = 0; c < layout.count; c++) total += (this.living[c] as number) > 0 ? 1 : floor
+    }
+    let cluster: number
+    if (!counted || !(total > 0)) {
+      cluster = Math.min(layout.count - 1, Math.floor(draw * layout.count))
+    } else {
+      const target = draw * total
+      let sum = 0
+      cluster = layout.count - 1
+      for (let c = 0; c < layout.count; c++) {
+        sum += (this.living[c] as number) > 0 ? 1 : floor
+        if (target < sum) {
+          cluster = c
+          break
+        }
+      }
+    }
+    return layout.pointIn(cluster, random.float(), random.float())
+  }
+
+  /**
+   * Removes food stranded in clusters with no living organisms, lowest id first and at most
+   * `strandedFoodPerTick` a tick, so it cannot sit on the global food cap forever. No draws.
+   */
+  private clearStrandedFood(): void {
+    const limit = this.config.environment.clusters.strandedFoodPerTick
+    const layout = (this.ecology as EcologyModel).clusters as ClusterLayout
+    if (limit <= 0 || this.living.length !== layout.count) return
+    if (!this.living.some((alive) => alive === 0)) return
+    let removed = 0
+    for (const resource of this.resources.values()) {
+      const cluster = layout.clusterAt(resource.x, resource.y)
+      if (cluster < 0 || (this.living[cluster] as number) > 0) continue
+      this.resources.remove(resource.id)
+      if (++removed >= limit) return
+    }
+  }
+
   private spawnOne(tick: number): void {
     // With no region the whole world is used and the draws are exactly Phase 4's.
     const { region } = this.config.resources
@@ -74,10 +131,10 @@ export class EnvironmentSystem {
     if (eco !== null && eco.clusters !== null) {
       // The cluster layout (docs/decisions/0014): food grows inside clusters only.
       if (eco.kindsOn) kind = eco.chooseKind(this.random.float())
-      let point = this.clusterPoint(this.random)
+      let point = this.foodPoint(this.random)
       for (let attempt = 1; eco.kindsOn && !eco.kindGrowsAt(kind, point.x, point.y); attempt++) {
         if (attempt >= PLACEMENT_ATTEMPTS) return
-        point = this.clusterPoint(this.random)
+        point = this.foodPoint(this.random)
       }
       x = point.x
       y = point.y
@@ -200,6 +257,10 @@ export class EnvironmentSystem {
 
   update(tick: number): void {
     this.updateHazards(tick)
+    if (this.livingPerCluster !== null && this.ecology !== null && this.ecology.clusters !== null) {
+      this.living = this.livingPerCluster()
+      this.clearStrandedFood()
+    }
     const regeneration = this.ecology === null ? 1 : this.ecology.regenerationScale(tick)
     this.spawnAccumulator += this.config.resources.spawnRate * this.config.timestep * regeneration
     const capacity = Math.max(0, this.config.resources.maxCount - this.resources.size)

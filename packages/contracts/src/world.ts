@@ -47,6 +47,19 @@ export interface ClusterConfig {
   clusterSpread: number
   /** Founder gene offset between the species of one cluster, as a fraction of each gene's range. */
   speciesSpread: number
+  /**
+   * New food goes to clusters that have somebody to eat it: every cluster with at least one living
+   * organism gets an equal share, and a cluster with none gets this fraction of a share (in
+   * `[0, 1]`: 1 is the old even spread, 0 gives an empty cluster nothing). A small value keeps a
+   * trickle so a recovering cluster can restart. (Shares do not grow with population: that would
+   * let a crowded cluster starve its neighbours out of existence.)
+   */
+  foodFloor: number
+  /**
+   * The most food items removed per tick from clusters that have no living organisms, lowest id
+   * first, so stock stranded there cannot sit on the global food cap. 0 turns this off.
+   */
+  strandedFoodPerTick: number
 }
 
 export interface EnvironmentConfig {
