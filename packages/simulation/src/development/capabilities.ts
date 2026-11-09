@@ -1,4 +1,4 @@
-import { PART_STATS, mouthFormOf, statMultiplier } from '@evo/contracts'
+import { PART_STATS, mouthFormOf, statMultiplier, statValue } from '@evo/contracts'
 import type {
   Anatomy,
   AnatomyConfig,
@@ -6,7 +6,10 @@ import type {
   AnatomyView,
   Capabilities,
   CapabilityFactors,
-  PartType
+  PartStatSpec,
+  PartType,
+  Vision,
+  VisionCone
 } from '@evo/contracts'
 import { cos, sin } from '../math/trig'
 
@@ -71,6 +74,7 @@ export function capabilitiesOf(
   let torque = 0
   let eyes = 0
   let resolution = 0
+  const seen: Array<{ axis: number; gene: number }> = []
   const detection = new Array<number>(Math.max(1, kindCount)).fill(1)
   let reach = 1
   let digestion = 1
@@ -176,6 +180,7 @@ export function capabilitiesOf(
             : 1
         eyes += p * mult(part, 'range') * lift
         resolution += p * mult(part, 'resolution')
+        seen.push({ axis: part.axis, gene: part.stats[statIndex('eye', 'fieldOfView')] as number })
         break
       }
       case 'gyro':
@@ -237,13 +242,15 @@ export function capabilitiesOf(
     detection[kind] = (detection[kind] as number) * acuity
   }
 
+  const senseRange = config.senseFloor + Math.sqrt(eyes)
+
   return {
     mass,
     upkeep,
     forwardThrust,
     lateralThrust,
     torque,
-    senseRange: config.senseFloor + Math.sqrt(eyes),
+    senseRange,
     foodDetection: detection,
     reach,
     digestion,
@@ -258,8 +265,39 @@ export function capabilitiesOf(
     // The power-weighted mean of the mouths' yields: exactly 1 for the mandible (p / p).
     dietEfficiency: dietSum.map((sum) => (mouthPower > 0 ? sum / mouthPower : 1)),
     hasMouth: mouthPower > 0,
-    mateSignal: Math.min(effects.pheromoneCap, 1 + signal)
+    mateSignal: Math.min(effects.pheromoneCap, 1 + signal),
+    vision: visionOf(seen, senseRange, config)
   }
+}
+
+/**
+ * How a body sees (ADR 0016 "Directional vision"): one cone per working eye, about the eye's axis.
+ * An eye reaches as far as the body's sense range, scaled up when it is narrower than all-round
+ * (the range-for-angle trade, `effects.visionNarrowing`); an eye at its widest setting is a full
+ * circle of exactly the body's sense range, so a body of all-round eyes (and a body with no eye)
+ * is `omni` and the world sees it as the plain circle it always was.
+ */
+function visionOf(
+  eyes: ReadonlyArray<{ axis: number; gene: number }>,
+  senseRange: number,
+  config: AnatomyConfig
+): Vision {
+  const spec = PART_STATS.eye[statIndex('eye', 'fieldOfView')] as PartStatSpec
+  const cones: VisionCone[] = []
+  let omni = true
+  for (const eye of eyes) {
+    const axisCos = cos(eye.axis)
+    const axisSin = sin(eye.axis)
+    if (eye.gene >= 1) {
+      cones.push({ axisCos, axisSin, cosHalf: -1, reach: senseRange })
+      continue
+    }
+    omni = false
+    const fov = statValue(spec, eye.gene)
+    const narrow = 1 + config.effects.visionNarrowing * (Math.sqrt(spec.max / fov) - 1)
+    cones.push({ axisCos, axisSin, cosHalf: cos(fov / 2), reach: senseRange * narrow })
+  }
+  return { omni, floor: config.senseFloor, cones }
 }
 
 /** `value / founder`, or neutral when the founder has none of the quantity (it cannot be compared). */
@@ -306,7 +344,15 @@ export function capabilityFactors(
     // configured founder has (the default founder's mandible is exactly 1 on every kind).
     dietEfficiency: capabilities.dietEfficiency,
     hasMouth: capabilities.hasMouth,
-    mateSignal: relative(capabilities.mateSignal, founder.mateSignal)
+    mateSignal: relative(capabilities.mateSignal, founder.mateSignal),
+    vision: {
+      omni: capabilities.vision.omni,
+      floor: relative(capabilities.vision.floor, founder.senseRange),
+      cones: capabilities.vision.cones.map((cone) => ({
+        ...cone,
+        reach: relative(cone.reach, founder.senseRange)
+      }))
+    }
   }
 }
 

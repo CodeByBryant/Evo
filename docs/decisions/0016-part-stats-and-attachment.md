@@ -33,7 +33,7 @@ A slot is 14 genes (was 9): `present`, `type`, `parent`, `size`, `angle`, `offse
 | membrane  | insulation, thickness                |
 | mender    | rate, efficiency                     |
 
-The tables are provisional coefficients; the field of view is stored and displayed now and starts to act in its own change (directional sensing).
+The tables are provisional coefficients; the field of view is stored and displayed here and acts from the addendum "Directional vision".
 
 ### Attachment
 
@@ -69,7 +69,7 @@ With anatomy off the **field** layout is bit-identical to the previous commit in
 
 - Bodies read as bodies: parts touch the rim, tails start where they are rooted, children hang off their parents.
 - Several existing pins moved (scenario A in `world.test.ts`: 27 active, 45 born, 18 starved; the heavy-mutation stress rate in the long anatomy test was lowered because slots now carry 14 genes). Statistical ecology gates will be re-pinned in the starvation-tuning change, with measurements attached.
-- Not in this change, in order: new part types (eyestalk, gyro, lipid, pheromone gland, skeleton, join) and mouth forms (both came later, see the addendum); directional eye field of view; renderer and inspector for anchors, stats and parents.
+- Not in this change, in order: new part types (eyestalk, gyro, lipid, pheromone gland, skeleton, join) and mouth forms (both came later, see the addendum); directional eye field of view (it came later, see the second addendum); renderer and inspector for anchors, stats and parents.
 
 ## Addendum: six more part types
 
@@ -90,3 +90,14 @@ Decisions worth stating:
 - `Anatomy.budget` reports the budget a body actually had (the configured one plus its skeletons'); `sizeUsed <= budget` is the invariant, not `sizeUsed <= structuralBudget`.
 - The mating-signal search reaches `pheromoneCap` times the baseline when anatomy is on and each candidate is held to its own signal; with no glands every signal is exactly the baseline, so a body without one searches exactly as before.
 - **Hash and goldens:** the gene layout is unchanged (14 genes per slot), only the `type` gene's maximum moves from 9 to 15. All 24 golden tests pass unchanged, and the equivalence harness against the previous commit gives 17 of 17 identical scenarios with anatomy mutation frozen.
+
+## Addendum: directional vision
+
+The eye's `fieldOfView` stat (0.5 to 6.28 rad) now acts. Until now a body saw a circle of radius `sensorRadius * senseRange` whatever its eyes' orientation; now each working eye sees a cone about its axis and perception is filtered by it.
+
+- **Cones.** `capabilitiesOf` gives each working eye a cone `{ axis (body frame), cosHalf, reach }`, and the body an all-round touch radius (`anatomy.senseFloor`); `CapabilityFactors.vision` carries them relative to the founder's sense range. A target is inside a cone when `dot(offset, axis) >= distance * cos(half)`, with the axis rotated by the heading using the angle-sum identities, so there is no inverse trigonometry and nothing is drawn from a random stream.
+- **Range for angle.** An eye reaches the body's sense range times `1 + visionNarrowing * (sqrt(6.28 / fov) - 1)` (`anatomy.effects.visionNarrowing`, 0 to 1, default 1): the narrower the cone the further it sees. The sense range itself keeps its square-root law over eyes, so adding an eye still helps with diminishing returns, and the cone only decides where.
+- **The founder stays as it was.** The founder's eye now has its field-of-view stat at the maximum (all-round), so a body of all-round eyes (or no eyes) is `omni` and `PerceptionSystem` takes the old circle path unchanged. The equivalence harness against the previous commit gave 19 of 19 identical scenarios (default, scarce, rich, small and big worlds, short sensor, reflex, anatomy off, clusters, frozen body), run for 3,000 ticks with mutation off and compared through normalized snapshots, resources and metrics every 5 ticks.
+- **What is and is not vision.** Food, other organisms (the peer sense) and hazards go through the cones; the mating signal and the home sense do not. Sniffers are omnidirectional. A hazard is tested by the bearing of its centre against the reach to its edge.
+- **Goldens.** The founder body vector changed (one stat gene, 0.5 to 1), and body genes are hashed, so every golden with anatomy on regenerates even though the dynamics are identical (the 6 anatomy-off entries are unchanged). No schema or genome-version change: no gene was added.
+- **Consequence to watch.** The founder sits at the ceiling, so evolution can only narrow the cone and gets reach for it. Whether bodies drift toward narrow eyes (and what the preset populations do) is measured in the change's probe and recorded in the PR.

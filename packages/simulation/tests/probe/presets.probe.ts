@@ -70,6 +70,8 @@ interface Row {
     maturityAge: number
     maxAge: number
   }>
+  /** How the living bodies see over the run: the share that are not all-round, and their mean best reach. */
+  vision: Array<{ tick: number; nonOmni: number; meanReach: number; meanEyes: number }>
   ticksPerSecond: number
 }
 
@@ -113,6 +115,7 @@ function runWorld(presetName: string, seed: number): Row {
   const ageStarved: number[] = []
   const ageAged: number[] = []
   const genes: Row['genes'] = []
+  const vision: Row['vision'] = []
   let birthCount = 0
   let matureSeconds = 0
   let sum = 0
@@ -158,6 +161,15 @@ function runWorld(presetName: string, seed: number): Row {
           maturityAge: mean(g.map((x) => x.physical.maturityAge)),
           maxAge: mean(g.map((x) => x.physical.maxAge))
         })
+        const views = snapshot.organisms.map((o) => world.anatomyOf(o.id)?.factors.vision)
+        const seen = views.filter((v) => v !== undefined)
+        const narrow = seen.filter((v) => !v.omni)
+        vision.push({
+          tick,
+          nonOmni: seen.length === 0 ? 0 : narrow.length / seen.length,
+          meanReach: mean(seen.map((v) => v.cones.reduce((a, c) => Math.max(a, c.reach), 0))),
+          meanEyes: mean(seen.map((v) => v.cones.length))
+        })
       }
     }
   }
@@ -190,6 +202,7 @@ function runWorld(presetName: string, seed: number): Row {
     medianAgeAged: median(ageAged),
     birthRate: matureSeconds === 0 ? 0 : birthCount / matureSeconds,
     genes,
+    vision,
     ticksPerSecond: seconds === 0 ? 0 : snapshot.tick / seconds
   }
 }
@@ -209,6 +222,10 @@ describe('preset probe', () => {
     const detail: string[] = [
       '| preset | juvenile starved | mature starved | aged | median age starved / aged (s) | births per mature creature per s | ticks/s | cooldown gene first..last | minEnergy | investment | maxAge |',
       '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
+    ]
+    const sight: string[] = [
+      '| preset | not all-round (first..last sample) | mean best reach, relative to the founder (first..last) | mean eyes per body (first..last) |',
+      '| --- | --- | --- | --- |'
     ]
     for (const name of names) {
       const mine: Row[] = []
@@ -247,6 +264,24 @@ describe('preset probe', () => {
       detail.push(
         `| ${name} | ${share(sum((r) => r.stages.juvenile.starved))} | ${share(sum((r) => r.stages.mature.starved))} | ${share(sum((r) => r.aged))} | ${fixed(mean(mine.map((r) => r.medianAgeStarved)), 0)} / ${fixed(mean(mine.map((r) => r.medianAgeAged)), 0)} | ${fixed(mean(mine.map((r) => r.birthRate)), 4)} | ${fixed(mean(mine.map((r) => r.ticksPerSecond)), 0)} | ${firstLast('cooldown')} | ${firstLast('minEnergy')} | ${firstLast('offspringInvestment')} | ${firstLast('maxAge')} |`
       )
+      const ends = (
+        key: 'nonOmni' | 'meanReach' | 'meanEyes',
+        digits: number,
+        pct = false
+      ): string => {
+        const at = (index: number): number =>
+          mean(
+            mine.map((r) => {
+              const v = index === 0 ? r.vision[0] : r.vision[r.vision.length - 1]
+              return (v?.[key] as number | undefined) ?? 0
+            })
+          )
+        const f = (x: number): string => (pct ? `${fixed(x * 100, 0)}%` : fixed(x, digits))
+        return `${f(at(0))}..${f(at(1))}`
+      }
+      sight.push(
+        `| ${name} | ${ends('nonOmni', 0, true)} | ${ends('meanReach', 2)} | ${ends('meanEyes', 2)} |`
+      )
       table.push(
         `| ${name} | ${aggregate.worlds} | ${aggregate.extinct} | ${fixed(aggregate.popMean, 1)} | ${aggregate.popMin}..${aggregate.popMax} | ${fixed(aggregate.starvationShare * 100, 1)}% | ${fixed(aggregate.foodRatio * 100, 0)}% | ${fixed(aggregate.energyWastedShare * 100, 0)}% | ${aggregate.emptyClusters ?? '-'} |`
       )
@@ -256,6 +291,9 @@ describe('preset probe', () => {
       `${out}.json`,
       JSON.stringify({ ticks, seeds: seedCount, aggregates, rows }, null, 1)
     )
-    writeFileSync(`${out}.md`, `${table.join('\n')}\n\n${detail.join('\n')}\n`)
+    writeFileSync(
+      `${out}.md`,
+      `${table.join('\n')}\n\n${detail.join('\n')}\n\n${sight.join('\n')}\n`
+    )
   })
 })

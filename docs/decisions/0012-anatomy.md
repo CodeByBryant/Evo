@@ -65,7 +65,7 @@ The result is an `Anatomy` (body radius, the developed parts with their position
 
 `capabilityFactors(anatomy, founder, config)` expresses each capability **relative to the founder body plan** (`anatomy.founder` in config, the same plan for every founder). The founder's factors are exactly 1 (the same arithmetic divided by itself), so defaults are preserved: in PR 4 the engine multiplies today's baselines by these factors, and an unmutated founder behaves exactly as before. All coefficients are config, are **provisional**, and are set by measurement in PR 4. Every capability has an upkeep or mass cost, so none is free (ADR 0004 section 17).
 
-Eyes are omnidirectional in this design (no field of view); a part's `orientation` matters for thrust but not yet for sensing. That is a deliberate scope limit, listed below.
+Eyes are omnidirectional in this design (no field of view); a part's `orientation` matters for thrust but not yet for sensing. That was a deliberate scope limit, lifted in ADR 0016 ("Directional vision").
 
 ### Where the engine reads body genes (for PR 4)
 

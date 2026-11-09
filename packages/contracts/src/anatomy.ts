@@ -427,6 +427,31 @@ export interface Anatomy {
   readonly look: BodyLook
 }
 
+/**
+ * What one eye sees (ADR 0016 "Directional vision"): a cone about its axis. `axisCos`/`axisSin` give
+ * the axis in the body frame (heading 0), `cosHalf` is the cosine of the cone's half-angle (so a
+ * target is inside when `dot >= distance * cosHalf`, with no inverse trigonometry), and `reach` is
+ * how far it sees as a multiple of the baseline sensor radius (relative to the founder in
+ * `CapabilityFactors`).
+ */
+export interface VisionCone {
+  readonly axisCos: number
+  readonly axisSin: number
+  readonly cosHalf: number
+  readonly reach: number
+}
+
+/**
+ * How a body sees. `omni` bodies (no eye, or only all-round eyes) see a circle and take the plain
+ * perception path; the others see an all-round `floor` (the touch radius) plus each eye's cone.
+ */
+export interface Vision {
+  readonly omni: boolean
+  /** The all-round touch radius, in the same unit as the cones' `reach`. */
+  readonly floor: number
+  readonly cones: readonly VisionCone[]
+}
+
 /** Raw capabilities of a body (ADR 0012 "Capabilities"). */
 export interface Capabilities {
   readonly mass: number
@@ -460,6 +485,8 @@ export interface Capabilities {
   readonly hasMouth: boolean
   /** How far this body's mating signal carries, as a multiple of the baseline: `1 + glands`, capped. */
   readonly mateSignal: number
+  /** Where this body sees: one cone per working eye (ADR 0016). */
+  readonly vision: Vision
 }
 
 /** Capabilities relative to the founder body plan: 1 means "exactly the founder". */
@@ -489,6 +516,8 @@ export interface CapabilityFactors {
   readonly hasMouth: boolean
   /** Reach of this body's mating signal against the founder's (1 without a gland). */
   readonly mateSignal: number
+  /** The cones and touch radius, with reach relative to the founder's sense range. */
+  readonly vision: Vision
 }
 
 /**
@@ -509,6 +538,12 @@ export interface PartEffectsConfig {
   readonly pheromoneCap: number
   /** Structural budget added per unit of skeleton rigidity, for the slots after it. */
   readonly skeletonBudget: number
+  /**
+   * How much a narrower eye gains in reach, in `[0, 1]`: an eye of field of view `f` reaches
+   * `1 + visionNarrowing * (sqrt(full / f) - 1)` times as far as an all-round one, so 0 is no
+   * trade and 1 is the square-root law (a 90 degree cone reaches about 2.6 times as far).
+   */
+  readonly visionNarrowing: number
 }
 
 /** Balance numbers for one part type, per unit of `size`. */
