@@ -73,7 +73,11 @@ const isNumber = (value: unknown): value is number => typeof value === 'number'
 
 describe('the founder body', () => {
   it('is exactly 1 against itself, for every factor', () => {
-    const f = capabilityFactors(founder, founder)
+    const { vision, ...f } = capabilityFactors(founder, founder)
+    // The founder's eye is all-round, so the body is omni and its one cone reaches exactly as far
+    // as the founder's own sense range (ADR 0016 "Directional vision").
+    expect(vision.omni).toBe(true)
+    expect(vision.cones.map((cone) => cone.reach)).toEqual([1])
     expect(f).toEqual({
       speed: 1,
       strafe: 1,
@@ -332,7 +336,7 @@ describe('part stats (ADR 0016): every stat does something, and the strong ones 
     expect(cilia(0, 1).mass).toBeGreaterThan(cilia(0, 0).mass)
   })
 
-  it('eye: range sets how far it sees, resolution how well it picks food out; field of view is stored for later', () => {
+  it('eye: range sets how far it sees, resolution how well it picks food out; field of view sets the cone', () => {
     const eye = (index: number, gene: number) => raw([withStat('eye', index, gene)])
     expect(eye(0, 1).senseRange).toBeGreaterThan(eye(0, 0).senseRange)
     expect(eye(0, 1).upkeep).toBeGreaterThan(eye(0, 0).upkeep)
@@ -340,7 +344,15 @@ describe('part stats (ADR 0016): every stat does something, and the strong ones 
     for (let kind = 0; kind < KINDS; kind++) {
       expect(eye(1, 1).foodDetection[kind]).toBeGreaterThan(eye(1, 0).foodDetection[kind] as number)
     }
-    expect(eye(2, 1)).toEqual(eye(2, 0))
+    // The field of view moves neither the sense range nor the upkeep: it shapes where the eye looks.
+    expect(eye(2, 1).senseRange).toBe(eye(2, 0).senseRange)
+    expect(eye(2, 1).upkeep).toBe(eye(2, 0).upkeep)
+    expect(eye(2, 1).vision.omni).toBe(true)
+    expect(eye(2, 0).vision.omni).toBe(false)
+    // Narrow reaches further than all-round: the range-for-angle trade.
+    const reach = (gene: number): number => eye(2, gene).vision.cones[0]?.reach as number
+    expect(reach(0)).toBeGreaterThan(reach(0.5))
+    expect(reach(0.5)).toBeGreaterThan(reach(1))
   })
 
   it('sniffer: range and sensitivity both raise detection of its food kind and cost upkeep', () => {

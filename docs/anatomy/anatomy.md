@@ -25,24 +25,24 @@ The first ten are the original parts; the last six (eyestalk, gyro, lipid, phero
 
 A body has 12 slots; each is empty or holds one part. The types are in the order of the `type` gene. Besides `size`, every part carries up to six per-type **stats** (ADR 0016):
 
-| Type        | Stats (in gene order)                                                                    |
-| ----------- | ---------------------------------------------------------------------------------------- |
-| `flagellum` | length, thickness, force, efficiency                                                     |
-| `cilia`     | length, density, rate                                                                    |
-| `eye`       | range, resolution, field of view (stored and shown; acts when directional sensing lands) |
-| `sniffer`   | range, sensitivity, selectivity (which food kind)                                        |
-| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw), bite rate                  |
-| `intestine` | length, absorption, filter                                                               |
-| `stomach`   | capacity, throughput                                                                     |
-| `armor`     | thickness, coverage, hardness                                                            |
-| `membrane`  | insulation, thickness                                                                    |
-| `mender`    | rate, efficiency                                                                         |
-| `eyestalk`  | length, stiffness                                                                        |
-| `gyro`      | stability                                                                                |
-| `lipid`     | reserve                                                                                  |
-| `pheromone` | potency                                                                                  |
-| `skeleton`  | rigidity, length                                                                         |
-| `join`      | length, flexibility                                                                      |
+| Type        | Stats (in gene order)                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| `flagellum` | length, thickness, force, efficiency                                                                             |
+| `cilia`     | length, density, rate                                                                                            |
+| `eye`       | range, resolution, field of view (a cone about the eye's axis; narrower reaches further, see Directional vision) |
+| `sniffer`   | range, sensitivity, selectivity (which food kind)                                                                |
+| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw), bite rate                                          |
+| `intestine` | length, absorption, filter                                                                                       |
+| `stomach`   | capacity, throughput                                                                                             |
+| `armor`     | thickness, coverage, hardness                                                                                    |
+| `membrane`  | insulation, thickness                                                                                            |
+| `mender`    | rate, efficiency                                                                                                 |
+| `eyestalk`  | length, stiffness                                                                                                |
+| `gyro`      | stability                                                                                                        |
+| `lipid`     | reserve                                                                                                          |
+| `pheromone` | potency                                                                                                          |
+| `skeleton`  | rigidity, length                                                                                                 |
+| `join`      | length, flexibility                                                                                              |
 
 | Type        | Feeds                      | Needs       | Provides    | Default mass / upkeep / strength |
 | ----------- | -------------------------- | ----------- | ----------- | -------------------------------- |
@@ -80,28 +80,29 @@ It uses the engine's own `cos` and `sin`, no randomness, and never modifies its 
 
 `capabilitiesOf(anatomy, config, bodyScale, kindCount)`. Sums run over functional parts of the named type; `p = strength * size * integrity`; `m(stat)` is the stat's multiplier `0.5 + gene`, exactly 1 at the founder's value, so every line is the founder's at founder stats. Gene tables per type are in [ADR 0016](../decisions/0016-part-stats-and-attachment.md).
 
-| Capability                | Formula                                                                                                                                                                     |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| mass                      | `bodyMass * bodyScale` + `sum(mass * size * massScale)` over **all** parts (`massScale` follows the part's own dimensions)                                                  |
-| upkeep                    | `sum(upkeep * size * upkeepScale)` over **all** parts (`upkeepScale` follows force, rate or range; energy per second)                                                       |
-| thrust strength           | flagellum `p * m(force) * sqrt(m(length)) * (0.8 + 0.2 m(thickness))`; cilia `p * m(density) * sqrt(m(length) * m(rate))`                                                   |
-| forward / lateral thrust  | `strength * max(0, fx)` / `strength * abs(fy)` with the push `(fx, fy) = -(cos axis, sin axis)` (a tail trails along its axis)                                              |
-| torque                    | `strength * abs(x * fy - y * fx)`: the moment of the force about the centre, from the part's anchor                                                                         |
-| sense range               | `senseFloor + sqrt(sum(p * m(range)))` over eyes (so each extra eye adds less)                                                                                              |
-| food detection, kind `k`  | `(1 + sum(p * (m(range) + m(sensitivity)) / 2)) * (1 + 0.25 * sum(p * m(resolution)))`; a sniffer's selectivity stat picks `k`; eye resolution lifts every kind             |
-| reach                     | `1 + sum(p * m(reach))` over mouths                                                                                                                                         |
-| bite size / bite rate     | `sum(p * m(gape))` / `sum(p * m(rate))` over mouths; zero without a working mouth, which then cannot bite (ADR 0017)                                                        |
-| diet efficiency, kind `k` | power-weighted mean over mouths of the form's yield for that kind (config `anatomy.mouthForms`; the mandible is exactly 1)                                                  |
-| absorption                | `1 + sum(p * (m(absorption) + m(length)) / 2)` over intestines `+ sum(p * m(throughput) / 2)` over stomachs: how fast the gut empties                                       |
-| digestion                 | `1 + sum(p * (m(absorption) + m(length)) / 2)` over intestines `+ sum(p * m(gape) / 2)` over mouths `+ sum(p * m(throughput) / 2)` over stomachs                            |
-| toxin tolerance           | `x / (1 + x)` with `x = sum(p * m(filter))` over intestines, in `[0, 1)`                                                                                                    |
-| gyro torque               | `sum(p * m(stability) * effects.gyroTorque)` over gyros, added to the torque above: turning with no thrust                                                                  |
-| eye on an eyestalk        | an eye whose parent is a working eyestalk has its range term multiplied by `1 + effects.eyestalkLift * m(length)`                                                           |
-| mating signal             | `min(effects.pheromoneCap, 1 + sum(p * m(potency) * effects.pheromoneSignal))` over pheromone glands: a creature is heard by a searcher out to `mateSenseRadius` times this |
-| energy capacity           | `1 + sum(p * m(capacity))` over stomachs `+ sum(p * m(reserve) * effects.lipidCapacity)` over lipid stores                                                                  |
-| damage taken              | `1 / (1 + sum(p * (m(thickness) + m(coverage) + m(hardness)) / 3))` over armor, in `(0, 1]`                                                                                 |
-| temperature tolerance     | `1 + sum(p * m(insulation) * (0.8 + 0.2 m(thickness)))` over membranes                                                                                                      |
-| regeneration              | `1 + sum(p * m(rate))` over menders                                                                                                                                         |
+| Capability                | Formula                                                                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| mass                      | `bodyMass * bodyScale` + `sum(mass * size * massScale)` over **all** parts (`massScale` follows the part's own dimensions)                                                                 |
+| upkeep                    | `sum(upkeep * size * upkeepScale)` over **all** parts (`upkeepScale` follows force, rate or range; energy per second)                                                                      |
+| thrust strength           | flagellum `p * m(force) * sqrt(m(length)) * (0.8 + 0.2 m(thickness))`; cilia `p * m(density) * sqrt(m(length) * m(rate))`                                                                  |
+| forward / lateral thrust  | `strength * max(0, fx)` / `strength * abs(fy)` with the push `(fx, fy) = -(cos axis, sin axis)` (a tail trails along its axis)                                                             |
+| torque                    | `strength * abs(x * fy - y * fx)`: the moment of the force about the centre, from the part's anchor                                                                                        |
+| sense range               | `senseFloor + sqrt(sum(p * m(range)))` over eyes (so each extra eye adds less)                                                                                                             |
+| vision cone, per eye      | axis = the eye's facing; half-angle = field of view / 2; reach = sense range `* (1 + effects.visionNarrowing * (sqrt(6.28 / fov) - 1))` (an all-round eye reaches exactly the sense range) |
+| food detection, kind `k`  | `(1 + sum(p * (m(range) + m(sensitivity)) / 2)) * (1 + 0.25 * sum(p * m(resolution)))`; a sniffer's selectivity stat picks `k`; eye resolution lifts every kind                            |
+| reach                     | `1 + sum(p * m(reach))` over mouths                                                                                                                                                        |
+| bite size / bite rate     | `sum(p * m(gape))` / `sum(p * m(rate))` over mouths; zero without a working mouth, which then cannot bite (ADR 0017)                                                                       |
+| diet efficiency, kind `k` | power-weighted mean over mouths of the form's yield for that kind (config `anatomy.mouthForms`; the mandible is exactly 1)                                                                 |
+| absorption                | `1 + sum(p * (m(absorption) + m(length)) / 2)` over intestines `+ sum(p * m(throughput) / 2)` over stomachs: how fast the gut empties                                                      |
+| digestion                 | `1 + sum(p * (m(absorption) + m(length)) / 2)` over intestines `+ sum(p * m(gape) / 2)` over mouths `+ sum(p * m(throughput) / 2)` over stomachs                                           |
+| toxin tolerance           | `x / (1 + x)` with `x = sum(p * m(filter))` over intestines, in `[0, 1)`                                                                                                                   |
+| gyro torque               | `sum(p * m(stability) * effects.gyroTorque)` over gyros, added to the torque above: turning with no thrust                                                                                 |
+| eye on an eyestalk        | an eye whose parent is a working eyestalk has its range term multiplied by `1 + effects.eyestalkLift * m(length)`                                                                          |
+| mating signal             | `min(effects.pheromoneCap, 1 + sum(p * m(potency) * effects.pheromoneSignal))` over pheromone glands: a creature is heard by a searcher out to `mateSenseRadius` times this                |
+| energy capacity           | `1 + sum(p * m(capacity))` over stomachs `+ sum(p * m(reserve) * effects.lipidCapacity)` over lipid stores                                                                                 |
+| damage taken              | `1 / (1 + sum(p * (m(thickness) + m(coverage) + m(hardness)) / 3))` over armor, in `(0, 1]`                                                                                                |
+| temperature tolerance     | `1 + sum(p * m(insulation) * (0.8 + 0.2 m(thickness)))` over membranes                                                                                                                     |
+| regeneration              | `1 + sum(p * m(rate))` over menders                                                                                                                                                        |
 
 The consequences are the point: a flagellum pushing forward drives speed; pushing sideways it strafes; placed off the axis it turns the body; one at the rear on the axis cannot. Every part costs mass and upkeep, a dormant part costs them for nothing, and armor can reduce damage but never to zero.
 
@@ -135,3 +136,12 @@ The baselines are `organisms.maxSpeed`, `maxTurnRate`, `sensorRadius`, `movement
 ## What is verified
 
 Unit tests for the layout, founder body, gene table, development (placement, budget, dependencies, purity), the capability formulas (including that placement and orientation matter, that every part has a cost, and that values stay finite under extreme mutation), and a world-level test that turning anatomy on leaves snapshots, events, records and every legacy gene identical to anatomy off. An equivalence harness against the previous commit gave identical results in 20 of 20 scenarios with the default configuration.
+
+## Directional vision
+
+An eye sees a cone about its axis (its `orientation` placed on the outline), not a circle (ADR 0016, addendum "Directional vision"). A body's **vision** is one cone per working eye plus an all-round touch radius of `senseFloor` times the baseline sensor radius, so a creature always feels what it touches.
+
+- **Food, other organisms and hazards** are perceived only inside a cone (or the touch radius) and only within that cone's reach. The mating signal and the home sense are not vision and stay all-round.
+- **Range for angle.** A cone narrower than all-round reaches further: `1 + effects.visionNarrowing * (sqrt(6.28 / fov) - 1)` times the sense range, so a 90 degree eye reaches about twice as far. `visionNarrowing` runs from 0 (no trade) to 1.
+- **The founder's eye is all-round** (field of view at its widest), so the founder, and any world whose bodies do not change, perceives exactly what it did before eyes had a direction. A body whose eyes are all all-round, or that has no eye, is `omni` and takes the plain circle path. Evolution can only narrow the founder's field of view; two narrow eyes on opposite sides cover both ends and the sides stay blind.
+- A creature sees through the nearest-first rule inside its cones: the nearest visible food, the nearest visible peer, the nearest visible hazard edge.

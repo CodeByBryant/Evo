@@ -60,7 +60,8 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     lipidCapacity: 1.5,
     pheromoneSignal: 0.5,
     pheromoneCap: 2,
-    skeletonBudget: 1
+    skeletonBudget: 1,
+    visionNarrowing: 1
   },
   // Every stat sits at the middle (0.5, a multiplier of 1) and every part has full integrity, so
   // the founder is the reference all capabilities are measured against. Surface parts sit on the
@@ -117,7 +118,10 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
       offset: 0.8,
       orientation: 0,
       integrity: 1,
-      stats: MID
+      // Every stat in the middle except the field of view, which is its widest: the founder sees
+      // all round, so a world whose bodies do not change sees exactly what it saw before eyes
+      // had a direction (ADR 0016 "Directional vision"). Evolution can only narrow it.
+      stats: [0.5, 0.5, 1, 0.5, 0.5, 0.5]
     },
     {
       type: 'mouth',
@@ -202,7 +206,8 @@ const EFFECT_KEYS = [
   'lipidCapacity',
   'pheromoneSignal',
   'pheromoneCap',
-  'skeletonBudget'
+  'skeletonBudget',
+  'visionNarrowing'
 ]
 const FOUNDER_PART_KEYS = [
   'type',
@@ -296,6 +301,10 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
     }
     const cap = checkNumber(effects, 'pheromoneCap', 'anatomy.effects.pheromoneCap', {}, errors)
     if (cap !== undefined && cap < 1) errors.push('anatomy.effects.pheromoneCap must be at least 1')
+    const narrowing = effects['visionNarrowing']
+    if (typeof narrowing === 'number' && narrowing > 1) {
+      errors.push('anatomy.effects.visionNarrowing must be at most 1')
+    }
   }
 
   const founder = anatomy['founder']

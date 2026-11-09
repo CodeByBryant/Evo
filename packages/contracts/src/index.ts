@@ -190,5 +190,7 @@ export type {
   PartType,
   SlotField,
   StatField,
+  Vision,
+  VisionCone,
   VisualField
 } from './anatomy'

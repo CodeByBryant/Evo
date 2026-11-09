@@ -79,8 +79,10 @@ describe('Phase 6A: species exit criteria', () => {
         maxActive = Math.max(maxActive, active)
         expect(active).toBeLessThanOrEqual(world.snapshot().population.active)
       }
-      // 20 before bites (ADR 0017); seeds 1 to 4 now reach 33, 37, 38 and 37 living species.
-      expect(maxActive).toBeLessThanOrEqual(50)
+      // 20 before bites (ADR 0017). Seeds 1 to 8 over 30,000 ticks peak at 39 to 48 living species
+      // before directional eyes (mean 43.8) and 38 to 55 after (mean 44.3, seed 3 the outlier at 55)
+      // with about 94 creatures at the peak: the spread moved with the dynamics, not the mean.
+      expect(maxActive).toBeLessThanOrEqual(60)
       expect(world.validate()).toEqual({ ok: true, errors: [] })
     }
   })
