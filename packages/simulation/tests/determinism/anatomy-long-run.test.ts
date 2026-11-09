@@ -61,7 +61,7 @@ describe('anatomy long run', () => {
     // Anatomy is on by default (ADR 0015), so the baseline must switch it off explicitly.
     const off = World.create({
       seed: 23,
-      config: { genetics: BUSY.genetics ?? {}, anatomy: { enabled: false } }
+      config: { ...PHASE3_ECONOMY, genetics: BUSY.genetics ?? {}, anatomy: { enabled: false } }
     })
     const on = World.create({
       seed: 23,
