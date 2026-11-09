@@ -85,7 +85,9 @@ describe('Phase 6A: species exit criteria', () => {
       expect(maxActive).toBeLessThanOrEqual(60)
       expect(world.validate()).toEqual({ ok: true, errors: [] })
     }
-  })
+    // Two 30,000-tick worlds take about 52 s on an idle laptop and 77 s on a busy one; the default
+    // budget of 60 s timed out in the fresh-clone gate.
+  }, 240_000)
 
   it('more mutation gives more species (distance, not labels, drives speciation)', () => {
     const calm = run(1, 8_000, { genetics: { mutationRateScale: 0.2 } })
