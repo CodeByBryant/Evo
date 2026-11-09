@@ -10,6 +10,16 @@ import type { SpeciesId } from './species'
 
 /** One developed part as drawn: world units relative to the creature's centre (front along +x). */
 export interface PartSnapshot {
+  /** The slot this part grows from (its gene block), for naming it in the inspector. */
+  readonly slot: number
+  /**
+   * The index, in the same `parts` array, of the part this one hangs from, or `-1` when it attaches
+   * to the body. Always smaller than this part's own index, so one forward pass can place every
+   * child after its parent.
+   */
+  readonly parent: number
+  /** What a working eye sees (the half-angle of its cone and how far, in world units); `null` for every other part. */
+  readonly sight: { readonly half: number; readonly reach: number } | null
   readonly type: PartType
   readonly x: number
   readonly y: number

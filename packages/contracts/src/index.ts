@@ -137,6 +137,7 @@ export type {
   InspectorBrain,
   InspectorAnatomy,
   InspectorPart,
+  InspectorStat,
   InspectorView,
   ViewState,
   SimulationControls

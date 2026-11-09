@@ -132,10 +132,18 @@ export function drawnPartsOf(genome: Genome, config: WorldConfig): readonly Part
   const known = drawnParts.get(genome.body.genes)
   if (known !== undefined && known.radius === radius) return known.parts
   const factor = radius / outlineOf(genome.body.genes).areaRadius
-  const parts = developAnatomy(genome.body.genes, config.anatomy).parts.map((part) => {
+  const developed = developAnatomy(genome.body.genes, config.anatomy).parts
+  const cones = factorsOf(genome, config).vision.cones
+  const sensorRadius = config.organisms.sensorRadius
+  const parts = developed.map((part) => {
     const dx = part.tipX - part.x
     const dy = part.tipY - part.y
+    const cone = part.type === 'eye' ? cones.find((c) => c.slot === part.slot) : undefined
     return {
+      slot: part.slot,
+      // Parts are developed in slot order and a parent is always a lower slot, so its index is lower.
+      parent: part.parent < 0 ? -1 : developed.findIndex((q) => q.slot === part.parent),
+      sight: cone === undefined ? null : { half: cone.half, reach: cone.reach * sensorRadius },
       type: part.type,
       x: part.x * factor,
       y: part.y * factor,

@@ -66,11 +66,31 @@ export interface InspectorBrain {
 export interface InspectorPart {
   readonly slot: number
   readonly type: PartType
+  /** The slot this part hangs from, or `-1` when it attaches to the body. */
+  readonly parent: number
   readonly size: number
   readonly x: number
   readonly y: number
+  /** Where the far end of the part is (equal to the anchor for a part with no length). */
+  readonly tipX: number
+  readonly tipY: number
   readonly orientation: number
   readonly functional: boolean
+  /** Developmental quality in `[0.1, 1]`. */
+  readonly integrity: number
+  /** What the part adds to the body's mass and upkeep (energy per second); a dormant part still counts. */
+  readonly mass: number
+  readonly upkeep: number
+  /** The part's named stats in real units (`PART_STATS`), in table order. */
+  readonly stats: readonly InspectorStat[]
+}
+
+/** One named stat of a part: its label, its value in real units and the unit. */
+export interface InspectorStat {
+  readonly key: string
+  readonly label: string
+  readonly value: number
+  readonly unit: string
 }
 
 /** The selected organism's body: its outline, parts and what they do (ADR 0015). */

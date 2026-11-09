@@ -145,3 +145,7 @@ An eye sees a cone about its axis (its `orientation` placed on the outline), not
 - **Range for angle.** A cone narrower than all-round reaches further: `1 + effects.visionNarrowing * (sqrt(6.28 / fov) - 1)` times the sense range, so a 90 degree eye reaches about twice as far. `visionNarrowing` runs from 0 (no trade) to 1.
 - **The founder's eye is all-round** (field of view at its widest), so the founder, and any world whose bodies do not change, perceives exactly what it did before eyes had a direction. A body whose eyes are all all-round, or that has no eye, is `omni` and takes the plain circle path. Evolution can only narrow the founder's field of view; two narrow eyes on opposite sides cover both ends and the sides stay blind.
 - A creature sees through the nearest-first rule inside its cones: the nearest visible food, the nearest visible peer, the nearest visible hazard edge.
+
+## What the renderer and inspector are given
+
+Each drawn part (`PartSnapshot`) carries its `slot`, its `parent` (the index of the part it hangs from in the same array, always smaller than its own index, or `-1` for the body), its `sight` (a working eye's half-angle and reach in world units, else `null`) and the geometry it had before. The inspector's `InspectorPart` adds the parent slot, the tip, the integrity, the part's mass and upkeep (`partCostOf`: the parts plus the bare body add up to the body's mass, and the parts' upkeep to its upkeep) and the part's stats in real units from `PART_STATS`.

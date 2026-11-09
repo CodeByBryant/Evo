@@ -14,6 +14,7 @@ import {
   tailPolygon
 } from '../animation'
 import { hexToNumber, hslToHex } from '../colors'
+import { posedParts, tailSpecOf } from '../partPose'
 
 /**
  * How a creature is drawn: a soft translucent cell whose parts grow out of its body. The body is
@@ -163,19 +164,10 @@ function drawBack(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number):
     const t = part.functional ? time : 0
     if (part.type === 'flagellum') {
       // The part is anchored on the outline and points outward; its tail trails along that axis.
-      const dirX = Math.cos(part.orientation)
-      const dirY = Math.sin(part.orientation)
-      const polygon = tailPolygon({
-        baseX: part.x - dirX * r * 0.05,
-        baseY: part.y - dirY * r * 0.05,
-        dirX,
-        dirY,
-        length: r * 1.5 + part.radius * 5,
-        baseWidth: Math.max(r * 0.06, part.radius * 0.35),
-        time: t,
-        phase: phase + index * 1.3,
-        rate: beatRate(o.speedRatio)
-      })
+      // The spec is shared with `posedParts`, so whatever hangs from the tail rides this very curve.
+      const polygon = tailPolygon(
+        tailSpecOf(part, r, t, phase + index * 1.3, beatRate(o.speedRatio))
+      )
       g.poly(polygon).fill({ color: p.tail, alpha: 0.85 * alpha })
     } else if (part.type === 'membrane') {
       const halo = 0.14 + 0.08 * pulse(t, phase)
@@ -287,8 +279,37 @@ function drawMouth(
   g.circle(bx, by, Math.max(0.25, s * 0.4 * open)).fill({ color: DARK, alpha: 0.8 * alpha })
 }
 
+/**
+ * What a working eye sees, for the selected creature: a thin flat wedge about the eye's axis, as
+ * far as it reaches (a full circle for an all-round eye). One-pixel lines, no fill, no glow.
+ */
+function drawSight(g: Graphics, part: PartSnapshot, p: BodyPalette): void {
+  const sight = part.sight
+  if (sight === null) return
+  const line = { width: 1, color: p.light, alpha: 0.55, pixelLine: true }
+  if (sight.half >= Math.PI - 1e-6) {
+    g.circle(part.x, part.y, sight.reach).stroke(line)
+    return
+  }
+  const a0 = part.orientation - sight.half
+  const a1 = part.orientation + sight.half
+  g.arc(part.x, part.y, sight.reach, a0, a1).stroke(line)
+  g.moveTo(part.x, part.y)
+    .lineTo(part.x + Math.cos(a0) * sight.reach, part.y + Math.sin(a0) * sight.reach)
+    .stroke(line)
+  g.moveTo(part.x, part.y)
+    .lineTo(part.x + Math.cos(a1) * sight.reach, part.y + Math.sin(a1) * sight.reach)
+    .stroke(line)
+}
+
 /** The parts on and in the body: plates, gut, cilia, feelers, mouth, eyes. Cleared first. */
-function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number): void {
+function drawFront(
+  g: Graphics,
+  o: RenderOrganism,
+  p: BodyPalette,
+  time: number,
+  showSight: boolean
+): void {
   g.clear()
   const r = o.radius
   const phase = phaseOf(o.id)
@@ -529,6 +550,7 @@ function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number)
             color: 0xffffff,
             alpha: 0.5 * alpha * blink
           })
+          if (showSight && part.sight !== null && part.functional) drawSight(g, part, p)
           break
         }
       }
@@ -536,14 +558,21 @@ function drawFront(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number)
   }
 }
 
-/** Redraws a creature's moving parts at `time` seconds: the back layer (tails, halo) and the front layer. */
+/**
+ * Redraws a creature's moving parts at `time` seconds: the back layer (tails, halo) and the front
+ * layer. Parts are posed first, so a part that hangs from another rides it. `showSight` also draws
+ * what each working eye sees (for the selected creature).
+ */
 export function drawParts(
   back: Graphics,
   front: Graphics,
   o: RenderOrganism,
   p: BodyPalette,
-  time: number
+  time: number,
+  showSight = false
 ): void {
-  drawBack(back, o, p, time)
-  drawFront(front, o, p, time)
+  const parts = posedParts(o, time)
+  const posed = parts === o.parts ? o : { ...o, parts }
+  drawBack(back, posed, p, time)
+  drawFront(front, posed, p, time, showSight)
 }

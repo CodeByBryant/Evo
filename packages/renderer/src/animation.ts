@@ -145,6 +145,38 @@ export function tailPolygon(spec: TailSpec, segments = TAIL_SEGMENTS): number[] 
   return polygon
 }
 
+/**
+ * A point on the tail's centreline at fraction `s` of its length (0 at the base, 1 at the tip) and
+ * the direction the tail runs there, from the same wave as `tailPolygon`: whatever hangs from the
+ * tail rides this point.
+ */
+export function tailPoint(spec: TailSpec, s: number): { x: number; y: number; angle: number } {
+  const normalX = -spec.dirY
+  const normalY = spec.dirX
+  const amplitude = spec.length * 0.17
+  const at = (u: number): { x: number; y: number } => {
+    const wave =
+      Math.sin(TAU * (u * 1.25 - spec.rate * spec.time * 0.55) + spec.phase) *
+      amplitude *
+      Math.pow(u, 1.15)
+    return {
+      x: spec.baseX + spec.dirX * spec.length * u + normalX * wave,
+      y: spec.baseY + spec.dirY * spec.length * u + normalY * wave
+    }
+  }
+  const u = Math.min(1, Math.max(0, s))
+  const here = at(u)
+  // The direction is the chord a little either side (clamped to the ends).
+  const before = at(Math.max(0, u - 0.03))
+  const after = at(Math.min(1, u + 0.03))
+  return { ...here, angle: Math.atan2(after.y - before.y, after.x - before.x) }
+}
+
+/** How far a stalk (eyestalk, join) sways about its rest direction, in radians: a slow, small sweep. */
+export function stalkSway(time: number, phase: number): number {
+  return 0.12 * Math.sin(TAU * 0.35 * time + phase)
+}
+
 /** One cilium: where it starts, bends and ends. */
 export interface Cilium {
   readonly x0: number
