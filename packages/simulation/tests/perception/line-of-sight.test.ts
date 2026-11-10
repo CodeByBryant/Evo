@@ -125,9 +125,10 @@ describe('food behind a creature', () => {
   it('falls back to the next nearest food that is not hidden', () => {
     const scene = {
       others: [[2, 20, 0]] as const,
+      // food 9 is ahead and a little off the line (inside the founder's forward cone)
       foods: [
         [8, 40, 0],
-        [9, 0, 45]
+        [9, 45, 25]
       ] as const
     }
     expect(look(config, scene).food).toBe(9)
@@ -148,7 +149,7 @@ describe('food behind a creature', () => {
       foods: [
         [7, 30, 0],
         [8, 40, 0],
-        [9, 0, 50]
+        [9, 50, 30]
       ] as const
     }
     const capped = plain({ perception: { maxSightChecks: 1 } })
