@@ -117,15 +117,23 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   },
   species: {
     enabled: true,
-    threshold: 0.06,
+    // What makes a species: mostly the body plan, then the brain and the life-history genes; colour
+    // counts for nothing (cosmetic genes are in no group). Measured over 3 seeds x 30,000 ticks
+    // (`tests/probe/species.probe.ts`): 3 to 12 living species among about 50 creatures and about
+    // 3% of births founding one. Until then (threshold 0.06, physical 0.2 with the hue in it,
+    // metabolic 0.2, behavioral 0.1, reproduction 0.05, learning 0.05, brain 0.3, body 0) it was 29
+    // to 37 species among 50 and one birth in five: any two brains differ by about 0.2, which alone
+    // was at the old threshold. One part gained, lost or changed is 0.033 here, so about three such
+    // differences, or fewer with drift in the rest, make a new species.
+    threshold: 0.1,
     distanceWeights: {
-      physical: 0.2,
-      metabolic: 0.2,
-      behavioral: 0.1,
-      reproduction: 0.05,
+      physical: 0.1,
+      metabolic: 0.05,
+      behavioral: 0.05,
+      reproduction: 0.1,
       learning: 0.05,
-      brain: 0.3,
-      body: 0
+      brain: 0.15,
+      body: 0.5
     },
     sampleInterval: 500,
     maxHistorySamples: 1000,

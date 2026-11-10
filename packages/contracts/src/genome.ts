@@ -120,6 +120,12 @@ export interface GeneDefinition {
    * stay ordered for any ranges. The named gene must come earlier in `GENE_DEFINITIONS`.
    */
   readonly orderedAfter?: GenePath
+  /**
+   * How a creature looks and nothing else: no system reads it. Cosmetic genes are left out of the
+   * genetic distance that separates species (two creatures that differ only in colour are the same
+   * species) and reported apart, as `appearance`.
+   */
+  readonly cosmetic?: true
 }
 
 /**
@@ -132,7 +138,7 @@ export const GENE_DEFINITIONS: readonly GeneDefinition[] = [
   { path: 'physical.maturityAge', kind: 'float' },
   { path: 'physical.senescenceAge', kind: 'float', orderedAfter: 'physical.maturityAge' },
   { path: 'physical.maxAge', kind: 'float', orderedAfter: 'physical.senescenceAge' },
-  { path: 'physical.hue', kind: 'circular' },
+  { path: 'physical.hue', kind: 'circular', cosmetic: true },
   { path: 'metabolic.basalCost', kind: 'float' },
   { path: 'behavioral.wanderJitter', kind: 'float' },
   { path: 'reproduction.minEnergy', kind: 'float' },

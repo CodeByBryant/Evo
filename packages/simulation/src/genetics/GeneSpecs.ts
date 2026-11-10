@@ -38,6 +38,8 @@ export interface GeneSpec {
    * the table.
    */
   readonly resetWith?: number
+  /** Only changes how the creature looks; left out of the distance that separates species. */
+  readonly cosmetic?: boolean
 }
 
 /**
@@ -62,7 +64,8 @@ export function buildGeneSpecs(config: WorldConfig): GeneSpec[] {
       mutationStd: range.mutationStd,
       baseline: baselines[definition.path],
       relative: definition.relative === true,
-      orderedAfter: definition.orderedAfter === undefined ? -1 : indexOf(definition.orderedAfter)
+      orderedAfter: definition.orderedAfter === undefined ? -1 : indexOf(definition.orderedAfter),
+      cosmetic: definition.cosmetic === true
     }
   })
 }

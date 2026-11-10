@@ -31,8 +31,11 @@ describe('Phase 6A: species exit criteria', () => {
     // and species follow births. Seeds 1 to 4 end with 106, 163, 125 and 130 species (36, 22, 17
     // and 46 before). Still bounded, which is the claim; the threshold is re-tuned with the ecology.
     // After the 135 degree founder eye (ADR 0016) seeds 1 to 4 end with 225, 214, 215 and 207
-    // (202, 219, 196 and 183 before it), so the limit moves from 220 to 260.
-    expect(species.length).toBeLessThanOrEqual(260)
+    // (202, 219, 196 and 183 before it), so the limit moved from 220 to 260.
+    // Colour no longer counts and the body plan does, with a threshold of 0.1 (ADR 0008 addendum):
+    // seeds 1 to 4 end with 21, 32, 18 and 6 species created, so the limit is 60, the highest
+    // measurement about doubled. This is a tighter bound than before, not a looser one.
+    expect(species.length).toBeLessThanOrEqual(60)
     for (const s of species.slice(1)) {
       expect(s.ancestorSpeciesId).not.toBeNull()
       expect(s.ancestorSpeciesId as number).toBeLessThan(s.id)
@@ -84,7 +87,9 @@ describe('Phase 6A: species exit criteria', () => {
       // 20 before bites (ADR 0017). Seeds 1 to 8 over 30,000 ticks peak at 39 to 48 living species
       // before directional eyes (mean 43.8) and 38 to 55 after (mean 44.3, seed 3 the outlier at 55)
       // with about 94 creatures at the peak: the spread moved with the dynamics, not the mean.
-      expect(maxActive).toBeLessThanOrEqual(60)
+      // With colour out of the distance and the body plan in (ADR 0008 addendum) seeds 1, 3, 5 and 6
+      // peak at 12, 7, 6 and 8 living species, so the limit is 25 (it was 60 against 38 to 55).
+      expect(maxActive).toBeLessThanOrEqual(25)
       expect(world.validate()).toEqual({ ok: true, errors: [] })
     }
     // Two 30,000-tick worlds take about 52 s on an idle laptop and 77 s on a busy one; the default

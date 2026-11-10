@@ -30,7 +30,9 @@ describe('species long run', () => {
     // (38, 40, 34 and 37 without it); the 63 is seed 11 caught at a population peak of 79, and the
     // count follows the population of the moment, so the bound is 80 and the claim is unchanged:
     // living species stay at or below the living population.
-    expect(reference.species.active().length).toBeLessThanOrEqual(80)
+    // Colour no longer counts and the body plan does (ADR 0008 addendum): seeds 11 to 14 end with
+    // 6, 6, 8 and 7 living species at populations of 79, 50, 53 and 61, so the bound is 20.
+    expect(reference.species.active().length).toBeLessThanOrEqual(20)
   })
 
   it('turning species off leaves the 50,000-tick state hash unchanged', () => {

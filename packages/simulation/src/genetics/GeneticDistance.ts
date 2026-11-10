@@ -1,4 +1,5 @@
 import type { Genome, SpeciesDistanceWeights } from '@evo/contracts'
+import { bodyPlanDistance } from './BodyDistance'
 import { shortestDelta } from './geneMath'
 import type { GeneSpec } from './GeneSpecs'
 import { genomeToVector, sameArchitecture } from './GenomeFactory'
@@ -13,8 +14,16 @@ export interface GenomeDistance {
   reproduction: number
   brain: number
   learning: number
-  /** Body-plan genes (ADR 0012); `0` when no body table is given. */
+  /**
+   * How different the two body plans are (`bodyPlanDistance`: parts and outline, not a mean over
+   * genes); `0` when no body table is given.
+   */
   body: number
+  /**
+   * The cosmetic genes (colour and pattern) alone. Reported for display; it is in none of the
+   * groups above, so it never separates species.
+   */
+  appearance: number
 }
 
 type ScalarGroup = 'physical' | 'metabolic' | 'behavioral' | 'reproduction' | 'learning'
@@ -32,7 +41,9 @@ function geneDistance(spec: GeneSpec, a: number, b: number): number {
  * Compares two genomes (roadmap: "parent and child genomes can be compared"). Scalar genes are
  * normalized by range width (circular genes by the shortest arc), a group's distance is the mean
  * over its genes, and the brain is the RMS weight difference divided by `2 * initialWeightStd`
- * (clamped to 1). Symmetric, and `0` exactly when the genomes carry the same values.
+ * (clamped to 1). Cosmetic genes (colour, pattern) are in no group: they are reported apart as
+ * `appearance`, so two creatures that differ only in colour are at distance 0 in every group.
+ * Symmetric, and every field is `0` exactly when the genomes carry the same values.
  */
 export function genomeDistance(
   a: Genome,
@@ -54,9 +65,10 @@ export function genomeDistance(
     reproduction: { total: 0, count: 0 },
     learning: { total: 0, count: 0 }
   }
+  const looks = { total: 0, count: 0 }
   specs.forEach((spec, index) => {
     const group = spec.path.split('.')[0] as ScalarGroup
-    const bucket = sums[group]
+    const bucket = spec.cosmetic === true ? looks : sums[group]
     bucket.total += geneDistance(spec, left[index] as number, right[index] as number)
     bucket.count += 1
   })
@@ -80,14 +92,20 @@ export function genomeDistance(
   const learning = groupDistance('learning')
   let body = 0
   if (bodySpecs !== undefined && bodySpecs.length > 0) {
-    let sum = 0
+    body = bodyPlanDistance(a.body.genes, b.body.genes, bodySpecs)
     bodySpecs.forEach((spec, index) => {
-      sum += geneDistance(spec, a.body.genes[index] as number, b.body.genes[index] as number)
+      if (spec.cosmetic !== true) return
+      looks.total += geneDistance(
+        spec,
+        a.body.genes[index] as number,
+        b.body.genes[index] as number
+      )
+      looks.count += 1
     })
-    body = sum / bodySpecs.length
   }
+  const appearance = looks.count === 0 ? 0 : looks.total / looks.count
   const total = (physical + metabolic + behavioral + reproduction + brain + learning) / 6
-  return { total, physical, metabolic, behavioral, reproduction, brain, learning, body }
+  return { total, physical, metabolic, behavioral, reproduction, brain, learning, body, appearance }
 }
 
 /**

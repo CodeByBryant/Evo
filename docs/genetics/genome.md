@@ -14,7 +14,7 @@ Founders start at the **baseline** (the existing `organisms.*` / `reproduction.*
 | `physical.maturityAge`             | float            | 90 (`organisms.maturityAge`)              | 45 - 180     | 0.1  | 0.05 | life stage (Movement, Interaction, Metabolism, Reproduction) |
 | `physical.senescenceAge`           | float            | 250 (`organisms.senescenceAge`)           | 150 - 560    | 0.1  | 0.05 | life stage                                                   |
 | `physical.maxAge`                  | float            | 300 (`organisms.maxAge`)                  | 270 - 1200   | 0.1  | 0.05 | Death                                                        |
-| `physical.hue`                     | circular         | 0.55 (`organisms.hue`)                    | [0, 1) turns | 0.1  | 0.05 | carried (rendering, Phase 7)                                 |
+| `physical.hue`                     | circular         | 0.55 (`organisms.hue`)                    | [0, 1) turns | 0.1  | 0.05 | carried; cosmetic: left out of the species distance          |
 | `metabolic.basalCost`              | float            | 0.5 (`organisms.basalCost`)               | 0.3 - 0.8    | 0.1  | 0.05 | Metabolism (scaled by body size)                             |
 | `behavioral.wanderJitter`          | float            | 1.5 (`organisms.wanderJitter`)            | 0.75 - 3     | 0.1  | 0.05 | Decision                                                     |
 | `reproduction.minEnergy`           | float            | 75 (`reproduction.minEnergy`)             | 40 - 98      | 0.1  | 0.05 | Reproduction (eligibility)                                   |
@@ -56,7 +56,7 @@ Since the anatomy work (ADR 0012) a genome also carries a `body` section: **203 
 | `body.slotN.orientation`            | circular 0-2pi    | the part's axis relative to its anchor's outward normal (or its parent's axis)                                                                                |
 | `body.slotN.integrity`              | float 0.1-1       | developmental quality: scales what the part delivers, not what it costs                                                                                       |
 | `body.slotN.s0..s5`                 | float 0-1         | the part type's six stats (length, force, range, ... named per type in ADR 0016); unused entries are inert                                                    |
-| `body.visual.pattern`, `.accentHue` | int 0-3, circular | how the body is painted; no effect on fitness                                                                                                                 |
+| `body.visual.pattern`, `.accentHue` | int 0-3, circular | how the body is painted; no effect on fitness; cosmetic (left out of the species distance)                                                                    |
 | `body.outline.count`                | int 5-16          | how many points the body outline has                                                                                                                          |
 | `body.outline.radius0..15`          | float 0.35-1      | distance of each point from the centre                                                                                                                        |
 | `body.outline.angle0..15`           | float 0-1         | where each point sits inside its own sector                                                                                                                   |

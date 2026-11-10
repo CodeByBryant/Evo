@@ -269,6 +269,8 @@ export interface BodyGeneDefinition {
   readonly kind: GeneKind
   readonly min: number
   readonly max: number
+  /** A gene that only changes how the creature is painted (see `GeneDefinition.cosmetic`). */
+  readonly cosmetic?: true
 }
 
 const SLOT_RANGES: Readonly<Record<SlotField, { kind: GeneKind; min: number; max: number }>> = {
@@ -305,7 +307,7 @@ export const BODY_GENE_DEFINITIONS: readonly BodyGeneDefinition[] = (() => {
     }
   }
   for (const field of VISUAL_FIELDS) {
-    out.push({ path: `body.visual.${field}`, ...VISUAL_RANGES[field] })
+    out.push({ path: `body.visual.${field}`, ...VISUAL_RANGES[field], cosmetic: true })
   }
   out.push({
     path: 'body.outline.count',

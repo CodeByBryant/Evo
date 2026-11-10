@@ -37,7 +37,8 @@ describe('genomeDistance', () => {
       reproduction: 0,
       brain: 0,
       learning: 0,
-      body: 0
+      body: 0,
+      appearance: 0
     })
   })
 
@@ -60,7 +61,8 @@ describe('genomeDistance', () => {
   it('measures a physical difference as a share of the gene range', () => {
     const range = f.specs.find((s) => s.path === 'physical.radius')
     const b = withGenes(a, { 'physical.radius': (range?.baseline ?? 0) + 3 })
-    const physicalGenes = 5
+    // radius, maturityAge, senescenceAge and maxAge: the hue is cosmetic and in no group
+    const physicalGenes = 4
     const expected = 3 / ((range?.max ?? 0) - (range?.min ?? 0)) / physicalGenes
     expect(distance(a, b).physical).toBeCloseTo(expected, 12)
     expect(distance(a, b).metabolic).toBe(0)
@@ -82,10 +84,32 @@ describe('genomeDistance', () => {
     const near1 = withGenes(a, { 'physical.hue': 0.98 })
     const opposite = withGenes(a, { 'physical.hue': 0.5 })
     // 0.02 and 0.98 are 0.04 apart around the circle, not 0.96 apart.
-    const close = distance(near0, near1).physical
-    const far = distance(near0, opposite).physical
+    const close = distance(near0, near1).appearance
+    const far = distance(near0, opposite).appearance
     expect(close).toBeLessThan(far)
-    expect(close).toBeCloseTo(0.08 / 5, 9)
+    expect(close).toBeCloseTo(0.08, 9)
+  })
+
+  it('a difference in colour alone is no difference in any group, only in appearance', () => {
+    const recoloured = withGenes(a, { 'physical.hue': 0.5 })
+    const result = distance(a, recoloured)
+    expect(result.appearance).toBeGreaterThan(0)
+    for (const group of [
+      'total',
+      'physical',
+      'metabolic',
+      'behavioral',
+      'reproduction',
+      'learning',
+      'brain',
+      'body'
+    ] as const) {
+      expect(result[group]).toBe(0)
+    }
+    // the negative: a gene that does something moves its group and leaves appearance alone
+    const bigger = distance(a, withGenes(a, { 'physical.radius': 8 }))
+    expect(bigger.physical).toBeGreaterThan(0)
+    expect(bigger.appearance).toBe(0)
   })
 
   it('measures brain difference as RMS weight difference over two initial standard deviations', () => {

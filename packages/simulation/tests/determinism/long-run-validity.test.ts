@@ -36,8 +36,9 @@ describe('100,000-tick runs', () => {
     return hundredThousand
   }
 
-  // 142 s on an idle 4-core machine once bodies could carry any part (about 90 s before), so the
-  // 180 s default is too close for a slower runner.
+  // About 100 s on an idle 4-core machine when this was written, and the 180 s default timed out on a
+  // Windows runner running three files at once (PR 129). With every part type reachable (ADR 0016)
+  // bodies are richer and it takes 142 s idle: a time budget, not a weaker claim.
   it('runs 100,000 ticks headlessly without ever violating an invariant', () => {
     const world = World.create({ seed: 1, validateEveryTicks: 500 })
     expect(() => world.run(100_000)).not.toThrow()

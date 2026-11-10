@@ -125,7 +125,8 @@ export function buildBodySpecs(anatomy: AnatomyConfig): GeneSpec[] {
       mutationStd: mutation.continuousStd,
       baseline: baseline[index] as number,
       relative: false,
-      orderedAfter: -1
+      orderedAfter: -1,
+      cosmetic: definition.cosmetic === true
     }
     if (!mutation.openTypes || !group.startsWith('slot')) return spec
     // Every part type can appear: a type change jumps to any type, and a slot that wakes up takes
