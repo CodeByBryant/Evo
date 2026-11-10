@@ -177,12 +177,16 @@ describe('mating behavior in a world', () => {
   it('a long-range mating signal produces more births than almost none, under the brain', () => {
     let withSignal = 0
     let withoutSignal = 0
-    for (const seed of [1, 2]) {
+    // Four seeds. Births with the signal against without it: 1,287 against 1,133 (+13.6 percent)
+    // before the 135 degree founder eye (ADR 0016), 1,256 against 1,157 (+8.6 percent; per seed
+    // 1.11, 1.08, 1.08, 1.07) after it. The effect is real, on every seed, and a little smaller, so
+    // the margin is 5 percent.
+    for (const seed of [1, 2, 3, 4]) {
       withSignal += run('brain', 250, seed).snapshot().metrics.organismsBorn
       withoutSignal += run('brain', 1, seed).snapshot().metrics.organismsBorn
     }
-    expect(withSignal).toBeGreaterThan(withoutSignal * 1.1)
-  }, 300_000)
+    expect(withSignal).toBeGreaterThan(withoutSignal * 1.05)
+  }, 600_000)
 
   it('does nothing under the reflex controller, which never senses mates', () => {
     expect(run('reflex', 250, 3).stateHash()).toBe(run('reflex', 1, 3).stateHash())

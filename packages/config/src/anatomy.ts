@@ -116,12 +116,15 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
       size: 0.5,
       angle: 0.5,
       offset: 0.8,
-      orientation: 0,
+      // The outline's outward direction at this anchor is 0.9895 radians, so the eye is turned by
+      // 2 pi - 0.9895 to look straight ahead along the heading.
+      orientation: 5.29373,
       integrity: 1,
-      // Every stat in the middle except the field of view, which is its widest: the founder sees
-      // all round, so a world whose bodies do not change sees exactly what it saw before eyes
-      // had a direction (ADR 0016 "Directional vision"). Evolution can only narrow it.
-      stats: [0.5, 0.5, 1, 0.5, 0.5, 0.5]
+      // Every stat in the middle except the field of view: 0.3211 of its range is 135 degrees
+      // (2.356 radians), a forward cone as wide as a creature can reasonably see. With the range
+      // for angle trade (`visionNarrowing`) it reaches about 1.6 times as far as an all-round eye
+      // and sees the same area, but only the area it faces (ADR 0016 "Directional vision").
+      stats: [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
     },
     {
       type: 'mouth',

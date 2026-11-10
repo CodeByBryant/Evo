@@ -170,8 +170,10 @@ describe('senses: eyes set the range', () => {
   it('more eyes see further than the founder; an eyeless body sees much less', () => {
     const config = plain()
     const founder = founderParts(config)
-    expect(sees(config, founder, 1.4)).toBe(false)
-    expect(sees(config, [...founder, part('eye', 1), part('eye', 1)], 1.4)).toBe(true)
+    // The founder's forward cone reaches about 1.6 sensor radii (ADR 0016 "Directional vision").
+    expect(sees(config, founder, 1.5)).toBe(true)
+    expect(sees(config, founder, 1.8)).toBe(false)
+    expect(sees(config, [...founder, part('eye', 1), part('eye', 1)], 2.4)).toBe(true)
     expect(sees(config, founder, 0.9)).toBe(true)
     expect(sees(config, without(founder, 'eye'), 0.9)).toBe(false)
   })

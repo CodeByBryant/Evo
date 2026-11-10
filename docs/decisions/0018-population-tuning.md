@@ -1,6 +1,6 @@
 # ADR 0018: Population tuning: why nine in ten creatures starved, and what changed
 
-Status: accepted. Follows [ADR 0017](0017-feeding.md) (bites), which doubled populations and removed wasted food but left the starved share of deaths at about 91 percent.
+Status: accepted. Its numbers are the baseline from before the founder's eye became a 135 degree cone (ADR 0016, last addendum). Follows [ADR 0017](0017-feeding.md) (bites), which doubled populations and removed wasted food but left the starved share of deaths at about 91 percent.
 
 ## The problem, measured
 
