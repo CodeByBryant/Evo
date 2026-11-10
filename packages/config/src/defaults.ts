@@ -300,6 +300,12 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     gutCapacity: 40,
     absorption: 6,
     chewSlow: 0.15
+  },
+  // Another creature's body hides what is behind it (ADR 0016 "Line of sight"); a creature checks
+  // at most six candidates for something in the way, so a crowded patch costs a bounded amount.
+  perception: {
+    organismsBlockSight: true,
+    maxSightChecks: 6
   }
 } satisfies WorldConfig)
 

@@ -130,6 +130,17 @@ export interface OrganismConfig {
  * digestion parts. With `enabled: false` the old behavior runs: touching food with the body eats
  * it whole and credits the energy at once.
  */
+/**
+ * How creatures see each other (ADR 0016 "Line of sight"). Presentation of the world to the
+ * senses, not of the interface: it changes what a creature perceives, so it changes the run.
+ */
+export interface PerceptionConfig {
+  /** Whether another creature's body blocks sight of what is behind it (food and other creatures). */
+  organismsBlockSight: boolean
+  /** The most candidates a creature checks for something in the way before it gives up (at least 1). */
+  maxSightChecks: number
+}
+
 export interface FeedingConfig {
   enabled: boolean
   /** A mouth reaches this many body radii from its anchor, times the mouth's `reach` stat. */
@@ -215,6 +226,7 @@ export interface WorldConfig {
   ecology: EcologyConfig
   anatomy: AnatomyConfig
   feeding: FeedingConfig
+  perception: PerceptionConfig
 }
 
 /** A partial configuration merged onto the defaults. */
@@ -233,6 +245,7 @@ export interface WorldConfigOverrides {
   ecology?: EcologyConfigOverrides
   anatomy?: AnatomyConfigOverrides
   feeding?: Partial<FeedingConfig>
+  perception?: Partial<PerceptionConfig>
 }
 
 export interface WorldOptions {
