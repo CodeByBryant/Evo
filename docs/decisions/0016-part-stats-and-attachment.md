@@ -131,4 +131,10 @@ The change (`anatomy.mutation.openTypes`, on by default):
 
 **Measured** (`tests/probe/parts.probe.ts`, 4 seeds x 30,000 ticks, before to after): part types ever carried 7 to **16 of 16**; distinct part lists at the end 10.3 to **31.3**; extinct worlds 0 and 0; mean final population 51.3 to 59.3; births 785 to 816. The share of living bodies carrying each type, sampled over the run: sniffer 13%, intestine 12%, lipid 7%, armor 7%, pheromone gland 5%, membrane 3%, eyestalk 2%, join 2%, skeleton 1%, mender 1%, gyro 1%. The rare ones are rare because most bodies that try them are worse off, which is selection doing its job; this change only lets evolution try.
 
+**A world that could not adapt now can.** The Phase 3 scarce-food world (seed 5, 15 creatures, 80 food, spawn rate 1, reflex controller) always went extinct, at tick 10,231 once bodies were on. With every part reachable it does not: 15 to 27 creatures are alive through 100,000 ticks (663 births against 35), and the survivors carry lipid stores, intestines, a pheromone gland and a skeleton alongside the founder's parts. Evolution found parts that make scarcity survivable, which it could not reach when only flagella and eyes were on offer. The extinction test pins the old mutation for that world to keep describing Phase 3 (it reproduces 10,231 exactly).
+
+**A skeleton can now raise the budget.** `sizeUsed <= structuralBudget` was never the claim; a skeleton adds to the budget of the slots after it (`Anatomy.budget`), and bodies now reach 6.2 to 6.4. The two tests that compared with the base budget compare with the body's own.
+
+**Species.** More body variety means more body distance, so the species threshold moves from 0.1 to 0.12 (ADR 0008 addendum, `docs/simulation/species.md`).
+
 **What it does not do.** It does not add knockouts, duplication or vestigial organs (the rest of the failure-state work stays where it was in the plan), does not change what any part does, and does not change the founder.

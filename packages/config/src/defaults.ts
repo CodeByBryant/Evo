@@ -125,7 +125,11 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     // to 37 species among 50 and one birth in five: any two brains differ by about 0.2, which alone
     // was at the old threshold. One part gained, lost or changed is 0.033 here, so about three such
     // differences, or fewer with drift in the rest, make a new species.
-    threshold: 0.1,
+    // Moved to 0.12 once every part type became reachable (ADR 0016): with that much real body
+    // variety, 0.1 gave 10 to 22 living species and 8% of births founding one; 0.12 gives 6 to 16 and
+    // 2 to 5% (4 seeds x 30,000 ticks, about 60 creatures), and it is the cluster layout's own
+    // threshold, so field and cluster worlds agree.
+    threshold: 0.12,
     distanceWeights: {
       physical: 0.1,
       metabolic: 0.05,

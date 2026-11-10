@@ -74,7 +74,7 @@ The registry is not hashed and uses no RNG; it cannot change any existing golden
 
 ## What makes a species now (2026-11)
 
-Until then a creature with a new colour could drift into a new species (the hue gene was in the physical group) while a creature with a different body counted for nothing (the body weight was 0). The defaults are now **body 0.5, brain 0.15, physical 0.1, reproduction 0.1, metabolic 0.05, behavioral 0.05, learning 0.05, threshold 0.1** (`species.probe.ts`, 3 seeds x 30,000 ticks, about 50 creatures):
+Until then a creature with a new colour could drift into a new species (the hue gene was in the physical group) while a creature with a different body counted for nothing (the body weight was 0). The defaults are now **body 0.5, brain 0.15, physical 0.1, reproduction 0.1, metabolic 0.05, behavioral 0.05, learning 0.05, threshold 0.1** (`species.probe.ts`, 3 seeds x 30,000 ticks, about 50 creatures; the threshold is 0.12 since every part type became reachable, see below):
 
 | Quantity                                                           | Before (threshold 0.06, brain 0.3, body 0, hue counted) | Now                        |
 | ------------------------------------------------------------------ | ------------------------------------------------------- | -------------------------- |
@@ -83,6 +83,18 @@ Until then a creature with a new colour could drift into a new species (the hue 
 | Mean pairwise distance among the living: brain / body / appearance |                                                         | 0.19 / 0.12 to 0.16 / 0.08 |
 
 Any two brains differ by about 0.2 on their own, which with the old weights was above the old threshold by itself: that was most of the fragmentation. One part gained, lost or changed is about 0.033 of body distance here, so a species is a ball of bodies within a few parts of its founder. `threshold` and the weights are one decision; the probe takes `SPECIES_THRESHOLDS`, `SPECIES_WEIGHTS` and `SPECIES_SEEDS` to try others.
+
+### With every part type reachable (threshold 0.12)
+
+Once bodies could carry any of the 16 part types (ADR 0016 addendum) they differ more, so the same threshold finds more species: at 0.1, 4 seeds x 30,000 ticks (about 60 creatures) gave **10 to 22 living species and 8% of births founding one**, against 1 to 12 and about 3% before. A species is meant to be a real difference, and a body with a gyro now is one, so the threshold moved instead of any gate being loosened:
+
+| Threshold (4 seeds, 30,000 ticks) | Living species | Births that founded a species |
+| --------------------------------- | -------------- | ----------------------------- |
+| 0.08                              | 16 to 33       | 10 to 19%                     |
+| 0.10                              | 10 to 22       | 6 to 11%                      |
+| **0.12**                          | **6 to 16**    | **2 to 5%**                   |
+
+0.12 is also the cluster layout's own `clusters.speciesThreshold`, so the field and cluster worlds now use one value. The gates in `species/exit-criteria` and `determinism/species-long-run` carry their measurements: species created in 30,000 ticks 17 to 44 (limit 90), most living at once 7 to 14 (limit 30), living at 50,000 ticks 9 to 18 (limit 36).
 
 ## Measured behavior (Phase 6A, before the change above)
 
