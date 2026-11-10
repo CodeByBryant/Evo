@@ -25,8 +25,12 @@ describe('species long run', () => {
     expect(chunked.stateHash()).toBe(reference.stateHash())
     expect(reference.validate()).toEqual({ ok: true, errors: [] })
     expect(reference.species.size).toBeGreaterThan(1)
-    // 25 until bites (ADR 0017); seed 11 now ends with 42 living species (population about 2.5 times larger).
-    expect(reference.species.active().length).toBeLessThanOrEqual(60)
+    // 25 until bites (ADR 0017); seed 11 ended with 42 living species (population about 2.5 times larger).
+    // With line of sight (ADR 0019) seeds 11 to 14 end with 63, 33, 39 and 44 living species
+    // (38, 40, 34 and 37 without it); the 63 is seed 11 caught at a population peak of 79, and the
+    // count follows the population of the moment, so the bound is 80 and the claim is unchanged:
+    // living species stay at or below the living population.
+    expect(reference.species.active().length).toBeLessThanOrEqual(80)
   })
 
   it('turning species off leaves the 50,000-tick state hash unchanged', () => {

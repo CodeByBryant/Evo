@@ -180,6 +180,40 @@ export class SpatialHash<T extends HasId> {
   }
 
   /**
+   * Whether `test` holds for any item within `radius` (inclusive) of `center`: the same answer as
+   * `queryRadius(...).some(...)`, without sorting or allocating, stopping at the first yes. `test`
+   * must be a pure function of the item and its squared distance (it is called in no particular order).
+   */
+  some(
+    center: Readonly<Vec2>,
+    radius: number,
+    test: (item: T, distanceSquared: number) => boolean
+  ): boolean {
+    if (!Number.isFinite(radius) || radius < 0) {
+      throw new RangeError('radius must be a finite number greater than or equal to zero')
+    }
+    const radiusSquared = radius * radius
+    const minCx = Math.max(-CELL_LIMIT, Math.floor((center.x - radius) / this.cellSize))
+    const maxCx = Math.min(CELL_LIMIT - 1, Math.floor((center.x + radius) / this.cellSize))
+    const minCy = Math.max(-CELL_LIMIT, Math.floor((center.y - radius) / this.cellSize))
+    const maxCy = Math.min(CELL_LIMIT - 1, Math.floor((center.y + radius) / this.cellSize))
+    for (let cx = minCx; cx <= maxCx; cx++) {
+      for (let cy = minCy; cy <= maxCy; cy++) {
+        const bucket = this.buckets.get(cellKey(cx, cy))
+        if (!bucket) continue
+        for (const item of bucket) {
+          const position = this.getPosition(item)
+          const dx = position.x - center.x
+          const dy = position.y - center.y
+          const distanceSquared = dx * dx + dy * dy
+          if (distanceSquared <= radiusSquared && test(item, distanceSquared)) return true
+        }
+      }
+    }
+    return false
+  }
+
+  /**
    * The single nearest item within `radius`, or `null` if none; ties go to the lower id, exactly
    * as the first element of `queryRadius`. Skips the item with id `excludeId`, if given. Scans
    * for the minimum instead of sorting every hit, since this runs once per organism per tick.

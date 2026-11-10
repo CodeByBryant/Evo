@@ -82,6 +82,7 @@ export type {
   OrganismConfig,
   ResourceConfig,
   FeedingConfig,
+  PerceptionConfig,
   ReproductionConfig,
   HistoryConfig,
   WorldConfig,

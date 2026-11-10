@@ -42,8 +42,10 @@ describe('extinction over a long run', () => {
       config: withoutEcology({
         ...PHASE3_ECONOMY,
         // The Phase 3 body: an all-round eye (the founder's own 135 degree cone moved this tick to
-        // 18,223; ADR 0016 "The founder sees 135 degrees").
+        // 18,223; ADR 0016 "The founder sees 135 degrees") and a transparent world (line of sight
+        // moved it to 8,610; ADR 0019).
         ...ALL_ROUND,
+        perception: { organismsBlockSight: false },
         organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 15 },
         resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
         // Reflex controller, ecology off: this pin is about the Phase 4 forager. It moved from

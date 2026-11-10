@@ -13,8 +13,10 @@ import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
 import { cos, sin } from '../math/trig'
 import { factorsOf } from '../organisms/bodyFactors'
+import { bodyRadiusOf } from '../organisms/traits'
 import type { ReproductionReadiness } from '../organisms/reproductionReadiness'
-import type { SpatialHash } from '../spatial/SpatialHash'
+import { SIGHT_BLOCKER_MARGIN, segmentHitsCircle } from '../spatial/sight'
+import type { SpatialHash, SpatialHit } from '../spatial/SpatialHash'
 
 /** What `PerceptionSystem` needs to also find the nearest other organism (brain controller only). */
 export interface PeerSensing {
@@ -65,13 +67,20 @@ export class PerceptionSystem {
     private readonly peers?: PeerSensing,
     private readonly ecology: EcologyModel | null = null,
     private readonly hazardSensing?: HazardSensing,
-    private readonly mateSensing?: MateSensing
+    private readonly mateSensing?: MateSensing,
+    /** When given, creatures' bodies block sight (`perception.organismsBlockSight`). */
+    private readonly blockers?: { readonly organismIndex: SpatialHash<OrganismState> }
   ) {}
+
+  private readonly foodScratch: SpatialHit<ResourceState>[] = []
+  private readonly peerScratch: SpatialHit<OrganismState>[] = []
 
   // Scratch state for the organism being processed, read by the scan callbacks below. A directional
   // body's cone axes in the world frame are worked out once per organism, not once per candidate.
   private cVision: Vision | null = null
   private cBody: CapabilityFactors | null = null
+  private cDirectional = false
+  private cRadius = 0
   private cScale = 1
   private cModified = false
   private cSelf = 0
@@ -84,16 +93,25 @@ export class PerceptionSystem {
   private bestPeer: OrganismState | null = null
   private bestPeerDistance = Infinity
 
-  /** One food candidate of a directional body: keeps the nearest one it can see (ties to the lower id). */
-  private readonly visitFood = (item: ResourceState, distanceSquared: number): void => {
-    const dx = item.x - this.cX
-    const dy = item.y - this.cY
-    let reach = this.reachAlong(dx, dy, distanceSquared)
+  /** How far the aimed organism sees toward (`dx`, `dy`): its sensor radius, or what its cones allow. */
+  private reachFor(dx: number, dy: number, distanceSquared: number): number {
+    return this.cDirectional ? this.reachAlong(dx, dy, distanceSquared) : this.cRadius
+  }
+
+  /** The food reach after the kind's detectability and the body's detection (only with ecology modifying perception). */
+  private foodReach(item: ResourceState, distanceSquared: number): number {
+    let reach = this.reachFor(item.x - this.cX, item.y - this.cY, distanceSquared)
     if (this.cModified) {
       const eco = this.ecology as EcologyModel
       reach *= eco.kind(item.kind).detectability
       reach *= (this.cBody as CapabilityFactors).foodDetection[item.kind] ?? 1
     }
+    return reach
+  }
+
+  /** One food candidate of a directional body: keeps the nearest one it can see (ties to the lower id). */
+  private readonly visitFood = (item: ResourceState, distanceSquared: number): void => {
+    const reach = this.foodReach(item, distanceSquared)
     if (distanceSquared > reach * reach) return
     if (
       distanceSquared < this.bestFoodDistance ||
@@ -107,9 +125,7 @@ export class PerceptionSystem {
   /** One organism candidate of a directional body: keeps the nearest one it can see (ties to the lower id). */
   private readonly visitPeer = (item: OrganismState, distanceSquared: number): void => {
     if (item.id === this.cSelf) return
-    const dx = item.x - this.cX
-    const dy = item.y - this.cY
-    const reach = this.reachAlong(dx, dy, distanceSquared)
+    const reach = this.reachFor(item.x - this.cX, item.y - this.cY, distanceSquared)
     if (distanceSquared > reach * reach) return
     if (
       distanceSquared < this.bestPeerDistance ||
@@ -118,6 +134,39 @@ export class PerceptionSystem {
       this.bestPeer = item
       this.bestPeerDistance = distanceSquared
     }
+  }
+
+  /** The candidates of the occluding search that are in reach and cone, for sorting and the hidden test. */
+  private readonly collectFood = (item: ResourceState, distanceSquared: number): void => {
+    const reach = this.foodReach(item, distanceSquared)
+    if (distanceSquared <= reach * reach) this.foodScratch.push({ item, distanceSquared })
+  }
+
+  private readonly collectPeer = (item: OrganismState, distanceSquared: number): void => {
+    if (item.id === this.cSelf) return
+    const reach = this.reachFor(item.x - this.cX, item.y - this.cY, distanceSquared)
+    if (distanceSquared <= reach * reach) this.peerScratch.push({ item, distanceSquared })
+  }
+
+  /** Whether another body stands on the line from `viewer` to (`tx`, `ty`); `targetId` is the peer being looked at, if any. */
+  private blocked(viewer: OrganismState, tx: number, ty: number, targetId: number | null): boolean {
+    const index = (this.blockers as { organismIndex: SpatialHash<OrganismState> }).organismIndex
+    const dx = tx - viewer.x
+    const dy = ty - viewer.y
+    const middle = { x: viewer.x + dx / 2, y: viewer.y + dy / 2 }
+    const around = Math.sqrt(dx * dx + dy * dy) / 2 + SIGHT_BLOCKER_MARGIN
+    return index.some(middle, around, (other) => {
+      if (other.id === viewer.id || other.id === targetId) return false
+      return segmentHitsCircle(
+        viewer.x,
+        viewer.y,
+        tx,
+        ty,
+        other.x,
+        other.y,
+        bodyRadiusOf(other.genome, this.config)
+      )
+    })
   }
 
   update(tick = 0): void {
@@ -138,9 +187,35 @@ export class PerceptionSystem {
       const vision = body.vision
       const directional = !vision.omni
       const widest = directional ? this.widestReach(vision) * scale : radius
-      if (directional) this.aim(vision, body, organism, scale, modified)
+      this.aim(vision, body, organism, radius, scale, modified, directional)
 
-      if (directional) {
+      if (this.blockers !== undefined) {
+        // The nearest food that is in reach, in the cone and not hidden behind another creature.
+        const found = this.foodScratch
+        found.length = 0
+        this.resourceIndex.scan(origin, widest, this.collectFood)
+        found.sort((a, b) => a.distanceSquared - b.distanceSquared || a.item.id - b.item.id)
+        let seenFood: SpatialHit<ResourceState> | null = null
+        const limit = Math.min(found.length, this.config.perception.maxSightChecks)
+        for (let i = 0; i < limit; i++) {
+          const candidate = found[i] as SpatialHit<ResourceState>
+          if (!this.blocked(organism, candidate.item.x, candidate.item.y, null)) {
+            seenFood = candidate
+            break
+          }
+        }
+        this.perceptionBuffer.set(
+          organism.id,
+          seenFood
+            ? {
+                resourceId: seenFood.item.id,
+                position: { x: seenFood.item.x, y: seenFood.item.y },
+                distanceSquared: seenFood.distanceSquared,
+                kind: seenFood.item.kind
+              }
+            : null
+        )
+      } else if (directional) {
         this.bestFood = null
         this.bestFoodDistance = Infinity
         this.resourceIndex.scan(origin, widest, this.visitFood)
@@ -188,7 +263,31 @@ export class PerceptionSystem {
         )
       }
 
-      if (this.peers && directional) {
+      if (this.peers && this.blockers !== undefined) {
+        const found = this.peerScratch
+        found.length = 0
+        this.peers.organismIndex.scan(origin, widest, this.collectPeer)
+        found.sort((a, b) => a.distanceSquared - b.distanceSquared || a.item.id - b.item.id)
+        let seenPeer: SpatialHit<OrganismState> | null = null
+        const limit = Math.min(found.length, this.config.perception.maxSightChecks)
+        for (let i = 0; i < limit; i++) {
+          const candidate = found[i] as SpatialHit<OrganismState>
+          if (!this.blocked(organism, candidate.item.x, candidate.item.y, candidate.item.id)) {
+            seenPeer = candidate
+            break
+          }
+        }
+        this.peers.buffer.set(
+          organism.id,
+          seenPeer
+            ? {
+                organismId: seenPeer.item.id,
+                position: { x: seenPeer.item.x, y: seenPeer.item.y },
+                distanceSquared: seenPeer.distanceSquared
+              }
+            : null
+        )
+      } else if (this.peers && directional) {
         this.bestPeer = null
         this.bestPeerDistance = Infinity
         this.peers.organismIndex.scan(origin, widest, this.visitPeer)
@@ -285,25 +384,31 @@ export class PerceptionSystem {
   }
 
   /**
-   * Sets up the scratch state for one directional organism: its cones' axes in the world frame (the
-   * body-frame axis rotated by the heading with the angle-sum identities, worked out once here).
+   * Sets up the scratch state for one organism; for a directional body also its cones' axes in the
+   * world frame (the body-frame axis rotated by the heading with the angle-sum identities, worked out
+   * once here instead of once per candidate).
    */
   private aim(
     vision: Vision,
     body: CapabilityFactors,
     organism: OrganismState,
+    radius: number,
     scale: number,
-    modified: boolean
+    modified: boolean,
+    directional: boolean
   ): void {
-    const cosH = cos(organism.heading)
-    const sinH = sin(organism.heading)
     this.cVision = vision
     this.cBody = body
+    this.cDirectional = directional
+    this.cRadius = radius
     this.cScale = scale
     this.cModified = modified
     this.cSelf = organism.id
     this.cX = organism.x
     this.cY = organism.y
+    if (!directional) return
+    const cosH = cos(organism.heading)
+    const sinH = sin(organism.heading)
     const cones = vision.cones
     for (let k = 0; k < cones.length; k++) {
       const cone = cones[k] as Vision['cones'][number]
@@ -313,10 +418,10 @@ export class PerceptionSystem {
   }
 
   /**
-   * How far the aimed organism sees toward a target at offset (`dx`, `dy`) and squared distance
-   * `distanceSquared`: its all-round touch radius, or the reach of the farthest eye whose cone
-   * holds the target. The test is one dot-product comparison, `dot >= distance * cos(half)`, so no
-   * inverse trigonometry is needed.
+   * How far the aimed directional organism sees toward a target at offset (`dx`, `dy`) and squared
+   * distance `distanceSquared`: its all-round touch radius, or the reach of the farthest eye whose
+   * cone holds the target. The test is one dot-product comparison, `dot >= distance * cos(half)`, so
+   * no inverse trigonometry is needed.
    */
   private reachAlong(dx: number, dy: number, distanceSquared: number): number {
     const vision = this.cVision as Vision

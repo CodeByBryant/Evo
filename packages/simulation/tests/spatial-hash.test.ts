@@ -152,6 +152,30 @@ describe('SpatialHash scan and nearestWhere', () => {
     }
   })
 
+  it('some equals "any hit of the sorted query passes", stopping early', () => {
+    const index = new SpatialHash<Point>(13, (p) => p)
+    for (let round = 0; round < 4; round++) {
+      index.rebuild(layout(round))
+      for (let i = 0; i < 60; i++) {
+        const center = { x: ((i * 7) % 90) - 45, y: ((i * 11) % 80) - 40 }
+        const radius = 4 + (i % 37)
+        const test = (item: Point): boolean => item.id % (7 + (i % 5)) === 0
+        expect(index.some(center, radius, test)).toBe(
+          index.queryRadius(center, radius).some((h) => test(h.item))
+        )
+      }
+    }
+    let calls = 0
+    expect(
+      index.some({ x: 0, y: 0 }, 1000, () => {
+        calls++
+        return true
+      })
+    ).toBe(true)
+    expect(calls).toBe(1)
+    expect(index.some({ x: 0, y: 0 }, 1000, () => false)).toBe(false)
+  })
+
   it('nearestWhere returns null when nothing in range is accepted', () => {
     const index = new SpatialHash<Point>(10, (p) => p)
     index.rebuild([point(1, 1, 1), point(2, 50, 50)])

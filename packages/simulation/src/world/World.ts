@@ -281,7 +281,9 @@ export class World {
               !this.config.species.reproductiveIsolation ||
               this.speciesRegistry.speciesOf(a.id) === this.speciesRegistry.speciesOf(b.id)
           }
-        : undefined
+        : undefined,
+      // Creatures' bodies hide what is behind them (ADR 0016 "Line of sight").
+      this.config.perception.organismsBlockSight ? { organismIndex: this.organismIndex } : undefined
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
