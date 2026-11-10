@@ -36,13 +36,15 @@ describe('100,000-tick runs', () => {
     return hundredThousand
   }
 
+  // About 100 s on an idle 4-core machine, and the 180 s default timed out on a Windows runner
+  // running three files at once (PR 129): a time budget, not a weaker claim.
   it('runs 100,000 ticks headlessly without ever violating an invariant', () => {
     const world = World.create({ seed: 1, validateEveryTicks: 500 })
     expect(() => world.run(100_000)).not.toThrow()
     hundredThousand = world
     expect(world.clock.tick).toBe(100_000)
     expect(world.validate()).toEqual({ ok: true, errors: [] })
-  })
+  }, 420_000)
 
   it('keeps every genome valid and every trait mean near baseline over 100,000 ticks', () => {
     // validateEveryTicks runs World.validate(), which checks each living genome against the gene
