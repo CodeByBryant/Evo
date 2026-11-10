@@ -176,7 +176,9 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
         ...PHASE3_ECONOMY,
         organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 10 },
         learning: { controller: 'reflex' },
-        feeding: { enabled: false }
+        feeding: { enabled: false },
+        // Phase 3 had no line of sight: creatures were transparent (ADR 0016 "Line of sight").
+        perception: { organismsBlockSight: false }
       }),
       validateEveryTicks: 100
     })

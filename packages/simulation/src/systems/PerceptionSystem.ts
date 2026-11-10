@@ -13,8 +13,10 @@ import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
 import { cos, sin } from '../math/trig'
 import { factorsOf } from '../organisms/bodyFactors'
+import { bodyRadiusOf } from '../organisms/traits'
 import type { ReproductionReadiness } from '../organisms/reproductionReadiness'
-import type { SpatialHash } from '../spatial/SpatialHash'
+import { SIGHT_BLOCKER_MARGIN, segmentHitsCircle } from '../spatial/sight'
+import type { SpatialHash, SpatialHit } from '../spatial/SpatialHash'
 
 /** What `PerceptionSystem` needs to also find the nearest other organism (brain controller only). */
 export interface PeerSensing {
@@ -65,8 +67,40 @@ export class PerceptionSystem {
     private readonly peers?: PeerSensing,
     private readonly ecology: EcologyModel | null = null,
     private readonly hazardSensing?: HazardSensing,
-    private readonly mateSensing?: MateSensing
+    private readonly mateSensing?: MateSensing,
+    /** When given, creatures' bodies block sight (`perception.organismsBlockSight`). */
+    private readonly blockers?: { readonly organismIndex: SpatialHash<OrganismState> }
   ) {}
+
+  private readonly foodScratch: SpatialHit<ResourceState>[] = []
+  private readonly peerScratch: SpatialHit<OrganismState>[] = []
+
+  /** Whether another body stands on the line from `viewer` to (`tx`, `ty`); `targetId` is the peer being looked at, if any. */
+  private blocked(viewer: OrganismState, tx: number, ty: number, targetId: number | null): boolean {
+    const index = (this.blockers as { organismIndex: SpatialHash<OrganismState> }).organismIndex
+    const dx = tx - viewer.x
+    const dy = ty - viewer.y
+    const middle = { x: viewer.x + dx / 2, y: viewer.y + dy / 2 }
+    const around = Math.sqrt(dx * dx + dy * dy) / 2 + SIGHT_BLOCKER_MARGIN
+    for (const hit of index.queryRadius(middle, around)) {
+      const other = hit.item
+      if (other.id === viewer.id || other.id === targetId) continue
+      if (
+        segmentHitsCircle(
+          viewer.x,
+          viewer.y,
+          tx,
+          ty,
+          other.x,
+          other.y,
+          bodyRadiusOf(other.genome, this.config)
+        )
+      ) {
+        return true
+      }
+    }
+    return false
+  }
 
   update(tick = 0): void {
     this.perceptionBuffer.clear()
@@ -90,7 +124,50 @@ export class PerceptionSystem {
       const sinH = directional ? sin(organism.heading) : 0
       const widest = directional ? this.widestReach(vision) * scale : radius
 
-      if (directional) {
+      if (this.blockers !== undefined) {
+        // The nearest food that is in reach, in the cone and not hidden behind another creature.
+        const found = this.foodScratch
+        found.length = 0
+        for (const candidate of this.resourceIndex.queryRadius(origin, widest)) {
+          let reach = directional
+            ? this.reachToward(
+                vision,
+                cosH,
+                sinH,
+                candidate.item.x - organism.x,
+                candidate.item.y - organism.y,
+                candidate.distanceSquared,
+                scale
+              )
+            : radius
+          if (modified) {
+            reach *= eco.kind(candidate.item.kind).detectability
+            reach *= body.foodDetection[candidate.item.kind] ?? 1
+          }
+          if (candidate.distanceSquared <= reach * reach) found.push(candidate)
+        }
+        found.sort((a, b) => a.distanceSquared - b.distanceSquared || a.item.id - b.item.id)
+        let seenFood: SpatialHit<ResourceState> | null = null
+        const limit = Math.min(found.length, this.config.perception.maxSightChecks)
+        for (let i = 0; i < limit; i++) {
+          const candidate = found[i] as SpatialHit<ResourceState>
+          if (!this.blocked(organism, candidate.item.x, candidate.item.y, null)) {
+            seenFood = candidate
+            break
+          }
+        }
+        this.perceptionBuffer.set(
+          organism.id,
+          seenFood
+            ? {
+                resourceId: seenFood.item.id,
+                position: { x: seenFood.item.x, y: seenFood.item.y },
+                distanceSquared: seenFood.distanceSquared,
+                kind: seenFood.item.kind
+              }
+            : null
+        )
+      } else if (directional) {
         let best: ResourceState | null = null
         let bestDistance = Infinity
         for (const candidate of this.resourceIndex.queryRadius(origin, widest)) {
@@ -154,7 +231,45 @@ export class PerceptionSystem {
         )
       }
 
-      if (this.peers && directional) {
+      if (this.peers && this.blockers !== undefined) {
+        const found = this.peerScratch
+        found.length = 0
+        for (const candidate of this.peers.organismIndex.queryRadius(origin, widest)) {
+          if (candidate.item.id === organism.id) continue
+          const reach = directional
+            ? this.reachToward(
+                vision,
+                cosH,
+                sinH,
+                candidate.item.x - organism.x,
+                candidate.item.y - organism.y,
+                candidate.distanceSquared,
+                scale
+              )
+            : radius
+          if (candidate.distanceSquared <= reach * reach) found.push(candidate)
+        }
+        found.sort((a, b) => a.distanceSquared - b.distanceSquared || a.item.id - b.item.id)
+        let seenPeer: SpatialHit<OrganismState> | null = null
+        const limit = Math.min(found.length, this.config.perception.maxSightChecks)
+        for (let i = 0; i < limit; i++) {
+          const candidate = found[i] as SpatialHit<OrganismState>
+          if (!this.blocked(organism, candidate.item.x, candidate.item.y, candidate.item.id)) {
+            seenPeer = candidate
+            break
+          }
+        }
+        this.peers.buffer.set(
+          organism.id,
+          seenPeer
+            ? {
+                organismId: seenPeer.item.id,
+                position: { x: seenPeer.item.x, y: seenPeer.item.y },
+                distanceSquared: seenPeer.distanceSquared
+              }
+            : null
+        )
+      } else if (this.peers && directional) {
         let seen: OrganismState | null = null
         let seenDistance = Infinity
         for (const candidate of this.peers.organismIndex.queryRadius(origin, widest)) {

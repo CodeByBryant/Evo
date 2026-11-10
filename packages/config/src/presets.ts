@@ -68,6 +68,8 @@ export const PRESETS: readonly WorldPreset[] = [
       // That way of eating wastes about a third of the food, so it cannot carry the restrained
       // breeding and shorter lives of the default world (3 of 8 worlds went extinct).
       feeding: { enabled: false },
+      // ...and creatures see through each other, as they always did (ADR 0016 "Line of sight").
+      perception: { organismsBlockSight: false },
       reproduction: { minEnergy: 60, cooldown: 30 },
       organisms: { maxAge: 600, senescenceAge: 510 },
       ecology: {
