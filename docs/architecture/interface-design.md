@@ -15,25 +15,42 @@ The web application is a flat black interface over a living world. This note rec
 
 All colors, radii and type live in `packages/ui/src/theme.css` as custom properties on `:root`. Re-theming is a change to that one file.
 
-| Token                                    | Value                           | Use                                   |
-| ---------------------------------------- | ------------------------------- | ------------------------------------- |
-| `--evo-ink`                              | `#000`                          | page background                       |
-| `--evo-ink-2`, `--evo-panel`             | `#0a0a0a`                       | panels (inspector, dock, left column) |
-| `--evo-line`, `--evo-line-2`             | `#1f1f1f`, `#333`               | hairlines                             |
-| `--evo-text`, `--evo-muted`, `--evo-dim` | `#ededed`, `#9a9a9a`, `#7a7a7a` | text                                  |
-| `--evo-accent`                           | `#ededed`                       | the active state (neutral, no hue)    |
-| `--evo-good/warn/bad`                    | `#6fd08c`, `#e6c15a`, `#e8645a` | state                                 |
+| Token                                    | Value                           | Use                                |
+| ---------------------------------------- | ------------------------------- | ---------------------------------- |
+| `--evo-ink`                              | `#000`                          | page background                    |
+| `--evo-ink-2`, `--evo-panel`             | `#0a0a0a`                       | panels (the rails)                 |
+| `--evo-line`, `--evo-line-2`             | `#1f1f1f`, `#333`               | hairlines                          |
+| `--evo-text`, `--evo-muted`, `--evo-dim` | `#ededed`, `#9a9a9a`, `#7a7a7a` | text                               |
+| `--evo-accent`                           | `#ededed`                       | the active state (neutral, no hue) |
+| `--evo-good/warn/bad`                    | `#6fd08c`, `#e6c15a`, `#e8645a` | state                              |
 
 Type is the system sans and mono stacks (no web font is downloaded; the app stays offline-capable and the Pages artifact stays small).
 
 ## Layout
 
-- **Top left:** brand and run status, then time, tick, season and seed.
-- **Top right:** organisms, food and species, with the population line under them.
-- **Left column (scrolls, remembers nothing):** World (preset, seed, reset, new seed), Species, Clusters (cluster layout only), Layers, Statistics (collapsed).
-- **Right:** the inspector, a flat panel, only while an organism is selected.
-- **Bottom centre:** the dock: step, start or pause, a segmented speed control and the achieved ticks per second.
-- **Narrow screens:** the left column hides behind a Panels button, the inspector becomes a bottom sheet and the dock uses the full width.
+The interface is **docked**: a grid with the world in the middle and nothing floating over it except the camera buttons in its corner and the extinction notice.
+
+```text
+top    top    top        thin bar: brand, status, time, tick, season, seed, preset | playback
+left   world  right      left rail | the canvas | right rail (the inspector)
+left   strip  right                 | charts    |
+```
+
+| Window                  | Columns (left / world / right) | Rows (top / world / strip) |
+| ----------------------- | ------------------------------ | -------------------------- |
+| wide, 1280 px and up    | 248 / rest / 320               | 36 / rest / 196            |
+| laptop, 801 to 1279 px  | 208 / rest / 288               | 32 / rest / 140            |
+| phone, 800 px and under | one column                     | 44 / rest / inspector      |
+
+- **Top bar:** the brand, the run status (the only green), time, tick, season, seed and preset as hairline-separated cells; on the right the playback toolbar: step, start or pause, speeds and the achieved ticks per second.
+- **Left rail (scrolls):** Now (organisms, food, species), World (preset, seed, reset, new seed), Species, Layers, Statistics (running totals), key hints.
+- **World:** the canvas is the grid cell, so the camera has all of it (no insets). Fit, Focus and Follow sit in its top-right corner. The world is fitted again whenever the cell changes size, unless the viewer has taken the camera (panned, zoomed or followed).
+- **Strip:** Population over time, deaths by cause (counts, shares and flat bars) and, in a cluster world, the per-cluster table.
+- **Right rail:** the inspector, always there; with nothing selected it says so and how to select.
+- **Phone:** the top bar keeps the brand, status, time, start or pause and a Panels button. Panels opens the left rail as a sheet, with the full playback toolbar and the strip's panels in it. While an organism is selected the inspector takes the area under the world, so the world shrinks and is fitted again instead of being covered. Every control is at least 44 px tall.
+- **Reading order is the screen order:** top bar, left rail, world (`main`), strip, right rail, so the Tab key walks the screen the way it is laid out.
+
+The two widths live in `packages/ui/src/layout.ts` (`layoutFor`) and in the media queries of `apps/web/src/styles.css`; `tools/layout-breakpoints.test.mjs` holds them together.
 
 ## The world
 

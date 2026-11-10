@@ -6,8 +6,8 @@ body,
 }
 
 body {
-  background: var(--evo-ink, #07090f);
-  color: var(--evo-text, #e7ecff);
+  background: var(--evo-ink, #000);
+  color: var(--evo-text, #ededed);
   font-family: var(--evo-sans, system-ui, sans-serif);
   font-size: 13px;
   line-height: 1.45;
@@ -15,17 +15,52 @@ body {
   overflow: hidden;
 }
 
-/* The world fills the window; everything else floats over it. */
+/*
+ * The docked layout (docs/architecture/interface-design.md): a thin top bar, a left rail, the world,
+ * a strip under it and a right rail for the inspector. Nothing floats over the world except the
+ * camera buttons in its corner and the extinction notice. The two widths below are the same as
+ * PHONE_MAX_WIDTH and LAPTOP_MAX_WIDTH in packages/ui/src/layout.ts (held together by a test).
+ */
 .app {
   position: relative;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr) 320px;
+  grid-template-rows: 36px minmax(0, 1fr) 196px;
+  grid-template-areas:
+    'top top top'
+    'left world right'
+    'left strip right';
   height: 100%;
   overflow: hidden;
   background: var(--evo-ink);
 }
 
-.app-stage {
-  position: absolute;
-  inset: 0;
+.app-top {
+  grid-area: top;
+  min-width: 0;
+  border-bottom: 1px solid var(--evo-line);
+  background: var(--evo-ink);
+}
+
+.app-left {
+  grid-area: left;
+  min-height: 0;
+  padding: 12px;
+  overflow-y: auto;
+  background: var(--evo-panel);
+  border-right: 1px solid var(--evo-line);
+  scrollbar-width: thin;
+}
+.app-left[hidden] {
+  display: none;
+}
+
+.app-world {
+  grid-area: world;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .viewport {
@@ -42,59 +77,17 @@ body {
   border-radius: var(--evo-radius);
 }
 
-.app-topleft {
+.app-viewtools {
   position: absolute;
-  top: 14px;
-  left: 16px;
+  top: 8px;
+  right: 10px;
   z-index: 2;
-  pointer-events: none;
-}
-.app-topright {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* The left column scrolls, on a flat panel. */
-.app-sidebar {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 264px;
-  z-index: 1;
-  padding: 84px 16px 84px;
-  overflow-y: auto;
-  background: var(--evo-ink-2);
-  border-right: 1px solid var(--evo-line);
-  scrollbar-width: thin;
-}
-.app-sidebar[hidden] {
-  display: none;
-}
-
-.app-help {
-  margin: 0;
-  font-size: 0.7rem;
-  color: var(--evo-dim);
-  pointer-events: auto;
-}
-
-.app-panels-toggle {
-  position: absolute;
-  bottom: 64px;
-  left: 12px;
-  z-index: 4;
-  display: none;
-  background: var(--evo-panel);
 }
 
 .app-overlay {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 3;
   display: grid;
   place-items: center;
   pointer-events: none;
@@ -103,73 +96,104 @@ body {
   pointer-events: auto;
 }
 
-.app-inspector {
-  position: absolute;
-  top: 130px;
-  right: 16px;
-  bottom: 84px;
-  width: 320px;
-  z-index: 2;
-  display: flex;
-  align-items: flex-start;
+.app-strip {
+  grid-area: strip;
+  min-width: 0;
   min-height: 0;
-  pointer-events: none;
-}
-.app-inspector > .evo-inspector {
-  pointer-events: auto;
-  max-height: 100%;
-  width: 100%;
+  border-top: 1px solid var(--evo-line);
+  background: var(--evo-ink);
 }
 
-.app-dock {
-  position: absolute;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  z-index: 3;
-  max-width: calc(100% - 24px);
+.app-right {
+  grid-area: right;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--evo-panel);
+  border-left: 1px solid var(--evo-line);
 }
 
-/* Phones and narrow windows: the left column hides behind a button, the inspector becomes a sheet. */
+.app-help {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--evo-dim);
+}
+
+.app-panels-toggle {
+  display: none;
+}
+
+/* Laptop: the same grid, tighter. */
+@media (max-width: 1279px) {
+  .app {
+    grid-template-columns: 208px minmax(0, 1fr) 288px;
+    grid-template-rows: 32px minmax(0, 1fr) 140px;
+  }
+}
+
+/*
+ * Phone: one column. The left rail is a sheet opened by the Panels button (it carries the playback
+ * toolbar and the strip's panels too), and the inspector takes the area under the world while
+ * something is selected, so the world shrinks and is fitted again instead of being covered.
+ */
 @media (max-width: 800px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 44px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'top'
+      'world'
+      'right';
+  }
   .app-panels-toggle {
     display: inline-flex;
+    align-items: center;
   }
-  .app-sidebar {
-    top: 62px;
-    width: min(300px, 86vw);
-    padding-top: 16px;
-    z-index: 3;
-    pointer-events: auto;
-    background: rgb(7 9 15 / 0.95);
-    border-right: 1px solid var(--evo-line);
+  .app-left {
+    position: absolute;
+    top: 44px;
+    bottom: 0;
+    left: 0;
+    z-index: 5;
+    width: min(320px, 88vw);
   }
-  .app-topright {
-    top: auto;
-    bottom: 64px;
-    right: 12px;
+  .app-right {
+    height: 46vh;
+    border-left: 0;
+    border-top: 1px solid var(--evo-line);
   }
-  /* With the sheet open, the headline numbers would sit half behind it. */
-  .app:has(.app-sidebar:not([hidden])) .app-topright {
+  .app-left .evo-dock {
+    flex-wrap: wrap;
+    margin: 0 0 16px;
+  }
+  .app-left .evo-dock .evo-sep {
     display: none;
   }
-  .app-inspector {
-    top: auto;
-    left: 8px;
-    right: 8px;
-    bottom: 56px;
-    width: auto;
-    max-height: 52vh;
-    z-index: 5;
+  .app-left .evo-strip {
+    display: block;
+    height: auto;
+    margin: 0 0 20px;
   }
-  .app-dock {
-    left: 8px;
-    right: 8px;
-    transform: none;
-    max-width: none;
-    overflow-x: auto;
+  .app-left .evo-strip-panel {
+    padding: 0 0 16px;
+    border-right: 0;
   }
-  .app-dock > .evo-dock {
-    gap: 10px;
+  .app-left .evo-strip .evo-chart svg {
+    flex: none;
+    height: 72px;
+  }
+  .evo-fact-extra {
+    display: none !important;
+  }
+  /* Fingers, not pointers: every control is at least 44 px tall. */
+  .evo-cmd,
+  .evo-speed,
+  .evo-button,
+  .evo-tab,
+  .evo-toggle {
+    min-height: 44px;
+  }
+  .evo-speed,
+  .evo-cmd {
+    min-width: 44px;
   }
 }

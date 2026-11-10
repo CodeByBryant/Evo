@@ -449,7 +449,10 @@ export class PixiRenderer implements Renderer {
     const height = Math.max(1, this.host.clientHeight)
     this.app.renderer.resize(width, height)
     this.camera.setViewport(width, height)
-    if (!this.fitted) {
+    // The first size fits the world; so does every later one while the viewer has not taken the
+    // camera (panned, zoomed or followed), so a docked panel opening or a window resize keeps the
+    // whole world in view instead of leaving it off-centre.
+    if (!this.fitted || (!this.userMoved && !this.follow)) {
       this.camera.fit()
       this.fitted = true
     }

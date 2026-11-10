@@ -3,21 +3,28 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { RENDER_LAYERS } from '@evo/contracts'
 import {
   ClusterPanel,
+  DeathCauses,
   Dock,
   ExtinctionBanner,
   Hud,
   Inspector,
+  InspectorEmpty,
+  LAPTOP_MAX_WIDTH,
   LayerPanel,
+  PHONE_MAX_WIDTH,
   PopulationChart,
   SpeciesPanel,
   StatsPanel,
+  Strip,
   TopBar,
+  ViewTools,
   WorldPanel,
   barWidth,
   formatCount,
   formatNumber,
   formatTime,
   humanize,
+  layoutFor,
   parseSeedInput,
   percent,
   polylinePoints,
@@ -82,14 +89,26 @@ describe('formatting', () => {
 })
 
 describe('components render', () => {
-  it('top bar shows status, time, tick, season and seed', () => {
+  it('top bar shows status, time, tick, season, seed and preset, and docks what it is given', () => {
     const html = renderToStaticMarkup(<TopBar view={view()} />)
     expect(html).toContain('Running')
     expect(html).toContain('20:34')
     expect(html).toContain('12,345')
     expect(html).toContain('autumn')
     expect(html).toContain('>7<')
+    expect(html).toContain('>Balanced<')
+    expect(html).not.toContain('evo-topbar-tools')
     expect(renderToStaticMarkup(<TopBar view={view({ season: null })} />)).not.toContain('Season')
+    // an unknown preset name is shown as it is, not dropped
+    expect(renderToStaticMarkup(<TopBar view={view({ preset: 'mystery' })} />)).toContain(
+      '>mystery<'
+    )
+    const docked = renderToStaticMarkup(
+      <TopBar view={view()}>
+        <b>tools here</b>
+      </TopBar>
+    )
+    expect(docked).toMatch(/evo-topbar-tools[^>]*><b>tools here<\/b>/)
   })
 
   it('dock reflects state and wires its buttons', () => {
@@ -111,6 +130,20 @@ describe('components render', () => {
     expect(extinct).toMatch(/<button[^>]*disabled=""[^>]*>Start/)
   })
 
+  it('compact dock keeps only start or pause', () => {
+    const { controls } = recorder()
+    const compact = renderToStaticMarkup(<Dock view={view()} controls={controls} compact />)
+    expect(compact).toContain('role="toolbar"')
+    expect(compact).toContain('>Pause<')
+    expect(compact).not.toContain('>Step<')
+    expect(compact).not.toContain('aria-label="Speed"')
+    expect(compact).not.toContain('ticks/s')
+    const extinct = renderToStaticMarkup(
+      <Dock view={view({ status: 'extinct' })} controls={controls} compact />
+    )
+    expect(extinct).toMatch(/<button[^>]*disabled=""[^>]*>Start/)
+  })
+
   it('world panel offers the preset, the seed and a fresh start', () => {
     const { controls } = recorder()
     const html = renderToStaticMarkup(<WorldPanel view={view()} controls={controls} />)
@@ -122,20 +155,65 @@ describe('components render', () => {
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Go/)
   })
 
-  it('hud shows the three headline numbers and the population line', () => {
+  it('hud shows the three headline numbers and no chart (the chart is in the strip)', () => {
     const html = renderToStaticMarkup(<Hud view={view()} />)
     expect(html).toContain('>31<')
     expect(html).toContain('>120<')
     expect(html).toContain('+1 extinct')
-    expect(html).toContain('Population over time: now 31, highest 31, lowest 20')
+    expect(html).not.toContain('<svg')
   })
 
-  it('statistics folds the births, deaths and mating numbers with the chart', () => {
+  it('statistics lists the running totals, without the death causes or a chart', () => {
     const html = renderToStaticMarkup(<StatsPanel view={view()} />)
-    expect(html).toContain('<details')
+    expect(html).toContain('>400<') // born
+    expect(html).toContain('>350<') // died: 200 + 100 + 50
     expect(html).toContain('25%')
-    expect(html).toContain('>400<')
-    expect(html).toContain('<svg')
+    expect(html).toContain('Food eaten')
+    expect(html).not.toContain('Starved')
+    expect(html).not.toContain('<svg')
+  })
+
+  it('death causes show each count, its share and a bar that long', () => {
+    const html = renderToStaticMarkup(<DeathCauses view={view()} />)
+    expect(html).toMatch(/Starved.*>200<small[^>]*> 57%/s)
+    expect(html).toMatch(/Old age.*>100<small[^>]*> 29%/s)
+    expect(html).toMatch(/Damage.*>50<small[^>]*> 14%/s)
+    expect(html).toContain('width:57.1')
+    // no deaths yet: no share to show and empty bars, not a division by zero
+    const none = renderToStaticMarkup(
+      <DeathCauses
+        view={view({
+          metrics: {
+            ...view().metrics,
+            deathsByStarvation: 0,
+            deathsByAge: 0,
+            deathsByDamage: 0
+          }
+        })}
+      />
+    )
+    expect(none).not.toContain('NaN')
+    expect(none).toContain('width:0')
+  })
+
+  it('strip shows the population chart and the death causes, and clusters only in a cluster world', () => {
+    const html = renderToStaticMarkup(<Strip view={view()} />)
+    expect(html).toContain('aria-label="Charts"')
+    expect(html).toContain('Population over time: now 31, highest 31, lowest 20')
+    expect(html).toContain('Deaths by cause')
+    expect(html).toContain('>350<')
+    expect(html).not.toContain('Cluster 1')
+    const clusters = renderToStaticMarkup(
+      <Strip
+        view={view({
+          clusters: { clusters: [{ index: 0, alive: 12, inVoid: 0 }], species: [], meanPurity: 1 }
+        })}
+      />
+    )
+    expect(clusters).toContain('Cluster 1')
+    expect(renderToStaticMarkup(<Strip view={view({ populationHistory: [] })} />)).toContain(
+      'no data yet'
+    )
   })
 
   it('population chart explains an empty history', () => {
@@ -152,17 +230,32 @@ describe('components render', () => {
     )
   })
 
-  it('layer panel has a checkbox per layer and disables camera actions without a selection', () => {
+  it('layer panel has a checkbox per layer and no camera buttons', () => {
     const { controls } = recorder()
     const html = renderToStaticMarkup(<LayerPanel view={view()} controls={controls} />)
     expect(html.match(/type="checkbox"/g)).toHaveLength(RENDER_LAYERS.length)
     expect(html).toContain('Debug overlay')
+    expect(html).not.toContain('<button')
+  })
+
+  it('camera buttons: fit always, focus and follow only with a selection', () => {
+    const { controls } = recorder()
+    const html = renderToStaticMarkup(<ViewTools view={view()} controls={controls} />)
+    expect(html).toContain('aria-label="Camera"')
+    expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>Fit/)
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Focus/)
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Follow/)
     const selected = renderToStaticMarkup(
-      <LayerPanel view={view({ selectedId: 42 })} controls={controls} />
+      <ViewTools view={view({ selectedId: 42 })} controls={controls} />
     )
     expect(selected).not.toMatch(/<button[^>]*disabled=""[^>]*>Focus/)
+    expect(selected).not.toMatch(/<button[^>]*disabled=""[^>]*>Follow/)
+    // still following after the organism was deselected: Follow stays usable so it can be switched off
+    const following = renderToStaticMarkup(
+      <ViewTools view={view({ following: true })} controls={controls} />
+    )
+    expect(following).toMatch(/<button[^>]*aria-pressed="true"[^>]*>Follow/)
+    expect(following).not.toMatch(/<button[^>]*disabled=""[^>]*>Follow/)
   })
 
   it('extinction banner appears only when extinct, as an alert with a way out', () => {
@@ -190,6 +283,30 @@ describe('components render', () => {
     expect(html).toContain('55 / 100')
     expect(html).toContain('role="meter"')
     expect(html).toContain('aria-label="Close inspector"')
+  })
+
+  it('the empty inspector says nothing is selected and how to select', () => {
+    const html = renderToStaticMarkup(<InspectorEmpty />)
+    expect(html).toContain('Nothing selected')
+    expect(html).toContain('Click an organism')
+    expect(html).not.toContain('role="tablist"')
+  })
+})
+
+describe('layoutFor', () => {
+  it('gives the three arrangements, with both edges on the right side', () => {
+    expect(layoutFor(390)).toBe('phone')
+    expect(layoutFor(PHONE_MAX_WIDTH)).toBe('phone')
+    expect(layoutFor(PHONE_MAX_WIDTH + 1)).toBe('laptop')
+    expect(layoutFor(1100)).toBe('laptop')
+    expect(layoutFor(LAPTOP_MAX_WIDTH)).toBe('laptop')
+    expect(layoutFor(LAPTOP_MAX_WIDTH + 1)).toBe('wide')
+    expect(layoutFor(2560)).toBe('wide')
+  })
+
+  it('treats a width that is not a number as a phone', () => {
+    expect(layoutFor(Number.NaN)).toBe('phone')
+    expect(layoutFor(0)).toBe('phone')
   })
 })
 
