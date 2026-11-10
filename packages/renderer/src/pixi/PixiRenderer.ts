@@ -34,12 +34,6 @@ const DEFAULT_MIN_ZOOM = 0.15
 const CLUSTER_MIN_ZOOM = 0.01
 /** From this zoom (screen pixels per world unit) each creature's parts are drawn over its body. */
 const PARTS_ZOOM = 3
-/**
- * Below this zoom (the cluster layout fitted whole) creatures are a few pixels wide and a glow
- * adds almost nothing, but 400 overlapping additive sprites cost real fill rate (about a fifth of
- * the simulation's throughput in a software renderer), so the glow starts at this zoom.
- */
-const GLOW_MIN_ZOOM = 0.3
 /** Creatures animated at once; beyond this the nearest-to-the-front ones animate and the rest hold a pose. */
 const MAX_ANIMATED = 220
 /** The shortest gap, in milliseconds, between two animation frames drawn by the renderer's own loop. */
@@ -48,8 +42,11 @@ const ANIMATION_GAP_MS = 14
 const CLUSTER_GRID_PAD = 8000
 /** Pixels per side of a cluster's biome picture. */
 const CLUSTER_TEXTURE = 512
-const BACKGROUND = 0x070b14
-const FIELD = 0x0e1524
+/** Flat black page and a barely lighter world (docs/architecture/interface-design.md). */
+const BACKGROUND = 0x000000
+const FIELD = 0x050505
+/** The grid, the world's edge and the cluster rims: white lines at low strength, so one pixel hairlines. */
+const LINE = 0xffffff
 
 const EFFECT_COLORS = { birth: 0x7dffb0, death: 0xff6b6b, damage: 0xffb347 } as const
 
@@ -115,15 +112,12 @@ export class PixiRenderer implements Renderer {
   private trailG = new Graphics()
   private selectionG = new Graphics()
   private resources: PoolHost = { container: new Container(), pool: [] }
-  private shadows: PoolHost = { container: new Container(), pool: [] }
-  private glows: PoolHost = { container: new Container(), pool: [] }
   private bodies: PoolHost = { container: new Container(), pool: [] }
   private readonly bodyDrawings = new Map<number, BodyDrawing>()
   /** Counts scene updates, so a creature missing from the latest one can be recognized. */
   private sceneStamp = 0
   private debugText: Text | null = null
   private dotTexture: Texture | null = null
-  private glowTexture: Texture | null = null
   /** Whether creatures move: the Motion layer, unless the viewer asked their system for less motion. */
   private motionOn = true
   private reducedMotion = false
@@ -169,8 +163,6 @@ export class PixiRenderer implements Renderer {
     app.canvas.style.touchAction = 'none'
 
     this.dotTexture = this.makeDotTexture(app)
-    this.glowTexture = this.makeGlowTexture()
-    this.glows.container.blendMode = 'add'
     this.reducedMotion =
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -183,8 +175,6 @@ export class PixiRenderer implements Renderer {
       this.gridG,
       this.hazardG,
       this.resources.container,
-      this.glows.container,
-      this.shadows.container,
       this.bodies.container,
       this.trailG,
       this.selectionG
@@ -192,7 +182,7 @@ export class PixiRenderer implements Renderer {
     app.stage.addChild(this.world)
     this.debugText = new Text({
       text: '',
-      style: { fill: 0xa9b8d8, fontSize: 12, fontFamily: 'ui-monospace, monospace' }
+      style: { fill: 0x9a9a9a, fontSize: 12, fontFamily: 'ui-monospace, monospace' }
     })
     this.debugText.position.set(10, 10)
     app.stage.addChild(this.debugText)
@@ -327,9 +317,7 @@ export class PixiRenderer implements Renderer {
     this.clusterTerrain.visible = layers.terrain
     this.hazardG.visible = layers.hazards
     this.resources.container.visible = layers.resources
-    this.shadows.container.visible = layers.shadows
     this.bodies.container.visible = layers.organisms
-    this.glows.container.visible = layers.organisms
     this.motionOn = layers.motion
     this.trailG.visible = layers.trails
     this.selectionG.visible = layers.selection
@@ -490,7 +478,7 @@ export class PixiRenderer implements Renderer {
     for (const cluster of clusters.clusters) {
       this.fieldG
         .circle(cluster.x, cluster.y, clusters.radius)
-        .stroke({ width: 2, color: 0x7f93bf, alpha: 0.4, pixelLine: true })
+        .stroke({ width: 1, color: LINE, alpha: 0.12, pixelLine: true })
     }
   }
 
@@ -510,7 +498,7 @@ export class PixiRenderer implements Renderer {
         this.gridG.moveTo(x, top).lineTo(x, bottom)
       for (let y = top; y <= bottom; y += CLUSTER_GRID_SPACING)
         this.gridG.moveTo(left, y).lineTo(right, y)
-      this.gridG.stroke({ width: 1, color: 0x7f93bf, alpha: 0.06, pixelLine: true })
+      this.gridG.stroke({ width: 1, color: LINE, alpha: 0.04, pixelLine: true })
       return
     }
     for (let x = 0; x <= this.worldWidth; x += GRID_SPACING) {
@@ -519,10 +507,10 @@ export class PixiRenderer implements Renderer {
     for (let y = 0; y <= this.worldHeight; y += GRID_SPACING) {
       this.gridG.moveTo(0, y).lineTo(this.worldWidth, y)
     }
-    this.gridG.stroke({ width: 1, color: 0x7f93bf, alpha: 0.08, pixelLine: true })
+    this.gridG.stroke({ width: 1, color: LINE, alpha: 0.06, pixelLine: true })
     this.gridG
       .rect(0, 0, this.worldWidth, this.worldHeight)
-      .stroke({ width: 1, color: 0x7f93bf, alpha: 0.35, pixelLine: true })
+      .stroke({ width: 1, color: LINE, alpha: 0.12, pixelLine: true })
   }
 
   /** Paints each cluster's biome patches (nearest patch wins) inside its circle; outside it stays clear. */
@@ -602,33 +590,11 @@ export class PixiRenderer implements Renderer {
     }
     context.putImageData(image, 0, 0)
     this.terrainSprite.texture = Texture.from(canvas)
+    // Cells stay crisp squares when scaled up: a smoothed blend would read as a gradient.
+    this.terrainSprite.texture.source.scaleMode = 'nearest'
     this.terrainSprite.width = terrain.width
     this.terrainSprite.height = terrain.height
     this.terrainSprite.visible = this.layers.terrain
-  }
-
-  /** A soft round glow: white in the middle, fading to nothing, tinted per creature. */
-  private makeGlowTexture(): Texture {
-    const size = 128
-    const canvas = document.createElement('canvas')
-    canvas.width = size
-    canvas.height = size
-    const context = canvas.getContext('2d')
-    if (context === null) return Texture.WHITE
-    const gradient = context.createRadialGradient(
-      size / 2,
-      size / 2,
-      0,
-      size / 2,
-      size / 2,
-      size / 2
-    )
-    gradient.addColorStop(0, 'rgba(255,255,255,1)')
-    gradient.addColorStop(0.35, 'rgba(255,255,255,0.35)')
-    gradient.addColorStop(1, 'rgba(255,255,255,0)')
-    context.fillStyle = gradient
-    context.fillRect(0, 0, size, size)
-    return Texture.from(canvas)
   }
 
   private makeDotTexture(app: Application): Texture {
@@ -729,26 +695,11 @@ export class PixiRenderer implements Renderer {
       sprite.alpha = 0.95
     }
 
-    // organisms: a glow, a faint shadow and the body
-    this.glows.container.visible = this.layers.organisms && zoom >= GLOW_MIN_ZOOM
-    this.sync(this.glows, frame.organisms.length, this.glowTexture)
-    this.sync(this.shadows, frame.organisms.length, this.dotTexture)
-    const glowAlpha = this.partsVisible ? 0.12 : 0.3
+    // organisms: flat bodies
     for (let i = 0; i < frame.organisms.length; i++) {
       const o = frame.organisms[i]!
       // Far out, a creature is drawn at least MIN_ORGANISM_PX wide; close up the boost is 1.
       const boost = Math.max(1, MIN_ORGANISM_PX / (zoom * o.radius))
-      const size = o.radius * 2 * (o.lifeStage === 'juvenile' ? 0.75 : 1) * boost
-      const glow = this.glows.pool[i] as Sprite
-      glow.position.set(o.x, o.y)
-      glow.scale.set((size * 3.2) / 128)
-      glow.tint = this.numberOf(o.speciesColor)
-      glow.alpha = glowAlpha * (0.5 + 0.5 * o.energyRatio)
-      const shadow = this.shadows.pool[i] as Sprite
-      shadow.position.set(o.x + o.radius * boost * 0.25, o.y + o.radius * boost * 0.35)
-      shadow.scale.set((size * 1.05) / 64)
-      shadow.tint = 0x000000
-      shadow.alpha = 0.25
       const drawing = this.bodyOf(o)
       if (this.partsVisible && o.parts.length > 0) this.ensurePartLayers(drawing)
       if (drawing.back !== null) drawing.back.visible = this.partsVisible

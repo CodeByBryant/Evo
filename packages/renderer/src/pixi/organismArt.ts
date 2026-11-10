@@ -17,19 +17,21 @@ import { hexToNumber, hslToHex } from '../colors'
 import { posedParts, tailSpecOf } from '../partPose'
 
 /**
- * How a creature is drawn: a soft translucent cell whose parts grow out of its body. The body is
- * painted once (`paintBodyArt`); the parts that move are redrawn each animation frame
+ * How a creature is drawn: a flat cell, one solid color with a thin darker outline, whose parts
+ * grow out of its body. There is no glow, gradient, blur or shadow anywhere in it
+ * (docs/architecture/interface-design.md); a test scans this folder to keep it that way. The body
+ * is painted once (`paintBodyArt`); the parts that move are redrawn each animation frame
  * (`drawParts`) only while the camera is close. Presentation only: nothing here reads the engine.
  */
 
 /** The colors of one creature, from its hue, as Pixi numbers. */
 export interface BodyPalette {
+  /** The outline and the heading mark: the body's color, darker. */
   readonly deep: number
+  /** The body itself: one flat color. */
   readonly mid: number
   readonly light: number
-  readonly rim: number
   readonly tail: number
-  readonly spot: number
   readonly gut: number
   readonly halo: number
   readonly cilia: number
@@ -52,12 +54,10 @@ export function paletteOf(hue: number): BodyPalette {
     const color = (s: number, l: number, shift = 0): number =>
       hexToNumber(hslToHex(key + shift, s, l))
     palette = {
-      deep: color(0.38, 0.28),
-      mid: color(0.42, 0.46),
-      light: color(0.5, 0.7),
-      rim: color(0.35, 0.74),
-      tail: color(0.42, 0.66),
-      spot: color(0.45, 0.4),
+      deep: color(0.45, 0.3),
+      mid: color(0.6, 0.62),
+      light: color(0.55, 0.78),
+      tail: color(0.5, 0.68),
       gut: color(0.9, 0.62, 20),
       halo: color(0.38, 0.68),
       cilia: color(0.4, 0.72)
@@ -97,52 +97,35 @@ export function traceOutline(
 }
 
 /**
- * The body, painted once: a deep base, two lighter layers offset toward the light so it reads as
- * a lit, translucent cell, the painted pattern, a nucleus and a few granules placed from the
- * creature's id, and a thin bright membrane.
+ * The body, painted once: one solid color, the painted pattern as flat shapes on it, a darker disc
+ * toward the front so the heading reads, and a thin darker outline.
  */
 export function paintBodyArt(g: Graphics, o: RenderOrganism, p: BodyPalette): void {
   const r = o.radius
   const accent = hexToNumber(o.accentColor)
   g.clear()
   traceOutline(g, o.outline, 1)
-  g.fill({ color: p.deep, alpha: 0.88 })
-  traceOutline(g, o.outline, 0.86, -r * 0.05, -r * 0.06)
-  g.fill({ color: p.mid, alpha: 0.72 })
-  traceOutline(g, o.outline, 0.55, -r * 0.12, -r * 0.14)
-  g.fill({ color: p.light, alpha: 0.5 })
+  g.fill({ color: p.mid })
 
   if (o.pattern === 1) {
     traceOutline(g, o.outline, 0.5)
-    g.fill({ color: accent, alpha: 0.35 })
+    g.fill({ color: accent, alpha: 0.5 })
   } else if (o.pattern === 2) {
     for (let i = 0; i + 1 < o.outline.length; i += 2) {
       g.circle((o.outline[i] as number) * 0.72, (o.outline[i + 1] as number) * 0.72, r * 0.1).fill({
         color: accent,
-        alpha: 0.55
+        alpha: 0.7
       })
     }
   } else if (o.pattern === 3) {
-    g.circle(-r * 0.2, 0, r * 0.3).fill({ color: accent, alpha: 0.5 })
+    g.circle(-r * 0.2, 0, r * 0.3).fill({ color: accent, alpha: 0.65 })
   }
 
-  // Organelles: a nucleus toward the front (so the heading reads) and granules around it.
-  const phase = phaseOf(o.id)
+  // The heading mark: a darker disc toward the front.
   g.circle(r * 0.22, -r * 0.1, r * 0.2).fill({ color: p.deep, alpha: 0.7 })
-  for (let i = 0; i < 4; i++) {
-    const angle = phase + i * 1.9
-    const radius = r * (0.3 + (0.16 * ((i * 37) % 3)) / 3)
-    g.circle(Math.cos(angle) * radius, Math.sin(angle) * radius, r * 0.05).fill({
-      color: p.light,
-      alpha: 0.45
-    })
-  }
 
-  // A faint inner line, then the membrane.
-  traceOutline(g, o.outline, 0.9)
-  g.stroke({ width: Math.max(0.2, r * 0.025), color: p.rim, alpha: 0.16 })
   traceOutline(g, o.outline, 1)
-  g.stroke({ width: Math.max(0.35, r * 0.035), color: p.rim, alpha: 0.5 })
+  g.stroke({ width: Math.max(0.35, r * 0.04), color: p.deep })
 }
 
 /** The angle of a part as seen from the body's centre, falling back to its axis when it sits at the centre. */

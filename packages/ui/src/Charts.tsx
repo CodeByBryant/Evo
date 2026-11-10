@@ -1,4 +1,3 @@
-import { useId } from 'react'
 import type { PopulationPoint } from '@evo/contracts'
 import { formatCount } from './format'
 
@@ -23,7 +22,7 @@ export function polylinePoints(
 }
 
 /**
- * The population over the run: a line with a soft glow under it, readable without hovering. The
+ * The population over the run: a flat line over a flat tint, readable without hovering. The
  * `compact` form drops the caption, for the heads-up display.
  */
 export function PopulationChart({
@@ -37,7 +36,6 @@ export function PopulationChart({
   height?: number
   compact?: boolean
 }): React.JSX.Element {
-  const gradientId = useId()
   const counts = points.map((p) => p.count)
   const max = Math.max(10, ...counts)
   const latest = counts[counts.length - 1]
@@ -55,14 +53,8 @@ export function PopulationChart({
             : `Population over time: now ${latest}, highest ${Math.max(...counts)}, lowest ${Math.min(...counts)}`
         }
       >
-        <defs>
-          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="var(--evo-cyan)" stopOpacity="0.28" />
-            <stop offset="1" stopColor="var(--evo-violet)" stopOpacity="0" />
-          </linearGradient>
-        </defs>
         <line className="evo-chart-axis" x1="0" y1={height - 1} x2={width} y2={height - 1} />
-        {area !== '' && <polygon fill={`url(#${gradientId})`} points={area} />}
+        {area !== '' && <polygon className="evo-chart-area" points={area} />}
         <polyline className="evo-chart-line" fill="none" points={line} />
       </svg>
       {!compact && (

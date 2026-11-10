@@ -180,7 +180,6 @@ describe('render and view contracts', () => {
       'terrain',
       'hazards',
       'resources',
-      'shadows',
       'organisms',
       'trails',
       'selection',

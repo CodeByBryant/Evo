@@ -2,15 +2,10 @@
 @import './theme.css';
 
 /* ---------- shared ---------- */
-.evo-glass {
-  background: var(--evo-glass);
-  backdrop-filter: blur(18px) saturate(1.25);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+.evo-surface {
+  background: var(--evo-panel);
   border: 1px solid var(--evo-line);
   border-radius: var(--evo-radius);
-  box-shadow:
-    0 10px 40px rgb(0 0 0 / 0.45),
-    inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 
 .evo-sr {
@@ -113,7 +108,7 @@ select.evo-input {
   background: transparent;
 }
 select.evo-input option {
-  background: var(--evo-glass-solid);
+  background: var(--evo-panel);
   color: var(--evo-text);
 }
 .evo-input[aria-invalid='true'] {
@@ -136,15 +131,15 @@ select.evo-input option {
   transition: border-color var(--evo-ease);
 }
 .evo-button:hover:not(:disabled) {
-  border-color: var(--evo-cyan);
+  border-color: var(--evo-accent);
 }
 .evo-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 .evo-primary {
-  border-color: rgb(94 225 255 / 0.55);
-  color: var(--evo-cyan);
+  border-color: var(--evo-text);
+  color: var(--evo-accent);
 }
 .evo-icon {
   min-width: 28px;
@@ -178,8 +173,8 @@ select.evo-input option {
   border-bottom-color: var(--evo-text);
 }
 .evo-cmd-main {
-  color: var(--evo-cyan);
-  border-bottom-color: var(--evo-cyan);
+  color: var(--evo-accent);
+  border-bottom-color: var(--evo-accent);
 }
 .evo-cmd:disabled {
   opacity: 0.4;
@@ -198,7 +193,7 @@ select.evo-input option {
   .evo-toggle input,
   summary
 ):focus-visible {
-  outline: 2px solid var(--evo-cyan);
+  outline: 2px solid var(--evo-accent);
   outline-offset: 2px;
 }
 
@@ -224,8 +219,8 @@ select.evo-input option {
   margin: 0;
   border: 1px solid var(--evo-line-2);
   border-radius: 3px;
-  color: var(--evo-dim);
-  background: linear-gradient(currentColor, currentColor) 2px center / 7px 6px no-repeat;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='6'%3E%3Crect width='7' height='6' fill='%237a7a7a'/%3E%3C/svg%3E")
+    2px center / 7px 6px no-repeat;
   transition:
     background-position var(--evo-ease),
     color var(--evo-ease),
@@ -233,8 +228,8 @@ select.evo-input option {
   cursor: pointer;
 }
 .evo-toggle input:checked {
-  color: var(--evo-cyan);
-  border-color: rgb(94 225 255 / 0.55);
+  border-color: var(--evo-text);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='6'%3E%3Crect width='7' height='6' fill='%23ededed'/%3E%3C/svg%3E");
   background-position: calc(100% - 2px) center;
 }
 
@@ -255,16 +250,13 @@ select.evo-input option {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--evo-cyan);
-  box-shadow: 0 0 10px var(--evo-cyan);
+  background: var(--evo-good);
 }
 .evo-dot-paused {
   background: var(--evo-warn);
-  box-shadow: 0 0 10px var(--evo-warn);
 }
 .evo-dot-extinct {
   background: var(--evo-bad);
-  box-shadow: 0 0 10px var(--evo-bad);
 }
 .evo-facts {
   display: flex;
@@ -284,7 +276,7 @@ select.evo-input option {
   font-variant-numeric: tabular-nums;
 }
 .evo-status-running dd {
-  color: var(--evo-cyan);
+  color: var(--evo-accent);
 }
 .evo-status-paused dd {
   color: var(--evo-warn);
@@ -340,8 +332,12 @@ select.evo-input option {
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
+.evo-chart-area {
+  fill: var(--evo-accent);
+  fill-opacity: 0.1;
+}
 .evo-chart-line {
-  stroke: var(--evo-cyan);
+  stroke: var(--evo-accent);
   stroke-width: 1.2;
   vector-effect: non-scaling-stroke;
 }
@@ -377,7 +373,7 @@ select.evo-input option {
   font-size: 0.8rem;
 }
 .evo-species-selected .evo-species-name {
-  color: var(--evo-cyan);
+  color: var(--evo-accent);
 }
 .evo-species-count {
   color: var(--evo-muted);
@@ -388,8 +384,7 @@ select.evo-input option {
   display: inline-block;
   width: 7px;
   height: 7px;
-  border-radius: 50%;
-  box-shadow: 0 0 8px currentColor;
+  border-radius: 1px;
 }
 
 /* ---------- dock ---------- */
@@ -427,8 +422,8 @@ select.evo-input option {
   color: var(--evo-text);
 }
 .evo-speed[aria-pressed='true'] {
-  color: var(--evo-cyan);
-  border-bottom-color: var(--evo-cyan);
+  color: var(--evo-accent);
+  border-bottom-color: var(--evo-accent);
 }
 .evo-tps {
   min-width: 5.5em;
@@ -464,14 +459,9 @@ select.evo-input option {
   min-height: 0;
   max-height: 100%;
   font-size: 0.8rem;
-  background: var(--evo-glass);
-  backdrop-filter: blur(18px) saturate(1.25);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  background: var(--evo-panel);
   border: 1px solid var(--evo-line);
   border-radius: var(--evo-radius);
-  box-shadow:
-    0 10px 40px rgb(0 0 0 / 0.45),
-    inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 .evo-inspector-head {
   display: flex;
@@ -521,8 +511,7 @@ select.evo-input option {
 }
 .evo-tab[aria-selected='true'] {
   color: var(--evo-text);
-  border-bottom: 1px solid;
-  border-image: var(--evo-grad) 1;
+  border-bottom: 1px solid var(--evo-text);
 }
 .evo-tab-panel {
   padding: 10px 12px 14px;
@@ -586,7 +575,7 @@ select.evo-input option {
   background: var(--evo-muted);
 }
 .evo-tone-age {
-  background: var(--evo-grad);
+  background: var(--evo-dim);
 }
 
 .evo-table {
@@ -628,7 +617,7 @@ select.evo-input option {
   height: 100%;
 }
 .evo-signal-pos {
-  background: var(--evo-cyan);
+  background: var(--evo-accent);
 }
 .evo-signal-neg {
   background: var(--evo-bad);
@@ -646,8 +635,8 @@ select.evo-input option {
   border-radius: var(--evo-radius-sm);
 }
 .evo-anatomy-body {
-  fill: rgb(94 225 255 / 0.14);
-  stroke: rgb(160 220 255 / 0.55);
+  fill: rgb(237 237 237 / 0.1);
+  stroke: rgb(237 237 237 / 0.55);
   stroke-width: 0.03;
 }
 .evo-anatomy figcaption {

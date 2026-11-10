@@ -151,7 +151,7 @@ export function ExtinctionBanner({
 }): React.JSX.Element | null {
   if (view.status !== 'extinct') return null
   return (
-    <div className="evo-banner evo-glass" role="alert">
+    <div className="evo-banner evo-surface" role="alert">
       <h2>Extinct</h2>
       <p>
         The last organism died at tick {formatCount(view.extinctionTick ?? view.tick)} (

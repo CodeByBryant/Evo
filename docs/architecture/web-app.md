@@ -44,7 +44,7 @@ The world is paused at extinction. The app shows an alert with **New world** and
 | `@evo/ui`         | Presentational React components and formatting helpers, typed only from contracts                                                                                                                             |
 | `apps/web`        | `SimulationHost`, the view-state builders, the URL hash and preferences helpers, the keyboard map, `App` and `Viewport`                                                                                       |
 
-Layers, in drawing order: grid, terrain (regions), hazards, food, shadows, organisms, trails, selection and event markers, motion, debug overlay. Each can be switched on and off from the **View** section (Motion switches creature animation off; the system's reduced-motion setting does the same) and the choice is remembered in `localStorage` (guarded, so private windows and blocked storage just forget it).
+Layers, in drawing order: grid, terrain (regions), hazards, food, organisms, trails, selection and event markers, motion, debug overlay. Each can be switched on and off from the **View** section (Motion switches creature animation off; the system's reduced-motion setting does the same) and the choice is remembered in `localStorage` (guarded, so private windows and blocked storage just forget it).
 
 ## Using it
 
@@ -75,7 +75,7 @@ The Chromium run used by this phase loaded the built app under a `/Evo/` sub-pat
 
 Numbers from that run, in a sandbox where Chromium has **no GPU** (software WebGL, which shares the CPU with the simulation), so a real machine should do better:
 
-- Building the scene (positions, tints, pools) took about 0.4 ms at the default population (20 organisms) and between 5 and 11 ms at 500 organisms across three runs (the spread is the shared CPU; the budget for 60 frames a second is 16.7 ms). Layers such as shadows can be switched off to reduce it.
+- Building the scene (positions, tints, pools) took about 0.4 ms at the default population (20 organisms) and between 5 and 11 ms at 500 organisms across three runs (the spread is the shared CPU; the budget for 60 frames a second is 16.7 ms). Layers such as trails can be switched off to reduce it.
 - `100x` achieved about 300-350 ticks per second at the default population (1,000 were requested), so the app shows the achieved rate rather than the requested one.
 - 500 organisms in brain mode is expensive for the engine itself (roughly 7 ms a tick), so the app reached only about 13 ticks per second at `5x` there. That is the engine's cost, not the interface's, and it is what a Worker (Phase 9) is for.
 

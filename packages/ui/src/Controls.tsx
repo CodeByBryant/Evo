@@ -9,7 +9,6 @@ const LAYER_LABELS: Readonly<Record<RenderLayerName, string>> = {
   terrain: 'Regions',
   hazards: 'Hazards',
   resources: 'Food',
-  shadows: 'Shadows',
   organisms: 'Organisms',
   trails: 'Trails',
   selection: 'Selection and events',
@@ -107,7 +106,7 @@ export function Dock({
   const running = view.status === 'running'
   const extinct = view.status === 'extinct'
   return (
-    <div className="evo-dock evo-glass" role="toolbar" aria-label="Playback">
+    <div className="evo-dock evo-surface" role="toolbar" aria-label="Playback">
       <button
         type="button"
         className="evo-cmd"

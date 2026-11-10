@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { RENDER_LAYERS } from '@evo/contracts'
 import {
   ClusterPanel,
   Dock,
@@ -154,7 +155,7 @@ describe('components render', () => {
   it('layer panel has a checkbox per layer and disables camera actions without a selection', () => {
     const { controls } = recorder()
     const html = renderToStaticMarkup(<LayerPanel view={view()} controls={controls} />)
-    expect(html.match(/type="checkbox"/g)).toHaveLength(10)
+    expect(html.match(/type="checkbox"/g)).toHaveLength(RENDER_LAYERS.length)
     expect(html).toContain('Debug overlay')
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Focus/)
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Follow/)

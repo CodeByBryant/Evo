@@ -43,7 +43,7 @@ Measured on the development machine (relative numbers): the brain controller cos
 
 - `Renderer` is an interface in `packages/renderer`; `PixiRenderer` is its implementation and the only file that imports `pixi.js` (loaded with a dynamic import so unit tests never load WebGL). A lint-level rule in `tools/check-dependency-rules.mjs` forbids `pixi.js` anywhere but `packages/renderer` and `react` anywhere but `ui`, `web` and `desktop`.
 - Everything that is logic rather than drawing is pure and unit-tested without a GPU: the `Camera` (pan, zoom toward the cursor, clamp, focus, follow, fit), picking (`pickOrganism`), species colors (a golden-angle hue per species id, stable across runs), the mapping from `WorldSnapshot` to `RenderSnapshot`, and the trail buffer.
-- Layers are independently switchable and ordered as in roadmap 7.4: background grid, terrain, hazards, resources, shadows, organisms, trails, selection, debug overlay. Sprites are pooled; nothing is allocated per organism per frame beyond the snapshot itself.
+- Layers are independently switchable and ordered as in roadmap 7.4: background grid, terrain, hazards, resources, organisms, trails, selection, debug overlay. Sprites are pooled; nothing is allocated per organism per frame beyond the snapshot itself.
 - Input uses Pointer Events (mouse, pen and touch): drag to pan, wheel and pinch to zoom, click to select.
 
 ### Deployment
