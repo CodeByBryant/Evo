@@ -9,7 +9,33 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same pull request makes the older run's results moot: stop it. Runs on main
+# are never cancelled.
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  changes:
+    name: Changed paths
+    runs-on: ubuntu-latest
+    # Decides which of the slow jobs below a change needs (tools/ci-scope.mjs): documentation and
+    # interface changes skip the simulation suites, and anything it cannot read runs everything.
+    outputs:
+      engine: ${{ steps.scope.outputs.engine }}
+      legacy: ${{ steps.scope.outputs.legacy }}
+      app: ${{ steps.scope.outputs.app }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out what changed
+        id: scope
+        run: node tools/ci-scope.mjs
+
   format:
     name: Format check
     runs-on: ubuntu-latest
@@ -79,8 +105,39 @@ jobs:
       - name: Run TypeScript checks
         run: pnpm typecheck
 
-  test:
-    name: Unit and integration tests
+  test-simulation:
+    name: Simulation tests (${{ matrix.shard }}/3)
+    needs: changes
+    # Only for a change that can affect the engine; the aggregate `test` job below knows that a skip is fine.
+    if: needs.changes.outputs.engine == 'true'
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run this third of the simulation tests
+        run: pnpm --filter @evo/simulation exec vitest run --passWithNoTests --shard=${{ matrix.shard }}/3
+
+  test-packages:
+    name: Package and tool tests
     runs-on: ubuntu-latest
 
     steps:
@@ -99,8 +156,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests
-        run: pnpm test
+      - name: Run the tool tests and every package's tests except the simulation's
+        run: pnpm test:tools && pnpm -r --filter '!@evo/simulation' test
+
+  test:
+    name: Unit and integration tests
+    # The one check that stands for all the test jobs above (its name is the one that has always been
+    # reported), so it passes exactly when everything that had to run passed.
+    needs: [changes, test-simulation, test-packages]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require every test job that had to run
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          PACKAGES: ${{ needs.test-packages.result }}
+          SIMULATION: ${{ needs.test-simulation.result }}
+          ENGINE: ${{ needs.changes.outputs.engine }}
+        run: |
+          echo "changes=$CHANGES packages=$PACKAGES simulation=$SIMULATION engine=$ENGINE"
+          test "$CHANGES" = success
+          test "$PACKAGES" = success
+          if [ "$ENGINE" = true ]; then test "$SIMULATION" = success; fi
 
   build:
     name: Build
@@ -131,16 +209,32 @@ jobs:
         run: pnpm build
 
   determinism:
-    name: Determinism (${{ matrix.os }})
+    name: Determinism (${{ matrix.os }}, ${{ matrix.shard.name }})
+    needs: changes
+    if: needs.changes.outputs.engine == 'true'
     runs-on: ${{ matrix.os }}
     # Slow by design (100k-tick runs) and cross-platform; not required to merge, but a failure
     # means the engine has diverged from its own golden hashes or between operating systems.
     continue-on-error: true
 
+    # The suite is cut into three shards of about the same length (measured on one machine; the file lists
+    # are checked against the directory by tools/determinism-shards.test.mjs, so a new file cannot be
+    # left out). Locally `pnpm test:determinism` still runs every file.
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        shard:
+          - name: shard 1
+            files: tests/determinism/ecology-stability-1.test.ts tests/determinism/ecology-stability-2.test.ts tests/determinism/brain-long-run-1.test.ts tests/determinism/long-run-validity.test.ts tests/determinism/long-run-replay.test.ts tests/determinism/long-run-population.test.ts tests/determinism/long-run-extinction.test.ts
+          - name: shard 2
+            files: tests/determinism/ecology-stability-3.test.ts tests/determinism/ecology-stability-4.test.ts tests/determinism/anatomy-replay.test.ts tests/determinism/golden.test.ts tests/determinism/long-run-chunking.test.ts
+          - name: shard 3
+            files: tests/determinism/anatomy-long-run.test.ts tests/determinism/cluster-long-run.test.ts tests/determinism/species-long-run.test.ts tests/determinism/brain-long-run-2.test.ts tests/determinism/brain-long-run.test.ts
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout
@@ -158,11 +252,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run the determinism suite
-        run: pnpm test:determinism
+      - name: Run this shard of the determinism suite
+        run: pnpm --filter @evo/simulation exec vitest run --config vitest.determinism.config.ts ${{ matrix.shard.files }}
 
   legacy:
     name: Legacy prototype
+    needs: changes
+    if: needs.changes.outputs.legacy == 'true'
     runs-on: ubuntu-latest
 
     defaults:
@@ -194,6 +290,8 @@ jobs:
 
   pages:
     name: Pages artifact
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     # Not required to merge. The deploy workflow only runs on main, so this builds the same artifact
     # on every pull request and checks that it is deployable (relative URLs, nothing missing).

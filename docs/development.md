@@ -25,7 +25,7 @@ Run from the repository root:
 | `pnpm test`                           | Tool tests plus every package's Vitest suite                                           |
 | `pnpm format`                         | Format with Prettier (`pnpm format:check` verifies without writing)                    |
 | `pnpm lint:deps`                      | Only the workspace dependency-rule check                                               |
-| `pnpm test:determinism`               | The slow suite: 100,000-tick runs and pinned state hashes                              |
+| `pnpm test:determinism`               | The slow suite: 100,000-tick runs and pinned state hashes (CI runs it in shards)       |
 | `pnpm --filter @evo/simulation probe` | A measurement, not a test: runs presets over many seeds and writes a table (see below) |
 | `pnpm --filter @evo/web dev`          | The web app with hot reload (`preview` serves a build)                                 |
 
@@ -314,6 +314,21 @@ npm run build:mac
 npm run build:linux
 # Output in ./release/
 ```
+
+## What CI runs, and how it is kept fast
+
+The Quality workflow (`.github/workflows/quality.yml`) starts with a `Changed paths` job that reads the files a pull request touches (`tools/ci-scope.mjs`, with its own tests) and decides what the slow jobs need:
+
+| Change touches                                                                                       | Runs                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| only `docs/` or Markdown                                                                             | format, lint, typecheck, the package tests and the build; not the simulation suites                                   |
+| the interface (`packages/ui`, `packages/renderer`, `apps/web`)                                       | the above plus the Pages artifact; not the simulation suites                                                          |
+| `packages/simulation`, `config` or `contracts`, the lockfile, `tools/`, root config or the workflows | everything: the simulation unit tests in three shards and the determinism suite in three shards on Ubuntu and Windows |
+| anything it cannot read (a push to `main`, a failed diff)                                            | everything                                                                                                            |
+
+A skipped job is a passing check. The `Unit and integration tests` check is an aggregate of the test jobs, so it keeps the name it always had and fails if anything that had to run failed.
+
+The determinism suite is cut into files of at most about two minutes each (a file runs its tests one after another, so a long file is what limits a shard) and the workflow names the files of each shard. `tools/determinism-shards.test.mjs` fails if a test file is in no shard or in two, so a new file has to be added to the workflow. Tests that would build an identical world share it, and "one tick at a time" runs are compared with a `run()` world at the same tick over a shorter stretch than the full run; every assertion is kept. Locally `pnpm test:determinism` still runs every file, in parallel across your cores.
 
 ## Measuring ecology (the preset probe)
 
