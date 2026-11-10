@@ -72,6 +72,12 @@ interface Row {
   }>
   /** How the living bodies see over the run: the share that are not all-round, and their mean best reach. */
   vision: Array<{ tick: number; nonOmni: number; meanReach: number; meanEyes: number }>
+  /**
+   * How creatures move, sampled over the run: counts of creature-samples that are slow and turning
+   * (idle-spinning: under a tenth of the top speed, turning over 1 rad/s), nearly still, slow and
+   * moving. Taken from two snapshots one tick apart, so the turn rate is the real heading change.
+   */
+  motion: { spinning: number; still: number; slow: number; moving: number }
   ticksPerSecond: number
 }
 
@@ -116,6 +122,9 @@ function runWorld(presetName: string, seed: number): Row {
   const ageAged: number[] = []
   const genes: Row['genes'] = []
   const vision: Row['vision'] = []
+  const motion: Row['motion'] = { spinning: 0, still: 0, slow: 0, moving: 0 }
+  const maxSpeed = world.config.organisms.maxSpeed
+  let headings: Map<number, number> | null = null
   let birthCount = 0
   let matureSeconds = 0
   let sum = 0
@@ -142,8 +151,25 @@ function runWorld(presetName: string, seed: number): Row {
         born.delete(event.organismId)
       }
     }
+    if (headings !== null) {
+      // One tick after a sample: the heading change since then is the turn rate.
+      for (const o of world.snapshot().organisms) {
+        const before = headings.get(o.id)
+        if (before === undefined) continue
+        const turn =
+          Math.abs(Math.atan2(Math.sin(o.heading - before), Math.cos(o.heading - before))) / dt
+        const speed = Math.sqrt(o.velocity.x * o.velocity.x + o.velocity.y * o.velocity.y)
+        if (speed < 0.1 * maxSpeed) {
+          if (turn > 1) motion.spinning++
+          else motion.still++
+        } else if (speed < 0.4 * maxSpeed) motion.slow++
+        else motion.moving++
+      }
+      headings = null
+    }
     if (tick % SAMPLE_EVERY === 0) {
       const snapshot = world.snapshot()
+      headings = new Map(snapshot.organisms.map((o) => [o.id, o.heading]))
       const active = snapshot.population.active
       sum += active
       samples++
@@ -203,6 +229,7 @@ function runWorld(presetName: string, seed: number): Row {
     birthRate: matureSeconds === 0 ? 0 : birthCount / matureSeconds,
     genes,
     vision,
+    motion,
     ticksPerSecond: seconds === 0 ? 0 : snapshot.tick / seconds
   }
 }
@@ -220,8 +247,8 @@ describe('preset probe', () => {
       '| --- | --- | --- | --- | --- | --- | --- | --- | --- |'
     ]
     const detail: string[] = [
-      '| preset | juvenile starved | mature starved | aged | median age starved / aged (s) | births per mature creature per s | ticks/s | cooldown gene first..last | minEnergy | investment | maxAge |',
-      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
+      '| preset | juvenile starved | mature starved | aged | median age starved / aged (s) | births per mature creature per s | ticks/s | cooldown gene first..last | minEnergy | investment | maxAge | idle-spinning | nearly still | moving |',
+      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
     ]
     const sight: string[] = [
       '| preset | not all-round (first..last sample) | mean best reach, relative to the founder (first..last) | mean eyes per body (first..last) |',
@@ -261,8 +288,13 @@ describe('preset probe', () => {
         )
         return `${fixed(a, 1)}..${fixed(b, 1)}`
       }
+      const motionTotal = sum(
+        (r) => r.motion.spinning + r.motion.still + r.motion.slow + r.motion.moving
+      )
+      const motionShare = (key: keyof Row['motion']): string =>
+        motionTotal === 0 ? '-' : `${fixed((sum((r) => r.motion[key]) / motionTotal) * 100, 1)}%`
       detail.push(
-        `| ${name} | ${share(sum((r) => r.stages.juvenile.starved))} | ${share(sum((r) => r.stages.mature.starved))} | ${share(sum((r) => r.aged))} | ${fixed(mean(mine.map((r) => r.medianAgeStarved)), 0)} / ${fixed(mean(mine.map((r) => r.medianAgeAged)), 0)} | ${fixed(mean(mine.map((r) => r.birthRate)), 4)} | ${fixed(mean(mine.map((r) => r.ticksPerSecond)), 0)} | ${firstLast('cooldown')} | ${firstLast('minEnergy')} | ${firstLast('offspringInvestment')} | ${firstLast('maxAge')} |`
+        `| ${name} | ${share(sum((r) => r.stages.juvenile.starved))} | ${share(sum((r) => r.stages.mature.starved))} | ${share(sum((r) => r.aged))} | ${fixed(mean(mine.map((r) => r.medianAgeStarved)), 0)} / ${fixed(mean(mine.map((r) => r.medianAgeAged)), 0)} | ${fixed(mean(mine.map((r) => r.birthRate)), 4)} | ${fixed(mean(mine.map((r) => r.ticksPerSecond)), 0)} | ${firstLast('cooldown')} | ${firstLast('minEnergy')} | ${firstLast('offspringInvestment')} | ${firstLast('maxAge')} | ${motionShare('spinning')} | ${motionShare('still')} | ${motionShare('moving')} |`
       )
       const ends = (
         key: 'nonOmni' | 'meanReach' | 'meanEyes',

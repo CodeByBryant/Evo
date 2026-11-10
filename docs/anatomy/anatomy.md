@@ -143,7 +143,7 @@ An eye sees a cone about its axis (its `orientation` placed on the outline), not
 
 - **Food, other organisms and hazards** are perceived only inside a cone (or the touch radius) and only within that cone's reach. The mating signal and the home sense are not vision and stay all-round.
 - **Range for angle.** A cone narrower than all-round reaches further: `1 + effects.visionNarrowing * (sqrt(6.28 / fov) - 1)` times the sense range, so a 90 degree eye reaches about twice as far. `visionNarrowing` runs from 0 (no trade) to 1.
-- **The founder's eye is all-round** (field of view at its widest), so the founder, and any world whose bodies do not change, perceives exactly what it did before eyes had a direction. A body whose eyes are all all-round, or that has no eye, is `omni` and takes the plain circle path. Evolution can only narrow the founder's field of view; two narrow eyes on opposite sides cover both ends and the sides stay blind.
+- **The founder's eye is a 135 degree forward cone** (field of view 2.356 radians, looking straight ahead): it reaches about 1.63 times the sensor radius, and the sector covers the same area as the old full circle, so a stationary creature sees as much ground as before but only the ground it faces. A body whose eyes are all all-round, or that has no eye, is `omni` and takes the plain circle path (the test helper `ALL_ROUND` is the founder as it was). Evolution can widen or narrow the cone; two narrow eyes on opposite sides cover both ends and the sides stay blind.
 - A creature sees through the nearest-first rule inside its cones: the nearest visible food, the nearest visible peer, the nearest visible hazard edge.
 
 ## What the renderer and inspector are given

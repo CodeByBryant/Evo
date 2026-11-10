@@ -110,10 +110,11 @@ describe('partCostOf: what each part adds to the body', () => {
 describe('the founder body', () => {
   it('is exactly 1 against itself, for every factor', () => {
     const { vision, ...f } = capabilityFactors(founder, founder)
-    // The founder's eye is all-round, so the body is omni and its one cone reaches exactly as far
-    // as the founder's own sense range (ADR 0016 "Directional vision").
-    expect(vision.omni).toBe(true)
-    expect(vision.cones.map((cone) => cone.reach)).toEqual([1])
+    // The founder's eye is a 135 degree cone, so the body is not omni and its one cone reaches
+    // sqrt(6.28 / fov) times its own sense range (ADR 0016 "Directional vision").
+    expect(vision.omni).toBe(false)
+    expect(vision.cones).toHaveLength(1)
+    expect(vision.cones[0]?.reach).toBeCloseTo(Math.sqrt(6.28 / (0.5 + 0.3211 * 5.78)), 9)
     expect(f).toEqual({
       speed: 1,
       strafe: 1,

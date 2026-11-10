@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ConfigValidationError } from '@evo/config'
 import { ENGINE_VERSION, World } from '../src/index'
 import { withoutEcology } from './support/ecology'
+import { ALL_ROUND } from './support/bodies'
 import { PHASE3_ECONOMY } from './support/phase3'
 
 describe('World.create', () => {
@@ -174,6 +175,7 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
       // Phase 3's way of eating (touch and take whole): bites are pinned in feeding/.
       config: withoutEcology({
         ...PHASE3_ECONOMY,
+        ...ALL_ROUND,
         organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 10 },
         learning: { controller: 'reflex' },
         feeding: { enabled: false },

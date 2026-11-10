@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { World, buildGeneSpecs, genomeToVector } from '../../src/index'
+import { ALL_ROUND } from '../support/bodies'
 import { withoutEcology } from '../support/ecology'
 import { PHASE3_ECONOMY } from '../support/phase3'
 
@@ -222,6 +223,9 @@ describe('100,000-tick runs', () => {
       seed: 5,
       config: withoutEcology({
         ...PHASE3_ECONOMY,
+        // The Phase 3 body: an all-round eye (the founder's own 135 degree cone moved this tick to
+        // 18,223; ADR 0016 "The founder sees 135 degrees").
+        ...ALL_ROUND,
         organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 15 },
         resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
         // Reflex controller, ecology off: this pin is about the Phase 4 forager. It moved from
