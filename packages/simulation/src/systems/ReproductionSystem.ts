@@ -124,16 +124,14 @@ export class ReproductionSystem {
         continue
       }
 
-      const hits = this.organismIndex.queryRadius(
+      const partnerHit = this.organismIndex.nearestWhere(
         { x: organism.x, y: organism.y },
-        genome.reproduction.searchRadius
-      )
-      const partnerHit = hits.find(
-        (hit) =>
-          hit.item.id !== organism.id &&
-          this.sameSpecies(organism, hit.item) &&
-          !pairedIds.has(hit.item.id) &&
-          this.readiness.isReady(hit.item, tick)
+        genome.reproduction.searchRadius,
+        (item) =>
+          item.id !== organism.id &&
+          this.sameSpecies(organism, item) &&
+          !pairedIds.has(item.id) &&
+          this.readiness.isReady(item, tick)
       )
       if (!partnerHit) {
         this.events.record({
