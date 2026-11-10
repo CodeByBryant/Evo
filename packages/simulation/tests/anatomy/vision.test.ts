@@ -14,6 +14,7 @@ import { SpatialHash } from '../../src/spatial/SpatialHash'
 import { PerceptionSystem } from '../../src/systems/PerceptionSystem'
 import { World } from '../../src/world/World'
 import { withoutEcology } from '../support/ecology'
+import { ALL_ROUND } from '../support/bodies'
 import { organismFor } from '../support/organism'
 
 /**
@@ -100,20 +101,53 @@ function seesPeer(config: WorldConfig, parts: Parts, dx: number, dy: number): bo
 
 const R = (config: WorldConfig): number => config.organisms.sensorRadius
 
-describe('the founder sees all round', () => {
-  it('has an all-round eye, so it is omni and its factors are exactly what they were', () => {
+describe('the founder sees a forward cone', () => {
+  const FOV = 0.5 + 0.3211 * (6.28 - 0.5) // 135 degrees, the founder eye's field of view
+  const NARROW = Math.sqrt(6.28 / FOV)
+
+  it('has a 135 degree eye, so it is not omni, and it reaches about 1.6 times the sensor radius', () => {
     const config = plain()
     const f = factorsOf(organismFor(config, 1).genome, config)
-    expect(f.vision.omni).toBe(true)
+    expect(f.vision.omni).toBe(false)
     expect(f.vision.cones).toHaveLength(1)
-    expect(f.vision.cones[0]?.cosHalf).toBe(-1)
-    expect(f.vision.cones[0]?.reach).toBe(1)
+    expect(f.vision.cones[0]?.half).toBeCloseTo(FOV / 2, 9)
+    expect(f.vision.cones[0]?.reach).toBeCloseTo(NARROW, 9)
+    // The range for angle trade keeps the area it sees: a sector of this reach and angle covers
+    // the same ground as the old full circle.
+    expect(0.5 * NARROW * NARROW * FOV).toBeCloseTo(Math.PI, 2)
     expect(f.senseRange).toBe(1)
   })
 
-  it('sees food at any bearing inside its range, front, side or back', () => {
+  it('sees food ahead out to about 1.6 radii and nothing beside or behind past the touch radius', () => {
     const config = plain()
     const founder = founderParts(config)
+    const R0 = R(config)
+    expect(seesFood(config, founder, R0 * 1.5, 0)).toBe(true)
+    expect(seesFood(config, founder, R0 * 1.8, 0)).toBe(false)
+    // behind and to the side: only the touch radius
+    expect(seesFood(config, founder, -R0 * 0.9, 0)).toBe(false)
+    expect(seesFood(config, founder, 0, R0 * 0.9)).toBe(false)
+    expect(seesFood(config, founder, 0, -R0 * 0.9)).toBe(false)
+    const touch = R0 * config.anatomy.senseFloor
+    expect(seesFood(config, founder, -touch * 0.8, 0)).toBe(true)
+  })
+
+  it('looks along its heading: the cone turns with the creature', () => {
+    const config = plain()
+    const founder = founderParts(config)
+    const d = R(config) * 1.2
+    expect(seesFood(config, founder, d, 0, 0)).toBe(true)
+    expect(seesFood(config, founder, d, 0, Math.PI)).toBe(false)
+    expect(seesFood(config, founder, 0, d, Math.PI / 2)).toBe(true)
+  })
+
+  it('an all-round founder (the test helper) sees every bearing inside its range', () => {
+    const config = plain(ALL_ROUND)
+    const f = factorsOf(organismFor(config, 1).genome, config)
+    expect(f.vision.omni).toBe(true)
+    expect(f.vision.cones[0]?.cosHalf).toBe(-1)
+    expect(f.vision.cones[0]?.reach).toBe(1)
+    const founder = config.anatomy.founder.map((p) => ({ ...p }))
     const d = R(config) * 0.9
     for (const angle of [0, 1, 2, 3, 4, 5, 6]) {
       expect(seesFood(config, founder, d * Math.cos(angle), d * Math.sin(angle))).toBe(true)
@@ -247,10 +281,11 @@ describe('other organisms are seen through the same cones', () => {
     expect(seesPeer(config, forward, -d, 0)).toBe(false)
   })
 
-  it('the founder sees a peer on every side', () => {
+  it('the founder sees a peer ahead and not behind or beside (past the touch radius)', () => {
     const founder = founderParts(config)
-    expect(seesPeer(config, founder, -d, 0)).toBe(true)
-    expect(seesPeer(config, founder, 0, d)).toBe(true)
+    expect(seesPeer(config, founder, d, 0)).toBe(true)
+    expect(seesPeer(config, founder, -d, 0)).toBe(false)
+    expect(seesPeer(config, founder, 0, d)).toBe(false)
   })
 })
 
@@ -275,7 +310,9 @@ describe('hazards are seen through the same cones', () => {
     const d = R(config) * 0.9 + 5
     expect(seesHazard(forward, d)).toBe(true)
     expect(seesHazard(forward, -d)).toBe(false)
-    expect(seesHazard(founderParts(config), -d)).toBe(true)
+    // the founder's own cone is forward too: the zone behind it is out of view
+    expect(seesHazard(founderParts(config), -d)).toBe(false)
+    expect(seesHazard(founderParts(config), d)).toBe(true)
   })
 })
 

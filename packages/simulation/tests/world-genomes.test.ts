@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { World } from '../src/index'
 import { genomeToVector } from '../src/genetics/GenomeFactory'
 import { withoutEcology } from './support/ecology'
+import { ALL_ROUND } from './support/bodies'
 import { PHASE3_ECONOMY } from './support/phase3'
 
 /** The world wiring of genomes (docs/decisions/0006); Phase 3 behavior is pinned in world.test.ts. */
@@ -193,6 +194,7 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
       seed: 1,
       config: withoutEcology({
         ...PHASE3_ECONOMY,
+        ...ALL_ROUND,
         organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 10 },
         genetics: { ...PHASE3_ECONOMY.genetics, mutationRateScale: 0 },
         learning: { controller: 'reflex' },

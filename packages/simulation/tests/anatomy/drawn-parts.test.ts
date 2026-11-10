@@ -56,11 +56,16 @@ describe('drawnPartsOf: the founder', () => {
     expect(new Set(parts.map((p) => p.slot)).size).toBe(parts.length)
   })
 
-  it('gives an eye its sight and nothing else: the founder sees all round as far as the sensor', () => {
+  it('gives an eye its sight and nothing else: the founder sees a 135 degree cone', () => {
     const eyes = parts.filter((p) => p.type === 'eye')
     expect(eyes).toHaveLength(1)
-    expect(eyes[0]?.sight?.half).toBeCloseTo(Math.PI, 12)
-    expect(eyes[0]?.sight?.reach).toBeCloseTo(config.organisms.sensorRadius, 9)
+    const fov = 0.5 + 0.3211 * (6.28 - 0.5)
+    expect(eyes[0]?.sight?.half).toBeCloseTo(fov / 2, 9)
+    // reach: the sensor radius times sqrt(6.28 / fov), about 98 units
+    expect(eyes[0]?.sight?.reach).toBeCloseTo(
+      config.organisms.sensorRadius * Math.sqrt(6.28 / fov),
+      9
+    )
     expect(parts.filter((p) => p.type !== 'eye').every((p) => p.sight === null)).toBe(true)
   })
 })

@@ -4,6 +4,7 @@ import type { EcologyModel } from '../../src/ecology/EcologyModel'
 import { IdGenerator } from '../../src/entities/IdGenerator'
 import type { OrganismState, OrganismStore } from '../../src/entities/OrganismStore'
 import type { EventLog } from '../../src/events/EventLog'
+import { founderBodyVector } from '../../src/genetics/BodyGenes'
 import { buildGeneSpecs } from '../../src/genetics/GeneSpecs'
 import {
   createFounderGenome,
@@ -33,7 +34,9 @@ export function organismFor(
     id,
     buildGeneSpecs(config),
     config.genetics.brain,
-    new SeededRandom(deriveStreamWords(id + 1, 'genetics'))
+    new SeededRandom(deriveStreamWords(id + 1, 'genetics')),
+    // The config's own founder body (the default one unless the test overrides it).
+    founderBodyVector(config.anatomy)
   )
   return {
     id,

@@ -29,6 +29,7 @@ import { MigrationSystem } from '../../src/systems/MigrationSystem'
 import { MovementSystem } from '../../src/systems/MovementSystem'
 import { PerceptionSystem } from '../../src/systems/PerceptionSystem'
 import { maxHealthOf } from '../../src/organisms/traits'
+import { ALL_ROUND } from '../support/bodies'
 import { withoutEcology } from '../support/ecology'
 import { makeReproduction, organismFor, idsFrom } from '../support/organism'
 
@@ -41,6 +42,7 @@ const stream = (seed: number, name: Parameters<typeof deriveStreamWords>[1]): Se
 const config = (ecology: EcologyOverrides = {}, extra: WorldConfigOverrides = {}): WorldConfig =>
   resolveWorldConfig(
     withoutEcology({
+      ...ALL_ROUND,
       ...extra,
       learning: { controller: 'reflex', ...(extra.learning ?? {}) },
       ecology

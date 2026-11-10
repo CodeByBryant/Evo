@@ -30,7 +30,9 @@ describe('Phase 6A: species exit criteria', () => {
     // 80 until bites (ADR 0017): with no food wasted the population peaks near 90 instead of 40,
     // and species follow births. Seeds 1 to 4 end with 106, 163, 125 and 130 species (36, 22, 17
     // and 46 before). Still bounded, which is the claim; the threshold is re-tuned with the ecology.
-    expect(species.length).toBeLessThanOrEqual(220)
+    // After the 135 degree founder eye (ADR 0016) seeds 1 to 4 end with 225, 214, 215 and 207
+    // (202, 219, 196 and 183 before it), so the limit moves from 220 to 260.
+    expect(species.length).toBeLessThanOrEqual(260)
     for (const s of species.slice(1)) {
       expect(s.ancestorSpeciesId).not.toBeNull()
       expect(s.ancestorSpeciesId as number).toBeLessThan(s.id)
