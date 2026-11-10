@@ -203,6 +203,6 @@ Where each guarantee is checked (all paths under `packages/simulation/tests/`):
 | Lineage queries and survival after death                     | `lineage.test.ts`, `world-genomes.test.ts`, `phase4-exit-criteria.test.ts`       |
 | Systems read the organism's own genes                        | `genes-in-systems.test.ts`, `traits.test.ts`                                     |
 | Mutation off reproduces Phase 3; mutation on changes the run | `world-genomes.test.ts` (Scenario A: 26 / 47 / 21 with mutation off)             |
-| Genomes valid and trait drift bounded over 100,000 ticks     | `determinism/long-run.test.ts`                                                   |
-| Chunked and stepped runs match, lineage included             | `determinism/long-run.test.ts`                                                   |
-| Lineage stays queryable and frozen after extinction          | `determinism/long-run.test.ts`                                                   |
+| Genomes valid and trait drift bounded over 100,000 ticks     | `determinism/long-run-validity.test.ts`                                          |
+| Chunked and stepped runs match, lineage included             | `determinism/long-run-chunking.test.ts`                                          |
+| Lineage stays queryable and frozen after extinction          | `determinism/long-run-extinction.test.ts`                                        |

@@ -93,25 +93,24 @@ export class InteractionSystem {
         // The mouth in the world: the body-frame point turned by the heading.
         const mx = (mouth.x * c - mouth.y * s) * bodyRadius
         const my = (mouth.x * s + mouth.y * c) * bodyRadius
-        const hits = this.resourceIndex.queryRadius(
+        const hit = this.resourceIndex.nearestWhere(
           { x: organism.x + mx, y: organism.y + my },
-          reach + this.largestResourceRadius
-        )
-        const hit = hits.find((candidate) => {
-          const resource = candidate.item
-          if (!this.resources.has(resource.id) || resource.remaining <= EPSILON) return false
-          const limit = reach + this.kindOf(resource.kind).radius
-          if (candidate.distanceSquared > limit * limit) return false
-          // Only food in front of the mouth: inside the cone around the way the mouth points.
-          const fx = resource.x - organism.x
-          const fy = resource.y - organism.y
-          const food = fx * fx + fy * fy
-          const mouthLength = mx * mx + my * my
-          if (food > 0 && mouthLength > 0) {
-            if (fx * mx + fy * my < cosCone * Math.sqrt(food * mouthLength)) return false
+          reach + this.largestResourceRadius,
+          (resource, distanceSquared) => {
+            if (!this.resources.has(resource.id) || resource.remaining <= EPSILON) return false
+            const limit = reach + this.kindOf(resource.kind).radius
+            if (distanceSquared > limit * limit) return false
+            // Only food in front of the mouth: inside the cone around the way the mouth points.
+            const fx = resource.x - organism.x
+            const fy = resource.y - organism.y
+            const food = fx * fx + fy * fy
+            const mouthLength = mx * mx + my * my
+            if (food > 0 && mouthLength > 0) {
+              if (fx * mx + fy * my < cosCone * Math.sqrt(food * mouthLength)) return false
+            }
+            return true
           }
-          return true
-        })
+        )
         if (!hit) continue
 
         const resource = hit.item

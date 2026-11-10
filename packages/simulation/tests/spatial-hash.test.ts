@@ -105,3 +105,100 @@ describe('SpatialHash', () => {
     })
   })
 })
+
+describe('SpatialHash scan and nearestWhere', () => {
+  // A layout with ties (a small lattice, so many points share a distance), negative coordinates and
+  // an index that has been rebuilt several times (the bucket arrays are recycled between rebuilds).
+  const layout = (seed: number): Point[] => {
+    const points: Point[] = []
+    for (let i = 1; i <= 160; i++) {
+      points.push(
+        point(i, ((i * 37 + seed * 11) % 31) * 3 - 40, ((i * 53 + seed * 7) % 29) * 3 - 40)
+      )
+    }
+    return points
+  }
+
+  it('scan visits exactly the items queryRadius returns, once each', () => {
+    const index = new SpatialHash<Point>(13, (p) => p)
+    for (let round = 0; round < 4; round++) {
+      index.rebuild(layout(round))
+      for (let i = 0; i < 60; i++) {
+        const center = { x: ((i * 7) % 90) - 45, y: ((i * 11) % 80) - 40 }
+        const radius = 4 + (i % 37)
+        const seen: Array<[number, number]> = []
+        index.scan(center, radius, (item, d2) => seen.push([item.id, d2]))
+        const sorted = index
+          .queryRadius(center, radius)
+          .map((h): [number, number] => [h.item.id, h.distanceSquared])
+        expect(seen.sort((a, b) => a[0] - b[0])).toEqual(sorted.sort((a, b) => a[0] - b[0]))
+      }
+    }
+  })
+
+  it('nearestWhere equals the first accepted hit of the sorted query, ties included', () => {
+    const index = new SpatialHash<Point>(13, (p) => p)
+    for (let round = 0; round < 4; round++) {
+      index.rebuild(layout(round))
+      for (let i = 0; i < 60; i++) {
+        const center = { x: ((i * 7) % 90) - 45, y: ((i * 11) % 80) - 40 }
+        const radius = 4 + (i % 37)
+        const accept = (item: Point): boolean => item.id % (2 + (i % 3)) === 0
+        const expected = index.queryRadius(center, radius).find((h) => accept(h.item))
+        const actual = index.nearestWhere(center, radius, accept)
+        expect(actual?.item.id).toBe(expected?.item.id)
+        expect(actual?.distanceSquared).toBe(expected?.distanceSquared)
+      }
+    }
+  })
+
+  it('some equals "any hit of the sorted query passes", stopping early', () => {
+    const index = new SpatialHash<Point>(13, (p) => p)
+    for (let round = 0; round < 4; round++) {
+      index.rebuild(layout(round))
+      for (let i = 0; i < 60; i++) {
+        const center = { x: ((i * 7) % 90) - 45, y: ((i * 11) % 80) - 40 }
+        const radius = 4 + (i % 37)
+        const test = (item: Point): boolean => item.id % (7 + (i % 5)) === 0
+        expect(index.some(center, radius, test)).toBe(
+          index.queryRadius(center, radius).some((h) => test(h.item))
+        )
+      }
+    }
+    let calls = 0
+    expect(
+      index.some({ x: 0, y: 0 }, 1000, () => {
+        calls++
+        return true
+      })
+    ).toBe(true)
+    expect(calls).toBe(1)
+    expect(index.some({ x: 0, y: 0 }, 1000, () => false)).toBe(false)
+  })
+
+  it('nearestWhere returns null when nothing in range is accepted', () => {
+    const index = new SpatialHash<Point>(10, (p) => p)
+    index.rebuild([point(1, 1, 1), point(2, 50, 50)])
+    expect(index.nearestWhere({ x: 0, y: 0 }, 10, () => false)).toBeNull()
+    expect(index.nearestWhere({ x: 0, y: 0 }, 10, (p) => p.id === 2)).toBeNull()
+    expect(index.nearestWhere({ x: 0, y: 0 }, 100, (p) => p.id === 2)?.item.id).toBe(2)
+  })
+
+  it('a rebuild forgets the previous items (recycled buckets leak nothing)', () => {
+    const index = new SpatialHash<Point>(10, (p) => p)
+    index.rebuild([point(1, 5, 5), point(2, 6, 6)])
+    index.rebuild([point(3, 95, 95)])
+    expect(index.queryRadius({ x: 5, y: 5 }, 20)).toEqual([])
+    expect(index.queryRadius({ x: 95, y: 95 }, 5).map((h) => h.item.id)).toEqual([3])
+  })
+
+  it('keeps cells apart across the origin and refuses a point beyond the addressable range', () => {
+    const index = new SpatialHash<Point>(10, (p) => p)
+    // These four cells are (-1,-1), (-1,0), (0,-1), (0,0): their keys must not collide.
+    index.rebuild([point(1, -5, -5), point(2, -5, 5), point(3, 5, -5), point(4, 5, 5)])
+    expect(index.queryRadius({ x: -5, y: -5 }, 0.5).map((h) => h.item.id)).toEqual([1])
+    expect(index.queryRadius({ x: 5, y: -5 }, 0.5).map((h) => h.item.id)).toEqual([3])
+    expect(() => index.rebuild([point(1, 1e12, 0)])).toThrow(RangeError)
+    expect(() => index.rebuild([point(1, Number.NaN, 0)])).toThrow(RangeError)
+  })
+})
