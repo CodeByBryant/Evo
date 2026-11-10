@@ -69,6 +69,8 @@ interface BodyDrawing {
   front: Graphics | null
   /** The creature as of the latest scene, so an animation frame can redraw its parts. */
   organism: RenderOrganism | null
+  /** The scene stamp its parts were last drawn at, so a creature past the animation budget is still drawn once per scene. */
+  partsStamp: number
 }
 
 /**
@@ -281,11 +283,16 @@ export class PixiRenderer implements Renderer {
     this.animationFrame = requestAnimationFrame(step)
   }
 
-  /** Redraws the moving parts of every creature in view (at most `MAX_ANIMATED`) at the current time. */
+  /**
+   * Redraws the moving parts of every creature in view at the current time. At most `MAX_ANIMATED`
+   * creatures move; the rest in view are drawn once per scene at rest (time 0), so a crowd never
+   * shows creatures without their parts.
+   */
   private animateParts(now: number): void {
     const bounds = this.camera.visibleBounds()
     const animate = this.isAnimating()
     const time = animate ? now / 1000 : 0
+    const selectedId = this.frame?.selectedEntityId ?? null
     let animated = 0
     for (const drawing of this.bodyDrawings.values()) {
       const o = drawing.organism
@@ -297,9 +304,18 @@ export class PixiRenderer implements Renderer {
         o.y >= bounds.top - pad &&
         o.y <= bounds.bottom + pad
       if (!visible) continue
-      if (animated >= MAX_ANIMATED) break
+      const sight = o.id === selectedId
+      if (animated >= MAX_ANIMATED && !sight) {
+        // Past the budget: hold the rest pose, drawn once for this scene.
+        if (drawing.partsStamp !== this.sceneStamp) {
+          drawParts(drawing.back, drawing.front, o, paletteOf(o.hue), 0)
+          drawing.partsStamp = this.sceneStamp
+        }
+        continue
+      }
       animated++
-      drawParts(drawing.back, drawing.front, o, paletteOf(o.hue), time)
+      drawParts(drawing.back, drawing.front, o, paletteOf(o.hue), time, sight)
+      drawing.partsStamp = this.sceneStamp
     }
   }
 
@@ -654,7 +670,16 @@ export class PixiRenderer implements Renderer {
       const graphics = new Graphics()
       container.addChild(graphics)
       this.bodies.container.addChild(container)
-      drawing = { container, graphics, key: '', seen: 0, back: null, front: null, organism: null }
+      drawing = {
+        container,
+        graphics,
+        key: '',
+        seen: 0,
+        back: null,
+        front: null,
+        organism: null,
+        partsStamp: -1
+      }
       this.bodyDrawings.set(o.id, drawing)
     }
     drawing.seen = this.sceneStamp

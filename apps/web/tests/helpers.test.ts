@@ -162,4 +162,36 @@ describe('buildAnatomy', () => {
     expect(speed?.value).toBe(1) // a founder is exactly the baseline
     expect(buildAnatomy(world, 987654321)).toBeNull()
   })
+
+  it('gives every part its parent, tip, stats in real units, and its share of mass and upkeep', async () => {
+    const { World } = await import('@evo/simulation')
+    const { PART_STATS } = await import('@evo/contracts')
+    const { buildAnatomy } = await import('../src/host/viewState')
+    const world = World.create({ seed: 5 })
+    const id = world.snapshot().organisms[0]!.id
+    const anatomy = buildAnatomy(world, id)!
+    const slots = new Set(anatomy.parts.map((part) => part.slot))
+    for (const part of anatomy.parts) {
+      // a parent is the body or another developed part
+      expect(part.parent === -1 || slots.has(part.parent)).toBe(true)
+      expect(part.parent).not.toBe(part.slot)
+      // one stat per row of the part's table, in the table's order and unit
+      expect(part.stats.map((stat) => stat.key)).toEqual(PART_STATS[part.type].map((s) => s.key))
+      expect(part.stats.map((stat) => stat.unit)).toEqual(PART_STATS[part.type].map((s) => s.unit))
+      for (const stat of part.stats) expect(Number.isFinite(stat.value)).toBe(true)
+      expect(part.mass).toBeGreaterThan(0)
+      expect(part.upkeep).toBeGreaterThanOrEqual(0)
+      expect(part.integrity).toBeGreaterThan(0)
+      expect(Number.isFinite(part.tipX) && Number.isFinite(part.tipY)).toBe(true)
+    }
+    // the parts and the bare body add up to the body's mass and upkeep, so nothing is hidden
+    const cap = (label: string): number =>
+      anatomy.capabilities.find((c) => c.label === label)?.value as number
+    const partMass = anatomy.parts.reduce((sum, part) => sum + part.mass, 0)
+    expect(cap('mass') - partMass).toBeCloseTo(world.config.anatomy.bodyMass, 9)
+    const partUpkeep = anatomy.parts.reduce((sum, part) => sum + part.upkeep, 0)
+    expect(cap('upkeep (energy/s)')).toBeCloseTo(partUpkeep, 12)
+    // negative: dropping a part would leave the sums short
+    expect(partMass - (anatomy.parts[0]?.mass ?? 0)).toBeLessThan(partMass)
+  })
 })

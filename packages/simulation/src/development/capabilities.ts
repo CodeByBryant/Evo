@@ -42,6 +42,84 @@ function power(part: AnatomyPart, config: AnatomyConfig): number {
 }
 
 /**
+ * How the part's own dimensions scale its mass and its upkeep (the factors on `balance.mass * size`
+ * and `balance.upkeep * size`): longer, thicker or bigger is heavier, a stronger force, rate or
+ * range costs more to keep.
+ */
+function scalesOf(part: AnatomyPart): { mass: number; upkeep: number } {
+  let massScale = 1
+  let upkeepScale = 1
+  switch (part.type) {
+    case 'flagellum':
+      massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'thickness'))
+      upkeepScale = (mult(part, 'force') * mult(part, 'force')) / mult(part, 'efficiency')
+      break
+    case 'cilia':
+      massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'density'))
+      upkeepScale = mult(part, 'rate')
+      break
+    case 'eye':
+      upkeepScale = mult(part, 'range') * mult(part, 'resolution')
+      break
+    case 'sniffer':
+      upkeepScale = 0.5 * (mult(part, 'range') + mult(part, 'sensitivity'))
+      break
+    case 'mouth':
+      massScale = 0.5 + 0.5 * mult(part, 'gape')
+      upkeepScale = mult(part, 'rate')
+      break
+    case 'intestine':
+      massScale = 0.5 + 0.5 * mult(part, 'length')
+      break
+    case 'stomach':
+      massScale = 0.5 + 0.5 * mult(part, 'capacity')
+      break
+    case 'armor':
+      massScale = (0.5 + 0.5 * mult(part, 'thickness')) * (0.5 + 0.5 * mult(part, 'coverage'))
+      break
+    case 'membrane':
+      massScale = 0.5 + 0.5 * mult(part, 'thickness')
+      break
+    case 'mender':
+      upkeepScale = mult(part, 'rate') / mult(part, 'efficiency')
+      break
+    case 'eyestalk':
+      massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'stiffness'))
+      break
+    case 'gyro':
+      upkeepScale = mult(part, 'stability')
+      break
+    case 'lipid':
+      // Fat is heavy: the more it stores the more it weighs, so it slows the body.
+      massScale = mult(part, 'reserve')
+      break
+    case 'pheromone':
+      upkeepScale = mult(part, 'potency')
+      break
+    case 'skeleton':
+      massScale = (0.5 + 0.5 * mult(part, 'rigidity')) * (0.5 + 0.5 * mult(part, 'length'))
+      break
+    case 'join':
+      massScale = 0.5 + 0.5 * mult(part, 'length')
+      break
+  }
+  return { mass: massScale, upkeep: upkeepScale }
+}
+
+/** What one part adds to the body's mass and upkeep (dormant ones included), from its type's balance numbers. */
+export function partCostOf(
+  part: AnatomyPart,
+  config: AnatomyConfig
+): { mass: number; upkeep: number } {
+  const balance = config.parts[part.type]
+  const scales = scalesOf(part)
+  return {
+    mass: balance.mass * part.size * scales.mass,
+    upkeep: balance.upkeep * part.size * scales.upkeep
+  }
+}
+
+/**
  * What a body can do (ADR 0012 "Capabilities", ADR 0016 "Stats"). Pure arithmetic on the developed
  * parts.
  *
@@ -74,7 +152,7 @@ export function capabilitiesOf(
   let torque = 0
   let eyes = 0
   let resolution = 0
-  const seen: Array<{ axis: number; gene: number }> = []
+  const seen: Array<{ slot: number; axis: number; gene: number }> = []
   const detection = new Array<number>(Math.max(1, kindCount)).fill(1)
   let reach = 1
   let digestion = 1
@@ -91,65 +169,9 @@ export function capabilitiesOf(
   const dietSum = new Array<number>(Math.max(1, kindCount)).fill(0)
 
   for (const part of anatomy.parts) {
-    const balance = config.parts[part.type]
-    let massScale = 1
-    let upkeepScale = 1
-    switch (part.type) {
-      case 'flagellum':
-        massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'thickness'))
-        upkeepScale = (mult(part, 'force') * mult(part, 'force')) / mult(part, 'efficiency')
-        break
-      case 'cilia':
-        massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'density'))
-        upkeepScale = mult(part, 'rate')
-        break
-      case 'eye':
-        upkeepScale = mult(part, 'range') * mult(part, 'resolution')
-        break
-      case 'sniffer':
-        upkeepScale = 0.5 * (mult(part, 'range') + mult(part, 'sensitivity'))
-        break
-      case 'mouth':
-        massScale = 0.5 + 0.5 * mult(part, 'gape')
-        upkeepScale = mult(part, 'rate')
-        break
-      case 'intestine':
-        massScale = 0.5 + 0.5 * mult(part, 'length')
-        break
-      case 'stomach':
-        massScale = 0.5 + 0.5 * mult(part, 'capacity')
-        break
-      case 'armor':
-        massScale = (0.5 + 0.5 * mult(part, 'thickness')) * (0.5 + 0.5 * mult(part, 'coverage'))
-        break
-      case 'membrane':
-        massScale = 0.5 + 0.5 * mult(part, 'thickness')
-        break
-      case 'mender':
-        upkeepScale = mult(part, 'rate') / mult(part, 'efficiency')
-        break
-      case 'eyestalk':
-        massScale = (0.5 + 0.5 * mult(part, 'length')) * (0.5 + 0.5 * mult(part, 'stiffness'))
-        break
-      case 'gyro':
-        upkeepScale = mult(part, 'stability')
-        break
-      case 'lipid':
-        // Fat is heavy: the more it stores the more it weighs, so it slows the body.
-        massScale = mult(part, 'reserve')
-        break
-      case 'pheromone':
-        upkeepScale = mult(part, 'potency')
-        break
-      case 'skeleton':
-        massScale = (0.5 + 0.5 * mult(part, 'rigidity')) * (0.5 + 0.5 * mult(part, 'length'))
-        break
-      case 'join':
-        massScale = 0.5 + 0.5 * mult(part, 'length')
-        break
-    }
-    mass += balance.mass * part.size * massScale
-    upkeep += balance.upkeep * part.size * upkeepScale
+    const cost = partCostOf(part, config)
+    mass += cost.mass
+    upkeep += cost.upkeep
     const p = power(part, config)
     if (p === 0) continue
     switch (part.type) {
@@ -180,7 +202,11 @@ export function capabilitiesOf(
             : 1
         eyes += p * mult(part, 'range') * lift
         resolution += p * mult(part, 'resolution')
-        seen.push({ axis: part.axis, gene: part.stats[statIndex('eye', 'fieldOfView')] as number })
+        seen.push({
+          slot: part.slot,
+          axis: part.axis,
+          gene: part.stats[statIndex('eye', 'fieldOfView')] as number
+        })
         break
       }
       case 'gyro':
@@ -278,7 +304,7 @@ export function capabilitiesOf(
  * is `omni` and the world sees it as the plain circle it always was.
  */
 function visionOf(
-  eyes: ReadonlyArray<{ axis: number; gene: number }>,
+  eyes: ReadonlyArray<{ slot: number; axis: number; gene: number }>,
   senseRange: number,
   config: AnatomyConfig
 ): Vision {
@@ -289,13 +315,27 @@ function visionOf(
     const axisCos = cos(eye.axis)
     const axisSin = sin(eye.axis)
     if (eye.gene >= 1) {
-      cones.push({ axisCos, axisSin, cosHalf: -1, reach: senseRange })
+      cones.push({
+        slot: eye.slot,
+        axisCos,
+        axisSin,
+        cosHalf: -1,
+        half: Math.PI,
+        reach: senseRange
+      })
       continue
     }
     omni = false
     const fov = statValue(spec, eye.gene)
     const narrow = 1 + config.effects.visionNarrowing * (Math.sqrt(spec.max / fov) - 1)
-    cones.push({ axisCos, axisSin, cosHalf: cos(fov / 2), reach: senseRange * narrow })
+    cones.push({
+      slot: eye.slot,
+      axisCos,
+      axisSin,
+      cosHalf: cos(fov / 2),
+      half: fov / 2,
+      reach: senseRange * narrow
+    })
   }
   return { omni, floor: config.senseFloor, cones }
 }

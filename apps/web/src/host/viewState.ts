@@ -1,4 +1,4 @@
-import { ACTION_LABELS, OBSERVATION_LABELS } from '@evo/contracts'
+import { ACTION_LABELS, OBSERVATION_LABELS, PART_STATS } from '@evo/contracts'
 import type {
   ClusterReport,
   EntityId,
@@ -18,6 +18,7 @@ import type {
   WorldSnapshot
 } from '@evo/contracts'
 import { speciesColor } from '@evo/renderer'
+import { partCostOf } from '@evo/simulation'
 import type { World } from '@evo/simulation'
 
 /** Samples of a species' history sent to the interface. */
@@ -66,15 +67,30 @@ export function buildAnatomy(world: World, id: EntityId): InspectorAnatomy | nul
   for (const point of anatomy.outline.points) outline.push(point.x, point.y)
   return {
     outline,
-    parts: anatomy.parts.map((part) => ({
-      slot: part.slot,
-      type: part.type,
-      size: part.size,
-      x: part.x,
-      y: part.y,
-      orientation: part.orientation,
-      functional: part.functional
-    })),
+    parts: anatomy.parts.map((part) => {
+      const cost = partCostOf(part, world.config.anatomy)
+      return {
+        slot: part.slot,
+        type: part.type,
+        parent: part.parent,
+        size: part.size,
+        x: part.x,
+        y: part.y,
+        tipX: part.tipX,
+        tipY: part.tipY,
+        orientation: part.orientation,
+        functional: part.functional,
+        integrity: part.integrity,
+        mass: cost.mass,
+        upkeep: cost.upkeep,
+        stats: PART_STATS[part.type].map((spec) => ({
+          key: spec.key,
+          label: spec.label,
+          value: part.statValues[spec.key] as number,
+          unit: spec.unit
+        }))
+      }
+    }),
     undeveloped: anatomy.undeveloped,
     sizeUsed: anatomy.sizeUsed,
     budget: world.config.anatomy.structuralBudget,

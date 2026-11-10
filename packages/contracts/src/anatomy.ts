@@ -435,9 +435,13 @@ export interface Anatomy {
  * `CapabilityFactors`).
  */
 export interface VisionCone {
+  /** The slot of the eye this cone belongs to, so a part can find its own sight. */
+  readonly slot: number
   readonly axisCos: number
   readonly axisSin: number
   readonly cosHalf: number
+  /** The half-angle in radians (`pi` for an all-round eye), for drawing the cone. */
+  readonly half: number
   readonly reach: number
 }
 

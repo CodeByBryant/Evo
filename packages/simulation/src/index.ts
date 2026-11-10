@@ -102,6 +102,12 @@ export type { RewardInput } from './learning/RewardModel'
 export { ActorCriticLearner, HebbianLearner, createLearner } from './learning/LearningAlgorithm'
 export type { DecideContext, LearningAlgorithm, LearningParams } from './learning/LearningAlgorithm'
 export { INNATE_PRIOR_MIN_HIDDEN, innatePriorWeights } from './learning/InnatePrior'
-export { capabilitiesOf, capabilityFactors, sniffedKind, viewOf } from './development/capabilities'
+export {
+  capabilitiesOf,
+  capabilityFactors,
+  partCostOf,
+  sniffedKind,
+  viewOf
+} from './development/capabilities'
 export { developAnatomy, resolveFunctional } from './development/develop'
 export type { DependencyRule } from './development/develop'

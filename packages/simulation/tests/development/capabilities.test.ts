@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { resolveWorldConfig } from '@evo/config'
 import type { AnatomyConfig, FounderPart, PartType } from '@evo/contracts'
 import {
+  partCostOf,
   capabilitiesOf,
   capabilityFactors,
   sniffedKind,
@@ -70,6 +71,41 @@ const factors = (parts: FounderPart[], scale = 1) =>
 
 /** The numeric values of a capability object (it also carries the boolean `hasMouth`). */
 const isNumber = (value: unknown): value is number => typeof value === 'number'
+
+describe('partCostOf: what each part adds to the body', () => {
+  it('adds up: the parts and the bare body are the body, in mass and in upkeep', () => {
+    for (const scale of [1, 1.7]) {
+      const body = capabilitiesOf(founderAnatomy, defaults, scale, KINDS)
+      const costs = founderAnatomy.parts.map((part) => partCostOf(part, defaults))
+      expect(costs.reduce((sum, c) => sum + c.mass, 0) + defaults.bodyMass * scale).toBeCloseTo(
+        body.mass,
+        12
+      )
+      expect(costs.reduce((sum, c) => sum + c.upkeep, 0)).toBeCloseTo(body.upkeep, 12)
+    }
+  })
+
+  it('charges a dormant part exactly what a working one costs (dead weight is not free)', () => {
+    const working = founderAnatomy.parts.find((part) => part.type === 'stomach')
+    expect(working).toBeDefined()
+    const dormant = { ...(working as (typeof founderAnatomy.parts)[number]), functional: false }
+    expect(partCostOf(dormant, defaults)).toEqual(partCostOf(working as typeof dormant, defaults))
+    expect(partCostOf(dormant, defaults).mass).toBeGreaterThan(0)
+  })
+
+  it('a bigger part costs more, and a stronger stat costs more upkeep (nothing is free)', () => {
+    const eye = founderAnatomy.parts.find(
+      (part) => part.type === 'eye'
+    ) as (typeof founderAnatomy.parts)[number]
+    const bigger = partCostOf({ ...eye, size: eye.size * 2 }, defaults)
+    expect(bigger.mass).toBeGreaterThan(partCostOf(eye, defaults).mass)
+    expect(bigger.upkeep).toBeGreaterThan(partCostOf(eye, defaults).upkeep)
+    // range stat (index 0) at its top against its bottom
+    const range = (gene: number) =>
+      partCostOf({ ...eye, stats: eye.stats.map((v, i) => (i === 0 ? gene : v)) }, defaults).upkeep
+    expect(range(1)).toBeGreaterThan(range(0))
+  })
+})
 
 describe('the founder body', () => {
   it('is exactly 1 against itself, for every factor', () => {

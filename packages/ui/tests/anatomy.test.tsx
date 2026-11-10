@@ -41,8 +41,38 @@ describe('Anatomy tab', () => {
   const anatomy: InspectorAnatomy = {
     outline: square,
     parts: [
-      { slot: 0, type: 'flagellum', size: 0.6, x: -0.5, y: 0.3, orientation: 0, functional: true },
-      { slot: 1, type: 'stomach', size: 0.5, x: -0.2, y: 0, orientation: 0, functional: false }
+      {
+        slot: 0,
+        type: 'flagellum',
+        parent: -1,
+        size: 0.6,
+        x: -0.5,
+        y: 0.3,
+        tipX: -1.2,
+        tipY: 0.3,
+        orientation: 0,
+        functional: true,
+        integrity: 1,
+        mass: 0.2,
+        upkeep: 0.01,
+        stats: [{ key: 'length', label: 'Length', value: 1.5, unit: 'radii' }]
+      },
+      {
+        slot: 1,
+        type: 'stomach',
+        parent: 0,
+        size: 0.5,
+        x: -0.2,
+        y: 0,
+        tipX: -0.2,
+        tipY: 0,
+        orientation: 0,
+        functional: false,
+        integrity: 1,
+        mass: 0.3,
+        upkeep: 0.002,
+        stats: []
+      }
     ],
     undeveloped: [3],
     sizeUsed: 1.1,
