@@ -25,7 +25,10 @@ describe('anatomy long run', () => {
     expect(fingerprints.size).toBeGreaterThan(3)
     for (const o of world.snapshot().organisms) {
       const view = world.anatomyOf(o.id)
-      expect(view?.anatomy.sizeUsed).toBeLessThanOrEqual(world.config.anatomy.structuralBudget)
+      // The body's own budget: the configured one plus what its skeletons added (ADR 0016). A
+      // skeleton is reachable by mutation now, so a body can legitimately use more than the base 6.
+      expect(view?.anatomy.sizeUsed).toBeLessThanOrEqual(view?.anatomy.budget as number)
+      expect(view?.anatomy.budget).toBeGreaterThanOrEqual(world.config.anatomy.structuralBudget)
       expect(view?.anatomy.parts.length).toBeLessThanOrEqual(12)
     }
   }, 300_000)
