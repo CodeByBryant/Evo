@@ -95,18 +95,41 @@ export function WorldPanel({
   )
 }
 
-/** The playback dock: step, start or pause, speed, and how fast the world is really going. */
+/**
+ * The playback toolbar: step, start or pause, speed, and how fast the world is really going.
+ * `compact` keeps only start or pause, for a top bar with no room for the rest.
+ */
 export function Dock({
   view,
-  controls
+  controls,
+  compact = false
 }: {
   view: ViewState
   controls: SimulationControls
+  compact?: boolean
 }): React.JSX.Element {
   const running = view.status === 'running'
   const extinct = view.status === 'extinct'
+  const toggle = (
+    <button
+      type="button"
+      className="evo-cmd evo-cmd-main"
+      onClick={() => controls.toggle()}
+      disabled={extinct}
+      aria-keyshortcuts="Space"
+    >
+      {running ? 'Pause' : 'Start'}
+    </button>
+  )
+  if (compact) {
+    return (
+      <div className="evo-dock evo-dock-compact" role="toolbar" aria-label="Playback">
+        {toggle}
+      </div>
+    )
+  }
   return (
-    <div className="evo-dock evo-surface" role="toolbar" aria-label="Playback">
+    <div className="evo-dock" role="toolbar" aria-label="Playback">
       <button
         type="button"
         className="evo-cmd"
@@ -116,15 +139,7 @@ export function Dock({
       >
         Step
       </button>
-      <button
-        type="button"
-        className="evo-cmd evo-cmd-main"
-        onClick={() => controls.toggle()}
-        disabled={extinct}
-        aria-keyshortcuts="Space"
-      >
-        {running ? 'Pause' : 'Start'}
-      </button>
+      {toggle}
       <span className="evo-sep" aria-hidden="true" />
       <div className="evo-speeds" role="group" aria-label="Speed">
         {SPEED_SETTINGS.map((speed) => (
@@ -153,7 +168,48 @@ export function Dock({
   )
 }
 
-/** What is drawn, and where the camera looks. */
+/** Where the camera looks: fit the world, go to the selected organism, or keep following it. */
+export function ViewTools({
+  view,
+  controls
+}: {
+  view: ViewState
+  controls: SimulationControls
+}): React.JSX.Element {
+  return (
+    <div className="evo-viewtools" role="toolbar" aria-label="Camera">
+      <button
+        type="button"
+        className="evo-button"
+        onClick={() => controls.fitWorld()}
+        aria-keyshortcuts="0"
+      >
+        Fit
+      </button>
+      <button
+        type="button"
+        className="evo-button"
+        onClick={() => controls.focusSelected()}
+        disabled={view.selectedId === null}
+        aria-keyshortcuts="Z"
+      >
+        Focus
+      </button>
+      <button
+        type="button"
+        className="evo-button"
+        aria-pressed={view.following}
+        onClick={() => controls.toggleFollow()}
+        disabled={view.selectedId === null && !view.following}
+        aria-keyshortcuts="F"
+      >
+        Follow
+      </button>
+    </div>
+  )
+}
+
+/** What is drawn. */
 export function LayerPanel({
   view,
   controls
@@ -162,29 +218,7 @@ export function LayerPanel({
   controls: SimulationControls
 }): React.JSX.Element {
   return (
-    <Section id="evo-layers" title="View">
-      <div className="evo-row evo-cmds">
-        <button type="button" className="evo-cmd" onClick={() => controls.fitWorld()}>
-          Fit
-        </button>
-        <button
-          type="button"
-          className="evo-cmd"
-          onClick={() => controls.focusSelected()}
-          disabled={view.selectedId === null}
-        >
-          Focus
-        </button>
-        <button
-          type="button"
-          className="evo-cmd"
-          aria-pressed={view.following}
-          onClick={() => controls.toggleFollow()}
-          disabled={view.selectedId === null && !view.following}
-        >
-          Follow
-        </button>
-      </div>
+    <Section id="evo-layers" title="Layers">
       <ul className="evo-toggles">
         {RENDER_LAYERS.map((layer) => (
           <li key={layer}>

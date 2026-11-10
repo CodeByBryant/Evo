@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import {
-  ClusterPanel,
   Dock,
   ExtinctionBanner,
   Hud,
   Inspector,
+  InspectorEmpty,
   LayerPanel,
   SpeciesPanel,
   StatsPanel,
+  Strip,
   TopBar,
-  WorldPanel
+  ViewTools,
+  WorldPanel,
+  layoutFor
 } from '@evo/ui'
+import type { LayoutKind } from '@evo/ui'
 import { Viewport } from './Viewport'
 import type { SimulationHost } from './host/SimulationHost'
 import { safeLocalStorage } from './host/browserHost'
@@ -24,22 +28,19 @@ function useViewState(host: SimulationHost) {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 }
 
-/** Width of the left column and the height the dock takes at the bottom, in pixels. */
-const SIDEBAR_WIDTH = 264
-const DOCK_CLEARANCE = 64
+/** Nothing floats over the canvas in the docked layout, so the camera has the whole of it. */
+const NO_INSETS = { left: 0, right: 0, top: 0, bottom: 0 }
 
-/** Whether the window is phone-narrow, where panels become sheets. */
-function useNarrow(): boolean {
-  const query = '(max-width: 800px)'
+/** Which arrangement the window gets (wide, laptop or phone), kept current as it is resized. */
+function useLayout(): LayoutKind {
   const subscribe = useCallback((listener: () => void) => {
-    const list = window.matchMedia(query)
-    list.addEventListener('change', listener)
-    return () => list.removeEventListener('change', listener)
+    window.addEventListener('resize', listener)
+    return () => window.removeEventListener('resize', listener)
   }, [])
-  return useSyncExternalStore(
+  return useSyncExternalStore<LayoutKind>(
     subscribe,
-    () => window.matchMedia(query).matches,
-    () => false
+    () => layoutFor(window.innerWidth),
+    () => 'wide'
   )
 }
 
@@ -70,18 +71,10 @@ export function App({ host }: { host: SimulationHost }): React.JSX.Element {
   const view = useViewState(host)
   useShortcuts(host)
 
-  const narrow = useNarrow()
-  const [sidebarOpen, setSidebarOpen] = useState(() => !narrow)
-  // The left column covers part of the world on wide screens (it is a sheet on narrow ones).
-  const insets = useMemo(
-    () => ({
-      left: sidebarOpen && !narrow ? SIDEBAR_WIDTH : 0,
-      right: 0,
-      top: 0,
-      bottom: DOCK_CLEARANCE
-    }),
-    [sidebarOpen, narrow]
-  )
+  const phone = useLayout() === 'phone'
+  // On a phone the left rail is a sheet, closed until asked for; on wider windows it is always there.
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const leftShown = !phone || sheetOpen
 
   // Remember the layers and speed for next time; a viewer's convenience, never needed to run.
   useEffect(() => {
@@ -90,51 +83,61 @@ export function App({ host }: { host: SimulationHost }): React.JSX.Element {
 
   return (
     <div className="app">
-      <main className="app-stage">
-        <Viewport host={host} layers={view.layers} insets={insets} />
-      </main>
-      <div className="app-topleft">
-        <TopBar view={view} />
-      </div>
-      <div className="app-topright">
-        <Hud view={view} />
+      <div className="app-top">
+        <TopBar view={view}>
+          <Dock view={view} controls={host} compact={phone} />
+          <button
+            type="button"
+            className="evo-button app-panels-toggle"
+            aria-expanded={sheetOpen}
+            aria-controls="app-left"
+            onClick={() => setSheetOpen((open) => !open)}
+          >
+            {sheetOpen ? 'Close' : 'Panels'}
+          </button>
+        </TopBar>
       </div>
       <aside
-        id="app-sidebar"
-        className="app-sidebar"
+        id="app-left"
+        className="app-left"
         aria-label="World settings and statistics"
-        hidden={!sidebarOpen}
+        hidden={!leftShown}
       >
+        {phone && <Dock view={view} controls={host} />}
+        <Hud view={view} />
         <WorldPanel view={view} controls={host} />
         <SpeciesPanel view={view} />
-        <ClusterPanel view={view} />
         <LayerPanel view={view} controls={host} />
         <StatsPanel view={view} />
+        {phone && <Strip view={view} />}
         <p className="app-help">
           Keys: Space pause, . step, 1-5 speed, Esc deselect, T trails, F follow, Z focus, 0 fit.
           Drag to pan, wheel or pinch to zoom, click an organism to inspect it.
         </p>
       </aside>
-      <button
-        type="button"
-        className="evo-button app-panels-toggle"
-        aria-expanded={sidebarOpen}
-        aria-controls="app-sidebar"
-        onClick={() => setSidebarOpen((open) => !open)}
-      >
-        {sidebarOpen ? 'Hide panels' : 'Panels'}
-      </button>
-      {view.selected !== null && (
-        <div className="app-inspector">
-          <Inspector inspector={view.selected} controls={host} />
+      <main className="app-world">
+        <Viewport host={host} layers={view.layers} insets={NO_INSETS} />
+        <div className="app-viewtools">
+          <ViewTools view={view} controls={host} />
+        </div>
+        <div className="app-overlay">
+          <ExtinctionBanner view={view} controls={host} />
+        </div>
+      </main>
+      {!phone && (
+        <div className="app-strip">
+          <Strip view={view} />
         </div>
       )}
-      <div className="app-dock">
-        <Dock view={view} controls={host} />
-      </div>
-      <div className="app-overlay">
-        <ExtinctionBanner view={view} controls={host} />
-      </div>
+      {(!phone || view.selected !== null) && (
+        <div className="app-right">
+          {view.selected !== null ? (
+            <Inspector inspector={view.selected} controls={host} />
+          ) : (
+            <InspectorEmpty />
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -52,8 +52,8 @@ Layers, in drawing order: grid, terrain (regions), hazards, food, organisms, tra
 - **Pointer:** one pointer drags to pan, two pinch to zoom, the wheel zooms toward the cursor, and a press that barely moves selects the nearest organism (a larger tolerance for touch). Dragging while following stops following.
 - **Address:** `#seed=7&preset=balanced` is rewritten whenever a world starts, and read on load. Malformed values are ignored.
 - **Inspector** (click an organism): Overview (energy, health, age, stage, mating cooldown), Genome (every gene by group), Brain (chosen action, last reward, what it senses), Lineage (parents, ancestor and descendant genomes, species line), Environment (region, season, migration).
-- **Layout:** the world fills the window and the interface floats over it (see [interface design](./interface-design.md)): status and counts at the top, world settings, species, layers and statistics in a left column, the inspector on the right and a playback dock at the bottom. The camera fits the world clear of the left column and the dock.
-- **Phones:** the left column hides behind a Panels button and opens as a sheet; the inspector becomes a bottom sheet and the dock spans the width.
+- **Layout:** docked (see [interface design](./interface-design.md)): a thin top bar with the status and the playback toolbar, a left rail (numbers, world settings, species, layers, statistics), the world in the middle with a strip of charts under it, and a right rail where the inspector always lives. The canvas is its grid cell, so nothing covers the world and the camera needs no insets; the world is fitted again when the cell changes size unless the viewer has taken the camera.
+- **Phones:** one column. The left rail opens as a sheet from a Panels button (with the playback toolbar and the charts in it), and the inspector takes the area under the world while something is selected.
 
 ## Deployment
 
