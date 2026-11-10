@@ -35,7 +35,6 @@
 
 .evo-section {
   margin: 0 0 20px;
-  pointer-events: auto;
 }
 .evo-section-title,
 .evo-inspector h2 {
@@ -132,6 +131,11 @@ select.evo-input option {
 }
 .evo-button:hover:not(:disabled) {
   border-color: var(--evo-accent);
+}
+.evo-button[aria-pressed='true'] {
+  color: var(--evo-ink);
+  background: var(--evo-text);
+  border-color: var(--evo-text);
 }
 .evo-button:disabled {
   opacity: 0.4;
@@ -233,22 +237,28 @@ select.evo-input option {
   background-position: calc(100% - 2px) center;
 }
 
-/* ---------- top left ---------- */
+/* ---------- top bar ---------- */
 .evo-topbar {
-  pointer-events: none;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  min-width: 0;
+  font-size: 0.78rem;
+  white-space: nowrap;
 }
 .evo-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1.05rem;
+  padding: 0 12px;
+  font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  text-transform: lowercase;
+  border-right: 1px solid var(--evo-line);
 }
 .evo-dot {
+  display: inline-block;
   width: 7px;
   height: 7px;
+  margin-right: 6px;
   border-radius: 50%;
   background: var(--evo-good);
 }
@@ -260,52 +270,33 @@ select.evo-input option {
 }
 .evo-facts {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px 12px;
-  margin: 2px 0 0;
-  font-size: 0.75rem;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
   color: var(--evo-muted);
 }
-.evo-facts div {
+.evo-facts > div {
   display: flex;
-  gap: 5px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-right: 1px solid var(--evo-line);
 }
 .evo-facts dd {
   margin: 0;
   color: var(--evo-text);
   font-variant-numeric: tabular-nums;
 }
-.evo-status-running dd {
-  color: var(--evo-accent);
+.evo-status dd {
+  font-weight: 600;
 }
-.evo-status-paused dd {
-  color: var(--evo-warn);
-}
-.evo-status-extinct dd {
-  color: var(--evo-bad);
-}
-
-/* ---------- top right ---------- */
-.evo-hud {
-  min-width: 170px;
-  font-size: 0.75rem;
-  pointer-events: none;
-}
-.evo-hud-rows {
-  margin: 0;
-}
-.evo-hud-rows > div {
+.evo-topbar-tools {
   display: flex;
-  justify-content: space-between;
-  gap: 14px;
-}
-.evo-hud-rows dt {
-  color: var(--evo-muted);
-}
-.evo-hud-rows dd {
-  margin: 0;
-  font-family: var(--evo-mono);
-  font-weight: 500;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  padding: 0 12px;
+  border-left: 1px solid var(--evo-line);
 }
 
 /* ---------- charts ---------- */
@@ -387,12 +378,11 @@ select.evo-input option {
   border-radius: 1px;
 }
 
-/* ---------- dock ---------- */
+/* ---------- playback toolbar ---------- */
 .evo-dock {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 7px 14px;
+  gap: 14px;
   white-space: nowrap;
 }
 .evo-sep {
@@ -452,16 +442,17 @@ select.evo-input option {
   font-size: 0.88rem;
 }
 
-/* ---------- inspector ---------- */
+/* ---------- inspector (docked in the right rail) ---------- */
 .evo-inspector {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-height: 100%;
+  height: 100%;
   font-size: 0.8rem;
-  background: var(--evo-panel);
-  border: 1px solid var(--evo-line);
-  border-radius: var(--evo-radius);
+}
+.evo-inspector-empty .evo-hint {
+  margin: 0;
+  padding: 10px 12px;
 }
 .evo-inspector-head {
   display: flex;
@@ -574,6 +565,12 @@ select.evo-input option {
 .evo-tone-gut {
   background: var(--evo-muted);
 }
+.evo-tone-warn {
+  background: var(--evo-warn);
+}
+.evo-tone-bad {
+  background: var(--evo-bad);
+}
 .evo-tone-age {
   background: var(--evo-dim);
 }
@@ -643,6 +640,80 @@ select.evo-input option {
   margin-top: 0.35rem;
   font-size: 0.75rem;
   color: var(--evo-muted);
+}
+
+/* ---------- the strip under the world ---------- */
+.evo-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+.evo-strip-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 12px;
+  border-right: 1px solid var(--evo-line);
+}
+.evo-strip-panel:last-child {
+  border-right: 0;
+}
+.evo-strip-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.evo-strip .evo-section {
+  margin: 0;
+}
+.evo-strip .evo-chart {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+}
+.evo-strip .evo-chart svg {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+.evo-causes {
+  margin: 0;
+  font-size: 0.8rem;
+}
+.evo-causes > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  padding: 3px 0;
+}
+.evo-causes dt {
+  color: var(--evo-muted);
+}
+.evo-causes dd {
+  margin: 0;
+  font-family: var(--evo-mono);
+  font-size: 0.78rem;
+}
+.evo-causes .evo-meter-track {
+  grid-column: 1 / -1;
+}
+
+/* ---------- camera buttons over the world ---------- */
+.evo-viewtools {
+  display: flex;
+  gap: 6px;
+}
+.evo-viewtools .evo-button {
+  min-height: 28px;
+  padding: 3px 10px;
+  background: var(--evo-ink);
+}
+.evo-viewtools .evo-button[aria-pressed='true'] {
+  background: var(--evo-text);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,8 +1,19 @@
 export { PopulationChart, Sparkline, polylinePoints } from './Charts'
-export { Dock, LayerPanel, WorldPanel, parseSeedInput } from './Controls'
+export { Dock, LayerPanel, ViewTools, WorldPanel, parseSeedInput } from './Controls'
 export { Section } from './Section'
-export { ClusterPanel, ExtinctionBanner, Hud, SpeciesPanel, StatsPanel, TopBar } from './Overview'
-export { AnatomyTab, Inspector } from './Inspector'
+export {
+  ClusterPanel,
+  DeathCauses,
+  ExtinctionBanner,
+  Hud,
+  SpeciesPanel,
+  StatsPanel,
+  Strip,
+  TopBar
+} from './Overview'
+export { AnatomyTab, Inspector, InspectorEmpty } from './Inspector'
+export { LAPTOP_MAX_WIDTH, PHONE_MAX_WIDTH, layoutFor } from './layout'
+export type { LayoutKind } from './layout'
 export {
   barWidth,
   formatCount,

@@ -1,49 +1,72 @@
 import type { SimulationControls, ViewState } from '@evo/contracts'
 import { PopulationChart } from './Charts'
 import { Section } from './Section'
-import { formatCount, formatNumber, formatTime, percent, statusLabel, totalDeaths } from './format'
+import {
+  barWidth,
+  formatCount,
+  formatNumber,
+  formatTime,
+  percent,
+  statusLabel,
+  totalDeaths
+} from './format'
 
-/** Top left: the brand, whether the world is running, and where in time it is. */
-export function TopBar({ view }: { view: ViewState }): React.JSX.Element {
+/**
+ * The top bar: the brand, whether the world is running and where in time it is, which world it is
+ * (seed and preset), and on the right whatever the app docks there (the playback toolbar).
+ */
+export function TopBar({
+  view,
+  children
+}: {
+  view: ViewState
+  children?: React.ReactNode
+}): React.JSX.Element {
+  const preset = view.presets.find((entry) => entry.name === view.preset)?.label ?? view.preset
   return (
     <header className="evo-topbar">
-      <strong className="evo-brand">
-        Evo
-        <i className={`evo-dot evo-dot-${view.status}`} aria-hidden="true" />
-      </strong>
+      <strong className="evo-brand">Evo</strong>
       <dl className="evo-facts">
         <div className={`evo-status evo-status-${view.status}`}>
           <dt className="evo-sr">Status</dt>
-          <dd>{statusLabel(view.status)}</dd>
+          <dd>
+            <i className={`evo-dot evo-dot-${view.status}`} aria-hidden="true" />
+            {statusLabel(view.status)}
+          </dd>
         </div>
         <div>
           <dt className="evo-sr">Time</dt>
           <dd>{formatTime(view.time)}</dd>
         </div>
-        <div>
+        <div className="evo-fact-extra">
           <dt>Tick</dt>
           <dd>{formatCount(view.tick)}</dd>
         </div>
         {view.season !== null && (
-          <div>
+          <div className="evo-fact-extra">
             <dt className="evo-sr">Season</dt>
             <dd className="evo-capitalize">{view.season}</dd>
           </div>
         )}
-        <div>
+        <div className="evo-fact-extra">
           <dt>Seed</dt>
           <dd>{view.seed}</dd>
         </div>
+        <div className="evo-fact-extra">
+          <dt>Preset</dt>
+          <dd>{preset}</dd>
+        </div>
       </dl>
+      {children !== undefined && <div className="evo-topbar-tools">{children}</div>}
     </header>
   )
 }
 
-/** Top right: the three numbers that matter and the population line under them. */
+/** The three numbers that matter, at the top of the left rail. */
 export function Hud({ view }: { view: ViewState }): React.JSX.Element {
   return (
-    <section className="evo-hud" aria-label="Population">
-      <dl className="evo-hud-rows">
+    <Section id="evo-now" title="Now">
+      <dl className="evo-rows">
         <div>
           <dt>Organisms</dt>
           <dd>{formatCount(view.population)}</dd>
@@ -62,48 +85,97 @@ export function Hud({ view }: { view: ViewState }): React.JSX.Element {
           </dd>
         </div>
       </dl>
-      <PopulationChart points={view.populationHistory} width={170} height={30} compact />
-    </section>
+    </Section>
   )
 }
 
-/** The rest of the numbers, folded away until wanted. */
+/** The running totals since the world began (deaths by cause are in the strip). */
 export function StatsPanel({ view }: { view: ViewState }): React.JSX.Element {
   const { metrics } = view
-  const attempts = metrics.reproductionAttempts
   return (
-    <Section id="evo-stats" title="Statistics">
-      <details className="evo-fold">
-        <summary>Births, deaths and mating</summary>
-        <dl className="evo-rows">
-          <div>
-            <dt>Born</dt>
-            <dd>{formatCount(metrics.organismsBorn)}</dd>
-          </div>
-          <div>
-            <dt>Died</dt>
-            <dd>{formatCount(totalDeaths(metrics))}</dd>
-          </div>
-          <div>
-            <dt>Mating success</dt>
-            <dd>{percent(metrics.reproductionSuccesses, attempts)}</dd>
-          </div>
-          <div>
-            <dt>Starved</dt>
-            <dd>{formatCount(metrics.deathsByStarvation)}</dd>
-          </div>
-          <div>
-            <dt>Old age</dt>
-            <dd>{formatCount(metrics.deathsByAge)}</dd>
-          </div>
-          <div>
-            <dt>Damage deaths</dt>
-            <dd>{formatCount(metrics.deathsByDamage)}</dd>
-          </div>
-        </dl>
-        <PopulationChart points={view.populationHistory} />
-      </details>
+    <Section id="evo-stats" title="Statistics" aside="since start">
+      <dl className="evo-rows">
+        <div>
+          <dt>Born</dt>
+          <dd>{formatCount(metrics.organismsBorn)}</dd>
+        </div>
+        <div>
+          <dt>Died</dt>
+          <dd>{formatCount(totalDeaths(metrics))}</dd>
+        </div>
+        <div>
+          <dt>Mating success</dt>
+          <dd>{percent(metrics.reproductionSuccesses, metrics.reproductionAttempts)}</dd>
+        </div>
+        <div>
+          <dt>Food eaten</dt>
+          <dd>{formatCount(metrics.resourcesConsumed)}</dd>
+        </div>
+      </dl>
     </Section>
+  )
+}
+
+const DEATH_CAUSES = [
+  { key: 'deathsByStarvation', label: 'Starved', tone: 'warn' },
+  { key: 'deathsByAge', label: 'Old age', tone: 'age' },
+  { key: 'deathsByDamage', label: 'Damage', tone: 'bad' }
+] as const
+
+/** Deaths by cause since the world began: a count and a flat bar (its share of all deaths) each. */
+export function DeathCauses({ view }: { view: ViewState }): React.JSX.Element {
+  const total = totalDeaths(view.metrics)
+  return (
+    <dl className="evo-causes">
+      {DEATH_CAUSES.map((cause) => {
+        const count = view.metrics[cause.key]
+        return (
+          <div key={cause.key}>
+            <dt>{cause.label}</dt>
+            <dd>
+              {formatCount(count)}
+              <small className="evo-hint"> {percent(count, total)}</small>
+            </dd>
+            <div className="evo-meter-track" aria-hidden="true">
+              <div
+                className={`evo-meter-fill evo-tone-${cause.tone}`}
+                style={{ width: barWidth(count, total) }}
+              />
+            </div>
+          </div>
+        )
+      })}
+    </dl>
+  )
+}
+
+/**
+ * The strip under the world: what is worth watching while the world runs. Each panel is a titled
+ * cell; the per-cluster table is there only in a cluster world.
+ */
+export function Strip({ view }: { view: ViewState }): React.JSX.Element {
+  return (
+    <section className="evo-strip" aria-label="Charts">
+      <div className="evo-strip-panel">
+        <h2 className="evo-section-title">
+          <span>Population</span>
+          <em>{formatCount(view.population)}</em>
+        </h2>
+        <PopulationChart points={view.populationHistory} />
+      </div>
+      <div className="evo-strip-panel">
+        <h2 className="evo-section-title">
+          <span>Deaths by cause</span>
+          <em>{formatCount(totalDeaths(view.metrics))}</em>
+        </h2>
+        <DeathCauses view={view} />
+      </div>
+      {view.clusters !== null && (
+        <div className="evo-strip-panel evo-strip-scroll">
+          <ClusterPanel view={view} />
+        </div>
+      )}
+    </section>
   )
 }
 

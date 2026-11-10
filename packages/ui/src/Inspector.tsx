@@ -294,6 +294,20 @@ function Environment({ inspector }: { inspector: InspectorView }): React.JSX.Ele
   )
 }
 
+/** What the inspector's place shows while nothing is selected: that, and how to select. */
+export function InspectorEmpty(): React.JSX.Element {
+  return (
+    <aside className="evo-inspector evo-inspector-empty" aria-labelledby="evo-inspector-title">
+      <header className="evo-inspector-head">
+        <h2 id="evo-inspector-title">Nothing selected</h2>
+      </header>
+      <p className="evo-hint">
+        Click an organism in the world to inspect its body, genes, brain and lineage. Esc deselects.
+      </p>
+    </aside>
+  )
+}
+
 /** The selected organism, in tabs (roadmap 7.7). Renders nothing until something is selected. */
 export function Inspector({
   inspector,
