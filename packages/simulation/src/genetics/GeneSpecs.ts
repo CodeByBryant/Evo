@@ -26,6 +26,18 @@ export interface GeneSpec {
   readonly correlationGroup?: string
   /** Index, in the same table, of a gene this one must stay strictly above; `-1` if none. */
   readonly orderedAfter: number
+  /**
+   * Integer genes only: the values are categories, not steps on a scale, so a mutation jumps to any
+   * other value with equal chance instead of stepping to a neighbour.
+   */
+  readonly jump?: boolean
+  /**
+   * Index, in the same table, of a boolean gene that switches this gene on. When that gene turns
+   * from 0 to 1 in a mutation pass, this gene takes a uniformly random value in its range instead
+   * of mutating, so what was latent does not decide what appears. The switch must come earlier in
+   * the table.
+   */
+  readonly resetWith?: number
 }
 
 /**

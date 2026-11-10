@@ -345,6 +345,8 @@ The probe steps tick by tick and also reports **how creatures die**: deaths by c
 
 Use at least 20,000 ticks: a creature's lifespan is 6,000 ticks, so shorter runs report almost every death as starvation. The probe is never part of `pnpm test`, the determinism suite or CI.
 
+Three smaller probes in `packages/simulation/tests/probe/` answer one question each and are run directly (`pnpm exec vitest run --config vitest.probe.config.ts tests/probe/<file>` from `packages/simulation`; the `probe` script ignores a file argument and runs them all): `step-profile.probe.ts` (where a tick's time goes, per system), `species.probe.ts` (how many species a world ends with under a set of distance weights and thresholds), and `parts.probe.ts` (which of the 16 part types living bodies carry, with and without open type mutation). Each writes its report to `<tmpdir>/evo-probe/`.
+
 ## Getting Help
 
 - **Questions**: Open a GitHub Discussion

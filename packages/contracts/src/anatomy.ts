@@ -577,8 +577,16 @@ export interface FounderPart {
 export interface AnatomyMutationConfig {
   /** Chance per slot per birth that `present` flips. */
   presenceRate: number
-  /** Chance per slot per birth that `type` steps by one. */
+  /** Chance per slot per birth that the part's `type` changes. */
   typeRate: number
+  /**
+   * How new parts and new part types arise. `true`: a slot that wakes up (its `present` gene turns
+   * on) takes a random part type, size, placement and stats, and a type change jumps to any other
+   * type with equal chance, so every part type can appear. `false`: the earlier behaviour, in which
+   * a woken slot expressed its latent genes (a flagellum for a slot the founder leaves empty) and a
+   * type change stepped to the neighbouring type in the list.
+   */
+  openTypes: boolean
   /** Chance per slot per birth that `parent` steps by one (a part moves to another parent). */
   parentRate: number
   /** Chance per continuous slot gene per birth. */
