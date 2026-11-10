@@ -263,10 +263,11 @@ describe('body distance and validation', () => {
       body: mother.body.genes.map((g, i) => (i === slotGeneIndex(0, 'size') ? 0.9 : g))
     })
     const distance = genomeDistance(mother, changed, f.specs, std, bodySpecs)
-    const off = f.config.species.distanceWeights
-    expect(off.body).toBe(0)
+    const off = { ...f.config.species.distanceWeights, body: 0 }
     expect(weightedDistance(distance, off)).toBe(0)
     expect(weightedDistance(distance, { ...off, body: 1 })).toBeGreaterThan(0)
+    // and by default the body does count (it is the largest weight)
+    expect(weightedDistance(distance, f.config.species.distanceWeights)).toBeGreaterThan(0)
   })
 
   it('validates body genes: length, range, integer and boolean rules', () => {

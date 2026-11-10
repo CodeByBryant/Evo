@@ -109,7 +109,8 @@ export function buildBodySpecs(anatomy: AnatomyConfig): GeneSpec[] {
       mutationStd: mutation.continuousStd,
       baseline: baseline[index] as number,
       relative: false,
-      orderedAfter: -1
+      orderedAfter: -1,
+      cosmetic: definition.cosmetic === true
     }
   })
 }

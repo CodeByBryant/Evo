@@ -114,7 +114,7 @@ describe('effectiveConfig', () => {
     expect(scaled.maxPopulation).toBe(Math.round(config.maxPopulation * scale))
     expect(scaled.reproduction.mateSenseRadius).toBe(200)
     expect(scaled.species.threshold).toBe(0.12)
-    expect(config.species.threshold).toBe(0.06) // the field's threshold is untouched
+    expect(config.species.threshold).toBe(0.1) // the field's threshold is untouched
     expect(scaled.reproduction.mateSenseRadius).toBeLessThan(2500 - 2 * 500)
   })
 })

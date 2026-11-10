@@ -21,7 +21,8 @@ describe('anatomy config', () => {
     const total = anatomy.founder.reduce((sum, part) => sum + part.size, 0)
     expect(total).toBeCloseTo(3.5, 12)
     expect(total).toBeLessThanOrEqual(anatomy.structuralBudget)
-    expect(DEFAULT_WORLD_CONFIG.species.distanceWeights.body).toBe(0)
+    // the body plan leads what makes a species (it counted for nothing until the species fix)
+    expect(DEFAULT_WORLD_CONFIG.species.distanceWeights.body).toBe(0.5)
   })
 
   it('merges overrides: sections field by field, parts per type, the founder whole', () => {

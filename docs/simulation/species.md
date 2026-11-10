@@ -21,7 +21,9 @@ else: found a new species (representative = g, ancestor = the child's mother's s
 
 - A species' representative is its **founding genome** and never changes.
 - An **extinct** species (no living members) is never rejoined, even by a genome that is close to its representative. A later lookalike founds a new species whose ancestor is the mother's species.
-- `weightedDistance` combines the group distances from `genomeDistance` (the seven original groups, plus `body` since the anatomy work, whose default weight is 0) with `species.distanceWeights`, normalized by the sum of the weights. Each group distance is in `[0, 1]`, so the result is too.
+- `weightedDistance` combines the group distances from `genomeDistance` (physical, metabolic, behavioral, reproduction, learning, brain and the body plan) with `species.distanceWeights`, normalized by the sum of the weights. Each group distance is in `[0, 1]`, so the result is too.
+- **Colour is not a difference.** Genes that only change how a creature is painted (`physical.hue` and the body's `pattern` and `accentHue`) are flagged `cosmetic`: they are in no group, so two creatures that differ only in colour are at distance 0 and are the same species. They are reported apart as `appearance` for display.
+- **The body plan is compared as a body** (`bodyPlanDistance`), not as a mean over twelve slots of genes: a slot that is empty in both bodies costs nothing (its latent genes express nothing), a part gained, lost or of a different type is a whole slot (the types are categories, not a scale), a part both bodies have counts by how much it differs (what it hangs from, its size, placement, integrity and stats, as a share of each gene's range), and the outline counts by its shared points. Slots are 80% of the result and the outline 20%.
 - No randomness is consumed. The same genomes in the same order always give the same species and the same ids (species ids are allocated from 0 in creation order).
 
 ## Records
@@ -70,7 +72,19 @@ See [configuration.md](configuration.md). `species.enabled: false` disables the 
 
 The registry is not hashed and uses no RNG; it cannot change any existing golden hash. `tests/species/` asserts that chunked and stepped runs produce identical registries (a digest of every species record), since the hash would not catch a difference.
 
-## Measured behavior (Phase 6A)
+## What makes a species now (2026-11)
+
+Until then a creature with a new colour could drift into a new species (the hue gene was in the physical group) while a creature with a different body counted for nothing (the body weight was 0). The defaults are now **body 0.5, brain 0.15, physical 0.1, reproduction 0.1, metabolic 0.05, behavioral 0.05, learning 0.05, threshold 0.1** (`species.probe.ts`, 3 seeds x 30,000 ticks, about 50 creatures):
+
+| Quantity                                                           | Before (threshold 0.06, brain 0.3, body 0, hue counted) | Now                        |
+| ------------------------------------------------------------------ | ------------------------------------------------------- | -------------------------- |
+| Living species at the end                                          | 29, 37 (seeds 1, 2)                                     | 8, 12, 3 (seeds 1, 2, 3)   |
+| Births that founded a species                                      | 20.5%, 22.7%                                            | 2.7%, 4.0%, 2.3%           |
+| Mean pairwise distance among the living: brain / body / appearance |                                                         | 0.19 / 0.12 to 0.16 / 0.08 |
+
+Any two brains differ by about 0.2 on their own, which with the old weights was above the old threshold by itself: that was most of the fragmentation. One part gained, lost or changed is about 0.033 of body distance here, so a species is a ball of bodies within a few parts of its founder. `threshold` and the weights are one decision; the probe takes `SPECIES_THRESHOLDS`, `SPECIES_WEIGHTS` and `SPECIES_SEEDS` to try others.
+
+## Measured behavior (Phase 6A, before the change above)
 
 The default `species.threshold` is **0.06**. It was chosen by measurement, not by taste: one 30,000-tick run per seed was fed to several registries at once (one per threshold), with the default configuration and the default weights.
 
