@@ -27,8 +27,11 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
   bodyMass: 1,
   senseFloor: 0.25,
   mutation: {
-    presenceRate: 0.004,
-    typeRate: 0.004,
+    // 0.004 each until every part type became reachable (`openTypes`); 2.5 times that now, still
+    // rare: about one birth in nine changes which parts a body has.
+    presenceRate: 0.01,
+    typeRate: 0.01,
+    openTypes: true,
     parentRate: 0.004,
     continuousRate: 0.05,
     continuousStd: 0.05,
@@ -196,6 +199,7 @@ const ANATOMY_KEYS = [
 const MUTATION_KEYS = [
   'presenceRate',
   'typeRate',
+  'openTypes',
   'parentRate',
   'continuousRate',
   'continuousStd',
@@ -284,6 +288,9 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
       { positive: true },
       errors
     )
+    if (mutation.openTypes !== undefined && typeof mutation.openTypes !== 'boolean') {
+      errors.push('anatomy.mutation.openTypes must be a boolean')
+    }
   }
 
   const parts = checkSection(anatomy, 'parts', [...PART_TYPES], errors, 'anatomy.parts')

@@ -77,11 +77,27 @@ export const DEFAULT_BODY_GENES: readonly number[] = Object.freeze(
   founderBodyVector(DEFAULT_ANATOMY)
 )
 
+/** What a slot draws afresh when it wakes up (`anatomy.mutation.openTypes`). */
+const WOKEN_FIELDS = [
+  'type',
+  'size',
+  'angle',
+  'offset',
+  'orientation',
+  's0',
+  's1',
+  's2',
+  's3',
+  's4',
+  's5'
+]
+
 /**
  * The body gene table in canonical order, in the same shape the generic mutation, recombination,
  * validation and distance code already uses for the scalar genes. Presence, type and parent
  * mutate at their own rates; every other slot gene (size, placement, integrity, stats) shares the
- * continuous rate; the visual genes and the outline their own.
+ * continuous rate; the visual genes and the outline their own. With `openTypes` the type gene
+ * jumps instead of stepping and a woken slot is drawn afresh.
  */
 export function buildBodySpecs(anatomy: AnatomyConfig): GeneSpec[] {
   const baseline = founderBodyVector(anatomy)
@@ -100,7 +116,7 @@ export function buildBodySpecs(anatomy: AnatomyConfig): GeneSpec[] {
             : field === 'parent'
               ? mutation.parentRate
               : mutation.continuousRate
-    return {
+    const spec: GeneSpec = {
       path: definition.path,
       kind: definition.kind,
       min: definition.min,
@@ -111,6 +127,17 @@ export function buildBodySpecs(anatomy: AnatomyConfig): GeneSpec[] {
       relative: false,
       orderedAfter: -1,
       cosmetic: definition.cosmetic === true
+    }
+    if (!mutation.openTypes || !group.startsWith('slot')) return spec
+    // Every part type can appear: a type change jumps to any type, and a slot that wakes up takes
+    // a random type, size, placement and stats (its parent and integrity stay as they were).
+    const slot = Number(group.slice('slot'.length))
+    return {
+      ...spec,
+      ...(field === 'type' ? { jump: true } : {}),
+      ...((WOKEN_FIELDS as readonly string[]).includes(field)
+        ? { resetWith: slotGeneIndex(slot, 'present') }
+        : {})
     }
   })
 }

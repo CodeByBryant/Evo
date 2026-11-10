@@ -46,6 +46,16 @@ describe('extinction over a long run', () => {
         // moved it to 8,610; ADR 0019).
         ...ALL_ROUND,
         perception: { organismsBlockSight: false },
+        // And the mutation of that world: parts only step to their neighbour in the list and a
+        // woken slot is a latent flagellum (`openTypes: false`, rates 0.004). With every part type
+        // reachable (ADR 0016 "Every part type is reachable") this scarce world no longer dies out:
+        // 15 to 27 creatures are alive through 100,000 ticks with lipid stores, intestines and
+        // pheromone glands among their parts. This test is about extinction, so it keeps the world
+        // that goes extinct, and the old mutation reproduces tick 10,231 exactly.
+        anatomy: {
+          ...ALL_ROUND.anatomy,
+          mutation: { openTypes: false, presenceRate: 0.004, typeRate: 0.004 }
+        },
         organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 15 },
         resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
         // Reflex controller, ecology off: this pin is about the Phase 4 forager. It moved from

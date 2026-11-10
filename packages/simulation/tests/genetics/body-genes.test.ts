@@ -189,10 +189,51 @@ describe('recombining bodies', () => {
     expect(child.body.genes).toEqual(mother.body.genes)
   })
 
-  it('with high rates, bodies change structurally while staying valid', () => {
+  it('with high rates and open types (the default), a part type can jump anywhere and bodies stay valid', () => {
     const { bodySpecs, mother, father, recombiner } = setup({
       anatomy: {
         mutation: { presenceRate: 1, typeRate: 1, continuousRate: 1, visualRate: 1, outlineRate: 1 }
+      },
+      genetics: { mutationRateScale: 1 }
+    })
+    let flips = 0
+    let jumps = 0
+    for (let seed = 0; seed < 40; seed++) {
+      const child = recombiner(anatomyStream(seed), true).combine(
+        mother,
+        father,
+        geneticsStream(seed)
+      )
+      expect(validateGeneValues(child.body.genes, bodySpecs)).toEqual([])
+      for (let slot = 0; slot < BODY_SLOT_COUNT; slot++) {
+        if (
+          child.body.genes[slotGeneIndex(slot, 'present')] !==
+          mother.body.genes[slotGeneIndex(slot, 'present')]
+        )
+          flips++
+        const dt = Math.abs(
+          (child.body.genes[slotGeneIndex(slot, 'type')] as number) -
+            (mother.body.genes[slotGeneIndex(slot, 'type')] as number)
+        )
+        if (dt > 1) jumps++
+      }
+    }
+    expect(flips).toBeGreaterThan(0)
+    // the type gene is a category: it jumps, and not only to the next type in the list
+    expect(jumps).toBeGreaterThan(0)
+  })
+
+  it('with high rates and neighbour steps (openTypes off), a part type moves by one at most', () => {
+    const { bodySpecs, mother, father, recombiner } = setup({
+      anatomy: {
+        mutation: {
+          openTypes: false,
+          presenceRate: 1,
+          typeRate: 1,
+          continuousRate: 1,
+          visualRate: 1,
+          outlineRate: 1
+        }
       },
       genetics: { mutationRateScale: 1 }
     })

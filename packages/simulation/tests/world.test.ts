@@ -200,8 +200,10 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     // and again when bodies became evolvable by default, and once more when part stats arrived
     // (ADR 0016): a body's parts now follow its outline and carry their own stats and integrity,
     // so mutated bodies move and turn differently.)
-    expect(snapshot.population.active).toBe(27)
-    expect(snapshot.metrics.organismsBorn).toBe(45)
+    // They moved once more when every part type became reachable (ADR 0016 "Every part type is
+    // reachable"): bodies mutate differently, 27 active / 45 born / 18 starved before, now 29 / 47 / 18.
+    expect(snapshot.population.active).toBe(29)
+    expect(snapshot.metrics.organismsBorn).toBe(47)
     expect(snapshot.metrics.deathsByStarvation).toBe(18)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()

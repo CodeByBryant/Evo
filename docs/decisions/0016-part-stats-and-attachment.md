@@ -112,3 +112,29 @@ The first version of directional vision gave the founder an all-round eye (field
 - **Two statistical gates re-measured, not loosened.** The species end-state bound (seeds 1 to 4 at 30,000 ticks): 202, 219, 196, 183 species before, 225, 214, 215, 207 after (limit 220 to 260). The mate-signal effect (births with against without a 250 unit signal, four seeds): +13.6 percent before, +8.6 percent after, the same direction on every seed (margin 10 to 5 percent, four seeds instead of two).
 - **Tests.** Tests that are about something other than sight (the ecology's visibility scaling, the Phase 3 scenario A pins) use `tests/support/bodies.ts` (`ALL_ROUND`), the founder as it was; the founder's own cone is pinned in `anatomy/vision`. The shared `organismFor` test helper now takes its body from the config's founder.
 - **What it does not do.** It does not change the learned brain's energy penalty, the food supply or the spawning; the spin-in-place behaviour the owner reported is not caused by vision (about 3 percent of creatures idle and spin, before and after) and is left for the food and predation work.
+
+## Addendum: every part type is reachable
+
+The owner watched a world run and saw only colour changes and more eyes and flagella: no gyros, no stalks. The code agreed. Over four seeds and 30,000 ticks, bodies only ever carried **7 of the 16 part types** (flagellum, cilia, eye, mouth, stomach, and a trace of sniffer and intestine), with 10.3 distinct part lists at the end. Two causes, both in how a body mutates:
+
+- A slot the founder leaves empty carries latent genes (`EMPTY_SLOT`), and its type was always 0, a flagellum. A part that woke up was therefore a flagellum of size 0.5, almost always useful, which is also a built-in bias toward more flagella.
+- The `type` gene was an ordinary integer, so a mutation stepped it to the neighbouring type in the list. A gyro or an eyestalk is ten or more steps from a flagellum, at 0.4% per slot per birth, so they effectively never arose.
+
+The change (`anatomy.mutation.openTypes`, on by default):
+
+- The `type` gene **jumps** (a `jump` flag on its gene spec): a change goes to any other type with equal chance.
+- A slot that wakes up (its `present` gene goes from 0 to 1 in a mutation pass) takes a **random type, size, angle, offset, orientation and stats** (`resetWith`, naming the switch gene); its parent and integrity keep their values.
+- Both take their random value from the gene's own gate draw (the draw is uniform in [0, 1), and given that the gene fired, `gate / rate` is uniform too), so **no draw is added or moved**: every other stream and every gene that does not use these operators is untouched.
+- `presenceRate` and `typeRate` go from 0.004 to 0.01, about 2.5 times, as agreed: structural change stays uncommon (about one birth in nine changes which parts a body has).
+
+**Proof it is only this change.** With `openTypes: false` and the old 0.004 rates, all 22 golden entries reproduce their pinned hashes (22 of 22). With the new defaults 16 of the 22 change (the other 6 have no anatomy mutation or no births); they are regenerated in their own commit.
+
+**Measured** (`tests/probe/parts.probe.ts`, 4 seeds x 30,000 ticks, before to after): part types ever carried 7 to **16 of 16**; distinct part lists at the end 10.3 to **31.3**; extinct worlds 0 and 0; mean final population 51.3 to 59.3; births 785 to 816. The share of living bodies carrying each type, sampled over the run: sniffer 13%, intestine 12%, lipid 7%, armor 7%, pheromone gland 5%, membrane 3%, eyestalk 2%, join 2%, skeleton 1%, mender 1%, gyro 1%. The rare ones are rare because most bodies that try them are worse off, which is selection doing its job; this change only lets evolution try.
+
+**A world that could not adapt now can.** The Phase 3 scarce-food world (seed 5, 15 creatures, 80 food, spawn rate 1, reflex controller) always went extinct, at tick 10,231 once bodies were on. With every part reachable it does not: 15 to 27 creatures are alive through 100,000 ticks (663 births against 35), and the survivors carry lipid stores, intestines, a pheromone gland and a skeleton alongside the founder's parts. Evolution found parts that make scarcity survivable, which it could not reach when only flagella and eyes were on offer. The extinction test pins the old mutation for that world to keep describing Phase 3 (it reproduces 10,231 exactly).
+
+**A skeleton can now raise the budget.** `sizeUsed <= structuralBudget` was never the claim; a skeleton adds to the budget of the slots after it (`Anatomy.budget`), and bodies now reach 6.2 to 6.4. The two tests that compared with the base budget compare with the body's own.
+
+**Species.** More body variety means more body distance, so the species threshold moves from 0.1 to 0.12 (ADR 0008 addendum, `docs/simulation/species.md`).
+
+**What it does not do.** It does not add knockouts, duplication or vestigial organs (the rest of the failure-state work stays where it was in the plan), does not change what any part does, and does not change the founder.

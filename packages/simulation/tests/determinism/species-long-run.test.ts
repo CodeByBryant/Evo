@@ -31,8 +31,11 @@ describe('species long run', () => {
     // count follows the population of the moment, so the bound is 80 and the claim is unchanged:
     // living species stay at or below the living population.
     // Colour no longer counts and the body plan does (ADR 0008 addendum): seeds 11 to 14 end with
-    // 6, 6, 8 and 7 living species at populations of 79, 50, 53 and 61, so the bound is 20.
-    expect(reference.species.active().length).toBeLessThanOrEqual(20)
+    // 6, 6, 8 and 7 living species at populations of 79, 50, 53 and 61, so the bound was 20.
+    // With every part type reachable (ADR 0016) and the threshold at 0.12 they end with 9, 17, 15
+    // and 18 living species at populations of 45, 60, 59 and 70, so the bound is 36, the highest
+    // doubled. The claim is unchanged: living species stay well below the living population.
+    expect(reference.species.active().length).toBeLessThanOrEqual(36)
   })
 
   it('turning species off leaves the 50,000-tick state hash unchanged', () => {
