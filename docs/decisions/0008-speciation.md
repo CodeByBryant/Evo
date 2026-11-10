@@ -54,3 +54,13 @@ Each species keeps `memberCount`, `createdAtTick`, `lastSeenTick`, `extinctAtTic
 - A bad `threshold` either collapses everything into one species or fragments the population; the default (0.06) is set by measurement (see `docs/simulation/species.md`) and guarded by tests that bound the species count.
 - Founders differ only in their brain weights (Phase 4), so early species structure is driven by brain distance until body genes diverge.
 - Cost: one distance computation per active species per birth. Births are rare relative to ticks, and the active species count stays small by construction (tested).
+
+## Addendum (2026-11): colour is not a species, the body is
+
+Two defects showed in the running app. A creature that differed from its parent only in colour could found a new species, because `physical.hue` was one of the five genes of the physical group and a mutation of it moved the group distance. And a creature with a different body plan (other parts, other outline) counted for nothing, because `species.distanceWeights.body` was 0. Both go against what a species is meant to say.
+
+- **Cosmetic genes** (`physical.hue`, `body.visual.pattern`, `body.visual.accentHue`) carry a `cosmetic` flag in their gene definition and are left out of every group of `genomeDistance`; `appearance` reports them apart. The flag is data on the gene, not a special case by name, so a later cosmetic gene is one flag.
+- **The body plan is compared as a body** (`genetics/BodyDistance.ts`): empty slots express nothing, a part gained, lost or of another type is one whole slot, a shared part counts by how it differs, the outline by its shared points.
+- **New defaults**, set by measurement (see `docs/simulation/species.md`): threshold 0.1, body 0.5, brain 0.15 (it was 0.3), physical 0.1, reproduction 0.1, metabolic, behavioral and learning 0.05. Living species among about 50 creatures go from 29 to 37 to 3 to 12, and the share of births founding a species from about one in five to about one in thirty.
+- Species are not hashed, so no golden changes. The cluster layout already takes `max(species.threshold, clusters.speciesThreshold)` (0.12), so cluster worlds are unchanged by the threshold.
+- Founders still differ only in brain weights and a world still starts as one species.

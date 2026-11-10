@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { Genome, SpeciesConfig, SpeciesDistanceWeights } from '@evo/contracts'
 import { genomeDistance, weightedDistance } from '../../src/genetics/GeneticDistance'
 import { SpeciesRegistry } from '../../src/species/SpeciesRegistry'
+import { BODY_SLOT_COUNT, slotGeneIndex, visualGeneIndex } from '@evo/contracts'
+import { buildBodySpecs, founderBodyVector } from '../../src/genetics/BodyGenes'
+import { genomeFromParts, genomeToVector } from '../../src/genetics/GenomeFactory'
 import { fixture, genomeWith } from '../genetics/helpers'
 import type { Fixture } from '../genetics/helpers'
 
@@ -12,8 +15,27 @@ const baselineGene = (spec: { min: number; max: number }): number => (spec.min +
 /** A genome whose scalar genes are mid-range and whose brain weights are all `weight`. */
 const genome = (id: number, weight: number): Genome => genomeWith(f, id, baselineGene, weight)
 
+/**
+ * The weights these mechanics tests were written against (the brain at a third of the total). They
+ * are pinned here so the tests are about the registry, not about whatever the defaults are; the
+ * defaults have their own tests at the end of the file.
+ */
+const WEIGHTS: SpeciesDistanceWeights = {
+  physical: 0.2,
+  metabolic: 0.2,
+  behavioral: 0.1,
+  reproduction: 0.05,
+  learning: 0.05,
+  brain: 0.3,
+  body: 0
+}
+
 function registry(overrides: Partial<SpeciesConfig> = {}): SpeciesRegistry {
-  return new SpeciesRegistry({ ...f.config.species, threshold: 0.18, ...overrides }, f.specs, std)
+  return new SpeciesRegistry(
+    { ...f.config.species, distanceWeights: WEIGHTS, threshold: 0.18, ...overrides },
+    f.specs,
+    std
+  )
 }
 
 describe('weightedDistance', () => {
@@ -21,7 +43,7 @@ describe('weightedDistance', () => {
 
   it('is zero for identical genomes', () => {
     const same = genomeDistance(genome(0, 0.1), genome(1, 0.1), f.specs, std)
-    expect(weightedDistance(same, f.config.species.distanceWeights)).toBe(0)
+    expect(weightedDistance(same, WEIGHTS)).toBe(0)
   })
 
   it('equals the unweighted total when every weight is equal', () => {
@@ -54,7 +76,7 @@ describe('weightedDistance', () => {
   })
 
   it('is invariant to scaling all weights and is zero for all-zero weights', () => {
-    const w = f.config.species.distanceWeights
+    const w = WEIGHTS
     const scaled = Object.fromEntries(
       Object.entries(w).map(([key, value]) => [key, value * 10])
     ) as unknown as SpeciesDistanceWeights
@@ -67,7 +89,7 @@ describe('weightedDistance', () => {
 
   it('stays within [0, 1]', () => {
     const far = genomeDistance(genome(0, -5), genome(1, 5), f.specs, std)
-    const value = weightedDistance(far, f.config.species.distanceWeights)
+    const value = weightedDistance(far, WEIGHTS)
     expect(value).toBeGreaterThan(0)
     expect(value).toBeLessThanOrEqual(1)
   })
@@ -121,7 +143,7 @@ describe('SpeciesRegistry assignment', () => {
   it('treats the threshold as inclusive', () => {
     const exact = weightedDistance(
       genomeDistance(genome(0, 0), genome(1, 0.3), f.specs, std),
-      f.config.species.distanceWeights
+      WEIGHTS
     )
     const at = registry({ threshold: exact })
     at.assign({ organismId: 0, genome: genome(0, 0), parentOrganismId: null, tick: 0 })
@@ -407,5 +429,68 @@ describe('founder groups (the cluster layout)', () => {
     })
     const child = r.assign({ organismId: 3, genome: near(3), parentOrganismId: 1, tick: 1 })
     expect(child).toBe(a)
+  })
+})
+
+describe('what makes a species, with the default weights and threshold', () => {
+  const config = f.config.species
+  const bodySpecs = buildBodySpecs(f.config.anatomy)
+  const base = founderBodyVector(f.config.anatomy)
+  const fresh = (): SpeciesRegistry => new SpeciesRegistry(config, f.specs, std, bodySpecs)
+  const parent = genome(0, 0)
+  /** `parent` with scalar genes and body genes replaced. */
+  const variant = (id: number, scalars: Record<string, number>, body: number[] = base): Genome =>
+    genomeFromParts({
+      id,
+      parentIds: [0],
+      vector: genomeToVector(parent).map((value, index) => {
+        const path = f.specs[index]?.path as string
+        return path in scalars ? (scalars[path] as number) : value
+      }),
+      architecture: parent.brain.architecture,
+      weights: parent.brain.weights,
+      body
+    })
+  /** The founder body with `count` more parts, in the slots the founder leaves empty. */
+  const withParts = (count: number): number[] => {
+    const out = base.slice()
+    let added = 0
+    for (let slot = 0; slot < BODY_SLOT_COUNT && added < count; slot++) {
+      if (out[slotGeneIndex(slot, 'present')] === 1) continue
+      out[slotGeneIndex(slot, 'present')] = 1
+      added++
+    }
+    expect(added).toBe(count)
+    return out
+  }
+  const speciesOf = (child: Genome): number | null => {
+    const r = fresh()
+    r.assign({ organismId: 0, genome: parent, parentOrganismId: null, tick: 0 })
+    return r.assign({ organismId: 1, genome: child, parentOrganismId: 0, tick: 1 })
+  }
+
+  it('a creature that differs only in colour and pattern is the same species', () => {
+    const painted = base.slice()
+    painted[visualGeneIndex('pattern')] = 3
+    painted[visualGeneIndex('accentHue')] = 0.6
+    // the opposite hue, a different pattern and a different accent: as different as looks can be
+    const recoloured = variant(1, { 'physical.hue': 0.5 }, painted)
+    const distance = genomeDistance(parent, recoloured, f.specs, std, bodySpecs)
+    expect(distance.appearance).toBeGreaterThan(0.5)
+    expect(weightedDistance(distance, config.distanceWeights)).toBe(0)
+    expect(speciesOf(recoloured)).toBe(0)
+  })
+
+  it('a different body plan is a different species, with nothing else changed', () => {
+    expect(speciesOf(variant(1, {}, withParts(4)))).toBe(1)
+    // the negative: one more part on its own is variation inside the species
+    expect(speciesOf(variant(2, {}, withParts(1)))).toBe(0)
+  })
+
+  it('the body counts for more than any other part of the genome', () => {
+    const weights = config.distanceWeights
+    for (const [group, weight] of Object.entries(weights)) {
+      if (group !== 'body') expect(weights.body).toBeGreaterThan(weight)
+    }
   })
 })

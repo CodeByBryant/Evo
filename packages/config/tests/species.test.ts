@@ -34,7 +34,7 @@ describe('species config', () => {
   it('does not mutate the shared frozen defaults', () => {
     const config = resolveWorldConfig({ species: { distanceWeights: { brain: 1 } } })
     config.species.distanceWeights.brain = 99
-    expect(DEFAULT_WORLD_CONFIG.species.distanceWeights.brain).toBe(0.3)
+    expect(DEFAULT_WORLD_CONFIG.species.distanceWeights.brain).toBe(0.15)
   })
 
   it('requires the species section', () => {

@@ -26,6 +26,8 @@ export interface GeneSpec {
   readonly correlationGroup?: string
   /** Index, in the same table, of a gene this one must stay strictly above; `-1` if none. */
   readonly orderedAfter: number
+  /** Only changes how the creature looks; left out of the distance that separates species. */
+  readonly cosmetic?: boolean
 }
 
 /**
@@ -50,7 +52,8 @@ export function buildGeneSpecs(config: WorldConfig): GeneSpec[] {
       mutationStd: range.mutationStd,
       baseline: baselines[definition.path],
       relative: definition.relative === true,
-      orderedAfter: definition.orderedAfter === undefined ? -1 : indexOf(definition.orderedAfter)
+      orderedAfter: definition.orderedAfter === undefined ? -1 : indexOf(definition.orderedAfter),
+      cosmetic: definition.cosmetic === true
     }
   })
 }
