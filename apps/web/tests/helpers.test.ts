@@ -4,7 +4,12 @@ import { World } from '@evo/simulation'
 import { DEFAULT_PREFS, loadPrefs, savePrefs } from '../src/host/prefs'
 import type { KeyValueStore } from '../src/host/prefs'
 import { formatHash, parseHash, randomSeedFrom } from '../src/host/url'
-import { buildInspector, buildSpeciesRows, lineageCounts } from '../src/host/viewState'
+import {
+  buildInspector,
+  buildSpeciesRows,
+  historyPointOf,
+  lineageCounts
+} from '../src/host/viewState'
 
 describe('url hash', () => {
   it('round-trips a seed and preset', () => {
@@ -193,5 +198,50 @@ describe('buildAnatomy', () => {
     expect(cap('upkeep (energy/s)')).toBeCloseTo(partUpkeep, 12)
     // negative: dropping a part would leave the sums short
     expect(partMass - (anatomy.parts[0]?.mass ?? 0)).toBeLessThan(partMass)
+  })
+
+  it('gives a working eye its sight and every other part none, matching what the renderer draws', async () => {
+    const { World } = await import('@evo/simulation')
+    const { buildAnatomy } = await import('../src/host/viewState')
+    const world = World.create({ seed: 5 })
+    const first = world.snapshot().organisms[0]!
+    const anatomy = buildAnatomy(world, first.id)!
+    const drawn = first.parts // what the renderer draws
+    let eyes = 0
+    for (const part of anatomy.parts) {
+      const same = drawn.find((d) => d.slot === part.slot)!
+      expect(part.sight).toEqual(same.sight)
+      if (part.type !== 'eye') expect(part.sight).toBeNull()
+      else if (part.functional) {
+        eyes++
+        expect(part.sight!.reach).toBeGreaterThan(0)
+        expect(part.sight!.half).toBeGreaterThan(0)
+        expect(part.sight!.half).toBeLessThanOrEqual(Math.PI)
+      }
+    }
+    expect(eyes).toBeGreaterThan(0) // the founder has an eye, or this test proves nothing
+  })
+})
+
+describe('historyPointOf', () => {
+  it('samples population, distinct living species, food and the cumulative deaths together', () => {
+    const world = World.create({ seed: 5 })
+    world.run(300)
+    const snapshot = world.snapshot()
+    const point = historyPointOf(snapshot)
+    expect(point.tick).toBe(snapshot.tick)
+    expect(point.time).toBe(snapshot.time)
+    expect(point.count).toBe(snapshot.population.active)
+    expect(point.food).toBe(snapshot.resources.length)
+    expect(point.starved).toBe(snapshot.metrics.deathsByStarvation)
+    expect(point.aged).toBe(snapshot.metrics.deathsByAge)
+    expect(point.damaged).toBe(snapshot.metrics.deathsByDamage)
+    // one species per distinct id among the living, and it agrees with the registry
+    const ids = new Set(snapshot.organisms.map((o) => o.speciesId))
+    expect(point.species).toBe(ids.size)
+    expect(point.species).toBe(world.species.active().filter((sp) => sp.memberCount > 0).length)
+    // negative: a world with nobody alive has no species
+    const empty = World.create({ seed: 5, config: { organisms: { initialCount: 0 } } })
+    expect(historyPointOf(empty.snapshot()).species).toBe(0)
   })
 })

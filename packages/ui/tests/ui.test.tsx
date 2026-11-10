@@ -173,26 +173,17 @@ describe('components render', () => {
     expect(html).not.toContain('<svg')
   })
 
-  it('death causes show each count, its share and a bar that long', () => {
+  it('death causes are rates per simulated minute over the recent window, with totals alongside', () => {
     const html = renderToStaticMarkup(<DeathCauses view={view()} />)
-    expect(html).toMatch(/Starved.*>200<small[^>]*> 57%/s)
-    expect(html).toMatch(/Old age.*>100<small[^>]*> 29%/s)
-    expect(html).toMatch(/Damage.*>50<small[^>]*> 14%/s)
-    expect(html).toContain('width:57.1')
-    // no deaths yet: no share to show and empty bars, not a division by zero
-    const none = renderToStaticMarkup(
-      <DeathCauses
-        view={view({
-          metrics: {
-            ...view().metrics,
-            deathsByStarvation: 0,
-            deathsByAge: 0,
-            deathsByDamage: 0
-          }
-        })}
-      />
-    )
+    // fixture: 12 starved, 4 aged, 2 damaged in the 120 s between the first and last sample
+    expect(html).toMatch(/Starved.*>6\.0 \/min<small[^>]*> 200<\/small>/s)
+    expect(html).toMatch(/Old age.*>2\.0 \/min<small[^>]*> 100<\/small>/s)
+    expect(html).toMatch(/Damage.*>1\.0 \/min<small[^>]*> 50<\/small>/s)
+    expect(html).toContain('width:66.7') // starved is 12 of 18 recent deaths
+    // no history yet: no rate, empty bars, not a division by zero
+    const none = renderToStaticMarkup(<DeathCauses view={view({ history: [] })} />)
     expect(none).not.toContain('NaN')
+    expect(none).toContain('0.0 /min')
     expect(none).toContain('width:0')
   })
 
@@ -200,8 +191,11 @@ describe('components render', () => {
     const html = renderToStaticMarkup(<Strip view={view()} />)
     expect(html).toContain('aria-label="Charts"')
     expect(html).toContain('Population over time: now 31, highest 31, lowest 20')
+    expect(html).toContain('Species over time: now 2, highest 2, lowest 1')
+    expect(html).toContain('Food over time: now 120, highest 200, lowest 120')
     expect(html).toContain('Deaths by cause')
-    expect(html).toContain('>350<')
+    expect(html).toContain('9.0 /min') // the headline is the total rate
+    expect(html).toContain('67% of the last 2:00 of deaths were starvation')
     expect(html).not.toContain('Cluster 1')
     const clusters = renderToStaticMarkup(
       <Strip
@@ -211,20 +205,27 @@ describe('components render', () => {
       />
     )
     expect(clusters).toContain('Cluster 1')
-    expect(renderToStaticMarkup(<Strip view={view({ populationHistory: [] })} />)).toContain(
-      'no data yet'
-    )
+    const empty = renderToStaticMarkup(<Strip view={view({ history: [] })} />)
+    expect(empty).toContain('Species over time: no data yet')
+    expect(empty).toContain('No deaths in the recent window')
   })
 
   it('population chart explains an empty history', () => {
     expect(renderToStaticMarkup(<PopulationChart points={[]} />)).toContain('no data yet')
   })
 
-  it('species panel lists species with colors and highlights the selected one', () => {
+  it('species table has trend, members now, ancestor and age, and highlights the selected one', () => {
     const html = renderToStaticMarkup(<SpeciesPanel view={view({ selected: inspector() })} />)
     expect(html).toContain('#ff7ab8')
-    expect(html).toContain('from #0')
+    expect(html).toMatch(/<th[^>]*>Trend<\/th>/)
+    expect(html).toMatch(/<th[^>]*>From<\/th>/)
+    expect(html).toContain('<polyline') // the trend line
     expect(html).toMatch(/evo-species-selected[^>]*>.*#3/s)
+    // species 3 descends from 0; the founder species has no ancestor
+    expect(html).toContain('#0<')
+    expect(html).toContain('>-<')
+    // fixture clock: 1,234.5 s at tick 12,345 is 0.1 s a tick, and species 3 appeared at tick 900
+    expect(html).toContain('19:04')
     expect(renderToStaticMarkup(<SpeciesPanel view={view({ species: [] })} />)).toContain(
       'No living species'
     )
@@ -273,7 +274,7 @@ describe('components render', () => {
     expect(html).toContain('Replay this seed')
   })
 
-  it('inspector renders nothing without a selection and the overview with one', () => {
+  it('inspector renders nothing without a selection and the body tab with one', () => {
     const { controls } = recorder()
     expect(renderToStaticMarkup(<Inspector inspector={null} controls={controls} />)).toBe('')
     const html = renderToStaticMarkup(<Inspector inspector={inspector()} controls={controls} />)

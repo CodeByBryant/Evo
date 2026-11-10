@@ -3,12 +3,12 @@ import type {
   ClusterReport,
   EntityId,
   GeneRow,
+  HistoryPoint,
   InspectorAnatomy,
   InspectorBrain,
   InspectorView,
   LabelledValue,
   OrganismSnapshot,
-  PopulationPoint,
   PresetOption,
   RenderLayers,
   RunStatus,
@@ -46,6 +46,27 @@ export function buildSpeciesRows(world: World): { rows: SpeciesRow[]; extinct: n
   return { rows, extinct: world.species.size - active.length }
 }
 
+/**
+ * One sample of the run's history. The living-species count comes from the snapshot's organisms
+ * (distinct species ids), which is exact and needs no copy of the registry.
+ */
+export function historyPointOf(snapshot: WorldSnapshot): HistoryPoint {
+  const living = new Set<number>()
+  for (const organism of snapshot.organisms) {
+    if (organism.speciesId !== null) living.add(organism.speciesId)
+  }
+  return {
+    tick: snapshot.tick,
+    time: snapshot.time,
+    count: snapshot.population.active,
+    species: living.size,
+    food: snapshot.resources.length,
+    starved: snapshot.metrics.deathsByStarvation,
+    aged: snapshot.metrics.deathsByAge,
+    damaged: snapshot.metrics.deathsByDamage
+  }
+}
+
 /** How many genomes lie above and below this one in the family tree (can be slow late in a long run). */
 export function lineageCounts(
   world: World,
@@ -57,7 +78,17 @@ export function lineageCounts(
   }
 }
 
-/** The inspector's data for one living organism, or `null` if it is not in the snapshot. */
+/** What a working eye sees (the same reach as the renderer's sight arc), or `null` for any other part. */
+function sightOf(
+  part: { readonly slot: number; readonly type: string },
+  cones: readonly { readonly slot: number; readonly half: number; readonly reach: number }[],
+  sensorRadius: number
+): { half: number; reach: number } | null {
+  if (part.type !== 'eye') return null
+  const cone = cones.find((c) => c.slot === part.slot)
+  return cone === undefined ? null : { half: cone.half, reach: cone.reach * sensorRadius }
+}
+
 /** The anatomy tab's data: outline, parts and what the body does relative to the founder. */
 export function buildAnatomy(world: World, id: EntityId): InspectorAnatomy | null {
   const view = world.anatomyOf(id)
@@ -80,6 +111,7 @@ export function buildAnatomy(world: World, id: EntityId): InspectorAnatomy | nul
         tipY: part.tipY,
         orientation: part.orientation,
         functional: part.functional,
+        sight: sightOf(part, factors.vision.cones, world.config.organisms.sensorRadius),
         integrity: part.integrity,
         mass: cost.mass,
         upkeep: cost.upkeep,
@@ -113,6 +145,7 @@ export function buildAnatomy(world: World, id: EntityId): InspectorAnatomy | nul
   }
 }
 
+/** The inspector's data for one living organism, or `null` if it is not in the snapshot. */
 export function buildInspector(
   world: World,
   snapshot: WorldSnapshot,
@@ -195,7 +228,7 @@ export interface ViewInputs {
   readonly presets: readonly PresetOption[]
   readonly speed: SpeedSetting
   readonly achievedTicksPerSecond: number
-  readonly populationHistory: readonly PopulationPoint[]
+  readonly history: readonly HistoryPoint[]
   readonly species: { rows: readonly SpeciesRow[]; extinct: number }
   readonly clusters: ClusterReport | null
   readonly layers: RenderLayers
@@ -221,7 +254,7 @@ export function buildViewState(inputs: ViewInputs): ViewState {
     resources: snapshot.resources.length,
     extinctionTick: snapshot.population.extinctionTick,
     metrics: snapshot.metrics,
-    populationHistory: inputs.populationHistory,
+    history: inputs.history,
     species: inputs.species.rows,
     activeSpecies: inputs.species.rows.length,
     extinctSpecies: inputs.species.extinct,

@@ -1,9 +1,23 @@
 import { useState } from 'react'
-import type { InspectorView, LabelledValue, SimulationControls } from '@evo/contracts'
-import { PART_TINT, arrowEnd, partRadius, smoothPath } from './anatomyView'
-import { barWidth, formatCount, formatNumber, humanize, percent } from './format'
+import type {
+  InspectorPart,
+  InspectorView,
+  LabelledValue,
+  SimulationControls
+} from '@evo/contracts'
+import {
+  PART_TINT,
+  arrowEnd,
+  bareBody,
+  formatStat,
+  partRadius,
+  partTree,
+  sightLabel,
+  smoothPath
+} from './anatomyView'
+import { barWidth, formatCount, formatNumber, humanize } from './format'
 
-const TABS = ['Overview', 'Genome', 'Anatomy', 'Brain', 'Lineage', 'Environment'] as const
+const TABS = ['Body', 'Genome', 'Brain', 'Lineage', 'Env'] as const
 type Tab = (typeof TABS)[number]
 
 function Meter({
@@ -74,7 +88,8 @@ function Values({
   )
 }
 
-function Overview({ inspector }: { inspector: InspectorView }): React.JSX.Element {
+/** The state that changes while you watch: meters, life stage, position, cooldown. */
+function Vitals({ inspector }: { inspector: InspectorView }): React.JSX.Element {
   const o = inspector.overview
   return (
     <div>
@@ -97,19 +112,79 @@ function Overview({ inspector }: { inspector: InspectorView }): React.JSX.Elemen
           <dt>Mating cooldown</dt>
           <dd>{o.cooldown > 0 ? `${formatNumber(o.cooldown, 0)} s` : 'ready'}</dd>
         </div>
-        <div>
-          <dt>Age</dt>
-          <dd>{percent(o.age, o.maxAge)} of lifespan</dd>
-        </div>
       </dl>
     </div>
   )
 }
 
-/** The body: a schematic with its parts, what they do relative to the founder, and what they cost. */
+/** One part in the table: a row, and under it (opened by its button) every stat with its unit. */
+function PartRows({ part }: { part: InspectorPart }): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const key = part.stats[0]
+  return (
+    <tbody className={part.functional ? '' : 'evo-dormant'}>
+      <tr>
+        <th scope="row">{part.slot}</th>
+        <td>
+          <button
+            type="button"
+            className="evo-part-toggle"
+            aria-expanded={open}
+            aria-controls={`evo-part-${part.slot}-stats`}
+            onClick={() => setOpen(!open)}
+          >
+            <span aria-hidden="true">{open ? '▾' : '▸'}</span> {part.type}
+          </button>
+        </td>
+        <td className="evo-muted" title={key?.label}>
+          {key === undefined ? '' : formatStat(key.value, key.unit)}
+        </td>
+        <td className="evo-num">{formatNumber(part.mass, 3)}</td>
+        <td className="evo-num evo-muted">{formatNumber(part.upkeep, 4)}</td>
+      </tr>
+      <tr hidden={!open} id={`evo-part-${part.slot}-stats`}>
+        <td colSpan={PART_COLUMNS}>
+          <table className="evo-table evo-stat-table" aria-label={`Part ${part.slot} stats`}>
+            <tbody>
+              {part.stats.map((stat) => (
+                <tr key={stat.key}>
+                  <th scope="row">{stat.label}</th>
+                  <td className="evo-num">{formatStat(stat.value, stat.unit)}</td>
+                </tr>
+              ))}
+              <tr>
+                <th scope="row">integrity</th>
+                <td className="evo-num">{formatNumber(part.integrity, 2)}</td>
+              </tr>
+              <tr>
+                <th scope="row">size</th>
+                <td className="evo-num">{formatNumber(part.size, 2)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  )
+}
+
+/** The part table's columns: slot, part, key stat, mass, upkeep. */
+const PART_COLUMNS = 5
+
+/** The body: a schematic, who hangs from whom, every part's stats, mass and upkeep, sight, and what it can do. */
 export function AnatomyTab({ inspector }: { inspector: InspectorView }): React.JSX.Element {
   const body = inspector.anatomy
   if (body === null) return <p className="evo-hint">No body for this organism.</p>
+  const tree = partTree(body.parts)
+  const bySlot = new Map(body.parts.map((part) => [part.slot, part]))
+  const find = (label: string): number =>
+    body.capabilities.find((row) => row.label === label)?.value ?? 0
+  const total = { mass: find('mass'), upkeep: find('upkeep (energy/s)') }
+  const bare = bareBody(body.parts, total)
+  const eyes = body.parts.filter((part) => part.sight !== null)
+  const against = body.capabilities.filter(
+    (row) => row.label !== 'mass' && row.label !== 'upkeep (energy/s)'
+  )
   return (
     <div>
       <figure className="evo-anatomy">
@@ -147,35 +222,91 @@ export function AnatomyTab({ inspector }: { inspector: InspectorView }): React.J
           {body.undeveloped.length > 0 && ` (${body.undeveloped.length} did not develop)`}
         </figcaption>
       </figure>
-      <h3>Parts</h3>
-      <table className="evo-table">
+      <h3>Parts and what they hang from</h3>
+      <ul className="evo-tree" aria-label="Parent tree">
+        <li className="evo-tree-body">Body</li>
+        {tree.map((row) => (
+          <li
+            key={row.slot}
+            className={row.functional ? '' : 'evo-dormant'}
+            style={{ paddingLeft: `${row.depth * 14}px` }}
+          >
+            <span className="evo-num-inline">{row.slot}</span>{' '}
+            <span
+              className="evo-swatch"
+              style={{ background: PART_TINT[row.type] ?? '#fff' }}
+              aria-hidden="true"
+            />{' '}
+            {row.type}
+            {!row.functional && <small className="evo-hint"> dormant</small>}
+          </li>
+        ))}
+      </ul>
+      <h3>Mass and upkeep</h3>
+      <table className="evo-table evo-parts">
         <thead>
           <tr>
-            <th scope="col">Slot</th>
+            <th scope="col">#</th>
             <th scope="col">Part</th>
-            <th scope="col">Size</th>
-            <th scope="col">Works</th>
+            <th scope="col">Key stat</th>
+            <th scope="col" className="evo-num">
+              Mass
+            </th>
+            <th scope="col" className="evo-num" title="energy per second">
+              Upkeep /s
+            </th>
           </tr>
         </thead>
-        <tbody>
-          {body.parts.map((part) => (
-            <tr key={part.slot}>
-              <th scope="row">{part.slot}</th>
-              <td>
-                <span
-                  className="evo-swatch"
-                  style={{ background: PART_TINT[part.type] ?? '#fff' }}
-                />{' '}
-                {part.type}
-              </td>
-              <td className="evo-num">{formatNumber(part.size, 2)}</td>
-              <td>{part.functional ? 'yes' : 'dormant'}</td>
-            </tr>
-          ))}
-        </tbody>
+        {tree.map((row) => {
+          const part = bySlot.get(row.slot)
+          return part === undefined ? null : <PartRows key={part.slot} part={part} />
+        })}
+        <tfoot>
+          <tr>
+            <th scope="row" colSpan={PART_COLUMNS - 2}>
+              Bare body
+            </th>
+            <td className="evo-num">{formatNumber(bare.mass, 3)}</td>
+            <td className="evo-num evo-muted">{formatNumber(bare.upkeep, 4)}</td>
+          </tr>
+          <tr>
+            <th scope="row" colSpan={PART_COLUMNS - 2}>
+              Total
+            </th>
+            <td className="evo-num">{formatNumber(total.mass, 3)}</td>
+            <td className="evo-num">{formatNumber(total.upkeep, 4)}</td>
+          </tr>
+        </tfoot>
       </table>
-      <h3>What it can do (1 is the founder)</h3>
-      <Values rows={body.capabilities} />
+      {eyes.length > 0 && (
+        <>
+          <h3>
+            Sight <small className="evo-hint">field of view, reach</small>
+          </h3>
+          <dl className="evo-rows">
+            {eyes.map((part) => (
+              <div key={part.slot}>
+                <dt>Eye {part.slot}</dt>
+                <dd>{part.sight === null ? '' : sightLabel(part.sight)}</dd>
+              </div>
+            ))}
+          </dl>
+        </>
+      )}
+      <h3>
+        Against the founder <small className="evo-hint">1 is the founder</small>
+      </h3>
+      <Values rows={against} />
+    </div>
+  )
+}
+
+/** The Body tab: vitals first (they change as you watch), then the anatomy. */
+function Body({ inspector }: { inspector: InspectorView }): React.JSX.Element {
+  return (
+    <div>
+      <Vitals inspector={inspector} />
+      <AnatomyTab inspector={inspector} />
     </div>
   )
 }
@@ -316,7 +447,7 @@ export function Inspector({
   inspector: InspectorView | null
   controls: SimulationControls
 }): React.JSX.Element | null {
-  const [tab, setTab] = useState<Tab>('Overview')
+  const [tab, setTab] = useState<Tab>('Body')
   if (inspector === null) return null
   return (
     <aside className="evo-inspector" aria-labelledby="evo-inspector-title">
@@ -352,6 +483,7 @@ export function Inspector({
             aria-selected={tab === name}
             aria-controls="evo-tab-panel"
             className="evo-tab"
+            aria-label={name === 'Env' ? 'Environment' : undefined}
             onClick={() => setTab(name)}
           >
             {name}
@@ -364,12 +496,11 @@ export function Inspector({
         aria-labelledby={`evo-tab-${tab}`}
         className="evo-tab-panel"
       >
-        {tab === 'Overview' && <Overview inspector={inspector} />}
+        {tab === 'Body' && <Body inspector={inspector} />}
         {tab === 'Genome' && <Genome inspector={inspector} />}
-        {tab === 'Anatomy' && <AnatomyTab inspector={inspector} />}
         {tab === 'Brain' && <Brain inspector={inspector} />}
         {tab === 'Lineage' && <Lineage inspector={inspector} />}
-        {tab === 'Environment' && <Environment inspector={inspector} />}
+        {tab === 'Env' && <Environment inspector={inspector} />}
       </div>
     </aside>
   )

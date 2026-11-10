@@ -5,7 +5,7 @@ import type {
   ClusterLayoutSnapshot,
   EntityId,
   InspectorView,
-  PopulationPoint,
+  HistoryPoint,
   PresetOption,
   RenderEffect,
   RenderLayerName,
@@ -20,7 +20,13 @@ import type {
 } from '@evo/contracts'
 import { buildRenderSnapshot } from '@evo/renderer'
 import { World } from '@evo/simulation'
-import { buildInspector, buildSpeciesRows, buildViewState, lineageCounts } from './viewState'
+import {
+  buildInspector,
+  buildSpeciesRows,
+  buildViewState,
+  historyPointOf,
+  lineageCounts
+} from './viewState'
 
 /** Real time is 10 ticks a second (`timestep` 0.1 s), so `1x` means 10 ticks per second. */
 export const TICKS_PER_SECOND_AT_1X = 10
@@ -113,7 +119,7 @@ export class SimulationHost implements SimulationControls {
   private effects: RenderEffect[] = []
   /** When each organism last showed a damage marker, so one is not drawn every tick it stays in a hazard. */
   private lastDamageMarker = new Map<EntityId, number>()
-  private history: PopulationPoint[] = []
+  private history: HistoryPoint[] = []
   private sampleEvery = 50
   private lastSampledTick = -Infinity
 
@@ -508,7 +514,7 @@ export class SimulationHost implements SimulationControls {
   private sampleHistory(snapshot: WorldSnapshot): void {
     if (snapshot.tick - this.lastSampledTick < this.sampleEvery) return
     this.lastSampledTick = snapshot.tick
-    this.history.push({ tick: snapshot.tick, count: snapshot.population.active })
+    this.history.push(historyPointOf(snapshot))
     if (this.history.length >= HISTORY_CAP) {
       // Keep the whole run in a bounded array: halve the resolution, then sample half as often.
       this.history = this.history.filter((_, index) => index % 2 === 0)
@@ -539,7 +545,7 @@ export class SimulationHost implements SimulationControls {
       presets: this.presets,
       speed: this.speed,
       achievedTicksPerSecond: this.achieved,
-      populationHistory: this.history,
+      history: this.history,
       species: this.speciesCache,
       clusters: this.world.clusterReport(),
       layers: this.layers,
