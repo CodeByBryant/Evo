@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { World, buildGeneSpecs, genomeToVector } from '../../src/index'
-import { ALL_ROUND } from '../support/bodies'
-import { withoutEcology } from '../support/ecology'
-import { PHASE3_ECONOMY } from '../support/phase3'
 
 /**
  * The roadmap's first-milestone check, at full scale: a seeded world can run 100,000 ticks
@@ -21,143 +18,37 @@ import { PHASE3_ECONOMY } from '../support/phase3'
  * `genetics` stream, genome identity and the lineage store across chunk and step boundaries. The
  * lineage store is deliberately not part of the state hash, so its equivalence is asserted
  * explicitly rather than inherited from the hash comparison.
+ *
+ * The long determinism runs are split over several files (this one, long-run-replay,
+ * long-run-chunking, long-run-population and long-run-extinction) so the CI job can run them in
+ * parallel, and a world that two tests would build identically is built once and shared.
  */
 describe('100,000-tick runs', () => {
+  // The milestone run and the genome-drift check are the same world (seed 1, validated every 500
+  // ticks), so it is run once: the first test asserts the milestone, the second reads the same world.
+  let hundredThousand: World | undefined
+  const longRun = (): World => {
+    if (hundredThousand === undefined) {
+      const world = World.create({ seed: 1, validateEveryTicks: 500 })
+      world.run(100_000)
+      hundredThousand = world
+    }
+    return hundredThousand
+  }
+
   it('runs 100,000 ticks headlessly without ever violating an invariant', () => {
-    const world = World.create({ seed: 12345, validateEveryTicks: 500 })
+    const world = World.create({ seed: 1, validateEveryTicks: 500 })
     expect(() => world.run(100_000)).not.toThrow()
+    hundredThousand = world
     expect(world.clock.tick).toBe(100_000)
-    expect(world.validate()).toEqual({ ok: true, errors: [] })
-  })
-
-  // The replay tests below run each world twice. With bites (ADR 0017) populations are about 2.5
-  // times larger and a tick about 3 times slower, so they run 40,000 ticks (the same work as 100,000
-  // before); the single 100,000-tick run above is the milestone.
-  it('the same seed produces an identical hash and snapshot after 40,000 ticks', () => {
-    const a = World.create({ seed: 55, validateEveryTicks: 1000 })
-    const b = World.create({ seed: 55, validateEveryTicks: 1000 })
-    a.run(40_000)
-    b.run(40_000)
-    expect(a.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
-    expect(a.stateHash()).toBe(b.stateHash())
-    expect(a.snapshot()).toEqual(b.snapshot())
-  })
-
-  it('a different seed produces a different hash after 40,000 ticks', () => {
-    const a = World.create({ seed: 55 })
-    const b = World.create({ seed: 56 })
-    a.run(40_000)
-    b.run(40_000)
-    expect(a.stateHash()).not.toBe(b.stateHash())
-  })
-
-  it('running in two uneven chunks matches a single run of the same total, at scale', () => {
-    const chunked = World.create({ seed: 314159, config: { organisms: { initialCount: 30 } } })
-    chunked.run(14_965)
-    chunked.run(25_035)
-
-    const direct = World.create({ seed: 314159, config: { organisms: { initialCount: 30 } } })
-    direct.run(40_000)
-
-    // Reproduction allocates ids and draws from the 'reproduction' stream mid-run; this config
-    // reproduces heavily by 40,000 ticks, so a mismatched chunk boundary around a birth would
-    // show up here as a hash divergence, not just a tick-count coincidence.
-    expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
-    expect(chunked.clock.tick).toBe(direct.clock.tick)
-    expect(chunked.stateHash()).toBe(direct.stateHash())
-    expect(chunked.snapshot()).toEqual(direct.snapshot())
-
-    // The lineage store is not hashed, so chunking must be shown not to disturb it directly.
-    expect(chunked.lineage.size).toBe(direct.lineage.size)
-    expect(chunked.lineage.size).toBeGreaterThan(chunked.config.organisms.initialCount)
-    expect(chunked.lineage.founders()).toEqual(direct.lineage.founders())
-    const last = chunked.lineage.size - 1
-    expect(chunked.lineage.record(last)).toEqual(direct.lineage.record(last))
-    expect(chunked.lineage.ancestorsOf(last)).toEqual(direct.lineage.ancestorsOf(last))
-    expect(chunked.historicalOrganisms()).toEqual(direct.historicalOrganisms())
-  })
-
-  it('mutation visibly changes genomes over a long run, identically each time', () => {
-    const run = (): World => {
-      const world = World.create({ seed: 77, validateEveryTicks: 1000 })
-      world.run(30_000)
-      return world
-    }
-    const a = run()
-    const b = run()
-    const baseline = buildGeneSpecs(a.config).map((spec) => spec.baseline)
-    const differing = a
-      .snapshot()
-      .organisms.filter((o) => genomeToVector(a.genomeOf(o.id)!).some((v, i) => v !== baseline[i]))
-    expect(differing.length).toBeGreaterThan(0)
-    expect(a.stateHash()).toBe(b.stateHash())
-    expect(a.lineage.size).toBe(b.lineage.size)
-  })
-
-  it('running in many small chunks still matches a single run of the same total', () => {
-    const chunked = World.create({ seed: 7, config: { organisms: { initialCount: 10 } } })
-    for (let i = 0; i < 40; i++) chunked.run(1000)
-
-    const direct = World.create({ seed: 7, config: { organisms: { initialCount: 10 } } })
-    direct.run(40_000)
-
-    expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
-    expect(chunked.stateHash()).toBe(direct.stateHash())
-  })
-
-  it('stepping one tick at a time matches run() for the same total', () => {
-    const stepped = World.create({ seed: 42, config: { organisms: { initialCount: 5 } } })
-    for (let i = 0; i < 20_000; i++) stepped.step()
-
-    const ran = World.create({ seed: 42, config: { organisms: { initialCount: 5 } } })
-    ran.run(20_000)
-
-    expect(stepped.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
-    expect(stepped.stateHash()).toBe(ran.stateHash())
-  })
-
-  it('sustains a bounded population over 50,000 ticks (roadmap: sustained population)', () => {
-    // Population must neither collapse nor run away toward maxPopulation over a long run - this
-    // is what "the engine can sustain a population for a long simulated period" (roadmap Phase 3
-    // exit criteria) means in practice. This is the Phase 3/4 evidence, so it runs the reflex
-    // controller; the brain controller's measured bands are in brain-long-run.test.ts.
-    // It is Phase 3/4 evidence, so it keeps Phase 3's way of eating (touch and take whole): the
-    // bites of ADR 0017 raise the population, and the default world's bands are in
-    // ecology-stability.test.ts and brain-long-run.test.ts.
-    const world = World.create({
-      seed: 1,
-      // ...and the pre-tuning economy (ADR 0018), which is what this band was measured on.
-      config: withoutEcology({
-        ...PHASE3_ECONOMY,
-        learning: { controller: 'reflex' },
-        feeding: { enabled: false }
-      }),
-      validateEveryTicks: 1000
-    })
-    const samples: number[] = []
-    for (let i = 0; i < 50; i++) {
-      world.run(1000)
-      samples.push(world.snapshot().population.active)
-    }
-
-    expect(world.isExtinct).toBe(false)
-    const backHalf = samples.slice(25)
-    for (const active of backHalf) {
-      expect(active).toBeGreaterThanOrEqual(15)
-      // 40 until ADR 0016: parts anchored to the outline changed every body's mass and thrust,
-      // and seed 1's back half moved from 15-40 to 25-46 (seeds 1 to 6 span 21-46). Still a
-      // bounded band far below maxPopulation, with no collapse, so the claim is unchanged.
-      expect(active).toBeLessThanOrEqual(50)
-    }
-    expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })
 
   it('keeps every genome valid and every trait mean near baseline over 100,000 ticks', () => {
     // validateEveryTicks runs World.validate(), which checks each living genome against the gene
     // table and brain architecture and each lineage record against its genome, every 500 ticks.
-    const world = World.create({ seed: 1, validateEveryTicks: 500 })
-    world.run(100_000)
+    // This is the world of the test above (same seed, same config), not a second 100,000-tick run.
+    const world = longRun()
 
     const specs = buildGeneSpecs(world.config)
     const genomes = world.snapshot().organisms.map((o) => world.genomeOf(o.id)!)
@@ -186,115 +77,5 @@ describe('100,000-tick runs', () => {
     expect(() => world.run(30_000)).not.toThrow()
     expect(world.validate()).toEqual({ ok: true, errors: [] })
     expect(world.lineage.size).toBeGreaterThan(world.config.organisms.initialCount)
-  })
-
-  it('extinction, once reached, is never reversed across a long remaining run', () => {
-    const world = World.create({
-      seed: 1,
-      // The Phase 5 world: slower terrain lowers movement cost, which changes how long starvation takes.
-      config: withoutEcology({
-        organisms: { initialCount: 10 },
-        resources: { initialCount: 0, spawnRate: 0 }
-      }),
-      validateEveryTicks: 1000
-    })
-    // Starvation takes about 1,100 ticks with this brain (it was just under 1,000 before Phase 6
-    // changed each founder brain's shape); the property is permanence, not the exact timing.
-    world.run(2000)
-    expect(world.isExtinct).toBe(true)
-    const extinctionTick = world.snapshot().population.extinctionTick
-    // This config starves organisms before any of them ever reach reproduction.minEnergy, so
-    // reproduction never even attempts here - see the boom-then-bust test below for the case
-    // where reproduction succeeds repeatedly before the population still goes extinct.
-    expect(world.snapshot().metrics.reproductionSuccesses).toBe(0)
-
-    world.run(98_000)
-
-    expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(extinctionTick)
-    expect(world.validate()).toEqual({ ok: true, errors: [] })
-  })
-
-  it('extinction is permanent even after reproduction has already succeeded repeatedly', () => {
-    // A population that initially thrives (resources.spawnRate too slow to keep up with a
-    // reproducing population) still goes fully and permanently extinct once resources run out -
-    // reproduction having worked earlier gives it nothing to revive from once organisms=0.
-    const world = World.create({
-      seed: 5,
-      config: withoutEcology({
-        ...PHASE3_ECONOMY,
-        // The Phase 3 body: an all-round eye (the founder's own 135 degree cone moved this tick to
-        // 18,223; ADR 0016 "The founder sees 135 degrees").
-        ...ALL_ROUND,
-        organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 15 },
-        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
-        // Reflex controller, ecology off: this pin is about the Phase 4 forager. It moved from
-        // 11,901 (Phase 4) to 18,482 (Phase 5) to 48,820 (Phase 6) to 8,913 (Phase 7) to 8,305
-        // (ADR 0015: bodies are on by default and five scalar genes retired) to 10,231 (ADR 0016:
-        // per-type stats and outline anchoring) only because the genome changes how many values the
-        // genetics stream draws and what each body can do; the population hovers at 5-10
-        // for a long time before the last animals die.
-        learning: { controller: 'reflex' },
-        // Phase 3's way of eating: with bites (ADR 0017) nothing is wasted and this world no longer dies out.
-        feeding: { enabled: false }
-      }),
-      validateEveryTicks: 1000
-    })
-
-    world.run(60_000)
-    expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(10_231)
-    expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
-
-    world.run(40_000)
-
-    expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(10_231)
-    expect(world.snapshot().organisms).toEqual([])
-    expect(world.validate()).toEqual({ ok: true, errors: [] })
-  })
-
-  it('keeps the whole lineage queryable after the population goes extinct', () => {
-    const world = World.create({
-      seed: 5,
-      validateEveryTicks: 1000,
-      config: {
-        organisms: { initialCount: 15 },
-        resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
-        // Phase 3's way of eating: with bites (ADR 0017) nothing is wasted and this world no longer dies out.
-        feeding: { enabled: false }
-      }
-    })
-    world.run(20_000)
-    expect(world.isExtinct).toBe(true)
-
-    const size = world.lineage.size
-    expect(size).toBeGreaterThan(world.config.organisms.initialCount)
-    // Every founder lineage has died out, yet every record and ancestry link is still there.
-    for (const founder of world.lineage.founders()) {
-      expect(world.lineage.isLineageExtinct(founder)).toBe(true)
-      expect(world.lineage.record(founder)).toBeDefined()
-    }
-    const records = world.historicalOrganisms()
-    expect(records.length).toBe(size)
-    for (const record of records) {
-      const lineage = world.lineage.record(record.genomeId)
-      expect(lineage).toBeDefined()
-      for (const parent of lineage!.parentGenomeIds) {
-        expect(world.lineage.record(parent)).toBeDefined()
-      }
-    }
-    const newest = records[records.length - 1]!
-    if (newest.parentIds.length > 0) {
-      expect(world.lineage.ancestorsOf(newest.genomeId).length).toBeGreaterThan(0)
-    }
-
-    // And extinction adds nothing: the lineage is frozen from here on.
-    world.run(80_000)
-    expect(world.lineage.size).toBe(size)
-    for (const founder of world.lineage.founders()) {
-      expect(world.lineage.isLineageExtinct(founder)).toBe(true)
-    }
-    expect(world.validate()).toEqual({ ok: true, errors: [] })
   })
 })
