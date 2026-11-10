@@ -12,20 +12,22 @@ import { World } from '../../src/index'
  * written to `<tmpdir>/evo-probe/step-profile.txt`. It reaches into the world's private systems on
  * purpose, so it is the one place that knows their field names.
  */
-type Any = Record<string, any>
+/** A system, seen only as far as its methods. */
+type Methods = Record<string, (...args: unknown[]) => unknown>
 const report: string[] = []
 
 function profile(label: string, world: World, warm: number, ticks: number): void {
   world.run(warm)
-  const w = world as unknown as Any
+  const w = world as unknown as Record<string, Methods>
+  const system = (name: string): Methods => w[name] as Methods
   const totals: Record<string, number> = {}
-  const wrap = (obj: Any, method: string, name: string): void => {
-    const orig = obj[method].bind(obj)
+  const wrap = (obj: Methods, method: string, name: string): void => {
+    const orig = (obj[method] as (...args: unknown[]) => unknown).bind(obj)
     totals[name] = 0
     obj[method] = (...a: unknown[]) => {
       const t = performance.now()
       const r = orig(...a)
-      totals[name] += performance.now() - t
+      totals[name] = (totals[name] ?? 0) + (performance.now() - t)
       return r
     }
   }
@@ -41,15 +43,15 @@ function profile(label: string, world: World, warm: number, ticks: number): void
     'reproductionSystem',
     'deathSystem'
   ])
-    wrap(w[n], 'update', n)
-  wrap(w.brainSystem, 'decide', 'brain.decide')
-  wrap(w.brainSystem, 'settle', 'brain.settle')
-  wrap(w.decisionSystem, 'update', 'decision')
-  wrap(w.resourceIndex, 'rebuild', 'resourceIndex')
-  wrap(w.organismIndex, 'rebuild', 'organismIndex')
-  wrap(w.metricsCollector, 'recordEvents', 'metrics.events')
-  wrap(w.metricsCollector, 'updatePopulation', 'metrics.pop')
-  wrap(w.speciesRegistry, 'observe', 'species.observe')
+    wrap(system(n), 'update', n)
+  wrap(system('brainSystem'), 'decide', 'brain.decide')
+  wrap(system('brainSystem'), 'settle', 'brain.settle')
+  wrap(system('decisionSystem'), 'update', 'decision')
+  wrap(system('resourceIndex'), 'rebuild', 'resourceIndex')
+  wrap(system('organismIndex'), 'rebuild', 'organismIndex')
+  wrap(system('metricsCollector'), 'recordEvents', 'metrics.events')
+  wrap(system('metricsCollector'), 'updatePopulation', 'metrics.pop')
+  wrap(system('speciesRegistry'), 'observe', 'species.observe')
   const t0 = performance.now()
   world.run(ticks)
   const total = performance.now() - t0
@@ -77,7 +79,7 @@ describe('step profile', () => {
   })
   it('cluster world (~1000 creatures)', () => {
     const p = presetByName('balanced')!
-    const cfg = { ...(p.overrides as Any), environment: { layout: 'clusters' } }
+    const cfg = { ...(p.overrides as object), environment: { layout: 'clusters' } }
     profile('clusters', World.create({ seed: 3, config: cfg as never }), 1500, 600)
     const dir = join(tmpdir(), 'evo-probe')
     mkdirSync(dir, { recursive: true })

@@ -128,7 +128,9 @@ describe('SpatialHash scan and nearestWhere', () => {
         const radius = 4 + (i % 37)
         const seen: Array<[number, number]> = []
         index.scan(center, radius, (item, d2) => seen.push([item.id, d2]))
-        const sorted = index.queryRadius(center, radius).map((h) => [h.item.id, h.distanceSquared])
+        const sorted = index
+          .queryRadius(center, radius)
+          .map((h): [number, number] => [h.item.id, h.distanceSquared])
         expect(seen.sort((a, b) => a[0] - b[0])).toEqual(sorted.sort((a, b) => a[0] - b[0]))
       }
     }
