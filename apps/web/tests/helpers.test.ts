@@ -76,10 +76,31 @@ describe('prefs', () => {
     const store = memory()
     const prefs = {
       layers: { ...DEFAULT_RENDER_LAYERS, trails: true, grid: false },
-      speed: 100 as const
+      speed: 100 as const,
+      panels: { left: true, right: false, strip: true }
     }
     savePrefs(store, prefs)
     expect(loadPrefs(store)).toEqual(prefs)
+  })
+
+  it('keeps panels open unless stored as collapsed, and ignores anything malformed', () => {
+    const open = { left: false, right: false, strip: false }
+    expect(loadPrefs(memory()).panels).toEqual(open)
+    // an older save with no panels field
+    expect(loadPrefs(memory({ 'evo.prefs.v1': JSON.stringify({ speed: 25 }) })).panels).toEqual(
+      open
+    )
+    const store = (panels: unknown): KeyValueStore =>
+      memory({ 'evo.prefs.v1': JSON.stringify({ panels }) })
+    expect(loadPrefs(store({ left: true, strip: true })).panels).toEqual({
+      left: true,
+      right: false,
+      strip: true
+    })
+    // only a real true collapses a panel
+    expect(loadPrefs(store({ left: 'yes', right: 1, strip: null })).panels).toEqual(open)
+    expect(loadPrefs(store('collapsed')).panels).toEqual(open)
+    expect(loadPrefs(store(null)).panels).toEqual(open)
   })
 
   it('ignores unknown layers and invalid speeds', () => {
