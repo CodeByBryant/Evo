@@ -137,6 +137,10 @@ The baselines are `organisms.maxSpeed`, `maxTurnRate`, `sensorRadius`, `movement
 
 Unit tests for the layout, founder body, gene table, development (placement, budget, dependencies, purity), the capability formulas (including that placement and orientation matter, that every part has a cost, and that values stay finite under extreme mutation), and a world-level test that turning anatomy on leaves snapshots, events, records and every legacy gene identical to anatomy off. An equivalence harness against the previous commit gave identical results in 20 of 20 scenarios with the default configuration.
 
+## Starting bodies
+
+The founder plan (`anatomy.founder`) is the reference every factor is measured against, and the body of `classic`, `fixed-bodies` and `clusters`. In the other presets a world starts with one of five hand-designed bodies instead (`anatomy.starters`, [ADR 0020](../decisions/0020-starting-bodies.md)): _grazer_ (sprout mouth, roomy stomach), _nectar sipper_ (proboscis, nectar-tuned sniffer), _fungus scraper_ (radula, filtering intestine), _scout_ (eye on an eyestalk, narrow far view, three tails) and _tank_ (armour, fat reserve). The world draws one from its seed (one draw, always), every founder of the world gets it, and the left rail says "Started as ...". Factors in the inspector are still against the founder plan, so a scout reads fast and sharp-sighted rather than 1. Measured, none of them raised how many part types evolution reaches; what they change is what each world looks like and eats at the start.
+
 ## Directional vision
 
 An eye sees a cone about its axis (its `orientation` placed on the outline), not a circle (ADR 0016, addendum "Directional vision"). A body's **vision** is one cone per working eye plus an all-round touch radius of `senseFloor` times the baseline sensor radius, so a creature always feels what it touches.

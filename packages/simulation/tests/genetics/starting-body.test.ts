@@ -4,6 +4,7 @@ import type { StartingBody, WorldConfigOverrides } from '@evo/contracts'
 import { BODY_GENE_COUNT, slotGeneIndex } from '@evo/contracts'
 import { RandomStreams } from '../../src/random/streams'
 import { World } from '../../src/world/World'
+import { REFERENCE_START } from '../support/bodies'
 import { bodyVectorOf, chooseStartingBody, founderBodyVector } from '../../src/genetics/BodyGenes'
 
 // Starting bodies (ADR 0020): the founder plan stays the reference, a world may start with a named
@@ -42,7 +43,9 @@ const draw = (seed: number): ReturnType<typeof chooseStartingBody> =>
 
 describe('chooseStartingBody', () => {
   it('reference mode is the founder plan, with no name and no draw', () => {
-    const anatomy = resolveWorldConfig({ anatomy: { starters: STARTERS } }).anatomy
+    const anatomy = resolveWorldConfig({
+      anatomy: { starters: STARTERS, startingBody: { mode: 'reference' } }
+    }).anatomy
     expect(anatomy.startingBody.mode).toBe('reference')
     const streams = new RandomStreams(7)
     const random = streams.get('genetics')
@@ -122,7 +125,7 @@ describe('chooseStartingBody', () => {
       RangeError
     )
     expect(() =>
-      resolveWorldConfig({ anatomy: { startingBody: { mode: 'archetypes' } } })
+      resolveWorldConfig({ anatomy: { starters: [], startingBody: { mode: 'archetypes' } } })
     ).toThrow()
     expect(() =>
       resolveWorldConfig(withStarters({ mode: 'archetypes', archetype: 'nope' }))
@@ -148,7 +151,10 @@ describe('a world with starting bodies', () => {
   })
 
   it('is the founder plan, nameless, in reference mode (the default)', () => {
-    const world = World.create({ seed: 5, config: { ...small, anatomy: { starters: STARTERS } } })
+    const world = World.create({
+      seed: 5,
+      config: { ...small, anatomy: { starters: STARTERS, startingBody: { mode: 'reference' } } }
+    })
     expect(world.startingBodyName).toBeNull()
     for (const organism of world.snapshot().organisms) {
       expect(world.genomeOf(organism.id)?.body.genes).toEqual(
@@ -168,7 +174,7 @@ describe('a world with starting bodies', () => {
     expect(view.factors.speed).toBe(1)
     expect(Object.values(view.factors.dietEfficiency).some((v) => v !== 1)).toBe(true)
     // negative: the founder plan itself is exactly 1 everywhere
-    const plain = World.create({ seed: 5, config: small })
+    const plain = World.create({ seed: 5, config: { ...small, ...REFERENCE_START } })
     const founderView = plain.anatomyOf(plain.snapshot().organisms[0]!.id)!
     expect(Object.values(founderView.factors.dietEfficiency).every((v) => v === 1)).toBe(true)
   })

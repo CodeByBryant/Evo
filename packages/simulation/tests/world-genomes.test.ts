@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { World } from '../src/index'
 import { genomeToVector } from '../src/genetics/GenomeFactory'
 import { withoutEcology } from './support/ecology'
-import { ALL_ROUND } from './support/bodies'
+import { ALL_ROUND, REFERENCE_START } from './support/bodies'
 import { PHASE3_ECONOMY } from './support/phase3'
 
 /** The world wiring of genomes (docs/decisions/0006); Phase 3 behavior is pinned in world.test.ts. */
@@ -72,7 +72,10 @@ describe('config baselines reach the genes', () => {
   })
 
   it('reports the organism’s own radius gene in the snapshot', () => {
-    const world = World.create({ seed: 3, config: { organisms: { initialCount: 2, radius: 4 } } })
+    const world = World.create({
+      seed: 3,
+      config: { ...REFERENCE_START, organisms: { initialCount: 2, radius: 4 } }
+    })
     for (const organism of world.snapshot().organisms) expect(organism.radius).toBe(4)
   })
 })

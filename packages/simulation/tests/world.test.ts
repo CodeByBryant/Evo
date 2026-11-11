@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ConfigValidationError } from '@evo/config'
 import { ENGINE_VERSION, World } from '../src/index'
 import { withoutEcology } from './support/ecology'
-import { ALL_ROUND } from './support/bodies'
+import { ALL_ROUND, REFERENCE_START } from './support/bodies'
 import { PHASE3_ECONOMY } from './support/phase3'
 
 describe('World.create', () => {
@@ -239,6 +239,7 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
     const world = World.create({
       seed: 1,
       config: withoutEcology({
+        ...REFERENCE_START,
         organisms: { initialCount: 10 },
         resources: { initialCount: 0, spawnRate: 0 },
         learning: { controller: 'reflex' }

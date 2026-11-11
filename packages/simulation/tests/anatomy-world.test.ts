@@ -8,6 +8,7 @@ import { genomeToVector } from '../src/genetics/GenomeFactory'
 import { SeededRandom } from '../src/random/SeededRandom'
 import { deriveStreamWords } from '../src/random/streams'
 import { PHASE3_ECONOMY } from './support/phase3'
+import { REFERENCE_START } from './support/bodies'
 
 /**
  * Body genes in a running world (docs/decisions/0012): inert with anatomy off, harmless to the
@@ -20,6 +21,7 @@ const BUSY: WorldConfigOverrides = {
   ...PHASE3_ECONOMY,
   anatomy: {
     enabled: false,
+    startingBody: { mode: 'reference' as const },
     mutation: { presenceRate: 0.3, typeRate: 0.3, continuousRate: 0.5, visualRate: 0.5 }
   },
   genetics: { ...PHASE3_ECONOMY.genetics, mutationRateScale: 4 }
@@ -153,7 +155,7 @@ describe('anatomy on', () => {
 
 describe('invariants', () => {
   it('reject a corrupted body gene (negative test)', () => {
-    const world = World.create({ seed: SEED })
+    const world = World.create({ seed: SEED, config: REFERENCE_START })
     world.run(100)
     expect(world.validate().ok).toBe(true)
     const organism = internals(world).organisms.values()[0]
@@ -176,12 +178,12 @@ describe('invariants', () => {
 
 describe('World.anatomyOf', () => {
   it('is undefined for an organism that does not exist', () => {
-    const world = World.create({ seed: SEED })
+    const world = World.create({ seed: SEED, config: REFERENCE_START })
     expect(world.anatomyOf(987654321)).toBeUndefined()
   })
 
   it('gives every founder exactly the founder factors, matching its own genes', () => {
-    const world = World.create({ seed: SEED })
+    const world = World.create({ seed: SEED, config: REFERENCE_START })
     for (const o of world.snapshot().organisms) {
       const view = world.anatomyOf(o.id)
       const genome = world.genomeOf(o.id)

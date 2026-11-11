@@ -46,4 +46,15 @@ describe('presets', () => {
   it('looks up unknown names as undefined', () => {
     expect(presetByName('nope')).toBeUndefined()
   })
+
+  it('worlds that evolve bodies draw a starting body; classic, fixed-bodies and clusters keep the founder plan', () => {
+    const mode = (name: string): string =>
+      resolveWorldConfig(presetByName(name)?.overrides).anatomy.startingBody.mode
+    for (const name of ['balanced', 'lush', 'harsh', 'rapid-evolution']) {
+      expect(mode(name)).toBe('archetypes')
+    }
+    for (const name of ['classic', 'fixed-bodies', 'clusters']) {
+      expect(mode(name)).toBe('reference')
+    }
+  })
 })

@@ -171,7 +171,7 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
   },
   // Bodies a world can start with instead of the founder (ADR 0020).
   starters: DEFAULT_STARTERS,
-  startingBody: { mode: 'reference', archetype: null },
+  startingBody: { mode: 'archetypes', archetype: null },
   outlineDrag: 0.5,
   // Energy yield of each mouth form on each kind of food (ADR 0017). The mandible is the
   // generalist and exactly 1 everywhere, so the founder is the reference; the specialists beat it on

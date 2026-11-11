@@ -7,6 +7,8 @@ export const BUSY: WorldConfigOverrides = {
   ...PHASE3_ECONOMY,
   anatomy: {
     enabled: true,
+    // These pin the founder body's behaviour (ADR 0020), not a drawn starting body.
+    startingBody: { mode: 'reference' as const },
     // A stress rate, not a default. Each slot now carries 14 genes (ADR 0016) against 9 before, so
     // the old 0.2 mutated about 50% more genes per birth and drove most seeds extinct (seeds 22 to
     // 24 at 0.2: only 24 survives; at 0.12, seeds 22 to 26: only 22 and 25 survive). Seed 22 is pinned because it

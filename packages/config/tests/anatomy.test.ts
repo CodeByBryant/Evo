@@ -261,9 +261,9 @@ describe('starting bodies (ADR 0020)', () => {
     }
   }
 
-  it('ship five named starters, default to the founder plan, and that is valid', () => {
+  it('ship five named starters, default to drawing one, and that is valid', () => {
     const { anatomy } = DEFAULT_WORLD_CONFIG
-    expect(anatomy.startingBody).toEqual({ mode: 'reference', archetype: null })
+    expect(anatomy.startingBody).toEqual({ mode: 'archetypes', archetype: null })
     expect(anatomy.starters.map((s) => s.name)).toEqual([
       'grazer',
       'nectar-sipper',
