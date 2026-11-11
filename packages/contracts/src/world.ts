@@ -180,6 +180,36 @@ export interface FoodDistributionConfig {
   turnover: number
 }
 
+/**
+ * Renewable plants (ADR 0021). With `enabled`, a spawn makes a **plant**: a hub joined to up to six
+ * nodes, each an ordinary food item you can bite. Eating a node leaves the plant, which regrows it
+ * from the hub's store; eating the hub kills the plant (its nodes are left as free food). The hub
+ * gains `photosynthesis` energy a second up to its capacity (where energy enters the world), and a
+ * plant withers after `lifespan`. With plants on, `spawnRate` counts plants per second while
+ * `initialCount` and `maxCount` still count items (a plant is a hub plus its nodes). Field layout only.
+ */
+export interface PlantConfig {
+  enabled: boolean
+  /** Nodes around a hub, 1 to 6. */
+  nodes: number
+  /** Distance from hub to node, in food radii. */
+  ring: number
+  /** The hub's store, in multiples of its kind's energy. */
+  hubEnergyScale: number
+  /** One node's energy, in multiples of its kind's energy. */
+  nodeEnergyScale: number
+  /** How much harder the hub is to bite than its kind's hardness. */
+  hubHardness: number
+  /** Energy per second the hub moves into a growing node. */
+  regrowRate: number
+  /** Energy per second the hub gains, up to its capacity. */
+  photosynthesis: number
+  /** Seconds before a plant withers with its nodes; `0` lives forever. */
+  lifespan: number
+  /** Most plants alive at once. */
+  maxPlants: number
+}
+
 export interface ResourceConfig {
   initialCount: number
   /** Upper bound on simultaneously existing resources. */
@@ -194,11 +224,14 @@ export interface ResourceConfig {
   region: Rect | null
   /** How food is spread over the field. */
   distribution: FoodDistributionConfig
+  /** Renewable plants. */
+  plants: PlantConfig
 }
 
-/** Overrides merge field by field; `distribution` too. */
-export type ResourceConfigOverrides = Partial<Omit<ResourceConfig, 'distribution'>> & {
+/** Overrides merge field by field; `distribution` and `plants` too. */
+export type ResourceConfigOverrides = Partial<Omit<ResourceConfig, 'distribution' | 'plants'>> & {
   distribution?: Partial<FoodDistributionConfig>
+  plants?: Partial<PlantConfig>
 }
 
 /**

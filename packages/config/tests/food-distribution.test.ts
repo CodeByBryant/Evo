@@ -50,3 +50,51 @@ describe('food distribution (ADR 0021)', () => {
     )
   })
 })
+
+describe('plants (ADR 0021)', () => {
+  const errors = (change: (c: Loose) => void): string[] => {
+    const config = JSON.parse(JSON.stringify(DEFAULT_WORLD_CONFIG)) as Loose
+    change(config)
+    return [...validateWorldConfig(config).errors]
+  }
+
+  it('are off by default, valid, and merge field by field', () => {
+    expect(DEFAULT_WORLD_CONFIG.resources.plants.enabled).toBe(false)
+    expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
+    const merged = resolveWorldConfig({ resources: { plants: { enabled: true, nodes: 4 } } })
+    expect(merged.resources.plants.enabled).toBe(true)
+    expect(merged.resources.plants.nodes).toBe(4)
+    expect(merged.resources.plants.regrowRate).toBe(
+      DEFAULT_WORLD_CONFIG.resources.plants.regrowRate
+    )
+    // a plants override leaves the distribution alone
+    expect(merged.resources.distribution).toEqual(DEFAULT_WORLD_CONFIG.resources.distribution)
+  })
+
+  it('reject bad numbers, an unknown key, and a missing section', () => {
+    expect(errors((c) => (c.resources.plants.nodes = 7))).toContain(
+      'resources.plants.nodes must be an integer from 1 to 6'
+    )
+    expect(errors((c) => (c.resources.plants.nodes = 0))).toContain(
+      'resources.plants.nodes must be an integer from 1 to 6'
+    )
+    expect(errors((c) => (c.resources.plants.nodes = 2.5)).length).toBeGreaterThan(0)
+    expect(errors((c) => (c.resources.plants.enabled = 'yes'))).toContain(
+      'resources.plants.enabled must be a boolean'
+    )
+    for (const key of ['ring', 'hubEnergyScale', 'nodeEnergyScale']) {
+      expect(errors((c) => (c.resources.plants[key] = 0)).length).toBeGreaterThan(0)
+    }
+    expect(errors((c) => (c.resources.plants.hubHardness = 0.5))).toContain(
+      'resources.plants.hubHardness must be at least 1'
+    )
+    for (const key of ['regrowRate', 'photosynthesis', 'lifespan']) {
+      expect(errors((c) => (c.resources.plants[key] = -1)).length).toBeGreaterThan(0)
+    }
+    expect(errors((c) => (c.resources.plants.maxPlants = 0)).length).toBeGreaterThan(0)
+    expect(errors((c) => (c.resources.plants.extra = 1))).toContain(
+      'unknown property "resources.plants.extra"'
+    )
+    expect(errors((c) => delete c.resources.plants)).toContain('resources.plants is required')
+  })
+})

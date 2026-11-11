@@ -1,6 +1,8 @@
 import type { WorldConfig } from '@evo/contracts'
 import type { IdGenerator } from '../entities/IdGenerator'
+import { HUB_SLOT, isNode } from '../entities/ResourceStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
+import { missingSlot, nodePosition } from '../ecology/Plants'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { ClusterLayout } from '../ecology/ClusterLayout'
 import type { FoodField } from '../ecology/FoodField'
@@ -16,6 +18,8 @@ const PLACEMENT_ATTEMPTS = 8
  * acceptance number), so the number of draws never depends on where the pattern says food belongs.
  */
 const NOISE_CANDIDATES = 8
+/** The share of a hub's capacity it never spends on growing nodes. */
+const HUB_RESERVE = 0.2
 /** Attempts to place one static damage area in a hazardous region. */
 const HAZARD_PLACEMENT_ATTEMPTS = 16
 /** Upper bound on storms spawned in one tick, whatever the configured rate. */
@@ -150,7 +154,11 @@ export class EnvironmentSystem {
     return found
   }
 
-  private spawnOne(tick: number): void {
+  /**
+   * Chooses where, and of what kind, the next food item (or plant) goes, or `null` when no site is
+   * found and the spawn is dropped. The draws, in order, are exactly those of the three layouts.
+   */
+  private site(): { x: number; y: number; kind: number } | null {
     // With no region the whole world is used and the draws are exactly Phase 4's.
     const { region } = this.config.resources
     const area = region ?? {
@@ -168,7 +176,7 @@ export class EnvironmentSystem {
       if (eco.kindsOn) kind = eco.chooseKind(this.random.float())
       let point = this.foodPoint(this.random)
       for (let attempt = 1; eco.kindsOn && !eco.kindGrowsAt(kind, point.x, point.y); attempt++) {
-        if (attempt >= PLACEMENT_ATTEMPTS) return
+        if (attempt >= PLACEMENT_ATTEMPTS) return null
         point = this.foodPoint(this.random)
       }
       x = point.x
@@ -177,7 +185,7 @@ export class EnvironmentSystem {
       // The patchy field (ADR 0021): a fixed number of candidates, the first the pattern accepts.
       if (eco !== null && eco.kindsOn) kind = eco.chooseKind(this.random.float())
       const site = this.noiseSite(area, eco !== null && eco.kindsOn ? kind : null)
-      if (site === null) return
+      if (site === null) return null
       x = site.x
       y = site.y
     } else if (eco !== null && eco.kindsOn) {
@@ -186,7 +194,7 @@ export class EnvironmentSystem {
       y = area.y + this.random.float() * area.height
       for (let attempt = 1; !eco.kindGrowsAt(kind, x, y); attempt++) {
         // A kind whose regions do not exist on this map never appears: the spawn is dropped.
-        if (attempt >= PLACEMENT_ATTEMPTS) return
+        if (attempt >= PLACEMENT_ATTEMPTS) return null
         x = area.x + this.random.float() * area.width
         y = area.y + this.random.float() * area.height
       }
@@ -194,21 +202,171 @@ export class EnvironmentSystem {
       x = area.x + this.random.float() * area.width
       y = area.y + this.random.float() * area.height
     }
-    const id = this.ids.allocate()
-    const energy = eco === null ? this.config.resources.energyValue : eco.kind(kind).energy
-    const resource: ResourceState = { id, x, y, remaining: energy, kind }
+    return { x, y, kind }
+  }
+
+  /** What one item of `kind` is worth, and how big it is. */
+  private energyOf(kind: number): number {
+    return this.ecology === null
+      ? this.config.resources.energyValue
+      : this.ecology.kind(kind).energy
+  }
+
+  private radiusOf(kind: number): number {
+    return this.ecology === null ? this.config.resources.radius : this.ecology.kind(kind).radius
+  }
+
+  private add(resource: ResourceState, tick: number): void {
     this.resources.add(resource)
     this.events.record({
       type: 'resource-spawned',
       tick,
-      resourceId: id,
-      kind,
-      position: { x, y }
+      resourceId: resource.id,
+      kind: resource.kind,
+      position: { x: resource.x, y: resource.y }
     })
+  }
+
+  private spawnOne(tick: number): void {
+    const site = this.site()
+    if (site === null) return
+    const id = this.ids.allocate()
+    this.add(
+      { id, x: site.x, y: site.y, remaining: this.energyOf(site.kind), kind: site.kind },
+      tick
+    )
+  }
+
+  /** Plants are on, and this layout has them (the cluster layout keeps free food). */
+  private get plantsOn(): boolean {
+    return (
+      this.config.resources.plants.enabled &&
+      (this.ecology === null || this.ecology.clusters === null)
+    )
+  }
+
+  /** One node of the plant whose hub is `hub`, at `slot`, full of energy. */
+  private addNode(hub: ResourceState, slot: number, tick: number): void {
+    const plants = this.config.resources.plants
+    const { width, height } = this.config.environment
+    const at = nodePosition(
+      hub,
+      slot,
+      plants.nodes,
+      plants.ring * this.radiusOf(hub.kind),
+      width,
+      height
+    )
+    this.add(
+      {
+        id: this.ids.allocate(),
+        x: at.x,
+        y: at.y,
+        remaining: plants.nodeEnergyScale * this.energyOf(hub.kind),
+        kind: hub.kind,
+        parent: hub.id,
+        slot
+      },
+      tick
+    )
+  }
+
+  /** A whole plant: a hub with a full store and every node (ADR 0021). */
+  private spawnPlant(tick: number): void {
+    const site = this.site()
+    if (site === null) return
+    const plants = this.config.resources.plants
+    const hub: ResourceState = {
+      id: this.ids.allocate(),
+      x: site.x,
+      y: site.y,
+      remaining: plants.hubEnergyScale * this.energyOf(site.kind),
+      kind: site.kind,
+      parent: 0,
+      slot: HUB_SLOT,
+      bornTick: tick,
+      sproutProgress: 0
+    }
+    this.add(hub, tick)
+    for (let slot = 1; slot <= plants.nodes; slot++) this.addNode(hub, slot, tick)
+  }
+
+  /** Scratch for the plant pass: the hubs, and which node slots each has. */
+  private readonly hubs: ResourceState[] = []
+  private readonly present = new Map<number, number>()
+
+  /**
+   * One tick of plant life (ADR 0021), draw-free: each hub gains photosynthesis up to its capacity,
+   * moves energy from its store into the node that is growing back (and sprouts it when it is
+   * enough), and a plant past its lifespan withers with its nodes. Returns how many plants live.
+   */
+  private updatePlants(tick: number): number {
+    const plants = this.config.resources.plants
+    const dt = this.config.timestep
+    const hubs = this.hubs
+    const present = this.present
+    hubs.length = 0
+    present.clear()
+    this.resources.forEach((resource) => {
+      if (resource.slot === HUB_SLOT) {
+        hubs.push(resource)
+        present.set(resource.id, 0)
+      }
+    })
+    this.resources.forEach((resource) => {
+      if (!isNode(resource)) return
+      const mask = present.get(resource.parent as number)
+      if (mask !== undefined)
+        present.set(resource.parent as number, mask | (1 << (resource.slot as number)))
+    })
+    let alive = 0
+    for (const hub of hubs) {
+      const born = hub.bornTick ?? 0
+      if (plants.lifespan > 0 && (tick - born) * dt >= plants.lifespan) {
+        // A plant that withers takes its nodes with it.
+        for (const node of this.resources.values()) {
+          if (isNode(node) && node.parent === hub.id) this.resources.remove(node.id)
+        }
+        this.resources.remove(hub.id)
+        continue
+      }
+      alive++
+      const kindEnergy = this.energyOf(hub.kind)
+      const capacity = plants.hubEnergyScale * kindEnergy
+      hub.remaining = Math.min(capacity, hub.remaining + plants.photosynthesis * dt)
+      const slot = missingSlot(present.get(hub.id) as number, plants.nodes)
+      if (slot === 0) {
+        hub.sproutProgress = 0
+        continue
+      }
+      // The hub keeps a reserve so growing nodes never starves the plant itself.
+      const reserve = HUB_RESERVE * capacity
+      const moved = Math.min(plants.regrowRate * dt, Math.max(0, hub.remaining - reserve))
+      hub.remaining -= moved
+      const nodeEnergy = plants.nodeEnergyScale * kindEnergy
+      let progress = (hub.sproutProgress ?? 0) + moved
+      if (progress >= nodeEnergy - 1e-9) {
+        if (this.resources.size < this.config.resources.maxCount) {
+          this.addNode(hub, slot, tick)
+          progress = Math.max(0, progress - nodeEnergy)
+        } else {
+          progress = nodeEnergy // full: wait for room
+        }
+      }
+      hub.sproutProgress = progress
+    }
+    return alive
   }
 
   /** Spawns the initial population at world creation. Called once, at tick 0, from `World`. */
   spawnInitial(tick: number): void {
+    if (this.plantsOn) {
+      // `initialCount` counts items: a plant is a hub and its nodes.
+      const plants = this.config.resources.plants
+      const count = Math.floor(this.config.resources.initialCount / (1 + plants.nodes))
+      for (let i = 0; i < Math.min(count, plants.maxPlants); i++) this.spawnPlant(tick)
+      return
+    }
     for (let i = 0; i < this.config.resources.initialCount; i++) this.spawnOne(tick)
   }
 
@@ -306,6 +464,22 @@ export class EnvironmentSystem {
     }
     const regeneration = this.ecology === null ? 1 : this.ecology.regenerationScale(tick)
     this.spawnAccumulator += this.config.resources.spawnRate * this.config.timestep * regeneration
+    if (this.plantsOn) {
+      // `spawnRate` counts plants; `maxCount` counts items, `maxPlants` plants.
+      const plants = this.config.resources.plants
+      const alive = this.updatePlants(tick)
+      const room = Math.floor(
+        Math.max(0, this.config.resources.maxCount - this.resources.size) / (1 + plants.nodes)
+      )
+      const toPlant = Math.min(
+        Math.floor(this.spawnAccumulator),
+        room,
+        Math.max(0, plants.maxPlants - alive)
+      )
+      this.spawnAccumulator -= toPlant
+      for (let i = 0; i < toPlant; i++) this.spawnPlant(tick)
+      return
+    }
     const capacity = Math.max(0, this.config.resources.maxCount - this.resources.size)
     const toSpawn = Math.min(Math.floor(this.spawnAccumulator), capacity)
     this.spawnAccumulator -= toSpawn

@@ -2,6 +2,7 @@ import type { EntityId, WorldConfig } from '@evo/contracts'
 import type { DamageBuffer, IntentBuffer } from '../buffers/types'
 import type { EcologyModel, KindProperties } from '../ecology/EcologyModel'
 import type { OrganismStore } from '../entities/OrganismStore'
+import { HUB_SLOT } from '../entities/ResourceStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
@@ -116,7 +117,12 @@ export class InteractionSystem {
         const resource = hit.item
         const kind = this.kindOf(resource.kind)
         const yieldPerChunk = body.dietEfficiency[resource.kind] ?? 1
-        const wanted = Math.min(resource.remaining, (biteSize * body.biteSize) / kind.hardness)
+        // A plant's hub is tougher than its nodes (ADR 0021); free food and nodes are the kind's own.
+        const hardness =
+          resource.slot === HUB_SLOT
+            ? kind.hardness * this.config.resources.plants.hubHardness
+            : kind.hardness
+        const wanted = Math.min(resource.remaining, (biteSize * body.biteSize) / hardness)
         // A gut with no real room for a bite is full: no dribbling of crumbs into it.
         if (room / yieldPerChunk < MIN_BITE_FRACTION * wanted) break
         const chunk = Math.min(wanted, room / yieldPerChunk)

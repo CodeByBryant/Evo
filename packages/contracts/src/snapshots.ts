@@ -103,6 +103,12 @@ export interface ResourceSnapshot {
   readonly remaining: number
   /** Index into the resource kinds (0 when kinds are off). */
   readonly kind: number
+  /** The hub this node hangs from, or `0` (free food and hubs). Plants only (ADR 0021). */
+  readonly parent?: number
+  /** `0` for a hub, `1` to `6` for a node, `255` (or absent) for free food. */
+  readonly slot?: number
+  /** On a hub: where its next node is growing and how far along it is, in `[0, 1]`; else `null`/absent. */
+  readonly bud?: { readonly x: number; readonly y: number; readonly progress: number } | null
 }
 
 export interface PopulationSnapshot {

@@ -1,6 +1,7 @@
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import { DEFAULT_RENDER_LAYERS, REGION_TYPES } from '@evo/contracts'
 import type {
+  RenderResource,
   ClusterLayoutSnapshot,
   RenderLayers,
   RenderOrganism,
@@ -27,6 +28,9 @@ const GRID_SPACING = 50
  */
 const MIN_ORGANISM_PX = 2.6
 const MIN_FOOD_PX = 1.3
+/** How much larger than a free food item a plant's hub is drawn, and how much smaller its nodes. */
+const HUB_SCALE = 1.7
+const NODE_SCALE = 0.8
 /** The grid of the cluster layout is coarser: its world is about a hundred times wider than the field. */
 const CLUSTER_GRID_SPACING = 250
 /** The camera's lowest zoom in the field and in the (far larger) cluster layout. */
@@ -109,6 +113,8 @@ export class PixiRenderer implements Renderer {
   private clusterTerrain = new Container()
   private clusters: ClusterLayoutSnapshot | null = null
   private hazardG = new Graphics()
+  /** One flat line from each plant's hub to each of its nodes, and the buds growing back. */
+  private stemG = new Graphics()
   private trailG = new Graphics()
   private selectionG = new Graphics()
   private resources: PoolHost = { container: new Container(), pool: [] }
@@ -174,6 +180,7 @@ export class PixiRenderer implements Renderer {
       this.clusterTerrain,
       this.gridG,
       this.hazardG,
+      this.stemG,
       this.resources.container,
       this.bodies.container,
       this.trailG,
@@ -691,8 +698,11 @@ export class PixiRenderer implements Renderer {
       const r = frame.resources[i]!
       const sprite = this.resources.pool[i] as Sprite
       sprite.position.set(r.x, r.y)
+      // A plant's hub is drawn larger than its nodes (ADR 0021); free food is as before.
+      const part = r.slot === 0 ? HUB_SCALE : r.slot !== undefined && r.slot < 255 ? NODE_SCALE : 1
       sprite.scale.set(
-        Math.max(r.radius * 2 * (0.4 + 0.6 * r.remainingRatio), (MIN_FOOD_PX * 2) / zoom) / 64
+        Math.max(r.radius * 2 * part * (0.4 + 0.6 * r.remainingRatio), (MIN_FOOD_PX * 2) / zoom) /
+          64
       )
       sprite.tint = this.numberOf(resourceColor(r.kind))
       sprite.alpha = 0.95
@@ -716,6 +726,7 @@ export class PixiRenderer implements Renderer {
     this.dropGoneBodies()
 
     this.drawHazards(frame)
+    this.drawStems(frame)
     this.drawTrails(frame)
     this.drawSelection(frame)
 
@@ -732,6 +743,42 @@ export class PixiRenderer implements Renderer {
         `tick ${frame.tick}  organisms ${frame.organisms.length}  food ${frame.resources.length}`,
         `zoom ${zoom.toFixed(2)}  scene ${this.lastMs.toFixed(1)} ms  frames ${this.frameCount}`
       ].join('\n')
+    }
+  }
+
+  /**
+   * Plants (ADR 0021): one flat 1 px line from a hub to each of its nodes, and a small ring where a
+   * node is growing back, as large as the share of it already grown. Flat, no fill, no glow.
+   */
+  private drawStems(frame: RenderSnapshot): void {
+    this.stemG.clear()
+    const hubs = new Map<number, RenderResource>()
+    for (const r of frame.resources) if (r.slot === 0) hubs.set(r.id, r)
+    if (hubs.size === 0) return
+    const zoom = this.camera.state.zoom
+    for (const r of frame.resources) {
+      if (r.slot === undefined || r.slot < 1 || r.slot === 255) continue
+      const hub = hubs.get(r.parent ?? 0)
+      if (hub === undefined) continue
+      this.stemG
+        .moveTo(hub.x, hub.y)
+        .lineTo(r.x, r.y)
+        .stroke({ width: 1, color: 0x4d6b57, alpha: 0.9, pixelLine: true })
+    }
+    for (const hub of hubs.values()) {
+      const bud = hub.bud
+      if (bud === null || bud === undefined) continue
+      this.stemG
+        .moveTo(hub.x, hub.y)
+        .lineTo(bud.x, bud.y)
+        .stroke({ width: 1, color: 0x4d6b57, alpha: 0.35, pixelLine: true })
+      const radius = Math.max(NODE_SCALE * hub.radius * bud.progress, 0.8 / zoom)
+      this.stemG.circle(bud.x, bud.y, radius).stroke({
+        width: 1,
+        color: this.numberOf(resourceColor(hub.kind)),
+        alpha: 0.7,
+        pixelLine: true
+      })
     }
   }
 

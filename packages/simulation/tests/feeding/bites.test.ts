@@ -457,3 +457,22 @@ describe('feeding off is the original behavior', () => {
     expect(s.events.eventsThisTick().map((e) => e.type)).toEqual(['resource-consumed'])
   })
 })
+
+describe('a plant hub (ADR 0021)', () => {
+  const plantConfig = (): WorldConfig =>
+    config({ resources: { plants: { enabled: true, hubHardness: 3 } } } as WorldConfigOverrides)
+
+  it('is tougher than its nodes and free food: a bite takes a third as much from it', () => {
+    const hub = scene(plantConfig(), (m) => [{ ...food(9, m.x + 1, m.y, 90), slot: 0, parent: 0 }])
+    hub.interact()
+    expect(hub.resources.get(9)?.remaining).toBe(86) // 12 / 3 = 4 off a hub of 90
+    expect(hub.organism.gut).toBe(4)
+    // a node and free food of the same size take the full chunk
+    const node = scene(plantConfig(), (m) => [{ ...food(9, m.x + 1, m.y, 90), slot: 2, parent: 0 }])
+    node.interact()
+    expect(node.resources.get(9)?.remaining).toBe(78)
+    const free = scene(plantConfig(), (m) => [food(9, m.x + 1, m.y, 90)])
+    free.interact()
+    expect(free.resources.get(9)?.remaining).toBe(78)
+  })
+})

@@ -66,9 +66,22 @@ const RESOURCE_KEYS = [
   'energyValue',
   'radius',
   'region',
-  'distribution'
+  'distribution',
+  'plants'
 ]
 const DISTRIBUTION_KEYS = ['mode', 'scale', 'contrast', 'floor', 'turnover']
+const PLANT_KEYS = [
+  'enabled',
+  'nodes',
+  'ring',
+  'hubEnergyScale',
+  'nodeEnergyScale',
+  'hubHardness',
+  'regrowRate',
+  'photosynthesis',
+  'lifespan',
+  'maxPlants'
+]
 const REPRODUCTION_KEYS = [
   'minEnergy',
   'offspringInvestment',
@@ -249,6 +262,45 @@ export function validateWorldConfig(value: unknown): ValidationResult {
         'turnover',
         'resources.distribution.turnover',
         { nonnegative: true },
+        errors
+      )
+    }
+    const plants = checkSection(resources, 'plants', PLANT_KEYS, errors, 'resources.plants')
+    if (plants) {
+      if (typeof plants['enabled'] !== 'boolean') {
+        errors.push('resources.plants.enabled must be a boolean')
+      }
+      const nodes = checkNumber(
+        plants,
+        'nodes',
+        'resources.plants.nodes',
+        { integer: true },
+        errors
+      )
+      if (nodes !== undefined && (nodes < 1 || nodes > 6)) {
+        errors.push('resources.plants.nodes must be an integer from 1 to 6')
+      }
+      for (const key of ['ring', 'hubEnergyScale', 'nodeEnergyScale'] as const) {
+        checkNumber(plants, key, `resources.plants.${key}`, { positive: true }, errors)
+      }
+      const hardness = checkNumber(
+        plants,
+        'hubHardness',
+        'resources.plants.hubHardness',
+        {},
+        errors
+      )
+      if (hardness !== undefined && hardness < 1) {
+        errors.push('resources.plants.hubHardness must be at least 1')
+      }
+      for (const key of ['regrowRate', 'photosynthesis', 'lifespan'] as const) {
+        checkNumber(plants, key, `resources.plants.${key}`, { nonnegative: true }, errors)
+      }
+      checkNumber(
+        plants,
+        'maxPlants',
+        'resources.plants.maxPlants',
+        { integer: true, positive: true },
         errors
       )
     }
@@ -447,14 +499,15 @@ function mergeEcology(base: object, override: unknown): unknown {
   return merged
 }
 
-/** Merges the resources section: `distribution` merges field by field. */
+/** Merges the resources section: `distribution` and `plants` merge field by field. */
 function mergeResources(base: object, override: unknown): unknown {
   if (override === undefined || !isObject(override)) return mergeSection(base, override)
   const defaults = base as Record<string, object>
   return {
     ...base,
     ...override,
-    distribution: mergeSection(defaults['distribution'] as object, override['distribution'])
+    distribution: mergeSection(defaults['distribution'] as object, override['distribution']),
+    plants: mergeSection(defaults['plants'] as object, override['plants'])
   }
 }
 

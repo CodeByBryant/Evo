@@ -81,6 +81,7 @@ export type {
   EnvironmentLayout,
   OrganismConfig,
   FoodDistributionConfig,
+  PlantConfig,
   ResourceConfig,
   ResourceConfigOverrides,
   FeedingConfig,

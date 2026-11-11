@@ -244,6 +244,49 @@ describe('buildRenderSnapshot', () => {
     expect(frame.effects).toEqual([])
   })
 
+  it("carries a plant's links and growing bud through, and adds nothing to free food", () => {
+    const plant = buildRenderSnapshot(
+      {
+        ...world,
+        resources: [
+          {
+            id: 1,
+            position: { x: 10, y: 10 },
+            radius: 3,
+            energyValue: 90,
+            remaining: 45,
+            kind: 0,
+            parent: 0,
+            slot: 0,
+            bud: { x: 12, y: 14, progress: 0.4 }
+          },
+          {
+            id: 2,
+            position: { x: 20, y: 10 },
+            radius: 3,
+            energyValue: 18,
+            remaining: 18,
+            kind: 0,
+            parent: 1,
+            slot: 3,
+            bud: null
+          }
+        ]
+      },
+      { worldWidth: 100, worldHeight: 100, season: null, selectedId: null }
+    )
+    expect(plant.resources[0]).toMatchObject({
+      slot: 0,
+      parent: 0,
+      remainingRatio: 0.5,
+      bud: { x: 12, y: 14, progress: 0.4 }
+    })
+    expect(plant.resources[1]).toMatchObject({ slot: 3, parent: 1, bud: null })
+    // food that is not part of a plant has none of these keys
+    expect(Object.keys(frame.resources[0] as object)).not.toContain('slot')
+    expect(Object.keys(frame.resources[0] as object)).not.toContain('bud')
+  })
+
   it('does not alias the engine snapshot', () => {
     ;(world.organisms[0] as { position: { x: number } }).position.x = 999
     expect((frame.organisms[0] as RenderOrganism).x).toBe(10)
