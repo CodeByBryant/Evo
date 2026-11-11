@@ -1,5 +1,15 @@
 export { PopulationChart, Sparkline, polylinePoints } from './Charts'
-export { Dock, LayerPanel, ViewTools, WorldPanel, parseSeedInput } from './Controls'
+export { Dock, LayerPanel, PanelToggles, ViewTools, WorldPanel, parseSeedInput } from './Controls'
+export {
+  PANELS_OPEN,
+  PANEL_KEYS,
+  PANEL_LABELS,
+  PANEL_NAMES,
+  openPanel,
+  parsePanels,
+  togglePanel
+} from './panels'
+export type { PanelName, PanelState } from './panels'
 export { Section } from './Section'
 export {
   ClusterPanel,

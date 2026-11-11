@@ -48,10 +48,11 @@ Layers, in drawing order: grid, terrain (regions), hazards, food, organisms, tra
 
 ## Using it
 
-- **Keys:** `Space` pause or resume, `.` step, `1`-`5` speeds, `Esc` deselect, `T` trails, `F` follow, `Z` focus, `0` fit. They are ignored while typing in a field and with Ctrl, Alt or Meta held.
+- **Keys:** `Space` pause or resume, `.` step, `1`-`5` speeds, `Esc` deselect, `T` trails, `F` follow, `Z` focus, `0` fit, `[` `]` `\` show or hide the left panel, the inspector and the charts. They are ignored while typing in a field and with Ctrl, Alt or Meta held.
 - **Pointer:** one pointer drags to pan, two pinch to zoom, the wheel zooms toward the cursor, and a press that barely moves selects the nearest organism (a larger tolerance for touch). Dragging while following stops following.
 - **Address:** `#seed=7&preset=balanced` is rewritten whenever a world starts, and read on load. Malformed values are ignored.
 - **Inspector** (click an organism): Overview (energy, health, age, stage, mating cooldown), Genome (every gene by group), Brain (chosen action, last reward, what it senses), Lineage (parents, ancestor and descendant genomes, species line), Environment (region, season, migration).
+- **Collapsing:** three buttons at the right end of the top bar (and the `[` `]` `\` keys) hide or show the left rail, the inspector and the charts strip. A hidden panel takes no room, so the world gets it and is fitted again (unless the viewer has moved the camera); the buttons stay, so there is always a way back. The choice is remembered with the layers and speed (`evo.prefs.v1`, optional `panels` field, anything malformed means open). Selecting an organism opens a hidden inspector (a click should show its answer); deselecting leaves it as it was. Phones have no collapse: the rail is already a sheet and the inspector has its own close.
 - **Layout:** docked (see [interface design](./interface-design.md)): a thin top bar with the status and the playback toolbar, a left rail (numbers, world settings, species, layers, statistics), the world in the middle with a strip of charts under it, and a right rail where the inspector always lives. The canvas is its grid cell, so nothing covers the world and the camera needs no insets; the world is fitted again when the cell changes size unless the viewer has taken the camera.
 - **Phones:** one column. The left rail opens as a sheet from a Panels button (with the playback toolbar and the charts in it), and the inspector takes the area under the world while something is selected.
 

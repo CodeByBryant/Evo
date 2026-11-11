@@ -48,6 +48,7 @@ left   strip  right                 | charts    |
 - **Strip:** Population over time, deaths by cause (counts, shares and flat bars) and, in a cluster world, the per-cluster table.
 - **Right rail:** the inspector, always there; with nothing selected it says so and how to select.
 - **Phone:** the top bar keeps the brand, status, time, start or pause and a Panels button. Panels opens the left rail as a sheet, with the full playback toolbar and the strip's panels in it. While an organism is selected the inspector takes the area under the world, so the world shrinks and is fitted again instead of being covered. Every control is at least 44 px tall.
+- **Collapsing:** the three panels can be hidden (top-bar buttons, `[` left, `]` inspector, `\` charts); the grid's three sizes are CSS variables that a closed panel sets to zero, so the world's cell grows and nothing else moves. Not on phones.
 - **Reading order is the screen order:** top bar, left rail, world (`main`), strip, right rail, so the Tab key walks the screen the way it is laid out.
 
 The two widths live in `packages/ui/src/layout.ts` (`layoutFor`) and in the media queries of `apps/web/src/styles.css`; `tools/layout-breakpoints.test.mjs` holds them together.

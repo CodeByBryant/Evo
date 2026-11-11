@@ -29,6 +29,24 @@ describe('keyboard shortcuts', () => {
     expect(press('5')).toEqual({ type: 'speed', speed: 'max' })
   })
 
+  it('maps [ ] and backslash to the left panel, the inspector and the charts', () => {
+    expect(press('[')).toEqual({ type: 'panel', panel: 'left' })
+    expect(press(']')).toEqual({ type: 'panel', panel: 'right' })
+    expect(press('\\')).toEqual({ type: 'panel', panel: 'strip' })
+    // not while typing, and not with a modifier (browsers use Ctrl+[ to go back)
+    expect(press('[', { targetTag: 'INPUT' })).toBeNull()
+    expect(press(']', { targetEditable: true })).toBeNull()
+    expect(press('[', { ctrlKey: true })).toBeNull()
+    expect(press('\\', { metaKey: true })).toBeNull()
+  })
+
+  it('leaves a panel action to the app: it never touches the simulation', () => {
+    const calls: string[] = []
+    const controls = new Proxy({}, { get: (_t, name) => () => calls.push(String(name)) })
+    applyKeyAction({ type: 'panel', panel: 'left' }, controls as never, {} as unknown as ViewState)
+    expect(calls).toEqual([])
+  })
+
   it('ignores unknown keys and browser shortcuts', () => {
     expect(press('q')).toBeNull()
     expect(press('6')).toBeNull()

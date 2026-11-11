@@ -722,3 +722,30 @@ select.evo-input option {
     animation: none !important;
   }
 }
+
+/* ---------- the three panel buttons in the top bar ---------- */
+.evo-panel-toggles {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.evo-panel-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--evo-dim);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--evo-radius);
+  cursor: pointer;
+}
+.evo-panel-toggle:hover,
+.evo-panel-toggle[aria-pressed='true'] {
+  color: var(--evo-text);
+}
+.evo-panel-toggle:focus-visible {
+  outline: 2px solid var(--evo-accent);
+  outline-offset: 1px;
+}
