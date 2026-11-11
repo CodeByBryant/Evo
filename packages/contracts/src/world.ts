@@ -162,6 +162,54 @@ export interface FeedingConfig {
   chewSlow: number
 }
 
+/**
+ * How food is spread over the field (ADR 0021). `uniform`: every position is equally likely and a
+ * spawn draws exactly two numbers, as before. `noise`: a smooth pattern of patches that fades and
+ * drifts over time (value noise in x, y and time); a spawn takes a fixed number of candidate sites
+ * and keeps the first the pattern accepts, so the draw count never depends on the outcome.
+ */
+export interface FoodDistributionConfig {
+  mode: 'uniform' | 'noise'
+  /** World units per feature of the pattern (the size of a patch). */
+  scale: number
+  /** `0` (every site equally likely) to `1` (patches and bare ground). */
+  contrast: number
+  /** The least likely a site is to take food, in `(0, 1]`: bare ground is sparse, not empty. */
+  floor: number
+  /** Simulated seconds for the pattern to turn over (change by one feature); `0` freezes it. */
+  turnover: number
+}
+
+/**
+ * Renewable plants (ADR 0021). With `enabled`, a spawn makes a **plant**: a hub joined to up to six
+ * nodes, each an ordinary food item you can bite. Eating a node leaves the plant, which regrows it
+ * from the hub's store; eating the hub kills the plant (its nodes are left as free food). The hub
+ * gains `photosynthesis` energy a second up to its capacity (where energy enters the world), and a
+ * plant withers after `lifespan`. With plants on, `spawnRate` counts plants per second while
+ * `initialCount` and `maxCount` still count items (a plant is a hub plus its nodes). Field layout only.
+ */
+export interface PlantConfig {
+  enabled: boolean
+  /** Nodes around a hub, 1 to 6. */
+  nodes: number
+  /** Distance from hub to node, in food radii. */
+  ring: number
+  /** The hub's store, in multiples of its kind's energy. */
+  hubEnergyScale: number
+  /** One node's energy, in multiples of its kind's energy. */
+  nodeEnergyScale: number
+  /** How much harder the hub is to bite than its kind's hardness. */
+  hubHardness: number
+  /** Energy per second the hub moves into a growing node. */
+  regrowRate: number
+  /** Energy per second the hub gains, up to its capacity. */
+  photosynthesis: number
+  /** Seconds before a plant withers with its nodes; `0` lives forever. */
+  lifespan: number
+  /** Most plants alive at once. */
+  maxPlants: number
+}
+
 export interface ResourceConfig {
   initialCount: number
   /** Upper bound on simultaneously existing resources. */
@@ -174,6 +222,16 @@ export interface ResourceConfig {
   radius: number
   /** Where resources spawn: a rectangle inside the world, or `null` for the whole world. */
   region: Rect | null
+  /** How food is spread over the field. */
+  distribution: FoodDistributionConfig
+  /** Renewable plants. */
+  plants: PlantConfig
+}
+
+/** Overrides merge field by field; `distribution` and `plants` too. */
+export type ResourceConfigOverrides = Partial<Omit<ResourceConfig, 'distribution' | 'plants'>> & {
+  distribution?: Partial<FoodDistributionConfig>
+  plants?: Partial<PlantConfig>
 }
 
 /**
@@ -236,7 +294,7 @@ export interface WorldConfigOverrides {
   extinctionPolicy?: ExtinctionPolicy
   environment?: EnvironmentConfigOverrides
   organisms?: Partial<OrganismConfig>
-  resources?: Partial<ResourceConfig>
+  resources?: ResourceConfigOverrides
   reproduction?: Partial<ReproductionConfig>
   history?: Partial<HistoryConfig>
   genetics?: GeneticsConfigOverrides

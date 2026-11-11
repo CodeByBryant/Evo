@@ -1,6 +1,7 @@
 import type { MetricsSnapshot, ValidationResult, WorldConfig } from '@evo/contracts'
 import type { HazardState } from '../ecology/HazardStore'
 import type { OrganismState } from '../entities/OrganismStore'
+import { FREE_SLOT, HUB_SLOT } from '../entities/ResourceStore'
 import type { ResourceState } from '../entities/ResourceStore'
 import type { GeneSpec } from '../genetics/GeneSpecs'
 import { architectureOf } from '../genetics/GenomeFactory'
@@ -117,6 +118,43 @@ function checkResource(
 }
 
 /**
+ * The plants (ADR 0021): a hub has no parent, every node's parent is a hub that exists and was
+ * added before it, a hub has at most one node per slot, free food has neither parent nor a node
+ * slot, and the sprout progress of a hub is finite and not negative.
+ */
+function checkPlants(resources: readonly ResourceState[], nodes: number, errors: string[]): void {
+  const byId = new Map<number, ResourceState>()
+  for (const resource of resources) byId.set(resource.id, resource)
+  const taken = new Set<string>()
+  for (const resource of resources) {
+    const label = `resource ${resource.id}`
+    const slot = resource.slot ?? FREE_SLOT
+    const parent = resource.parent ?? 0
+    if (slot === FREE_SLOT) {
+      if (parent !== 0) errors.push(`${label}: free food has a parent (${parent})`)
+    } else if (slot === HUB_SLOT) {
+      if (parent !== 0) errors.push(`${label}: a hub has a parent (${parent})`)
+      const progress = resource.sproutProgress ?? 0
+      if (!Number.isFinite(progress) || progress < 0) {
+        errors.push(`${label}: sproutProgress is not a finite non-negative number`)
+      }
+    } else if (slot >= 1 && slot <= nodes) {
+      const hub = byId.get(parent)
+      if (hub === undefined || hub.slot !== HUB_SLOT) {
+        errors.push(`${label}: node of slot ${slot} has no hub (parent ${parent})`)
+      } else if (parent >= resource.id) {
+        errors.push(`${label}: node is older than its hub ${parent}`)
+      }
+      const key = `${parent}:${slot}`
+      if (taken.has(key)) errors.push(`${label}: hub ${parent} has two nodes in slot ${slot}`)
+      taken.add(key)
+    } else {
+      errors.push(`${label}: slot ${slot} is not a hub, a node of this plant, or free food`)
+    }
+  }
+}
+
+/**
  * Checks the invariants a correct world must always satisfy between ticks (never mid-step):
  * finite numbers, ascending unique ids, resources non-negative, bounds respected, and
  * extinction reported consistently. Reports every violation found; repairs nothing.
@@ -211,6 +249,7 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
     previousResourceId = resource.id
     checkResource(resource, width, height, errors)
   }
+  checkPlants(resources, config.resources.plants.nodes, errors)
 
   if (extinctionTick !== null) {
     if (!Number.isInteger(extinctionTick) || extinctionTick < 0 || extinctionTick > tick) {

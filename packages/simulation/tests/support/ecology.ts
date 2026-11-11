@@ -1,4 +1,5 @@
 import type { EcologyConfigOverrides, WorldConfigOverrides } from '@evo/contracts'
+import { FREE_FOOD } from './food'
 
 const OFF = {
   health: { enabled: false },
@@ -28,8 +29,18 @@ export function withoutEcology(config: WorldConfigOverrides = {}): WorldConfigOv
   }
   return {
     ...config,
-    // The Phase 5 food supply: the default spawn rate was lowered when mate seeking arrived (ADR 0010).
-    resources: { spawnRate: 2, ...(config.resources ?? {}) },
+    // The Phase 5 food: free food at two a second on a 500 x 500 field (the spawn rate was lowered
+    // when mate seeking arrived, ADR 0010; patches, plants and the bigger field came in ADR 0021).
+    environment: { ...FREE_FOOD.environment, ...(config.environment ?? {}) },
+    resources: {
+      ...FREE_FOOD.resources,
+      ...(config.resources ?? {}),
+      distribution: {
+        ...FREE_FOOD.resources?.distribution,
+        ...(config.resources?.distribution ?? {})
+      },
+      plants: { ...FREE_FOOD.resources?.plants, ...(config.resources?.plants ?? {}) }
+    },
     ecology,
     learning: {
       ...(config.learning ?? {}),

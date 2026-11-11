@@ -79,7 +79,11 @@ export function buildRenderSnapshot(world: WorldSnapshot, context: RenderContext
       y: resource.position.y,
       radius: resource.radius,
       kind: resource.kind,
-      remainingRatio: ratio(resource.remaining, resource.energyValue)
+      remainingRatio: ratio(resource.remaining, resource.energyValue),
+      // A plant's links (ADR 0021): only present when the world has plants.
+      ...(resource.slot === undefined
+        ? {}
+        : { parent: resource.parent ?? 0, slot: resource.slot, bud: resource.bud ?? null })
     })),
     hazards: world.hazards.map((hazard) => ({
       id: hazard.id,

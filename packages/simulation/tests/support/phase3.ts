@@ -1,4 +1,5 @@
 import type { WorldConfigOverrides } from '@evo/contracts'
+import { FREE_FOOD } from './food'
 
 /**
  * The world's economy as it was before the population tuning (docs/decisions/0018): the 600 s
@@ -8,6 +9,7 @@ import type { WorldConfigOverrides } from '@evo/contracts'
  * which starts every world with the one founder body (ADR 0020), not a drawn starting body.
  */
 export const PHASE3_ECONOMY: WorldConfigOverrides = {
+  ...FREE_FOOD,
   anatomy: { startingBody: { mode: 'reference' } },
   organisms: { maxAge: 600, senescenceAge: 510 },
   reproduction: { minEnergy: 60, cooldown: 30 },

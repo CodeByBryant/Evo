@@ -33,6 +33,30 @@ describe('SimulationHost: running', () => {
     expect(h.getWorldInfo().terrain).not.toBeNull()
   })
 
+  it('tells the interface the size of a bigger world, so the camera can fit all of it (ADR 0021)', () => {
+    const presets = [
+      {
+        name: 'big',
+        label: 'Big',
+        description: 'A bigger field.',
+        overrides: { environment: { width: 900, height: 900 } }
+      },
+      { name: 'balanced', label: 'Balanced', description: 'The default world.', overrides: {} }
+    ]
+    const { host: big } = host({ presets, preset: 'big' })
+    expect(big.getWorldInfo().width).toBe(900)
+    expect(big.getWorldInfo().height).toBe(900)
+    expect(big.getWorldInfo().terrain?.gridSize).toBe(45)
+    // negative: the default world is 700 with its own lookup grid, and classic keeps the 500 field
+    const { host: plain } = host({ presets, preset: 'balanced' })
+    expect(plain.getWorldInfo().width).toBe(700)
+    expect(plain.getWorldInfo().terrain?.gridSize).toBe(35)
+    const { host: classic } = host()
+    classic.setPreset('classic')
+    expect(classic.getWorldInfo().width).toBe(500)
+    expect(classic.getWorldInfo().terrain).toBeNull() // no regions in classic
+  })
+
   it('advances at the requested speed and reports what it achieved', () => {
     const { env, host: h } = host({ speed: 5 }) // 50 ticks per second
     env.runUntil(() => env.time > 3100)
@@ -228,7 +252,8 @@ describe('SimulationHost: worlds', () => {
     h.onWorld((info) => seen.push(info.width))
     h.newWorld(5)
     h.setPreset('classic')
-    expect(seen).toEqual([500, 500])
+    // the default world is 700 wide; classic keeps the 500 field it always had (ADR 0021)
+    expect(seen).toEqual([700, 500])
   })
 
   it('reports world changes for the address bar', () => {

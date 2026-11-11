@@ -12,6 +12,7 @@ import type {
   HistoricalOrganismRecord,
   MigrationSummary,
   RegionType,
+  ResourceSnapshot,
   Season,
   TerrainSnapshot,
   ValidationResult,
@@ -31,6 +32,7 @@ import type {
 import type { ClockState } from '../clock/SimulationClock'
 import { SimulationClock } from '../clock/SimulationClock'
 import { EcologyModel } from '../ecology/EcologyModel'
+import { FoodField } from '../ecology/FoodField'
 import { HazardStore } from '../ecology/HazardStore'
 import { MigrationTracker } from '../ecology/MigrationTracker'
 import { ClusterTerrain } from '../ecology/ClusterTerrain'
@@ -49,7 +51,8 @@ import {
   gutCapacityOf
 } from '../organisms/traits'
 import type { ResourceState } from '../entities/ResourceStore'
-import { ResourceStore } from '../entities/ResourceStore'
+import { FREE_SLOT, HUB_SLOT, ResourceStore, isNode } from '../entities/ResourceStore'
+import { missingSlot, nodePosition } from '../ecology/Plants'
 import { EventLog } from '../events/EventLog'
 import { capabilitiesOf, viewOf } from '../development/capabilities'
 import { developAnatomy } from '../development/develop'
@@ -264,7 +267,10 @@ export class World {
       this.ecology,
       this.hazardStore,
       this.randomStreams.get('events'),
-      this.clusters === null ? null : () => this.livingPerCluster()
+      this.clusters === null ? null : () => this.livingPerCluster(),
+      this.config.resources.distribution.mode === 'noise'
+        ? new FoodField(this.seed, this.config.resources.distribution)
+        : null
     )
     this.brainLayout = brainLayoutOf(architectureOf(this.config.genetics.brain))
     this.perceptionSystem = new PerceptionSystem(
@@ -636,6 +642,65 @@ export class World {
    * The name of the starting body this world drew (ADR 0020), or `null` when its founders started
    * with the founder plan itself. A derived fact about the seed and the configuration, not state.
    */
+  /** The food in the snapshot; a plant's hub and nodes carry their links and the hub its growing bud. */
+  private resourceSnapshots(): ResourceSnapshot[] {
+    const items = this.resources.values()
+    const plants = this.config.resources.plants
+    const masks = new Map<number, number>()
+    if (plants.enabled) {
+      for (const r of items) {
+        if (isNode(r)) {
+          const hub = r.parent as number
+          masks.set(hub, (masks.get(hub) ?? 0) | (1 << (r.slot as number)))
+        }
+      }
+    }
+    const { width, height } = this.config.environment
+    return items.map((resource) => {
+      const kind = this.ecology.kind(resource.kind)
+      const base = {
+        id: resource.id,
+        position: { x: resource.x, y: resource.y },
+        radius: kind.radius,
+        energyValue: kind.energy,
+        remaining: resource.remaining,
+        kind: resource.kind
+      }
+      if (!plants.enabled) return base
+      const slot = resource.slot ?? FREE_SLOT
+      if (slot === HUB_SLOT) {
+        const next = missingSlot(masks.get(resource.id) ?? 0, plants.nodes)
+        const nodeEnergy = plants.nodeEnergyScale * kind.energy
+        const at =
+          next === 0
+            ? null
+            : nodePosition(resource, next, plants.nodes, plants.ring * kind.radius, width, height)
+        return {
+          ...base,
+          energyValue: plants.hubEnergyScale * kind.energy,
+          parent: 0,
+          slot,
+          bud:
+            at === null
+              ? null
+              : {
+                  x: at.x,
+                  y: at.y,
+                  progress: Math.min(1, Math.max(0, (resource.sproutProgress ?? 0) / nodeEnergy))
+                }
+        }
+      }
+      if (slot === FREE_SLOT) return { ...base, parent: 0, slot, bud: null }
+      return {
+        ...base,
+        energyValue: plants.nodeEnergyScale * kind.energy,
+        parent: resource.parent ?? 0,
+        slot,
+        bud: null
+      }
+    })
+  }
+
   get startingBodyName(): string | null {
     return this.startName
   }
@@ -794,14 +859,7 @@ export class World {
         gut: organism.gut,
         gutCapacity: this.config.feeding.enabled ? gutCapacityOf(organism.genome, this.config) : 0
       })),
-      resources: this.resources.values().map((resource) => ({
-        id: resource.id,
-        position: { x: resource.x, y: resource.y },
-        radius: this.ecology.kind(resource.kind).radius,
-        energyValue: this.ecology.kind(resource.kind).energy,
-        remaining: resource.remaining,
-        kind: resource.kind
-      })),
+      resources: this.resourceSnapshots(),
       hazards: this.hazardSnapshots(),
       metrics: this.metricsCollector.snapshot()
     }
@@ -892,6 +950,11 @@ export class World {
         .writeFloat64(resource.y)
         .writeFloat64(resource.remaining)
         .writeUint8(resource.kind)
+        // Schema v11: the plant state follows the kind (docs/decisions/0021).
+        .writeUint32(resource.parent ?? 0)
+        .writeUint8(resource.slot ?? FREE_SLOT)
+        .writeUint32(resource.bornTick ?? 0)
+        .writeFloat64(resource.sproutProgress ?? 0)
     }
 
     const metrics = this.metricsCollector.snapshot()

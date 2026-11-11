@@ -12,6 +12,10 @@ import { World } from '../../src/index'
  * Since Phase 6 the default world also has the ecology on (regions, seasons, hazards, resource
  * kinds, health). The same band holds for seeds 1-4: means 24-35, minimum 12, maximum 51 when the
  * ecology defaults were set, with the defaults tuned to keep it (docs/ecology/ecology.md).
+ *
+ * Patches, plants and the 700 field (ADR 0021): seeds 1-4 now give means 50.5-75.7, minimum 24,
+ * maximum 114 (the 16 seeds of the ecology gates together: means 43.0-81.5, minimum 16, maximum
+ * 123), no world extinct. Only the ceiling moved, 110 to 140, a seventh of `maxPopulation`.
  */
 /** The population band every seed in `seeds` must hold (the seeds are split over brain-long-run-1 and -2 so CI can run them in parallel). */
 export function describeBrainBand(seeds: readonly number[]): void {
@@ -32,7 +36,7 @@ export function describeBrainBand(seeds: readonly number[]): void {
         expect(mean).toBeGreaterThan(25)
         expect(mean).toBeLessThan(90)
         expect(Math.min(...samples)).toBeGreaterThanOrEqual(15)
-        expect(Math.max(...samples)).toBeLessThanOrEqual(110)
+        expect(Math.max(...samples)).toBeLessThanOrEqual(140)
         expect(world.validate()).toEqual({ ok: true, errors: [] })
       },
       300_000

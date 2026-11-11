@@ -46,6 +46,8 @@ The world is paused at extinction. The app shows an alert with **New world** and
 | `@evo/ui`         | Presentational React components and formatting helpers, typed only from contracts                                                                                                                             |
 | `apps/web`        | `SimulationHost`, the view-state builders, the URL hash and preferences helpers, the keyboard map, `App` and `Viewport`                                                                                       |
 
+Plants (ADR 0021) are drawn as a larger hub, smaller nodes, one flat 1 px stem from the hub to each live node, and a thin ring where a node is growing back, as large as the share already grown; free food is the single dot it always was.
+
 Layers, in drawing order: grid, terrain (regions), hazards, food, organisms, trails, selection and event markers, motion, debug overlay. Each can be switched on and off from the **View** section (Motion switches creature animation off; the system's reduced-motion setting does the same) and the choice is remembered in `localStorage` (guarded, so private windows and blocked storage just forget it).
 
 ## Using it

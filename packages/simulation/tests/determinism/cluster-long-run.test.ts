@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { WorldConfigOverrides } from '@evo/contracts'
 import { World } from '../../src/world/World'
+import { FREE_FOOD } from '../support/food'
 
 /**
  * The cluster layout over a long run (docs/decisions/0014): unbounded positions, area-scaled food,
  * founder species by group. Replays must agree exactly however the run is sliced.
  */
 const CLUSTERS: WorldConfigOverrides = {
+  ...FREE_FOOD, // the cluster world's food is free food (ADR 0021)
   environment: { layout: 'clusters', clusters: { organismsPerSpecies: 4 } }
 }
 

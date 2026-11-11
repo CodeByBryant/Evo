@@ -49,6 +49,12 @@ export interface RenderResource {
   readonly kind: number
   /** What is left of the resource, in `[0, 1]`. */
   readonly remainingRatio: number
+  /** The hub a plant's node hangs from, or `0` (ADR 0021). */
+  readonly parent?: number
+  /** `0` for a hub, `1` to `6` for a node, `255` (or absent) for free food. */
+  readonly slot?: number
+  /** On a hub, the node that is growing back: where, and how far along (`[0, 1]`). */
+  readonly bud?: { readonly x: number; readonly y: number; readonly progress: number } | null
 }
 
 export interface RenderHazard {

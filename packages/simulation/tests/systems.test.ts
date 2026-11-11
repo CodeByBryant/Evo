@@ -47,11 +47,14 @@ const idsFrom = (n: number): IdGenerator => {
   return ids
 }
 
+/** Free food spread evenly, as these tests were written for (ADR 0021). */
+const FREE = { distribution: { mode: 'uniform' as const }, plants: { enabled: false } }
+
 describe('EnvironmentSystem', () => {
   it('spawnInitial creates exactly resources.initialCount resources within bounds', () => {
     const config = resolveWorldConfig({
       environment: { width: 50, height: 50 },
-      resources: { initialCount: 5, maxCount: 100 }
+      resources: { initialCount: 5, maxCount: 100, ...FREE }
     })
     const resources = new ResourceStore()
     const events = new EventLog(100)
@@ -81,7 +84,7 @@ describe('EnvironmentSystem', () => {
 
   it('never spawns beyond resources.maxCount', () => {
     const config = resolveWorldConfig({
-      resources: { initialCount: 0, maxCount: 3, spawnRate: 1000 }
+      resources: { initialCount: 0, maxCount: 3, spawnRate: 1000, ...FREE }
     })
     const resources = new ResourceStore()
     const events = new EventLog(1000)
@@ -102,7 +105,7 @@ describe('EnvironmentSystem', () => {
   it('accumulates fractional spawn rate deterministically (spawnRate 0.5, timestep 1 -> one every two ticks)', () => {
     const config = resolveWorldConfig({
       timestep: 1,
-      resources: { initialCount: 0, maxCount: 1000, spawnRate: 0.5 }
+      resources: { initialCount: 0, maxCount: 1000, spawnRate: 0.5, ...FREE }
     })
     const resources = new ResourceStore()
     const events = new EventLog(1000)

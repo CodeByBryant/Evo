@@ -195,9 +195,13 @@ Introduced when the five scalar genes were retired (ADR 0015). The scalar gene t
 
 Introduced with per-type part stats, outline anchoring and part-to-part parents (ADR 0016). Only the body genes change: a slot has **14** genes instead of 7 (`present`, `type`, `parent`, `size`, `angle`, `offset`, `orientation`, `integrity`, then the six stat genes `s0..s5`; `param` is gone), so the vector is **203** genes: slot 0's fourteen genes ... slot 11's, then `pattern`, `accentHue`, `outline.count`, `outline.radius0..15`, `outline.angle0..15`. The body gene count written before them is now 203, and the genome `version` is 4. The header carries the new version, so every hash differs from version 8. Equivalence with anatomy off is shown by the harness against the previous commit: 22 of 22 field-layout scenarios (reflex and brain controllers, mutation on and off) give identical snapshots, events and records. The two cluster-layout scenarios differ even with anatomy off, on purpose: cluster founders have different outlines, and parts now follow the outline, so their thrust and turning differ from the founder's.
 
-#### Version 10 (current, feeding)
+#### Version 10 (feeding; superseded by version 11)
 
 Introduced with bites, food health and the gut (ADR 0017). Each organism's record gains two values after `health`: `gut` (`writeFloat64`) and `biteCooldown` (`writeFloat64`), both zero for ever when `feeding.enabled` is false. Nothing else changes (food `remaining` was already hashed, it is simply no longer always the full amount). The header carries the new version, so every hash differs from version 9. Equivalence is shown by the harness against the previous commit with `feeding.enabled: false` and anatomy mutation frozen: 17 of 17 scenarios (every preset, both controllers, clusters, verbose events) give identical snapshots, events and records. With anatomy mutation on, worlds differ even with feeding off, on purpose: the mouth's `rate` stat now prices bite speed into upkeep, so a mutated rate changes a body's cost where it used to be inert.
+
+#### Version 11 (current, plants)
+
+Introduced with renewable plants (ADR 0021). Each resource's record gains four values after `kind`: `parent` (u32, the hub's id; only a node's slot says it is meaningful, since ids start at 0), `slot` (u8: `0` hub, `1` to `6` node, `255` free food), `bornTick` (u32, a hub's age) and `sproutProgress` (f64, the energy already moved into the node that is growing back). All four are `0, 255, 0, 0` for free food and for every world without plants. Nothing else changes: the food pattern of `resources.distribution` is a pure function of the seed, the position and time, so it is neither drawn from a stream nor hashed. Behaviour equivalence with the previous commit with `plants.enabled: false` was shown by comparing normalized snapshots (six per scenario, all fields of every organism and resource), 8 of 8 scenarios identical, not by hash.
 
 `WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
@@ -240,9 +244,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(10)`                                           | `21416a14c2a968d36736c1124a8e5f5b` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `65dbd07d43809c452c7561aab0636d1e` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `65dbd07d43809c452c7561aab0636d1e` |
+| header only: `"EVOH"`, `writeUint32(11)`                                           | `130e58ce5df357f5550c18263151d3b5` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `cb67b1cc1345af7cd1c98478e2bab3d8` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `cb67b1cc1345af7cd1c98478e2bab3d8` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 

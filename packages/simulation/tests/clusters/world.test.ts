@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { WorldConfigOverrides } from '@evo/contracts'
 import { World } from '../../src/world/World'
+import { FREE_FOOD } from '../support/food'
 
-const CLUSTERS: WorldConfigOverrides = { environment: { layout: 'clusters' } }
+// the cluster world's food is free food (ADR 0021)
+const CLUSTERS: WorldConfigOverrides = { ...FREE_FOOD, environment: { layout: 'clusters' } }
 /** The same world with 4 founders per species (72 organisms), for the long or repeated runs. */
 const LIGHT: WorldConfigOverrides = {
+  ...FREE_FOOD,
   environment: { layout: 'clusters', clusters: { organismsPerSpecies: 4 } }
 }
 const SEED = 4
@@ -184,7 +187,7 @@ describe('the cluster world while it runs', () => {
 
 describe('the field layout is untouched', () => {
   it('has no cluster layout or report, and walls', () => {
-    const world = World.create({ seed: SEED })
+    const world = World.create({ seed: SEED, config: FREE_FOOD })
     expect(world.clusterLayout()).toBeNull()
     expect(world.clusterReport()).toBeNull()
     world.run(2000)

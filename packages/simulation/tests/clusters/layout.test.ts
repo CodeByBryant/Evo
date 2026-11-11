@@ -6,6 +6,7 @@ import { effectiveConfig } from '../../src/world/clusterScaling'
 import { ClusterTerrain, clusterBiomeWeights } from '../../src/ecology/ClusterTerrain'
 import { SeededRandom } from '../../src/random/SeededRandom'
 import { deriveStreamWords } from '../../src/random/streams'
+import { FREE_FOOD } from '../support/food'
 
 const geometry = { count: 6, radius: 250, spacing: 750 }
 
@@ -100,12 +101,12 @@ describe('cluster biome weights and terrain', () => {
 
 describe('effectiveConfig', () => {
   it('returns the field configuration untouched', () => {
-    const config = resolveWorldConfig()
+    const config = resolveWorldConfig(FREE_FOOD)
     expect(effectiveConfig(config)).toBe(config)
   })
 
   it('scales food and population to the clusters, sets the founder count, and caps the mate signal', () => {
-    const config = resolveWorldConfig({ environment: { layout: 'clusters' } })
+    const config = resolveWorldConfig({ ...FREE_FOOD, environment: { layout: 'clusters' } })
     const scaled = effectiveConfig(config)
     const scale = (6 * Math.PI * 500 * 500) / (500 * 500)
     expect(scaled.organisms.initialCount).toBe(6 * 3 * 24)
