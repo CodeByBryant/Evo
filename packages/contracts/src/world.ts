@@ -162,6 +162,24 @@ export interface FeedingConfig {
   chewSlow: number
 }
 
+/**
+ * How food is spread over the field (ADR 0021). `uniform`: every position is equally likely and a
+ * spawn draws exactly two numbers, as before. `noise`: a smooth pattern of patches that fades and
+ * drifts over time (value noise in x, y and time); a spawn takes a fixed number of candidate sites
+ * and keeps the first the pattern accepts, so the draw count never depends on the outcome.
+ */
+export interface FoodDistributionConfig {
+  mode: 'uniform' | 'noise'
+  /** World units per feature of the pattern (the size of a patch). */
+  scale: number
+  /** `0` (every site equally likely) to `1` (patches and bare ground). */
+  contrast: number
+  /** The least likely a site is to take food, in `(0, 1]`: bare ground is sparse, not empty. */
+  floor: number
+  /** Simulated seconds for the pattern to turn over (change by one feature); `0` freezes it. */
+  turnover: number
+}
+
 export interface ResourceConfig {
   initialCount: number
   /** Upper bound on simultaneously existing resources. */
@@ -174,6 +192,13 @@ export interface ResourceConfig {
   radius: number
   /** Where resources spawn: a rectangle inside the world, or `null` for the whole world. */
   region: Rect | null
+  /** How food is spread over the field. */
+  distribution: FoodDistributionConfig
+}
+
+/** Overrides merge field by field; `distribution` too. */
+export type ResourceConfigOverrides = Partial<Omit<ResourceConfig, 'distribution'>> & {
+  distribution?: Partial<FoodDistributionConfig>
 }
 
 /**
@@ -236,7 +261,7 @@ export interface WorldConfigOverrides {
   extinctionPolicy?: ExtinctionPolicy
   environment?: EnvironmentConfigOverrides
   organisms?: Partial<OrganismConfig>
-  resources?: Partial<ResourceConfig>
+  resources?: ResourceConfigOverrides
   reproduction?: Partial<ReproductionConfig>
   history?: Partial<HistoryConfig>
   genetics?: GeneticsConfigOverrides

@@ -3,6 +3,7 @@ import type { IdGenerator } from '../entities/IdGenerator'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { ClusterLayout } from '../ecology/ClusterLayout'
+import type { FoodField } from '../ecology/FoodField'
 import type { HazardStore } from '../ecology/HazardStore'
 import type { EventLog } from '../events/EventLog'
 import type { RandomSource } from '../random/RandomSource'
@@ -10,6 +11,11 @@ import type { SeededRandom } from '../random/SeededRandom'
 
 /** Attempts to find a position a kind can grow in before a spawn is dropped. */
 const PLACEMENT_ATTEMPTS = 8
+/**
+ * Candidate sites a spawn draws in `noise` mode, always all of them (three draws each: x, y and an
+ * acceptance number), so the number of draws never depends on where the pattern says food belongs.
+ */
+const NOISE_CANDIDATES = 8
 /** Attempts to place one static damage area in a hazardous region. */
 const HAZARD_PLACEMENT_ATTEMPTS = 16
 /** Upper bound on storms spawned in one tick, whatever the configured rate. */
@@ -40,8 +46,13 @@ export class EnvironmentSystem {
     private readonly hazards: HazardStore | null = null,
     private readonly stormRandom: RandomSource | null = null,
     /** Living organisms per cluster, for steering food toward them (cluster layout only). */
-    private readonly livingPerCluster: (() => readonly number[]) | null = null
+    private readonly livingPerCluster: (() => readonly number[]) | null = null,
+    /** The pattern food follows in `noise` mode (ADR 0021); `null` spreads it evenly. */
+    private readonly foodField: FoodField | null = null
   ) {}
+
+  /** Simulated seconds at the current tick, for the drifting pattern. */
+  private time = 0
 
   /** Living organisms per cluster, read once a tick (`update`), so every spawn sees the same counts. */
   private living: readonly number[] = []
@@ -115,6 +126,30 @@ export class EnvironmentSystem {
     }
   }
 
+  /**
+   * The first of `NOISE_CANDIDATES` random sites in `area` that the pattern accepts (and, when kinds
+   * are on, where `kind` can grow), or `null` when none does and the spawn is dropped. Always draws
+   * all candidates.
+   */
+  private noiseSite(
+    area: { x: number; y: number; width: number; height: number },
+    kind: number | null
+  ): { x: number; y: number } | null {
+    const field = this.foodField as FoodField
+    const eco = this.ecology
+    let found: { x: number; y: number } | null = null
+    for (let i = 0; i < NOISE_CANDIDATES; i++) {
+      const x = area.x + this.random.float() * area.width
+      const y = area.y + this.random.float() * area.height
+      const accept = this.random.float()
+      if (found !== null) continue
+      if (accept >= field.density(x, y, this.time)) continue
+      if (kind !== null && eco !== null && !eco.kindGrowsAt(kind, x, y)) continue
+      found = { x, y }
+    }
+    return found
+  }
+
   private spawnOne(tick: number): void {
     // With no region the whole world is used and the draws are exactly Phase 4's.
     const { region } = this.config.resources
@@ -138,6 +173,13 @@ export class EnvironmentSystem {
       }
       x = point.x
       y = point.y
+    } else if (this.foodField !== null) {
+      // The patchy field (ADR 0021): a fixed number of candidates, the first the pattern accepts.
+      if (eco !== null && eco.kindsOn) kind = eco.chooseKind(this.random.float())
+      const site = this.noiseSite(area, eco !== null && eco.kindsOn ? kind : null)
+      if (site === null) return
+      x = site.x
+      y = site.y
     } else if (eco !== null && eco.kindsOn) {
       kind = eco.chooseKind(this.random.float())
       x = area.x + this.random.float() * area.width
@@ -256,6 +298,7 @@ export class EnvironmentSystem {
   }
 
   update(tick: number): void {
+    this.time = tick * this.config.timestep
     this.updateHazards(tick)
     if (this.livingPerCluster !== null && this.ecology !== null && this.ecology.clusters !== null) {
       this.living = this.livingPerCluster()

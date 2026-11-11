@@ -70,7 +70,9 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     spawnRate: 2,
     energyValue: 30,
     radius: 3,
-    region: null
+    region: null,
+    // `uniform` until the patchy field is tuned with the plants (ADR 0021).
+    distribution: { mode: 'uniform', scale: 120, contrast: 1, floor: 0.05, turnover: 1200 }
   },
   reproduction: {
     minEnergy: 75,

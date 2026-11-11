@@ -31,6 +31,7 @@ import type {
 import type { ClockState } from '../clock/SimulationClock'
 import { SimulationClock } from '../clock/SimulationClock'
 import { EcologyModel } from '../ecology/EcologyModel'
+import { FoodField } from '../ecology/FoodField'
 import { HazardStore } from '../ecology/HazardStore'
 import { MigrationTracker } from '../ecology/MigrationTracker'
 import { ClusterTerrain } from '../ecology/ClusterTerrain'
@@ -264,7 +265,10 @@ export class World {
       this.ecology,
       this.hazardStore,
       this.randomStreams.get('events'),
-      this.clusters === null ? null : () => this.livingPerCluster()
+      this.clusters === null ? null : () => this.livingPerCluster(),
+      this.config.resources.distribution.mode === 'noise'
+        ? new FoodField(this.seed, this.config.resources.distribution)
+        : null
     )
     this.brainLayout = brainLayoutOf(architectureOf(this.config.genetics.brain))
     this.perceptionSystem = new PerceptionSystem(

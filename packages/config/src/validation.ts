@@ -59,7 +59,16 @@ const ORGANISM_KEYS = [
   'juvenileSpeedScale',
   'juvenileMetabolicScale'
 ]
-const RESOURCE_KEYS = ['initialCount', 'maxCount', 'spawnRate', 'energyValue', 'radius', 'region']
+const RESOURCE_KEYS = [
+  'initialCount',
+  'maxCount',
+  'spawnRate',
+  'energyValue',
+  'radius',
+  'region',
+  'distribution'
+]
+const DISTRIBUTION_KEYS = ['mode', 'scale', 'contrast', 'floor', 'turnover']
 const REPRODUCTION_KEYS = [
   'minEnergy',
   'offspringInvestment',
@@ -211,6 +220,38 @@ export function validateWorldConfig(value: unknown): ValidationResult {
     const radius = checkNumber(resources, 'radius', 'resources.radius', { positive: true }, errors)
 
     checkRegion(resources, width, height, errors)
+    const distribution = checkSection(
+      resources,
+      'distribution',
+      DISTRIBUTION_KEYS,
+      errors,
+      'resources.distribution'
+    )
+    if (distribution) {
+      checkChoice(distribution, 'mode', 'resources.distribution.mode', ['uniform', 'noise'], errors)
+      checkNumber(distribution, 'scale', 'resources.distribution.scale', { positive: true }, errors)
+      const contrast = checkNumber(
+        distribution,
+        'contrast',
+        'resources.distribution.contrast',
+        {},
+        errors
+      )
+      if (contrast !== undefined && (contrast < 0 || contrast > 1)) {
+        errors.push('resources.distribution.contrast must be from 0 to 1')
+      }
+      const floor = checkNumber(distribution, 'floor', 'resources.distribution.floor', {}, errors)
+      if (floor !== undefined && (floor <= 0 || floor > 1)) {
+        errors.push('resources.distribution.floor must be greater than 0 and at most 1')
+      }
+      checkNumber(
+        distribution,
+        'turnover',
+        'resources.distribution.turnover',
+        { nonnegative: true },
+        errors
+      )
+    }
     if (initialCount !== undefined && maxCount !== undefined && initialCount > maxCount) {
       errors.push('resources.initialCount must not exceed resources.maxCount')
     }
@@ -406,6 +447,17 @@ function mergeEcology(base: object, override: unknown): unknown {
   return merged
 }
 
+/** Merges the resources section: `distribution` merges field by field. */
+function mergeResources(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  return {
+    ...base,
+    ...override,
+    distribution: mergeSection(defaults['distribution'] as object, override['distribution'])
+  }
+}
+
 /**
  * Merges the anatomy section: `mutation`, `founderLook` and `founderOutline` and `startingBody` merge field by
  * field, `parts` merges per type, and `founder` and `starters` (lists) are replaced whole.
@@ -473,7 +525,7 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     ...given,
     environment: mergeEnvironment(base.environment, given['environment']),
     organisms: mergeSection(base.organisms, given['organisms']),
-    resources: mergeSection(base.resources, given['resources']),
+    resources: mergeResources(base.resources, given['resources']),
     reproduction: mergeSection(base.reproduction, given['reproduction']),
     history: mergeSection(base.history, given['history']),
     genetics: mergeGenetics(base.genetics, given['genetics']),
