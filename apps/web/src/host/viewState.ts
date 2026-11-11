@@ -225,6 +225,7 @@ export interface ViewInputs {
   readonly status: RunStatus
   readonly seed: number
   readonly preset: string
+  readonly startingBody: string | null
   readonly presets: readonly PresetOption[]
   readonly speed: SpeedSetting
   readonly achievedTicksPerSecond: number
@@ -244,6 +245,7 @@ export function buildViewState(inputs: ViewInputs): ViewState {
     status: inputs.status,
     seed: inputs.seed,
     preset: inputs.preset,
+    startingBody: inputs.startingBody,
     presets: inputs.presets,
     speed: inputs.speed,
     achievedTicksPerSecond: inputs.achievedTicksPerSecond,

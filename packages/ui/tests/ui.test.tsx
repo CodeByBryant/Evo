@@ -155,6 +155,19 @@ describe('components render', () => {
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Go/)
   })
 
+  it('world panel says which starting body the world drew, and says nothing without one', () => {
+    const { controls } = recorder()
+    const html = renderToStaticMarkup(
+      <WorldPanel view={view({ startingBody: 'grazer' })} controls={controls} />
+    )
+    expect(html).toContain('Started as')
+    expect(html).toContain('>grazer<')
+    // the founder plan has no name: no row at all
+    expect(renderToStaticMarkup(<WorldPanel view={view()} controls={controls} />)).not.toContain(
+      'Started as'
+    )
+  })
+
   it('hud shows the three headline numbers and no chart (the chart is in the strip)', () => {
     const html = renderToStaticMarkup(<Hud view={view()} />)
     expect(html).toContain('>31<')

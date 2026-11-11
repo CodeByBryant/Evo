@@ -576,6 +576,36 @@ export interface FounderPart {
   readonly stats: readonly number[]
 }
 
+/**
+ * One starting body (an archetype): the same plan as the founder (`anatomy.founder`,
+ * `founderLook`, `founderOutline`) under a name. A world with `startingBody.mode: 'archetypes'`
+ * draws one of these from its seed and every founder of that world starts with it.
+ */
+export interface StartingBody {
+  /** Unique, non-empty; what a forced `startingBody.archetype` names and what the interface shows. */
+  readonly name: string
+  /** One sentence for people. */
+  readonly description: string
+  readonly parts: FounderPart[]
+  readonly look: BodyLook
+  readonly outline: FounderOutline
+}
+
+/** Which body the founders of a world start with. */
+export type StartingBodyMode = 'reference' | 'archetypes'
+
+export interface StartingBodyConfig {
+  /**
+   * `reference`: every world starts with the founder plan itself (`anatomy.founder`), as before
+   * archetypes existed, and draws nothing. `archetypes`: the world draws one entry of
+   * `anatomy.starters` (one draw from the `genetics` stream, always, so forcing one does not shift
+   * the streams).
+   */
+  mode: StartingBodyMode
+  /** In `archetypes` mode, the name of the starter to use instead of the drawn one; `null` lets the seed choose. */
+  archetype: string | null
+}
+
 export interface AnatomyMutationConfig {
   /** Chance per slot per birth that `present` flips. */
   presenceRate: number
@@ -624,6 +654,13 @@ export interface AnatomyConfig {
   /** The founders' outline. */
   founderOutline: FounderOutline
   /**
+   * The founder plan above is also **the reference** every capability is measured against (1 is the
+   * founder), whatever body a world starts with. These are the bodies worlds can start with instead.
+   */
+  starters: StartingBody[]
+  /** Which of them a world starts with. */
+  startingBody: StartingBodyConfig
+  /**
    * Extra movement cost per unit of outline roughness above the founder's (ADR 0013): a spiky
    * body drags. Zero turns the drag off; the founder outline itself always costs exactly nothing extra.
    */
@@ -635,7 +672,7 @@ export interface AnatomyConfig {
   mouthForms: Record<MouthForm, Record<string, number>>
 }
 
-/** Overrides merge field by field; `parts` merges per type and `founder` is replaced whole. */
+/** Overrides merge field by field; `parts` merges per type, and `founder` and `starters` are replaced whole. */
 export interface AnatomyConfigOverrides {
   enabled?: boolean
   structuralBudget?: number
@@ -647,6 +684,8 @@ export interface AnatomyConfigOverrides {
   founder?: FounderPart[]
   founderLook?: Partial<BodyLook>
   founderOutline?: Partial<FounderOutline>
+  starters?: StartingBody[]
+  startingBody?: Partial<StartingBodyConfig>
   outlineDrag?: number
   mouthForms?: { [F in MouthForm]?: Record<string, number> }
 }

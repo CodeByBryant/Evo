@@ -53,7 +53,7 @@ import { ResourceStore } from '../entities/ResourceStore'
 import { EventLog } from '../events/EventLog'
 import { capabilitiesOf, viewOf } from '../development/capabilities'
 import { developAnatomy } from '../development/develop'
-import { buildBodySpecs, founderBodyVector } from '../genetics/BodyGenes'
+import { buildBodySpecs, chooseStartingBody, founderBodyVector } from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
 import { kindNamesOf, massScaleOf } from '../organisms/bodyFactors'
@@ -136,7 +136,11 @@ export class World {
   private readonly migrationTracker: MigrationTracker
   private readonly geneSpecs: GeneSpec[]
   private readonly bodySpecs: GeneSpec[]
+  /** The founder plan: the reference every capability is measured against (ADR 0019). */
   private readonly founderBody: number[]
+  /** The body this world's founders start with, and its archetype's name (`null`: the founder plan). */
+  private startBody: number[]
+  private startName: string | null = null
   private readonly founderCapabilities: Capabilities
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
@@ -183,6 +187,7 @@ export class World {
     this.geneSpecs = buildGeneSpecs(this.config)
     this.bodySpecs = buildBodySpecs(this.config.anatomy)
     this.founderBody = founderBodyVector(this.config.anatomy)
+    this.startBody = this.founderBody
     this.randomStreams = new RandomStreams(this.seed)
     this.organisms = new OrganismStore()
     this.resources = new ResourceStore()
@@ -389,6 +394,11 @@ export class World {
     const worldRandom = this.randomStreams.get('world')
     const geneticsRandom = this.randomStreams.get('genetics')
     const { width, height } = this.config.environment
+    // The body every founder of this world starts with (ADR 0019): one draw in `archetypes` mode,
+    // none in `reference` mode, so the founder plan's worlds are exactly as before.
+    const start = chooseStartingBody(this.config.anatomy, geneticsRandom)
+    this.startBody = start.body
+    this.startName = start.name
     // In the cluster layout the founders are planned first (a body of genes per species), then
     // placed species by species inside their home cluster (docs/decisions/0014).
     const clusters = this.clusters
@@ -397,7 +407,7 @@ export class World {
         ? []
         : planClusterFounders(
             this.geneSpecs,
-            this.founderBody,
+            this.startBody,
             this.bodySpecs,
             this.config.environment.clusters,
             geneticsRandom
@@ -428,7 +438,7 @@ export class World {
         this.geneSpecs,
         this.config.genetics.brain,
         geneticsRandom,
-        plan === undefined ? this.founderBody : plan.body,
+        plan === undefined ? this.startBody : plan.body,
         plan?.vector
       )
       const organism: OrganismState = {
@@ -620,6 +630,14 @@ export class World {
    */
   genomeOf(organismId: EntityId): Genome | undefined {
     return this.organisms.get(organismId)?.genome
+  }
+
+  /**
+   * The name of the starting body this world drew (ADR 0019), or `null` when its founders started
+   * with the founder plan itself. A derived fact about the seed and the configuration, not state.
+   */
+  get startingBodyName(): string | null {
+    return this.startName
   }
 
   /**

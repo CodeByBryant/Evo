@@ -64,6 +64,8 @@ export interface WorldInfo {
   readonly terrain: TerrainSnapshot | null
   /** The cluster layout (ADR 0014), or `null` in the field layout. */
   readonly clusters: ClusterLayoutSnapshot | null
+  /** The starting body this world drew (ADR 0019), or `null` when it started with the founder plan. */
+  readonly startingBody: string | null
 }
 
 export interface HostOptions {
@@ -368,7 +370,13 @@ export class SimulationHost implements SimulationControls {
       clusters === null
         ? this.world.config.environment.height
         : clusters.bounds.maxY - clusters.bounds.minY
-    this.worldInfo = { width, height, terrain: this.world.terrain(), clusters }
+    this.worldInfo = {
+      width,
+      height,
+      terrain: this.world.terrain(),
+      clusters,
+      startingBody: this.world.startingBodyName
+    }
     for (const listener of this.worldListeners) listener(this.worldInfo)
     this.publishFrame(true)
     this.onWorldChange?.(this.seed, this.preset)
@@ -542,6 +550,7 @@ export class SimulationHost implements SimulationControls {
       status,
       seed: this.seed,
       preset: this.preset,
+      startingBody: this.worldInfo.startingBody,
       presets: this.presets,
       speed: this.speed,
       achievedTicksPerSecond: this.achieved,

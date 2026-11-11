@@ -54,6 +54,15 @@ export function WorldPanel({
         </small>
       </label>
 
+      {view.startingBody !== null && (
+        <dl className="evo-rows">
+          <div>
+            <dt>Started as</dt>
+            <dd className="evo-capitalize">{view.startingBody}</dd>
+          </div>
+        </dl>
+      )}
+
       <form
         className="evo-field"
         onSubmit={(event) => {
