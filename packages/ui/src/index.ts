@@ -1,4 +1,6 @@
-export { PopulationChart, Sparkline, polylinePoints } from './Charts'
+export { HistoryChart, PopulationChart, Sparkline, polylinePoints } from './Charts'
+export { DEATH_RATE_WINDOW, deathRates, shareOf } from './history'
+export type { DeathRates } from './history'
 export { Dock, LayerPanel, PanelToggles, ViewTools, WorldPanel, parseSeedInput } from './Controls'
 export {
   PANELS_OPEN,

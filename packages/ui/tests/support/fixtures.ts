@@ -32,10 +32,10 @@ export function view(overrides: Partial<ViewState> = {}): ViewState {
       energyWasted: 0,
       damageTaken: 0
     },
-    populationHistory: [
-      { tick: 0, count: 20 },
-      { tick: 50, count: 24 },
-      { tick: 100, count: 31 }
+    history: [
+      { tick: 0, time: 0, count: 20, species: 1, food: 200, starved: 0, aged: 0, damaged: 0 },
+      { tick: 600, time: 60, count: 24, species: 1, food: 150, starved: 6, aged: 2, damaged: 0 },
+      { tick: 1200, time: 120, count: 31, species: 2, food: 120, starved: 12, aged: 4, damaged: 2 }
     ],
     species: [
       {

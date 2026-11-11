@@ -108,11 +108,11 @@ describe('SimulationHost: determinism through the interface path', () => {
     h.pause()
     const before = h.stateHash()
     const frame = h.getFrame() as unknown as { organisms: { x: number }[] }
-    const view = h.getViewState() as unknown as { species: unknown[]; populationHistory: unknown[] }
+    const view = h.getViewState() as unknown as { species: unknown[]; history: unknown[] }
     for (const organism of frame.organisms) organism.x = -1e9
     frame.organisms.length = 0
     view.species.length = 0
-    view.populationHistory.length = 0
+    view.history.length = 0
     const info = h.getWorldInfo().terrain as unknown as { cells: number[] }
     info.cells.fill(0)
     expect(h.stateHash()).toBe(before)
@@ -159,11 +159,36 @@ describe('SimulationHost: the interface is not updated per tick', () => {
   it('keeps the population history bounded over a long run', () => {
     const { env, host: h } = host({ speed: 'max' })
     env.runUntil(() => h.getViewState().tick >= 40_000, 16, 1_000_000)
-    const history = h.getViewState().populationHistory
+    const history = h.getViewState().history
     expect(history.length).toBeLessThan(600)
     expect(history.length).toBeGreaterThan(50)
     expect(history[0]?.tick).toBeLessThan(2000)
+    // every series is one sample per point, so they line up, and the counters never go backwards
+    for (let i = 1; i < history.length; i++) {
+      const a = history[i - 1]!
+      const b = history[i]!
+      expect(b.tick).toBeGreaterThan(a.tick)
+      expect(b.time).toBeGreaterThan(a.time)
+      expect(b.starved).toBeGreaterThanOrEqual(a.starved)
+      expect(b.aged).toBeGreaterThanOrEqual(a.aged)
+      expect(b.damaged).toBeGreaterThanOrEqual(a.damaged)
+    }
+    for (const point of history) {
+      expect(point.species).toBeGreaterThanOrEqual(0)
+      expect(point.food).toBeGreaterThanOrEqual(0)
+    }
   }, 120_000)
+
+  it('records every series and starts them afresh with a new world', () => {
+    const { env, host: h } = host()
+    env.runUntil(() => h.getViewState().tick >= 400)
+    const first = h.getViewState().history
+    expect(first.length).toBeGreaterThan(2)
+    expect(first.every((p) => p.count > 0 && p.species >= 1 && p.food > 0)).toBe(true)
+    h.reset()
+    expect(h.getViewState().history.length).toBeLessThanOrEqual(1)
+    expect(h.getViewState().history.every((p) => p.tick === 0)).toBe(true)
+  })
 })
 
 describe('SimulationHost: worlds', () => {

@@ -1,4 +1,4 @@
-import type { PopulationPoint } from '@evo/contracts'
+import type { HistoryPoint } from '@evo/contracts'
 import { formatCount } from './format'
 
 /** Scales values to an SVG polyline's `points` attribute inside a `width x height` box. */
@@ -22,25 +22,33 @@ export function polylinePoints(
 }
 
 /**
- * The population over the run: a flat line over a flat tint, readable without hovering. The
- * `compact` form drops the caption, for the heads-up display.
+ * One series of the run's history: a flat line over a flat tint, readable without hovering. `pick`
+ * chooses the series, `label` names it for screen readers ("Population"). The `compact` form drops
+ * the caption.
  */
-export function PopulationChart({
+export function HistoryChart({
   points,
+  pick,
+  label,
+  floor = 10,
   width = 280,
   height = 72,
   compact = false
 }: {
-  points: readonly PopulationPoint[]
+  points: readonly HistoryPoint[]
+  pick: (point: HistoryPoint) => number
+  label: string
+  /** The smallest top of the scale, so a tiny count does not fill the chart. */
+  floor?: number
   width?: number
   height?: number
   compact?: boolean
 }): React.JSX.Element {
-  const counts = points.map((p) => p.count)
-  const max = Math.max(10, ...counts)
-  const latest = counts[counts.length - 1]
-  const line = polylinePoints(counts, width, height, max)
-  const area = counts.length === 0 ? '' : `${line} ${width - 2},${height} 2,${height}`
+  const values = points.map(pick)
+  const max = Math.max(floor, ...values)
+  const latest = values[values.length - 1]
+  const line = polylinePoints(values, width, height, max)
+  const area = values.length === 0 ? '' : `${line} ${width - 2},${height} 2,${height}`
   return (
     <figure className={compact ? 'evo-chart evo-chart-compact' : 'evo-chart'}>
       <svg
@@ -48,9 +56,9 @@ export function PopulationChart({
         preserveAspectRatio="none"
         role="img"
         aria-label={
-          counts.length === 0
-            ? 'Population over time: no data yet'
-            : `Population over time: now ${latest}, highest ${Math.max(...counts)}, lowest ${Math.min(...counts)}`
+          values.length === 0
+            ? `${label} over time: no data yet`
+            : `${label} over time: now ${latest}, highest ${Math.max(...values)}, lowest ${Math.min(...values)}`
         }
       >
         <line className="evo-chart-axis" x1="0" y1={height - 1} x2={width} y2={height - 1} />
@@ -65,6 +73,16 @@ export function PopulationChart({
       )}
     </figure>
   )
+}
+
+/** The population over the run. */
+export function PopulationChart(props: {
+  points: readonly HistoryPoint[]
+  width?: number
+  height?: number
+  compact?: boolean
+}): React.JSX.Element {
+  return <HistoryChart {...props} pick={(point) => point.count} label="Population" />
 }
 
 /** A tiny trend line with no axes, for rows in a list. */
