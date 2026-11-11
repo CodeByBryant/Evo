@@ -33,6 +33,26 @@ describe('SimulationHost: running', () => {
     expect(h.getWorldInfo().terrain).not.toBeNull()
   })
 
+  it('tells the interface the size of a bigger world, so the camera can fit all of it (ADR 0021)', () => {
+    const presets = [
+      {
+        name: 'big',
+        label: 'Big',
+        description: 'A bigger field.',
+        overrides: { environment: { width: 700, height: 700 } }
+      },
+      { name: 'balanced', label: 'Balanced', description: 'The default world.', overrides: {} }
+    ]
+    const { host: big } = host({ presets, preset: 'big' })
+    expect(big.getWorldInfo().width).toBe(700)
+    expect(big.getWorldInfo().height).toBe(700)
+    expect(big.getWorldInfo().terrain?.gridSize).toBe(35)
+    // negative: the default world is the reference size
+    const { host: plain } = host({ presets, preset: 'balanced' })
+    expect(plain.getWorldInfo().width).toBe(500)
+    expect(plain.getWorldInfo().terrain?.gridSize).toBe(25)
+  })
+
   it('advances at the requested speed and reports what it achieved', () => {
     const { env, host: h } = host({ speed: 5 }) // 50 ticks per second
     env.runUntil(() => env.time > 3100)

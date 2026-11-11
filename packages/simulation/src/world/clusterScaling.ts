@@ -1,9 +1,10 @@
 import type { WorldConfig } from '@evo/contracts'
 import { ClusterLayout } from '../ecology/ClusterLayout'
+import { fieldScaling } from './fieldScaling'
 
 /**
- * The configuration a world actually runs with (docs/decisions/0014). The field layout is returned
- * unchanged. For the cluster layout the quantities tuned for the reference area
+ * The configuration a world actually runs with (docs/decisions/0014). The field layout is scaled by
+ * its area only when it is not the reference size (`fieldScaling`, ADR 0021). For the cluster layout the quantities tuned for the reference area
  * (`environment.width x height`) scale with the combined area of the clusters, so food density per
  * unit of habitable area is exactly the tuned density; the founder count is the species count
  * times their size; and the mating signal is capped below the width of the void so ready
@@ -11,7 +12,7 @@ import { ClusterLayout } from '../ecology/ClusterLayout'
  */
 export function effectiveConfig(config: WorldConfig): WorldConfig {
   const { environment } = config
-  if (environment.layout !== 'clusters') return config
+  if (environment.layout !== 'clusters') return fieldScaling(config)
   const clusters = environment.clusters
   const layout = new ClusterLayout(clusters)
   const scale = layout.totalArea / (environment.width * environment.height)
