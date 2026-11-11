@@ -6,6 +6,7 @@ export function view(overrides: Partial<ViewState> = {}): ViewState {
     status: 'running',
     seed: 7,
     preset: 'balanced',
+    startingBody: null,
     presets: [
       { name: 'balanced', label: 'Balanced', description: 'The default world.' },
       { name: 'harsh', label: 'Harsh', description: 'Scarce food.' }

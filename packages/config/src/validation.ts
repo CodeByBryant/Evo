@@ -407,8 +407,8 @@ function mergeEcology(base: object, override: unknown): unknown {
 }
 
 /**
- * Merges the anatomy section: `mutation`, `founderLook` and `founderOutline` merge field by field, `parts` merges
- * per type, and `founder` (a list) is replaced whole.
+ * Merges the anatomy section: `mutation`, `founderLook` and `founderOutline` and `startingBody` merge field by
+ * field, `parts` merges per type, and `founder` and `starters` (lists) are replaced whole.
  */
 function mergeAnatomy(base: object, override: unknown): unknown {
   if (override === undefined || !isObject(override)) return mergeSection(base, override)
@@ -420,6 +420,7 @@ function mergeAnatomy(base: object, override: unknown): unknown {
     mutation: mergeSection(defaults['mutation'] as object, override['mutation']),
     founderLook: mergeSection(defaults['founderLook'] as object, override['founderLook']),
     founderOutline: mergeSection(defaults['founderOutline'] as object, override['founderOutline']),
+    startingBody: mergeSection(defaults['startingBody'] as object, override['startingBody']),
     parts: isObject(parts)
       ? mergeNamed(defaults['parts'] as Record<string, object>, parts)
       : mergeSection(defaults['parts'] as object, parts),

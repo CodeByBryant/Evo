@@ -12,8 +12,9 @@ import {
   slotGeneIndex,
   visualGeneIndex
 } from '@evo/contracts'
-import type { AnatomyConfig } from '@evo/contracts'
+import type { AnatomyConfig, FounderPart } from '@evo/contracts'
 import { DEFAULT_ANATOMY } from '@evo/config'
+import type { RandomSource } from '../random/RandomSource'
 import type { GeneSpec } from './GeneSpecs'
 
 /** Latent values for a slot with no founder part: harmless defaults that mutation can wake up. */
@@ -39,9 +40,29 @@ const EMPTY_SLOT = {
  * vector for every founder, so founders differ only in their brains (docs/decisions/0012).
  */
 export function founderBodyVector(anatomy: AnatomyConfig): number[] {
+  return bodyVectorOf({
+    parts: anatomy.founder,
+    look: anatomy.founderLook,
+    outline: anatomy.founderOutline
+  })
+}
+
+/** A body plan: what the founder, and every starting body (`anatomy.starters`), is made of. */
+export interface BodyPlan {
+  readonly parts: readonly FounderPart[]
+  readonly look: { readonly pattern: number; readonly accentHue: number }
+  readonly outline: {
+    readonly count: number
+    readonly radii: readonly number[]
+    readonly angles: readonly number[]
+  }
+}
+
+/** The body gene vector of a plan: slot `i` holds `parts[i]`, the rest are empty with latent values. */
+export function bodyVectorOf(plan: BodyPlan): number[] {
   const out = new Array<number>(BODY_GENE_COUNT).fill(0)
   for (let slot = 0; slot < BODY_SLOT_COUNT; slot++) {
-    const part = anatomy.founder[slot]
+    const part = plan.parts[slot]
     const values = part
       ? {
           present: 1,
@@ -62,14 +83,44 @@ export function founderBodyVector(anatomy: AnatomyConfig): number[] {
       : { present: 0, ...EMPTY_SLOT }
     for (const field of SLOT_FIELDS) out[slotGeneIndex(slot, field)] = values[field]
   }
-  out[visualGeneIndex('pattern')] = anatomy.founderLook.pattern
-  out[visualGeneIndex('accentHue')] = anatomy.founderLook.accentHue
-  out[OUTLINE_COUNT_INDEX] = anatomy.founderOutline.count
+  out[visualGeneIndex('pattern')] = plan.look.pattern
+  out[visualGeneIndex('accentHue')] = plan.look.accentHue
+  out[OUTLINE_COUNT_INDEX] = plan.outline.count
   for (let i = 0; i < OUTLINE_MAX_POINTS; i++) {
-    out[outlineRadiusIndex(i)] = anatomy.founderOutline.radii[i] as number
-    out[outlineAngleIndex(i)] = anatomy.founderOutline.angles[i] as number
+    out[outlineRadiusIndex(i)] = plan.outline.radii[i] as number
+    out[outlineAngleIndex(i)] = plan.outline.angles[i] as number
   }
   return out
+}
+
+/** The body a world's founders start with, and the name of the archetype it came from (`null` for the founder plan). */
+export interface StartingBodyChoice {
+  readonly name: string | null
+  readonly body: number[]
+}
+
+/**
+ * Picks the body a world starts with (ADR 0020). `reference` is the founder plan and draws
+ * nothing. `archetypes` always takes exactly one draw from `random`, whether or not an archetype is
+ * forced, so forcing one gives the same streams as drawing it. Throws on an empty pool or an
+ * unknown forced name (validation catches both first).
+ */
+export function chooseStartingBody(
+  anatomy: AnatomyConfig,
+  random: RandomSource
+): StartingBodyChoice {
+  const { mode, archetype } = anatomy.startingBody
+  if (mode === 'reference') return { name: null, body: founderBodyVector(anatomy) }
+  const starters = anatomy.starters
+  if (starters.length === 0) throw new RangeError('anatomy.starters is empty')
+  const drawn = Math.min(starters.length - 1, Math.floor(random.float() * starters.length))
+  const index = archetype === null ? drawn : starters.findIndex((s) => s.name === archetype)
+  const chosen = starters[index]
+  if (chosen === undefined) throw new RangeError(`unknown starting body "${String(archetype)}"`)
+  return {
+    name: chosen.name,
+    body: bodyVectorOf({ parts: chosen.parts, look: chosen.look, outline: chosen.outline })
+  }
 }
 
 /** The founder body of the default configuration (used where a genome is built without a config). */

@@ -5,7 +5,13 @@
     {
       "name": "default-1k",
       "seed": 12345,
-      "config": {},
+      "config": {
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        }
+      },
       "steps": 1000,
       "expectedHash": "6d4311c22988e3650660c61f138170d0"
     },
@@ -15,6 +21,11 @@
       "config": {
         "feeding": {
           "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 3000,
@@ -55,6 +66,11 @@
         },
         "feeding": {
           "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 5000,
@@ -91,6 +107,11 @@
           "rewardWeights": {
             "damage": 0,
             "exploration": 0
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
           }
         }
       },
@@ -133,6 +154,11 @@
             "damage": 0,
             "exploration": 0
           }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 20000,
@@ -170,6 +196,11 @@
           "rewardWeights": {
             "damage": 0,
             "exploration": 0
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
           }
         }
       },
@@ -211,6 +242,11 @@
             "damage": 0,
             "exploration": 0
           }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 100,
@@ -219,7 +255,13 @@
     {
       "name": "long-run-100k",
       "seed": 999,
-      "config": {},
+      "config": {
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        }
+      },
       "steps": 100000,
       "expectedHash": "37a19b9ba1ba7d9724917e3e60aee3f3"
     },
@@ -252,6 +294,11 @@
           },
           "migration": {
             "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
           }
         }
       },
@@ -290,6 +337,11 @@
           },
           "migration": {
             "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
           }
         }
       },
@@ -333,6 +385,11 @@
           "migration": {
             "enabled": false
           }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 20000,
@@ -367,6 +424,11 @@
           },
           "migration": {
             "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
           }
         }
       },
@@ -406,6 +468,11 @@
           "migration": {
             "enabled": false
           }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 5000,
@@ -443,6 +510,11 @@
           },
           "migration": {
             "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
           }
         }
       },
@@ -486,6 +558,11 @@
             "damage": 0,
             "exploration": 0
           }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 5000,
@@ -494,7 +571,13 @@
     {
       "name": "ecology-default-12k",
       "seed": 7,
-      "config": {},
+      "config": {
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        }
+      },
       "steps": 12000,
       "expectedHash": "9984b19355fa33024b1179457937d352"
     },
@@ -504,6 +587,11 @@
       "config": {
         "learning": {
           "controller": "reflex"
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 8000,
@@ -525,6 +613,11 @@
             "areaRadius": 120,
             "areaDamage": 40
           }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 3000,
@@ -541,6 +634,9 @@
             "typeRate": 0.1,
             "continuousRate": 0.3,
             "visualRate": 0.3
+          },
+          "startingBody": {
+            "mode": "reference"
           }
         },
         "genetics": {
@@ -561,6 +657,9 @@
             "typeRate": 0.1,
             "continuousRate": 0.3,
             "visualRate": 0.3
+          },
+          "startingBody": {
+            "mode": "reference"
           }
         },
         "genetics": {
@@ -582,6 +681,11 @@
           "clusters": {
             "organismsPerSpecies": 4
           }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 6000,
@@ -599,10 +703,101 @@
         },
         "learning": {
           "controller": "reflex"
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
         }
       },
       "steps": 4000,
       "expectedHash": "cfa75543f3fdf4e6c4787fc86e8e21d6"
+    },
+    {
+      "name": "archetypes-default-1k",
+      "seed": 12345,
+      "config": {},
+      "steps": 1000,
+      "expectedHash": "035c55528e63ff103819fef2c849427e"
+    },
+    {
+      "name": "archetypes-ecology-12k",
+      "seed": 7,
+      "config": {},
+      "steps": 12000,
+      "expectedHash": "45144a806e33162384569225394c5ff0"
+    },
+    {
+      "name": "archetypes-reflex-8k",
+      "seed": 3,
+      "config": {
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 8000,
+      "expectedHash": "93b18a0e94385e2758ab3c5d98fdad24"
+    },
+    {
+      "name": "archetypes-evolving-bodies-6k",
+      "seed": 7,
+      "config": {
+        "anatomy": {
+          "mutation": {
+            "presenceRate": 0.1,
+            "typeRate": 0.1,
+            "continuousRate": 0.3,
+            "visualRate": 0.5
+          }
+        },
+        "genetics": {
+          "mutationRateScale": 3
+        }
+      },
+      "steps": 6000,
+      "expectedHash": "154ff36c4d0ff9de625698743f9e0c7c"
+    },
+    {
+      "name": "archetype-forced-grazer-3k",
+      "seed": 1,
+      "config": {
+        "anatomy": {
+          "startingBody": {
+            "mode": "archetypes",
+            "archetype": "grazer"
+          }
+        }
+      },
+      "steps": 3000,
+      "expectedHash": "1ae2c7312514d3055e29a47e9e6a5046"
+    },
+    {
+      "name": "archetype-forced-fungus-scraper-3k",
+      "seed": 2,
+      "config": {
+        "anatomy": {
+          "startingBody": {
+            "mode": "archetypes",
+            "archetype": "fungus-scraper"
+          }
+        }
+      },
+      "steps": 3000,
+      "expectedHash": "c5330eb2fea56171d285b38ee09efe8c"
+    },
+    {
+      "name": "archetype-forced-tank-3k",
+      "seed": 5,
+      "config": {
+        "anatomy": {
+          "startingBody": {
+            "mode": "archetypes",
+            "archetype": "tank"
+          }
+        }
+      },
+      "steps": 3000,
+      "expectedHash": "6ad7e48e9d2ce956263183bb72ba81b4"
     }
   ]
 }

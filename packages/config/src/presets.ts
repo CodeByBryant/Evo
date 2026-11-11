@@ -48,14 +48,19 @@ export const PRESETS: readonly WorldPreset[] = [
     label: 'Clusters',
     description:
       'The prototype world: six circular clusters with several biomes each, empty void between them, three species per cluster.',
-    overrides: { environment: { layout: 'clusters' } }
+    // The cluster founders build on one body; the parked cluster world keeps the founder plan.
+    overrides: {
+      environment: { layout: 'clusters' },
+      anatomy: { startingBody: { mode: 'reference' } }
+    }
   },
   {
     name: 'fixed-bodies',
     label: 'Fixed bodies',
     description:
       'Every creature keeps the founder body: no part, outline or colour ever changes, so only brains and the other genes evolve.',
-    overrides: { anatomy: { enabled: false } }
+    // Anatomy off reads every body as the founder plan, so an archetype would only be paint.
+    overrides: { anatomy: { enabled: false, startingBody: { mode: 'reference' } } }
   },
   {
     name: 'classic',
@@ -63,6 +68,8 @@ export const PRESETS: readonly WorldPreset[] = [
     description:
       'One kind of food on an even field: no regions, seasons, hazards or health, and creatures eat by touching food.',
     overrides: {
+      // The phase 3 world starts with the one founder body it always had.
+      anatomy: { startingBody: { mode: 'reference' } },
       resources: { spawnRate: 2 },
       // The phase 3 world: touch food and take it whole, with the phase 3 breeding and lifespans.
       // That way of eating wastes about a third of the food, so it cannot carry the restrained

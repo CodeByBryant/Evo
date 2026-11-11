@@ -248,3 +248,97 @@ describe('mouth forms (ADR 0017)', () => {
     }
   })
 })
+
+describe('starting bodies (ADR 0020)', () => {
+  const starterOf = (name: string): Loose => {
+    const copy = JSON.parse(JSON.stringify(DEFAULT_WORLD_CONFIG.anatomy)) as Loose
+    return {
+      name,
+      description: `${name} body`,
+      parts: copy.founder,
+      look: copy.founderLook,
+      outline: copy.founderOutline
+    }
+  }
+
+  it('ship five named starters, default to drawing one, and that is valid', () => {
+    const { anatomy } = DEFAULT_WORLD_CONFIG
+    expect(anatomy.startingBody).toEqual({ mode: 'archetypes', archetype: null })
+    expect(anatomy.starters.map((s) => s.name)).toEqual([
+      'grazer',
+      'nectar-sipper',
+      'fungus-scraper',
+      'scout',
+      'tank'
+    ])
+    expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
+  })
+
+  it('accept valid starters, a forced name, and merge: startingBody by field, starters whole', () => {
+    const config = resolveWorldConfig({
+      anatomy: {
+        starters: [starterOf('a'), starterOf('b')] as never,
+        startingBody: { mode: 'archetypes' }
+      }
+    })
+    expect(config.anatomy.startingBody).toEqual({ mode: 'archetypes', archetype: null })
+    expect(config.anatomy.starters.map((s) => s.name)).toEqual(['a', 'b'])
+    const forced = resolveWorldConfig({
+      anatomy: { starters: [starterOf('a')] as never, startingBody: { archetype: 'a' } }
+    })
+    expect(forced.anatomy.startingBody.archetype).toBe('a')
+    // a second override replaces the list, it does not append
+    expect(
+      resolveWorldConfig({ anatomy: { starters: [starterOf('z')] as never } }).anatomy.starters
+    ).toHaveLength(1)
+  })
+
+  it('rejects an empty pool in archetypes mode, an unknown forced name and a bad mode', () => {
+    expect(
+      errorsFor((c) => {
+        c.anatomy.starters = []
+        c.anatomy.startingBody.mode = 'archetypes'
+      })
+    ).toContain('anatomy.startingBody.mode is "archetypes" but anatomy.starters is empty')
+    expect(
+      errorsFor((c) => {
+        c.anatomy.starters = [starterOf('a')]
+        c.anatomy.startingBody.archetype = 'b'
+      })
+    ).toContain('anatomy.startingBody.archetype "b" is not one of anatomy.starters')
+    expect(errorsFor((c) => (c.anatomy.startingBody.mode = 'random')).length).toBeGreaterThan(0)
+    expect(errorsFor((c) => (c.anatomy.startingBody.archetype = 3))).toContain(
+      'anatomy.startingBody.archetype must be a starter name or null'
+    )
+  })
+
+  it('checks each starter like the founder: names, parts, budget, look and outline', () => {
+    expect(errorsFor((c) => (c.anatomy.starters = [starterOf('a'), starterOf('a')]))).toContain(
+      'anatomy.starters[1].name "a" is used twice'
+    )
+    expect(errorsFor((c) => (c.anatomy.starters = [{ ...starterOf(''), name: ' ' }]))).toContain(
+      'anatomy.starters[0].name must be a non-empty string'
+    )
+    const heavy = errorsFor((c) => {
+      c.anatomy.structuralBudget = 2
+      c.anatomy.starters = [starterOf('a')]
+    })
+    expect(heavy.some((e) => e.includes('anatomy.starters[0].parts has a total size'))).toBe(true)
+    expect(heavy.some((e) => e.includes('the starting body must develop completely'))).toBe(true)
+    expect(
+      errorsFor((c) => {
+        const s = starterOf('a')
+        s.parts[0].type = 'wing'
+        s.look.pattern = 9
+        s.outline.count = 99
+        c.anatomy.starters = [s]
+      }).filter((e) => e.startsWith('anatomy.starters[0]')).length
+    ).toBeGreaterThanOrEqual(3)
+    expect(errorsFor((c) => (c.anatomy.starters = [{ ...starterOf('a'), extra: 1 }]))).toContain(
+      'unknown property "anatomy.starters[0].extra"'
+    )
+    expect(errorsFor((c) => (c.anatomy.starters = 'none'))).toContain(
+      'anatomy.starters must be an array'
+    )
+  })
+})

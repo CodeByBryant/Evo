@@ -173,11 +173,14 @@ describe('view-state builders', () => {
   })
 })
 
+// Tests about "the founder's body" start with it, not a drawn starting body (ADR 0020).
+const FOUNDER_PLAN = { anatomy: { startingBody: { mode: 'reference' as const } } }
+
 describe('buildAnatomy', () => {
   it('describes the body of a living organism and nothing for one that is gone', async () => {
     const { World } = await import('@evo/simulation')
     const { buildAnatomy } = await import('../src/host/viewState')
-    const world = World.create({ seed: 5 })
+    const world = World.create({ seed: 5, config: FOUNDER_PLAN })
     const id = world.snapshot().organisms[0]!.id
     const anatomy = buildAnatomy(world, id)
     expect(anatomy?.parts).toHaveLength(7)
@@ -193,7 +196,7 @@ describe('buildAnatomy', () => {
     const { World } = await import('@evo/simulation')
     const { PART_STATS } = await import('@evo/contracts')
     const { buildAnatomy } = await import('../src/host/viewState')
-    const world = World.create({ seed: 5 })
+    const world = World.create({ seed: 5, config: FOUNDER_PLAN })
     const id = world.snapshot().organisms[0]!.id
     const anatomy = buildAnatomy(world, id)!
     const slots = new Set(anatomy.parts.map((part) => part.slot))

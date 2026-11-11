@@ -7,6 +7,7 @@ import {
 } from '@evo/contracts'
 import { DEFAULT_ANATOMY, resolveWorldConfig } from '@evo/config'
 import { founderBodyVector } from '../../src/genetics/BodyGenes'
+import { REFERENCE_START } from '../support/bodies'
 import {
   developOutline,
   founderOutlineOf,
@@ -102,7 +103,7 @@ describe('outline physics factors', () => {
   })
 
   it('make a bigger body larger and costlier, and a spiky one drag', () => {
-    const world = World.create({ seed: 1 })
+    const world = World.create({ seed: 1, config: REFERENCE_START })
     const genome = world.genomeOf(world.snapshot().organisms[0]?.id as number)
     if (!genome) throw new Error('expected a genome')
     const config = world.config

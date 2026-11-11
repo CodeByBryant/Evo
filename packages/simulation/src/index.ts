@@ -47,7 +47,14 @@ export { SimulationClock } from './clock/SimulationClock'
 export type { ClockState } from './clock/SimulationClock'
 export { HASH_SCHEMA_VERSION, StateHasher } from './serialization/hash'
 export { utf8Encode } from './serialization/utf8'
-export { DEFAULT_BODY_GENES, buildBodySpecs, founderBodyVector } from './genetics/BodyGenes'
+export {
+  DEFAULT_BODY_GENES,
+  bodyVectorOf,
+  buildBodySpecs,
+  chooseStartingBody,
+  founderBodyVector
+} from './genetics/BodyGenes'
+export type { BodyPlan, StartingBodyChoice } from './genetics/BodyGenes'
 export { buildGeneSpecs, ORDER_MARGIN } from './genetics/GeneSpecs'
 export type { GeneSpec } from './genetics/GeneSpecs'
 export { boundGene, shortestDelta, wrapToRange } from './genetics/geneMath'

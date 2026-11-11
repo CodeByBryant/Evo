@@ -9,6 +9,7 @@ import {
 } from '@evo/contracts'
 import type { AnatomyConfig } from '@evo/contracts'
 import { checkChoice, checkNumber, checkSection, isObject } from './checks'
+import { DEFAULT_STARTERS } from './starters'
 import type { PlainObject } from './checks'
 
 const TWO_PI = Math.PI * 2
@@ -168,6 +169,9 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     ],
     angles: new Array<number>(OUTLINE_MAX_POINTS).fill(0.5)
   },
+  // Bodies a world can start with instead of the founder (ADR 0020).
+  starters: DEFAULT_STARTERS,
+  startingBody: { mode: 'archetypes', archetype: null },
   outlineDrag: 0.5,
   // Energy yield of each mouth form on each kind of food (ADR 0017). The mandible is the
   // generalist and exactly 1 everywhere, so the founder is the reference; the specialists beat it on
@@ -193,6 +197,8 @@ const ANATOMY_KEYS = [
   'founder',
   'founderLook',
   'founderOutline',
+  'starters',
+  'startingBody',
   'outlineDrag',
   'mouthForms'
 ]
@@ -227,6 +233,9 @@ const FOUNDER_PART_KEYS = [
   'stats'
 ]
 const LOOK_KEYS = ['pattern', 'accentHue']
+const STARTER_KEYS = ['name', 'description', 'parts', 'look', 'outline']
+const STARTING_BODY_KEYS = ['mode', 'archetype']
+const STARTING_BODY_MODES = ['reference', 'archetypes']
 const OUTLINE_KEYS = ['count', 'radii', 'angles']
 
 function checkRange(
@@ -317,73 +326,13 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
     }
   }
 
-  const founder = anatomy['founder']
-  if (founder === undefined) errors.push('anatomy.founder is required')
-  else if (!Array.isArray(founder)) errors.push('anatomy.founder must be an array')
-  else {
-    if (founder.length > BODY_SLOT_COUNT) {
-      errors.push(
-        `anatomy.founder has ${founder.length} parts but a body has ${BODY_SLOT_COUNT} slots`
-      )
-    }
-    let total = 0
-    let allSizes = true
-    founder.forEach((entry: unknown, index: number) => {
-      const path = `anatomy.founder[${index}]`
-      if (!isObject(entry)) {
-        errors.push(`${path} must be an object`)
-        allSizes = false
-        return
-      }
-      for (const key of Object.keys(entry)) {
-        if (!FOUNDER_PART_KEYS.includes(key)) errors.push(`unknown property "${path}.${key}"`)
-      }
-      checkChoice(entry, 'type', `${path}.type`, [...PART_TYPES], errors)
-      const size = checkRange(entry, 'size', `${path}.size`, 0.1, 1, true, errors)
-      if (size === undefined) allSizes = false
-      else total += size
-      checkRange(entry, 'angle', `${path}.angle`, 0, TWO_PI, false, errors)
-      checkRange(entry, 'orientation', `${path}.orientation`, 0, TWO_PI, false, errors)
-      checkRange(entry, 'offset', `${path}.offset`, 0, 1, true, errors)
-      checkRange(entry, 'integrity', `${path}.integrity`, 0.1, 1, true, errors)
-      const parent = checkNumber(entry, 'parent', `${path}.parent`, { integer: true }, errors)
-      if (parent !== undefined && (parent < 0 || parent > index)) {
-        errors.push(
-          `${path}.parent must be 0 (the body) or the number of an earlier part, 1 to ${index}`
-        )
-      }
-      const stats = entry['stats']
-      if (!Array.isArray(stats) || stats.length > PART_STAT_COUNT) {
-        errors.push(`${path}.stats must be an array of at most ${PART_STAT_COUNT} numbers`)
-      } else {
-        stats.forEach((value: unknown, statIndex: number) => {
-          if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
-            errors.push(`${path}.stats[${statIndex}] must be a number from 0 to 1`)
-          }
-        })
-      }
-    })
-    if (allSizes && budget !== undefined && total > budget) {
-      errors.push(
-        `anatomy.founder has a total size of ${total} but anatomy.structuralBudget is ${budget}; the founder body must develop completely`
-      )
-    }
-  }
+  checkParts(anatomy['founder'], 'anatomy.founder', budget, errors, 'founder body')
 
-  const look = checkSection(anatomy, 'founderLook', LOOK_KEYS, errors, 'anatomy.founderLook')
-  if (look) {
-    const pattern = checkNumber(
-      look,
-      'pattern',
-      'anatomy.founderLook.pattern',
-      { integer: true },
-      errors
-    )
-    if (pattern !== undefined && (pattern < 0 || pattern > 3)) {
-      errors.push('anatomy.founderLook.pattern must be an integer from 0 to 3')
-    }
-    checkRange(look, 'accentHue', 'anatomy.founderLook.accentHue', 0, 1, false, errors)
-  }
+  checkLook(
+    checkSection(anatomy, 'founderLook', LOOK_KEYS, errors, 'anatomy.founderLook'),
+    'anatomy.founderLook',
+    errors
+  )
 
   checkNumber(anatomy, 'outlineDrag', 'anatomy.outlineDrag', { nonnegative: true }, errors)
 
@@ -415,40 +364,173 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
     }
   }
 
-  const outline = checkSection(
-    anatomy,
-    'founderOutline',
-    OUTLINE_KEYS,
-    errors,
-    'anatomy.founderOutline'
+  checkOutline(
+    checkSection(anatomy, 'founderOutline', OUTLINE_KEYS, errors, 'anatomy.founderOutline'),
+    'anatomy.founderOutline',
+    errors
   )
-  if (outline) {
-    const count = checkNumber(
-      outline,
-      'count',
-      'anatomy.founderOutline.count',
-      { integer: true },
-      errors
-    )
-    if (count !== undefined && (count < OUTLINE_MIN_POINTS || count > OUTLINE_MAX_POINTS)) {
+
+  checkStarters(anatomy, errors, budget)
+}
+
+/**
+ * Validates a body plan's part list: `anatomy.founder` or a starter's `parts`. `noun` is what the
+ * messages call the body ("founder", "starting body"), so a total size over the budget reads right.
+ */
+function checkParts(
+  parts: unknown,
+  path: string,
+  budget: number | undefined,
+  errors: string[],
+  noun: string
+): void {
+  if (parts === undefined) {
+    errors.push(`${path} is required`)
+    return
+  }
+  if (!Array.isArray(parts)) {
+    errors.push(`${path} must be an array`)
+    return
+  }
+  if (parts.length > BODY_SLOT_COUNT) {
+    errors.push(`${path} has ${parts.length} parts but a body has ${BODY_SLOT_COUNT} slots`)
+  }
+  let total = 0
+  let allSizes = true
+  parts.forEach((entry: unknown, index: number) => {
+    const at = `${path}[${index}]`
+    if (!isObject(entry)) {
+      errors.push(`${at} must be an object`)
+      allSizes = false
+      return
+    }
+    for (const key of Object.keys(entry)) {
+      if (!FOUNDER_PART_KEYS.includes(key)) errors.push(`unknown property "${at}.${key}"`)
+    }
+    checkChoice(entry, 'type', `${at}.type`, [...PART_TYPES], errors)
+    const size = checkRange(entry, 'size', `${at}.size`, 0.1, 1, true, errors)
+    if (size === undefined) allSizes = false
+    else total += size
+    checkRange(entry, 'angle', `${at}.angle`, 0, TWO_PI, false, errors)
+    checkRange(entry, 'orientation', `${at}.orientation`, 0, TWO_PI, false, errors)
+    checkRange(entry, 'offset', `${at}.offset`, 0, 1, true, errors)
+    checkRange(entry, 'integrity', `${at}.integrity`, 0.1, 1, true, errors)
+    const parent = checkNumber(entry, 'parent', `${at}.parent`, { integer: true }, errors)
+    if (parent !== undefined && (parent < 0 || parent > index)) {
       errors.push(
-        `anatomy.founderOutline.count must be an integer from ${OUTLINE_MIN_POINTS} to ${OUTLINE_MAX_POINTS}`
+        `${at}.parent must be 0 (the body) or the number of an earlier part, 1 to ${index}`
       )
     }
-    const list = (key: 'radii' | 'angles', low: number, high: number): void => {
-      const values = outline[key]
-      const path = `anatomy.founderOutline.${key}`
-      if (!Array.isArray(values) || values.length !== OUTLINE_MAX_POINTS) {
-        errors.push(`${path} must be an array of ${OUTLINE_MAX_POINTS} numbers`)
-        return
-      }
-      values.forEach((value: unknown, index: number) => {
-        if (typeof value !== 'number' || !Number.isFinite(value) || value < low || value > high) {
-          errors.push(`${path}[${index}] must be a number from ${low} to ${high}`)
+    const stats = entry['stats']
+    if (!Array.isArray(stats) || stats.length > PART_STAT_COUNT) {
+      errors.push(`${at}.stats must be an array of at most ${PART_STAT_COUNT} numbers`)
+    } else {
+      stats.forEach((value: unknown, statIndex: number) => {
+        if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+          errors.push(`${at}.stats[${statIndex}] must be a number from 0 to 1`)
         }
       })
     }
-    list('radii', OUTLINE_MIN_RADIUS, 1)
-    list('angles', 0, 1)
+  })
+  if (allSizes && budget !== undefined && total > budget) {
+    errors.push(
+      `${path} has a total size of ${total} but anatomy.structuralBudget is ${budget}; the ${noun} must develop completely`
+    )
+  }
+}
+
+/** Validates a painted-genes section (`anatomy.founderLook` or a starter's `look`). */
+function checkLook(look: PlainObject | undefined, path: string, errors: string[]): void {
+  if (!look) return
+  const pattern = checkNumber(look, 'pattern', `${path}.pattern`, { integer: true }, errors)
+  if (pattern !== undefined && (pattern < 0 || pattern > 3)) {
+    errors.push(`${path}.pattern must be an integer from 0 to 3`)
+  }
+  checkRange(look, 'accentHue', `${path}.accentHue`, 0, 1, false, errors)
+}
+
+/** Validates an outline section (`anatomy.founderOutline` or a starter's `outline`). */
+function checkOutline(outline: PlainObject | undefined, path: string, errors: string[]): void {
+  if (!outline) return
+  const count = checkNumber(outline, 'count', `${path}.count`, { integer: true }, errors)
+  if (count !== undefined && (count < OUTLINE_MIN_POINTS || count > OUTLINE_MAX_POINTS)) {
+    errors.push(
+      `${path}.count must be an integer from ${OUTLINE_MIN_POINTS} to ${OUTLINE_MAX_POINTS}`
+    )
+  }
+  const list = (key: 'radii' | 'angles', low: number, high: number): void => {
+    const values = outline[key]
+    const at = `${path}.${key}`
+    if (!Array.isArray(values) || values.length !== OUTLINE_MAX_POINTS) {
+      errors.push(`${at} must be an array of ${OUTLINE_MAX_POINTS} numbers`)
+      return
+    }
+    values.forEach((value: unknown, index: number) => {
+      if (typeof value !== 'number' || !Number.isFinite(value) || value < low || value > high) {
+        errors.push(`${at}[${index}] must be a number from ${low} to ${high}`)
+      }
+    })
+  }
+  list('radii', OUTLINE_MIN_RADIUS, 1)
+  list('angles', 0, 1)
+}
+
+/** Validates `anatomy.starters` and `anatomy.startingBody` (ADR 0020). */
+function checkStarters(anatomy: PlainObject, errors: string[], budget: number | undefined): void {
+  const names: string[] = []
+  const starters = anatomy['starters']
+  if (starters === undefined) errors.push('anatomy.starters is required')
+  else if (!Array.isArray(starters)) errors.push('anatomy.starters must be an array')
+  else {
+    starters.forEach((entry: unknown, index: number) => {
+      const path = `anatomy.starters[${index}]`
+      if (!isObject(entry)) {
+        errors.push(`${path} must be an object`)
+        return
+      }
+      for (const key of Object.keys(entry)) {
+        if (!STARTER_KEYS.includes(key)) errors.push(`unknown property "${path}.${key}"`)
+      }
+      const name = entry['name']
+      if (typeof name !== 'string' || name.trim() === '') {
+        errors.push(`${path}.name must be a non-empty string`)
+      } else {
+        if (names.includes(name)) errors.push(`${path}.name "${name}" is used twice`)
+        names.push(name)
+      }
+      if (typeof entry['description'] !== 'string') {
+        errors.push(`${path}.description must be a string`)
+      }
+      checkParts(entry['parts'], `${path}.parts`, budget, errors, 'starting body')
+      checkLook(
+        checkSection(entry, 'look', LOOK_KEYS, errors, `${path}.look`),
+        `${path}.look`,
+        errors
+      )
+      checkOutline(
+        checkSection(entry, 'outline', OUTLINE_KEYS, errors, `${path}.outline`),
+        `${path}.outline`,
+        errors
+      )
+    })
+  }
+
+  const choice = checkSection(
+    anatomy,
+    'startingBody',
+    STARTING_BODY_KEYS,
+    errors,
+    'anatomy.startingBody'
+  )
+  if (!choice) return
+  checkChoice(choice, 'mode', 'anatomy.startingBody.mode', STARTING_BODY_MODES, errors)
+  const archetype = choice['archetype']
+  if (archetype !== null && typeof archetype !== 'string') {
+    errors.push('anatomy.startingBody.archetype must be a starter name or null')
+  } else if (typeof archetype === 'string' && !names.includes(archetype)) {
+    errors.push(`anatomy.startingBody.archetype "${archetype}" is not one of anatomy.starters`)
+  }
+  if (choice['mode'] === 'archetypes' && Array.isArray(starters) && starters.length === 0) {
+    errors.push('anatomy.startingBody.mode is "archetypes" but anatomy.starters is empty')
   }
 }

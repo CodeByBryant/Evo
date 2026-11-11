@@ -14,5 +14,16 @@ export const ALL_ROUND_FOUNDER: FounderPart[] = resolveWorldConfig({}).anatomy.f
       : { ...part }
 )
 
-/** `anatomy` overrides giving a world the all-round founder. */
-export const ALL_ROUND: WorldConfigOverrides = { anatomy: { founder: ALL_ROUND_FOUNDER } }
+/**
+ * `anatomy` overrides that start a world with the founder plan itself rather than a drawn starting
+ * body (ADR 0020). Tests about the founder, the Phase 3 pins and anything that reads "the body
+ * every organism has" use it, so they keep measuring what they were written to measure.
+ */
+export const REFERENCE_START: WorldConfigOverrides = {
+  anatomy: { startingBody: { mode: 'reference' } }
+}
+
+/** `anatomy` overrides giving a world the all-round founder (and starting with it). */
+export const ALL_ROUND: WorldConfigOverrides = {
+  anatomy: { founder: ALL_ROUND_FOUNDER, startingBody: { mode: 'reference' } }
+}
