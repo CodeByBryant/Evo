@@ -32,12 +32,21 @@ describe('golden state hashes', () => {
     expect(golden.entries.length).toBeGreaterThan(0)
   })
 
+  // Time budget. The longest entry (long-run-100k) took 182.3 s on a Windows CI runner, just over
+  // the 180 s global `testTimeout`, and timed out before its hash was compared (PR #134, Windows
+  // shard 2; every other entry passed there). `it.each` takes one timeout for all its rows, so the
+  // budget follows the longest entry: 6 ms a tick (100,000 ticks get 600 s, over three times the
+  // slowest run seen) and never below the global 180 s. It only matters for a hung or very slow
+  // run; what each test asserts (the same hash) is untouched.
+  const budget = Math.max(180_000, 6 * Math.max(...golden.entries.map((entry) => entry.steps)))
+
   it.each(golden.entries.map((entry) => [entry.name, entry] as const))(
     '%s reproduces its pinned hash',
     (_name, entry) => {
       const world = World.create({ seed: entry.seed, config: entry.config })
       world.run(entry.steps)
       expect(world.stateHash()).toBe(entry.expectedHash)
-    }
+    },
+    budget
   )
 })
