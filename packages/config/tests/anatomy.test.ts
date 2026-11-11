@@ -249,7 +249,7 @@ describe('mouth forms (ADR 0017)', () => {
   })
 })
 
-describe('starting bodies (ADR 0019)', () => {
+describe('starting bodies (ADR 0020)', () => {
   const starterOf = (name: string): Loose => {
     const copy = JSON.parse(JSON.stringify(DEFAULT_WORLD_CONFIG.anatomy)) as Loose
     return {
@@ -261,9 +261,16 @@ describe('starting bodies (ADR 0019)', () => {
     }
   }
 
-  it('default to the founder plan with no starters, and that is valid', () => {
+  it('ship five named starters, default to the founder plan, and that is valid', () => {
     const { anatomy } = DEFAULT_WORLD_CONFIG
     expect(anatomy.startingBody).toEqual({ mode: 'reference', archetype: null })
+    expect(anatomy.starters.map((s) => s.name)).toEqual([
+      'grazer',
+      'nectar-sipper',
+      'fungus-scraper',
+      'scout',
+      'tank'
+    ])
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
   })
 
@@ -287,9 +294,12 @@ describe('starting bodies (ADR 0019)', () => {
   })
 
   it('rejects an empty pool in archetypes mode, an unknown forced name and a bad mode', () => {
-    expect(errorsFor((c) => (c.anatomy.startingBody.mode = 'archetypes'))).toContain(
-      'anatomy.startingBody.mode is "archetypes" but anatomy.starters is empty'
-    )
+    expect(
+      errorsFor((c) => {
+        c.anatomy.starters = []
+        c.anatomy.startingBody.mode = 'archetypes'
+      })
+    ).toContain('anatomy.startingBody.mode is "archetypes" but anatomy.starters is empty')
     expect(
       errorsFor((c) => {
         c.anatomy.starters = [starterOf('a')]

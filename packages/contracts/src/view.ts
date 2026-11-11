@@ -167,7 +167,7 @@ export interface ViewState {
   readonly status: RunStatus
   readonly seed: number
   readonly preset: string
-  /** The starting body this world drew (ADR 0019), or `null` when its founders started with the founder plan. */
+  /** The starting body this world drew (ADR 0020), or `null` when its founders started with the founder plan. */
   readonly startingBody: string | null
   readonly presets: readonly PresetOption[]
   readonly speed: SpeedSetting

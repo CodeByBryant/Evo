@@ -64,7 +64,7 @@ export interface WorldInfo {
   readonly terrain: TerrainSnapshot | null
   /** The cluster layout (ADR 0014), or `null` in the field layout. */
   readonly clusters: ClusterLayoutSnapshot | null
-  /** The starting body this world drew (ADR 0019), or `null` when it started with the founder plan. */
+  /** The starting body this world drew (ADR 0020), or `null` when it started with the founder plan. */
   readonly startingBody: string | null
 }
 

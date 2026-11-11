@@ -100,7 +100,7 @@ export interface StartingBodyChoice {
 }
 
 /**
- * Picks the body a world starts with (ADR 0019). `reference` is the founder plan and draws
+ * Picks the body a world starts with (ADR 0020). `reference` is the founder plan and draws
  * nothing. `archetypes` always takes exactly one draw from `random`, whether or not an archetype is
  * forced, so forcing one gives the same streams as drawing it. Throws on an empty pool or an
  * unknown forced name (validation catches both first).

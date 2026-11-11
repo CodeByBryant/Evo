@@ -9,6 +9,7 @@ import {
 } from '@evo/contracts'
 import type { AnatomyConfig } from '@evo/contracts'
 import { checkChoice, checkNumber, checkSection, isObject } from './checks'
+import { DEFAULT_STARTERS } from './starters'
 import type { PlainObject } from './checks'
 
 const TWO_PI = Math.PI * 2
@@ -168,9 +169,8 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     ],
     angles: new Array<number>(OUTLINE_MAX_POINTS).fill(0.5)
   },
-  // Bodies a world can start with instead of the founder (ADR 0019); none until they are designed and
-  // measured, and `reference` until then.
-  starters: [],
+  // Bodies a world can start with instead of the founder (ADR 0020).
+  starters: DEFAULT_STARTERS,
   startingBody: { mode: 'reference', archetype: null },
   outlineDrag: 0.5,
   // Energy yield of each mouth form on each kind of food (ADR 0017). The mandible is the
@@ -475,7 +475,7 @@ function checkOutline(outline: PlainObject | undefined, path: string, errors: st
   list('angles', 0, 1)
 }
 
-/** Validates `anatomy.starters` and `anatomy.startingBody` (ADR 0019). */
+/** Validates `anatomy.starters` and `anatomy.startingBody` (ADR 0020). */
 function checkStarters(anatomy: PlainObject, errors: string[], budget: number | undefined): void {
   const names: string[] = []
   const starters = anatomy['starters']

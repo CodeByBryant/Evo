@@ -136,7 +136,7 @@ export class World {
   private readonly migrationTracker: MigrationTracker
   private readonly geneSpecs: GeneSpec[]
   private readonly bodySpecs: GeneSpec[]
-  /** The founder plan: the reference every capability is measured against (ADR 0019). */
+  /** The founder plan: the reference every capability is measured against (ADR 0020). */
   private readonly founderBody: number[]
   /** The body this world's founders start with, and its archetype's name (`null`: the founder plan). */
   private startBody: number[]
@@ -394,7 +394,7 @@ export class World {
     const worldRandom = this.randomStreams.get('world')
     const geneticsRandom = this.randomStreams.get('genetics')
     const { width, height } = this.config.environment
-    // The body every founder of this world starts with (ADR 0019): one draw in `archetypes` mode,
+    // The body every founder of this world starts with (ADR 0020): one draw in `archetypes` mode,
     // none in `reference` mode, so the founder plan's worlds are exactly as before.
     const start = chooseStartingBody(this.config.anatomy, geneticsRandom)
     this.startBody = start.body
@@ -633,7 +633,7 @@ export class World {
   }
 
   /**
-   * The name of the starting body this world drew (ADR 0019), or `null` when its founders started
+   * The name of the starting body this world drew (ADR 0020), or `null` when its founders started
    * with the founder plan itself. A derived fact about the seed and the configuration, not state.
    */
   get startingBodyName(): string | null {

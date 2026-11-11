@@ -6,7 +6,7 @@ import { RandomStreams } from '../../src/random/streams'
 import { World } from '../../src/world/World'
 import { bodyVectorOf, chooseStartingBody, founderBodyVector } from '../../src/genetics/BodyGenes'
 
-// Starting bodies (ADR 0019): the founder plan stays the reference, a world may start with a named
+// Starting bodies (ADR 0020): the founder plan stays the reference, a world may start with a named
 // archetype drawn from its seed, and every founder of the world gets it.
 
 const base = resolveWorldConfig({}).anatomy
