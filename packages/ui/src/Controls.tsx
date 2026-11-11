@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { MAX_SEED, RENDER_LAYERS, SPEED_SETTINGS } from '@evo/contracts'
 import type { RenderLayerName, SimulationControls, ViewState } from '@evo/contracts'
+import { PANEL_KEYS, PANEL_LABELS, PANEL_NAMES } from './panels'
+import type { PanelName, PanelState } from './panels'
 import { Section } from './Section'
 import { formatNumber, speedLabel } from './format'
 
@@ -243,5 +245,52 @@ export function LayerPanel({
         ))}
       </ul>
     </Section>
+  )
+}
+
+/** A tiny flat icon of the window with one panel filled in, so the three buttons read as places. */
+function PanelIcon({ name, shown }: { name: PanelName; shown: boolean }): React.JSX.Element {
+  const rect = {
+    left: { x: 2, y: 2, width: 4, height: 12 },
+    right: { x: 10, y: 2, width: 4, height: 12 },
+    strip: { x: 2, y: 10, width: 12, height: 4 }
+  }[name]
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <rect x="1.5" y="1.5" width="13" height="13" fill="none" stroke="currentColor" />
+      <rect {...rect} fill={shown ? 'currentColor' : 'none'} stroke="currentColor" />
+    </svg>
+  )
+}
+
+/**
+ * Three buttons in the top bar that show or hide the left rail, the charts and the inspector. A
+ * hidden panel takes no room, so the world gets it; the buttons stay put, so there is always a way
+ * back. Pressed means the panel is shown.
+ */
+export function PanelToggles({
+  collapsed,
+  onToggle
+}: {
+  collapsed: PanelState
+  onToggle: (name: PanelName) => void
+}): React.JSX.Element {
+  return (
+    <div className="evo-panel-toggles" role="group" aria-label="Panels">
+      {PANEL_NAMES.map((name) => (
+        <button
+          key={name}
+          type="button"
+          className="evo-panel-toggle"
+          aria-pressed={!collapsed[name]}
+          aria-label={`${collapsed[name] ? 'Show' : 'Hide'} ${PANEL_LABELS[name]}`}
+          aria-keyshortcuts={PANEL_KEYS[name]}
+          title={`${collapsed[name] ? 'Show' : 'Hide'} ${PANEL_LABELS[name]} (${PANEL_KEYS[name]})`}
+          onClick={() => onToggle(name)}
+        >
+          <PanelIcon name={name} shown={!collapsed[name]} />
+        </button>
+      ))}
+    </div>
   )
 }

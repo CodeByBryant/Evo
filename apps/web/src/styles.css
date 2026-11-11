@@ -24,8 +24,12 @@ body {
 .app {
   position: relative;
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr) 320px;
-  grid-template-rows: 36px minmax(0, 1fr) 196px;
+  /* the panel sizes are variables so a collapsed panel can give its room to the world */
+  --left-w: 248px;
+  --right-w: 320px;
+  --strip-h: 196px;
+  grid-template-columns: var(--left-w) minmax(0, 1fr) var(--right-w);
+  grid-template-rows: 36px minmax(0, 1fr) var(--strip-h);
   grid-template-areas:
     'top top top'
     'left world right'
@@ -122,11 +126,24 @@ body {
   display: none;
 }
 
+/* A collapsed panel takes no room (the buttons in the top bar bring it back). */
+.app[data-left='closed'] {
+  --left-w: 0px;
+}
+.app[data-right='closed'] {
+  --right-w: 0px;
+}
+.app[data-strip='closed'] {
+  --strip-h: 0px;
+}
+
 /* Laptop: the same grid, tighter. */
 @media (max-width: 1279px) {
   .app {
-    grid-template-columns: 208px minmax(0, 1fr) 288px;
-    grid-template-rows: 32px minmax(0, 1fr) 140px;
+    --left-w: 208px;
+    --right-w: 288px;
+    --strip-h: 140px;
+    grid-template-rows: 32px minmax(0, 1fr) var(--strip-h);
   }
 }
 

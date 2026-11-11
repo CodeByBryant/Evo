@@ -1,4 +1,5 @@
 import type { SimulationControls, SpeedSetting, ViewState } from '@evo/contracts'
+import type { PanelName } from '@evo/ui'
 
 /** What a key press asks for. Returned rather than executed so the mapping is testable on its own. */
 export type KeyAction =
@@ -10,6 +11,7 @@ export type KeyAction =
   | { readonly type: 'fit' }
   | { readonly type: 'focus' }
   | { readonly type: 'speed'; readonly speed: SpeedSetting }
+  | { readonly type: 'panel'; readonly panel: PanelName }
 
 export interface KeyInput {
   readonly key: string
@@ -29,11 +31,17 @@ const SPEEDS: Readonly<Record<string, SpeedSetting>> = {
   '5': 'max'
 }
 
+const PANEL_SHORTCUTS: Readonly<Record<string, PanelName>> = {
+  '[': 'left',
+  ']': 'right',
+  '\\': 'strip'
+}
+
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 
 /**
  * The keyboard shortcuts: Space pause/resume, `.` step, Esc deselect, `t` trails, `f` follow,
- * `z` focus, `0` fit, `1`-`5` speeds. Ignored while typing in a field and with Ctrl/Alt/Meta held,
+ * `z` focus, `0` fit, `1`-`5` speeds, `[` `]` `\\` show or hide the left panel, the inspector and the charts. Ignored while typing in a field and with Ctrl/Alt/Meta held,
  * so browser and screen-reader shortcuts keep working.
  */
 export function keyAction(input: KeyInput): KeyAction | null {
@@ -47,6 +55,8 @@ export function keyAction(input: KeyInput): KeyAction | null {
   if (key === 'f') return { type: 'follow' }
   if (key === 'z') return { type: 'focus' }
   if (key === '0') return { type: 'fit' }
+  const panel = PANEL_SHORTCUTS[key]
+  if (panel !== undefined) return { type: 'panel', panel }
   const speed = SPEEDS[key]
   return speed === undefined ? null : { type: 'speed', speed }
 }
@@ -80,6 +90,9 @@ export function applyKeyAction(
       break
     case 'speed':
       controls.setSpeed(action.speed)
+      break
+    case 'panel':
+      // Interface state, not the simulation's: the app handles it (see `App`).
       break
   }
 }

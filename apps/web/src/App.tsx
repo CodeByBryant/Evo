@@ -6,20 +6,24 @@ import {
   Inspector,
   InspectorEmpty,
   LayerPanel,
+  PANELS_OPEN,
+  PanelToggles,
   SpeciesPanel,
   StatsPanel,
   Strip,
   TopBar,
   ViewTools,
   WorldPanel,
-  layoutFor
+  layoutFor,
+  openPanel,
+  togglePanel
 } from '@evo/ui'
-import type { LayoutKind } from '@evo/ui'
+import type { LayoutKind, PanelName, PanelState } from '@evo/ui'
 import { Viewport } from './Viewport'
 import type { SimulationHost } from './host/SimulationHost'
 import { safeLocalStorage } from './host/browserHost'
 import { applyKeyAction, keyAction } from './host/keys'
-import { savePrefs } from './host/prefs'
+import { loadPrefs, savePrefs } from './host/prefs'
 
 /** The host's view state as React state: updated a few times a second, never per tick. */
 function useViewState(host: SimulationHost) {
@@ -44,7 +48,7 @@ function useLayout(): LayoutKind {
   )
 }
 
-function useShortcuts(host: SimulationHost): void {
+function useShortcuts(host: SimulationHost, onPanel: (panel: PanelName) => void): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       const target = event.target instanceof HTMLElement ? event.target : null
@@ -60,32 +64,52 @@ function useShortcuts(host: SimulationHost): void {
       // A focused button handles Space itself; do not also toggle the simulation.
       if (action.type === 'toggle' && target?.tagName === 'BUTTON') return
       event.preventDefault()
-      applyKeyAction(action, host, host.getViewState())
+      if (action.type === 'panel') onPanel(action.panel)
+      else applyKeyAction(action, host, host.getViewState())
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [host])
+  }, [host, onPanel])
 }
 
 export function App({ host }: { host: SimulationHost }): React.JSX.Element {
   const view = useViewState(host)
-  useShortcuts(host)
-
   const phone = useLayout() === 'phone'
+
+  // Which docked panels the viewer has collapsed (remembered). On a phone the panels are sheets and
+  // the inspector has its own close, so nothing is ever collapsed there.
+  const [stored, setStored] = useState<PanelState>(
+    () => loadPrefs(safeLocalStorage()).panels ?? PANELS_OPEN
+  )
+  const collapsed = phone ? PANELS_OPEN : stored
+  const onPanel = useCallback((name: PanelName) => setStored((s) => togglePanel(s, name)), [])
+  useShortcuts(host, onPanel)
+
+  // Selecting something opens the inspector if it was collapsed: a click should show its answer.
+  useEffect(() => {
+    if (view.selectedId !== null) setStored((s) => openPanel(s, 'right'))
+  }, [view.selectedId])
+
   // On a phone the left rail is a sheet, closed until asked for; on wider windows it is always there.
   const [sheetOpen, setSheetOpen] = useState(false)
-  const leftShown = !phone || sheetOpen
+  const leftShown = phone ? sheetOpen : !collapsed.left
 
   // Remember the layers and speed for next time; a viewer's convenience, never needed to run.
   useEffect(() => {
-    savePrefs(safeLocalStorage(), { layers: view.layers, speed: view.speed })
-  }, [view.layers, view.speed])
+    savePrefs(safeLocalStorage(), { layers: view.layers, speed: view.speed, panels: stored })
+  }, [view.layers, view.speed, stored])
 
   return (
-    <div className="app">
+    <div
+      className="app"
+      data-left={collapsed.left ? 'closed' : 'open'}
+      data-right={collapsed.right ? 'closed' : 'open'}
+      data-strip={collapsed.strip ? 'closed' : 'open'}
+    >
       <div className="app-top">
         <TopBar view={view}>
           <Dock view={view} controls={host} compact={phone} />
+          {!phone && <PanelToggles collapsed={collapsed} onToggle={onPanel} />}
           <button
             type="button"
             className="evo-button app-panels-toggle"
@@ -111,8 +135,9 @@ export function App({ host }: { host: SimulationHost }): React.JSX.Element {
         <StatsPanel view={view} />
         {phone && <Strip view={view} />}
         <p className="app-help">
-          Keys: Space pause, . step, 1-5 speed, Esc deselect, T trails, F follow, Z focus, 0 fit.
-          Drag to pan, wheel or pinch to zoom, click an organism to inspect it.
+          Keys: Space pause, . step, 1-5 speed, Esc deselect, T trails, F follow, Z focus, 0 fit, [
+          ] \\ hide the panels. Drag to pan, wheel or pinch to zoom, click an organism to inspect
+          it.
         </p>
       </aside>
       <main className="app-world">
@@ -124,12 +149,12 @@ export function App({ host }: { host: SimulationHost }): React.JSX.Element {
           <ExtinctionBanner view={view} controls={host} />
         </div>
       </main>
-      {!phone && (
+      {!phone && !collapsed.strip && (
         <div className="app-strip">
           <Strip view={view} />
         </div>
       )}
-      {(!phone || view.selected !== null) && (
+      {(phone ? view.selected !== null : !collapsed.right) && (
         <div className="app-right">
           {view.selected !== null ? (
             <Inspector inspector={view.selected} controls={host} />

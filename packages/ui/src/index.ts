@@ -1,7 +1,17 @@
 export { HistoryChart, PopulationChart, Sparkline, polylinePoints } from './Charts'
 export { DEATH_RATE_WINDOW, deathRates, shareOf } from './history'
 export type { DeathRates } from './history'
-export { Dock, LayerPanel, ViewTools, WorldPanel, parseSeedInput } from './Controls'
+export { Dock, LayerPanel, PanelToggles, ViewTools, WorldPanel, parseSeedInput } from './Controls'
+export {
+  PANELS_OPEN,
+  PANEL_KEYS,
+  PANEL_LABELS,
+  PANEL_NAMES,
+  openPanel,
+  parsePanels,
+  togglePanel
+} from './panels'
+export type { PanelName, PanelState } from './panels'
 export { Section } from './Section'
 export {
   ClusterPanel,
