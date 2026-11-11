@@ -22,7 +22,14 @@ const COUNT = 6
 function configWith(clusters: object, resources: object = {}): WorldConfig {
   return resolveWorldConfig({
     environment: { layout: 'clusters', clusters: { count: COUNT, ...clusters } },
-    resources: { initialCount: 0, spawnRate: 100, maxCount: 1_000_000, ...resources },
+    resources: {
+      initialCount: 0,
+      spawnRate: 100,
+      maxCount: 1_000_000,
+      distribution: { mode: 'uniform' },
+      plants: { enabled: false },
+      ...resources
+    },
     ecology: {
       health: { enabled: false },
       regions: { enabled: false },

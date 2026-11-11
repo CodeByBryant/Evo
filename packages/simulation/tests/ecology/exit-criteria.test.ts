@@ -78,6 +78,9 @@ describe('a long default world: resources, niches, migration', () => {
     for (const type of without) expect(share(type)).toBeLessThan(0.05)
     expect(Math.max(...withFungus.map((t) => share(t) as number))).toBeGreaterThan(0.2)
     // a cave-or-volcanic diet is overwhelmingly fungus
+    // (measured on the default world with plants, ADR 0021: cave 183 of 228 meals is fungus, 0.80;
+    // volcanic is a small patch on this map, 16 of 26, 0.62; on the old free-food 500 world cave
+    // was 0.73 and volcanic 0.66. The claim and the 0.6 are unchanged.)
     for (const type of ['cave', 'volcanic'] as const) {
       if (share(type) !== null) expect(share(type)).toBeGreaterThan(0.6)
     }
@@ -116,7 +119,10 @@ describe('a long default world: resources, niches, migration', () => {
       expect(REGION_TYPES).toContain(m!.homeType)
     }
     // a record's home region is where it was first seen, a real region of the map
-    for (const m of tracked.slice(0, 20)) expect(m!.homeRegion).toBeLessThan(30)
+    // (the map has `seedCount` regions: 30 on the reference field, more on a bigger one, ADR 0021)
+    for (const m of tracked.slice(0, 20)) {
+      expect(m!.homeRegion).toBeLessThan(world.config.ecology.regions.seedCount)
+    }
   })
 })
 

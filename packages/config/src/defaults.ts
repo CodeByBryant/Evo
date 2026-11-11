@@ -22,8 +22,10 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   maxPopulation: 1000,
   extinctionPolicy: 'stop',
   environment: {
-    width: 500,
-    height: 500,
+    // 700 x 700 (ADR 0021): the same food and creatures spread over twice the area, with biomes and
+    // hazards scaled to it (`fieldScaling`). `classic` and `clusters` keep 500 x 500.
+    width: 700,
+    height: 700,
     layout: 'field',
     clusters: {
       count: 6,
@@ -65,26 +67,28 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     juvenileMetabolicScale: 0.7
   },
   resources: {
-    initialCount: 100,
-    maxCount: 200,
-    spawnRate: 2,
+    // Items, not plants: a plant is a hub and six nodes (about 35 plants at the start).
+    initialCount: 245,
+    maxCount: 480,
+    // Plants a second (ADR 0021; free food a second when `plants.enabled` is false, as in `classic`).
+    spawnRate: 0.3,
     energyValue: 30,
     radius: 3,
     region: null,
-    // `uniform` until the patchy field is tuned with the plants (ADR 0021).
-    distribution: { mode: 'uniform', scale: 120, contrast: 1, floor: 0.05, turnover: 1200 },
-    // Off until the plants are tuned (ADR 0021); every number here is a first guess.
+    // Patches that fade and drift, about the size of a biome (ADR 0021).
+    distribution: { mode: 'noise', scale: 120, contrast: 1, floor: 0.05, turnover: 1200 },
+    // Renewable plants, tuned over 8 and 16 seeds against the free-food world they replace.
     plants: {
-      enabled: false,
+      enabled: true,
       nodes: 6,
       ring: 3,
       hubEnergyScale: 3,
       nodeEnergyScale: 0.6,
       hubHardness: 2,
-      regrowRate: 3,
+      regrowRate: 2,
       photosynthesis: 1.5,
-      lifespan: 600,
-      maxPlants: 40
+      lifespan: 300,
+      maxPlants: 60
     }
   },
   reproduction: {

@@ -82,15 +82,18 @@ describe('a world on a bigger field', () => {
     expect(big.terrain()?.gridSize).toBe(35)
     big.run(300)
     expect(big.validate()).toEqual({ ok: true, errors: [] })
-    const a = World.create({ seed: 3 })
-    const b = World.create({ seed: 3, config: { environment: { width: 500, height: 500 } } })
-    a.run(200)
-    b.run(200)
-    expect(b.stateHash()).toBe(a.stateHash())
+    // a world on the reference field has the reference terrain: 30 biomes on a 25-cell lookup
+    const reference = World.create({
+      seed: 3,
+      config: { environment: { width: 500, height: 500 } }
+    })
+    expect(reference.config.ecology.regions.seedCount).toBe(30)
+    expect(reference.terrain()?.gridSize).toBe(25)
+    expect(reference.config.ecology.hazards.stormRate).toBe(0.002)
   })
 
   it('keeps the food supply and the creature count of the 500 world (spread thinner, not more of them)', () => {
-    const base = World.create({ seed: 4 })
+    const base = World.create({ seed: 4, config: { environment: { width: 500, height: 500 } } })
     const big = World.create({ seed: 4, config: { environment: { width: 800, height: 800 } } })
     expect(big.snapshot().organisms.length).toBe(base.snapshot().organisms.length)
     expect(big.config.resources.spawnRate).toBe(base.config.resources.spawnRate)

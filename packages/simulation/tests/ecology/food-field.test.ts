@@ -110,7 +110,18 @@ describe('FoodField', () => {
 })
 
 describe('spawning with the patchy field', () => {
-  const small = { organisms: { initialCount: 0 }, resources: { initialCount: 150, maxCount: 400 } }
+  // free food on the 500 field these statistics were written for; only the distribution varies
+  const small = {
+    organisms: { initialCount: 0 },
+    environment: { width: 500, height: 500 },
+    resources: {
+      initialCount: 150,
+      maxCount: 400,
+      spawnRate: 2,
+      distribution: { mode: 'uniform' },
+      plants: { enabled: false }
+    }
+  }
   const noise = (extra: object = {}): object => ({
     ...small,
     resources: { ...small.resources, distribution: { mode: 'noise', ...extra } }
@@ -191,11 +202,13 @@ describe('spawning with the patchy field', () => {
     // with no eaters and a long run the spawn sites move as the pattern turns over
     const config = {
       organisms: { initialCount: 0 },
+      environment: { width: 500, height: 500 },
       resources: {
         initialCount: 0,
         maxCount: 3000,
         spawnRate: 50,
-        distribution: { mode: 'noise', turnover: 60 }
+        distribution: { mode: 'noise', turnover: 60 },
+        plants: { enabled: false }
       },
       ecology: { resourceKinds: { enabled: false } }
     } as never

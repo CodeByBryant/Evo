@@ -133,10 +133,10 @@ describe('resources.region', () => {
   it('rejects a rectangle that leaves the world or is degenerate', () => {
     const errors = (region: unknown): readonly string[] =>
       errorsFor((c) => (loose(c)['resources']!['region'] = region))
-    expect(errors({ x: 450, y: 0, width: 100, height: 10 })).toContain(
+    expect(errors({ x: 650, y: 0, width: 100, height: 10 })).toContain(
       'resources.region must lie inside the world (x + width exceeds environment.width)'
     )
-    expect(errors({ x: 0, y: 450, width: 10, height: 100 })).toContain(
+    expect(errors({ x: 0, y: 650, width: 10, height: 100 })).toContain(
       'resources.region must lie inside the world (y + height exceeds environment.height)'
     )
     expect(errors({ x: 0, y: 0, width: 0, height: 10 })).toContain(

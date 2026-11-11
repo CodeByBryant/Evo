@@ -5,7 +5,28 @@
     {
       "name": "default-1k",
       "seed": 12345,
-      "config": { "anatomy": { "startingBody": { "mode": "reference" } } },
+      "config": {
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
+      },
       "steps": 1000,
       "expectedHash": "13e0a0cb7c48250db38b79da8f2b1de6"
     },
@@ -14,7 +35,26 @@
       "seed": 12345,
       "config": {
         "feeding": { "enabled": false },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 3000,
       "expectedHash": "ae05456c6673b34f4ebadb898358ddd5"
@@ -34,7 +74,26 @@
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
         "feeding": { "enabled": false },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 5000,
       "expectedHash": "2d7c9563269c37788458e88f275836a4"
@@ -53,7 +112,26 @@
           "migration": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 5000,
       "expectedHash": "a7f6637db044c61ebee2cef2473b3979"
@@ -63,7 +141,24 @@
       "seed": 1,
       "config": {
         "organisms": { "initialCount": 10 },
-        "resources": { "initialCount": 0, "spawnRate": 0 },
+        "resources": {
+          "initialCount": 0,
+          "spawnRate": 0,
+          "maxCount": 200,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        },
         "ecology": {
           "health": { "enabled": false },
           "regions": { "enabled": false },
@@ -73,7 +168,8 @@
           "migration": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 }
       },
       "steps": 20000,
       "expectedHash": "f8b5273d856a680e02623e28519c7c09"
@@ -92,7 +188,26 @@
           "migration": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 200,
       "expectedHash": "c8446bf9e5786ac79af8e4dd4fbc9d14"
@@ -102,7 +217,24 @@
       "seed": 3,
       "config": {
         "organisms": { "initialCount": 0 },
-        "resources": { "initialCount": 0 },
+        "resources": {
+          "initialCount": 0,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        },
         "ecology": {
           "health": { "enabled": false },
           "regions": { "enabled": false },
@@ -112,7 +244,8 @@
           "migration": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 }
       },
       "steps": 100,
       "expectedHash": "bf0681d985041827d8799c4e99b7e157"
@@ -120,7 +253,28 @@
     {
       "name": "long-run-100k",
       "seed": 999,
-      "config": { "anatomy": { "startingBody": { "mode": "reference" } } },
+      "config": {
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
+      },
       "steps": 100000,
       "expectedHash": "19eccb7ebed70efaecd24dec64d31c39"
     },
@@ -137,7 +291,26 @@
           "resourceKinds": { "enabled": false },
           "migration": { "enabled": false }
         },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 1000,
       "expectedHash": "12f5955c0411c2617d410f1240840900"
@@ -156,7 +329,26 @@
           "resourceKinds": { "enabled": false },
           "migration": { "enabled": false }
         },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 5000,
       "expectedHash": "e5f4faca88f6c9b200886b9b7d951089"
@@ -166,7 +358,24 @@
       "seed": 1,
       "config": {
         "organisms": { "initialCount": 10 },
-        "resources": { "initialCount": 0, "spawnRate": 0 },
+        "resources": {
+          "initialCount": 0,
+          "spawnRate": 0,
+          "maxCount": 200,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        },
         "learning": { "controller": "reflex", "rewardWeights": { "damage": 0, "exploration": 0 } },
         "ecology": {
           "health": { "enabled": false },
@@ -176,7 +385,8 @@
           "resourceKinds": { "enabled": false },
           "migration": { "enabled": false }
         },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 }
       },
       "steps": 20000,
       "expectedHash": "8ad733371200845f5de60f9dc698ac83"
@@ -194,7 +404,26 @@
           "resourceKinds": { "enabled": false },
           "migration": { "enabled": false }
         },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 100000,
       "expectedHash": "369c86fbafdf9e405415eff163d6055f"
@@ -213,7 +442,26 @@
           "resourceKinds": { "enabled": false },
           "migration": { "enabled": false }
         },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 5000,
       "expectedHash": "6ae16401a300af1c88474460a6eecf51"
@@ -232,7 +480,26 @@
           "resourceKinds": { "enabled": false },
           "migration": { "enabled": false }
         },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 5000,
       "expectedHash": "01ff586c0059da27cf656a253d04a89d"
@@ -252,7 +519,26 @@
           "migration": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 5000,
       "expectedHash": "5fc31a275de92bb17066953906912a13"
@@ -260,7 +546,28 @@
     {
       "name": "ecology-default-12k",
       "seed": 7,
-      "config": { "anatomy": { "startingBody": { "mode": "reference" } } },
+      "config": {
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
+      },
       "steps": 12000,
       "expectedHash": "e5c970dcd8112a52e5c1eef5366ecc20"
     },
@@ -269,7 +576,26 @@
       "seed": 3,
       "config": {
         "learning": { "controller": "reflex" },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 8000,
       "expectedHash": "70d073b2f550af393c9125164146109e"
@@ -283,7 +609,26 @@
           "health": { "maxHealth": 8 },
           "hazards": { "areaCount": 10, "areaRadius": 120, "areaDamage": 40 }
         },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 3000,
       "expectedHash": "1f500bfb9ec87b9f278b3d21b56206f2"
@@ -302,7 +647,26 @@
           },
           "startingBody": { "mode": "reference" }
         },
-        "genetics": { "mutationRateScale": 3 }
+        "genetics": { "mutationRateScale": 3 },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 6000,
       "expectedHash": "b4c421e2b23244741a5be109138e2711"
@@ -322,7 +686,26 @@
           "startingBody": { "mode": "reference" }
         },
         "genetics": { "mutationRateScale": 3 },
-        "learning": { "controller": "reflex" }
+        "learning": { "controller": "reflex" },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 4000,
       "expectedHash": "eed85255c70baa6c03bf6890d9dc3f07"
@@ -331,8 +714,31 @@
       "name": "clusters-small-6k",
       "seed": 3,
       "config": {
-        "environment": { "layout": "clusters", "clusters": { "organismsPerSpecies": 4 } },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "environment": {
+          "layout": "clusters",
+          "clusters": { "organismsPerSpecies": 4 },
+          "width": 500,
+          "height": 500
+        },
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 6000,
       "expectedHash": "11b9a171a03d54b1009a1cc6c6d9ccd9"
@@ -341,9 +747,32 @@
       "name": "clusters-small-reflex-4k",
       "seed": 8,
       "config": {
-        "environment": { "layout": "clusters", "clusters": { "organismsPerSpecies": 4 } },
+        "environment": {
+          "layout": "clusters",
+          "clusters": { "organismsPerSpecies": 4 },
+          "width": 500,
+          "height": 500
+        },
         "learning": { "controller": "reflex" },
-        "anatomy": { "startingBody": { "mode": "reference" } }
+        "anatomy": { "startingBody": { "mode": "reference" } },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 4000,
       "expectedHash": "258acfa2f3f3419b9fdfede1ef7ad724"
@@ -351,21 +780,82 @@
     {
       "name": "archetypes-default-1k",
       "seed": 12345,
-      "config": {},
+      "config": {
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
+      },
       "steps": 1000,
       "expectedHash": "257dad98a4a25f7eb42cb6285fbebd18"
     },
     {
       "name": "archetypes-ecology-12k",
       "seed": 7,
-      "config": {},
+      "config": {
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
+      },
       "steps": 12000,
       "expectedHash": "cae1a5211aa1d28ab7c2a40eb4875222"
     },
     {
       "name": "archetypes-reflex-8k",
       "seed": 3,
-      "config": { "learning": { "controller": "reflex" } },
+      "config": {
+        "learning": { "controller": "reflex" },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
+      },
       "steps": 8000,
       "expectedHash": "bec47959e8aa80ac78631f197cd7aa45"
     },
@@ -381,7 +871,26 @@
             "visualRate": 0.5
           }
         },
-        "genetics": { "mutationRateScale": 3 }
+        "genetics": { "mutationRateScale": 3 },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 6000,
       "expectedHash": "21b0669a72494b79aa0b226e376674b0"
@@ -389,7 +898,28 @@
     {
       "name": "archetype-forced-grazer-3k",
       "seed": 1,
-      "config": { "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "grazer" } } },
+      "config": {
+        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "grazer" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
+      },
       "steps": 3000,
       "expectedHash": "8c712bcb32ef6241ec4042810413a711"
     },
@@ -397,7 +927,26 @@
       "name": "archetype-forced-fungus-scraper-3k",
       "seed": 2,
       "config": {
-        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "fungus-scraper" } }
+        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "fungus-scraper" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
       },
       "steps": 3000,
       "expectedHash": "c5e80cf748957a0cf4c0d1c0791e6b11"
@@ -405,14 +954,55 @@
     {
       "name": "archetype-forced-tank-3k",
       "seed": 5,
-      "config": { "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "tank" } } },
+      "config": {
+        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "tank" } },
+        "environment": { "width": 500, "height": 500 },
+        "resources": {
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "distribution": { "mode": "uniform" },
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        }
+      },
       "steps": 3000,
       "expectedHash": "50c1a145ddb7b1e6dfaea784eace3a4e"
     },
     {
       "name": "noise-food-4k",
       "seed": 5,
-      "config": { "resources": { "distribution": { "mode": "noise" } } },
+      "config": {
+        "resources": {
+          "distribution": { "mode": "noise" },
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        },
+        "environment": { "width": 500, "height": 500 }
+      },
       "steps": 4000,
       "expectedHash": "03beca123ec4c7659a9e214cedf964ef"
     },
@@ -421,7 +1011,25 @@
       "seed": 9,
       "config": {
         "learning": { "controller": "reflex" },
-        "resources": { "distribution": { "mode": "noise", "contrast": 0.6, "scale": 80 } }
+        "resources": {
+          "distribution": { "mode": "noise", "contrast": 0.6, "scale": 80 },
+          "initialCount": 100,
+          "maxCount": 200,
+          "spawnRate": 2,
+          "plants": {
+            "enabled": false,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          }
+        },
+        "environment": { "width": 500, "height": 500 }
       },
       "steps": 3000,
       "expectedHash": "891bf41b7457610c8e3dff5fbc02b418"
@@ -429,9 +1037,29 @@
     {
       "name": "plants-6k",
       "seed": 4,
-      "config": { "resources": { "spawnRate": 0.3, "plants": { "enabled": true } } },
+      "config": {
+        "resources": {
+          "spawnRate": 0.3,
+          "plants": {
+            "enabled": true,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          },
+          "initialCount": 100,
+          "maxCount": 200,
+          "distribution": { "mode": "uniform" }
+        },
+        "environment": { "width": 500, "height": 500 }
+      },
       "steps": 6000,
-      "expectedHash": "73f6bc5cba76e20e6984391e620a472a"
+      "expectedHash": "0322ef67166021b03cd87581d4a50ab5"
     },
     {
       "name": "plants-noise-reflex-5k",
@@ -441,11 +1069,25 @@
         "resources": {
           "spawnRate": 0.3,
           "distribution": { "mode": "noise" },
-          "plants": { "enabled": true, "lifespan": 200 }
-        }
+          "plants": {
+            "enabled": true,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 200,
+            "maxPlants": 40
+          },
+          "initialCount": 100,
+          "maxCount": 200
+        },
+        "environment": { "width": 500, "height": 500 }
       },
       "steps": 5000,
-      "expectedHash": "5fc36697ca63b8b066e2bea299707a5d"
+      "expectedHash": "449d0dc89dafe183bb3329303403a90e"
     },
     {
       "name": "plants-brain-evolving-8k",
@@ -454,12 +1096,77 @@
         "resources": {
           "spawnRate": 0.4,
           "distribution": { "mode": "noise" },
-          "plants": { "enabled": true }
+          "plants": {
+            "enabled": true,
+            "nodes": 6,
+            "ring": 3,
+            "hubEnergyScale": 3,
+            "nodeEnergyScale": 0.6,
+            "hubHardness": 2,
+            "regrowRate": 3,
+            "photosynthesis": 1.5,
+            "lifespan": 600,
+            "maxPlants": 40
+          },
+          "initialCount": 100,
+          "maxCount": 200
         },
-        "anatomy": { "mutation": { "presenceRate": 0.05, "typeRate": 0.05 } }
+        "anatomy": { "mutation": { "presenceRate": 0.05, "typeRate": 0.05 } },
+        "environment": { "width": 500, "height": 500 }
       },
       "steps": 8000,
-      "expectedHash": "7be8161e5a76866626b14bcad1c0e582"
+      "expectedHash": "d7f1f35c3159fa81893293c599f9f19f"
+    },
+    {
+      "name": "food-default-1k",
+      "seed": 12345,
+      "config": {},
+      "steps": 1000,
+      "expectedHash": "856fc636714d7fac9fa3eb653da9588b"
+    },
+    {
+      "name": "food-default-ecology-12k",
+      "seed": 7,
+      "config": {},
+      "steps": 12000,
+      "expectedHash": "7c5a23cef97bfa41c4986de23f8cdd5e"
+    },
+    {
+      "name": "food-default-reflex-8k",
+      "seed": 3,
+      "config": { "learning": { "controller": "reflex" } },
+      "steps": 8000,
+      "expectedHash": "4f266aab1306c8821e09b78715959ef9"
+    },
+    {
+      "name": "food-default-evolving-bodies-6k",
+      "seed": 7,
+      "config": {
+        "anatomy": {
+          "mutation": {
+            "presenceRate": 0.1,
+            "typeRate": 0.1,
+            "continuousRate": 0.3,
+            "visualRate": 0.5
+          }
+        },
+        "genetics": { "mutationRateScale": 3 }
+      },
+      "steps": 6000,
+      "expectedHash": "f80f7f7cf23d3f8b83bf7883410d137f"
+    },
+    {
+      "name": "food-lush-4k",
+      "seed": 5,
+      "config": {
+        "resources": {
+          "spawnRate": 0.4,
+          "maxCount": 640,
+          "plants": { "maxPlants": 80, "photosynthesis": 2 }
+        }
+      },
+      "steps": 4000,
+      "expectedHash": "9a20ee009f21951803e4780070af5d9e"
     }
   ]
 }

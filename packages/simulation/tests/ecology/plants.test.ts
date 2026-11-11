@@ -9,7 +9,12 @@ import { World } from '../../src/world/World'
 // a lifespan, and the invariants that keep every node pointing at a live hub.
 
 /** A world with only plants: no organisms, one kind of food (30 energy), no spawning unless asked. */
-const plantWorld = (plants: object = {}, resources: object = {}, seed = 3): World =>
+const plantWorld = (
+  plants: object = {},
+  resources: object = {},
+  seed = 3,
+  seasons: object = { seasons: { enabled: false } }
+): World =>
   World.create({
     seed,
     config: {
@@ -18,10 +23,10 @@ const plantWorld = (plants: object = {}, resources: object = {}, seed = 3): Worl
         initialCount: 14, // two plants of seven items
         maxCount: 400,
         spawnRate: 0,
-        plants: { enabled: true, ...plants },
+        plants: { enabled: true, lifespan: 0, ...plants },
         ...resources
       },
-      ecology: { resourceKinds: { enabled: false } }
+      ecology: { resourceKinds: { enabled: false }, ...seasons }
     } as WorldConfigOverrides
   })
 
@@ -164,6 +169,63 @@ describe('a plant', () => {
     expect(other.remaining).toBe(10)
   })
 
+  it('grows back with the season too: a dim season regrows a node more slowly', () => {
+    const ticksToRegrow = (regeneration: number): number => {
+      const world = plantWorld({ photosynthesis: 0, regrowRate: 3 }, {}, 3, {
+        seasons: {
+          enabled: true,
+          seasonLength: 100_000,
+          seasons: {
+            spring: { regeneration },
+            summer: { regeneration },
+            autumn: { regeneration },
+            winter: { regeneration }
+          }
+        }
+      })
+      const hub = hubsOf(world)[0]!
+      storeOf(world).remove(nodesOf(world, hub.id)[0]!.id)
+      for (let tick = 1; tick <= 3000; tick++) {
+        world.run(1)
+        if (nodesOf(world, hub.id).length === 6) return tick
+      }
+      return Infinity
+    }
+    const normal = ticksToRegrow(1)
+    const dim = ticksToRegrow(0.5)
+    expect(normal).toBeGreaterThan(0)
+    expect(normal).toBeLessThan(3000)
+    // half the light, twice as long to grow (within a tick or two)
+    expect(dim).toBeGreaterThanOrEqual(Math.floor(normal * 2) - 2)
+    expect(dim).toBeLessThanOrEqual(Math.ceil(normal * 2) + 2)
+  })
+
+  it('photosynthesizes with the season: a dim season gains less energy, a bright one more', () => {
+    const seasonal = (regeneration: number): number => {
+      const world = plantWorld({ photosynthesis: 2 }, {}, 3, {
+        seasons: {
+          enabled: true,
+          seasonLength: 1000,
+          seasons: {
+            spring: { regeneration },
+            summer: { regeneration },
+            autumn: { regeneration },
+            winter: { regeneration }
+          }
+        }
+      })
+      const hub = hubsOf(world)[0]!
+      hub.remaining = 10
+      world.run(10) // one simulated second
+      return hub.remaining - 10
+    }
+    expect(seasonal(1)).toBeCloseTo(2, 6)
+    expect(seasonal(0.5)).toBeCloseTo(1, 6)
+    expect(seasonal(1.5)).toBeCloseTo(3, 6)
+    // negative: a plain world with the seasons off gains the full rate
+    expect(hubsOf(plantWorld({ photosynthesis: 2 }))[0]!.remaining).toBe(90)
+  })
+
   it('dies with its hub: the nodes are left as free food and nothing regrows', () => {
     const world = plantWorld()
     const hub = hubsOf(world)[0]!
@@ -230,7 +292,10 @@ describe('a plant', () => {
     expect(node.slot).toBeGreaterThanOrEqual(1)
     expect(node.energyValue).toBeCloseTo(18, 9)
     // free food and a plant-less world carry no plant fields
-    const off = World.create({ seed: 3, config: { organisms: { initialCount: 0 } } })
+    const off = World.create({
+      seed: 3,
+      config: { organisms: { initialCount: 0 }, resources: { plants: { enabled: false } } }
+    })
     for (const r of off.snapshot().resources) {
       expect(r.slot).toBeUndefined()
       expect(r.parent).toBeUndefined()

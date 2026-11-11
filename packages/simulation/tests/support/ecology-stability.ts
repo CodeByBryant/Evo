@@ -21,7 +21,11 @@ import { World } from '../../src/index'
  * Bites (ADR 0017) stop food energy being wasted, so populations are larger: over these 12 seeds
  * (same sampling) means are 57.0-68.7, minimum 41, maximum 85, and no world went extinct. The
  * bounds were widened to match (mean 25-90, minimum 15, maximum 110); the starvation tuning
- * decides where the population should settle.
+ * decides where the population should settle. *
+ * Patches, plants and the 700 field (ADR 0021): over these 16 seeds (1-8 and 33-40, same sampling)
+ * means are 43.0-81.5, minimum 16, maximum 123, and no world went extinct. Only the ceiling
+ * moved: 110 became 140 (it was 87 and 85 before bites and plants), still a seventh of
+ * `maxPopulation`; means and the floor of 15 are as they were.
  */
 export function describeStability(seeds: readonly number[]): void {
   describe('the default ecology keeps held-out worlds alive', () => {
@@ -39,7 +43,7 @@ export function describeStability(seeds: readonly number[]): void {
         expect(mean).toBeGreaterThan(25)
         expect(mean).toBeLessThan(90)
         expect(Math.min(...samples)).toBeGreaterThanOrEqual(15)
-        expect(Math.max(...samples)).toBeLessThanOrEqual(110)
+        expect(Math.max(...samples)).toBeLessThanOrEqual(140)
         expect(world.validate()).toEqual({ ok: true, errors: [] })
         // the ecology was actually in play
         const { metrics, hazards } = world.snapshot()

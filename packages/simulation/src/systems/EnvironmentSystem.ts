@@ -298,9 +298,11 @@ export class EnvironmentSystem {
   /**
    * One tick of plant life (ADR 0021), draw-free: each hub gains photosynthesis up to its capacity,
    * moves energy from its store into the node that is growing back (and sprouts it when it is
-   * enough), and a plant past its lifespan withers with its nodes. Returns how many plants live.
+   * enough), and a plant past its lifespan withers with its nodes. Photosynthesis and regrowth
+   * follow the season (`regenerationScale`), so a harsh winter is felt by plants as it is by spawning. Returns
+   * how many plants live.
    */
-  private updatePlants(tick: number): number {
+  private updatePlants(tick: number, season: number): number {
     const plants = this.config.resources.plants
     const dt = this.config.timestep
     const hubs = this.hubs
@@ -333,7 +335,8 @@ export class EnvironmentSystem {
       alive++
       const kindEnergy = this.energyOf(hub.kind)
       const capacity = plants.hubEnergyScale * kindEnergy
-      hub.remaining = Math.min(capacity, hub.remaining + plants.photosynthesis * dt)
+      // The season sets how much light there is: winter starves plants as it starves spawning.
+      hub.remaining = Math.min(capacity, hub.remaining + plants.photosynthesis * dt * season)
       const slot = missingSlot(present.get(hub.id) as number, plants.nodes)
       if (slot === 0) {
         hub.sproutProgress = 0
@@ -341,7 +344,8 @@ export class EnvironmentSystem {
       }
       // The hub keeps a reserve so growing nodes never starves the plant itself.
       const reserve = HUB_RESERVE * capacity
-      const moved = Math.min(plants.regrowRate * dt, Math.max(0, hub.remaining - reserve))
+      // Growth follows the season too: a hub's store is a buffer, not a way round winter.
+      const moved = Math.min(plants.regrowRate * dt * season, Math.max(0, hub.remaining - reserve))
       hub.remaining -= moved
       const nodeEnergy = plants.nodeEnergyScale * kindEnergy
       let progress = (hub.sproutProgress ?? 0) + moved
@@ -467,7 +471,7 @@ export class EnvironmentSystem {
     if (this.plantsOn) {
       // `spawnRate` counts plants; `maxCount` counts items, `maxPlants` plants.
       const plants = this.config.resources.plants
-      const alive = this.updatePlants(tick)
+      const alive = this.updatePlants(tick, regeneration)
       const room = Math.floor(
         Math.max(0, this.config.resources.maxCount - this.resources.size) / (1 + plants.nodes)
       )

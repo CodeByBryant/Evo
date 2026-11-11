@@ -6,6 +6,7 @@ import { brainLayoutOf } from '../../src/learning/BrainLayout'
 import type { BrainState } from '../../src/learning/BrainState'
 import type { OrganismState } from '../../src/entities/OrganismStore'
 import { withoutEcology } from '../support/ecology'
+import { FREE_FOOD } from '../support/food'
 
 /**
  * Scenario D (roadmap): food appears only in one region, and learning is switched on and off.
@@ -39,10 +40,14 @@ describe('Scenario D: food in one region', () => {
   })
 
   it('leaves the spawn draws untouched when no region is set', () => {
-    const plain = World.create({ seed: 3 })
+    // free food on the 500 field these draws were written for (ADR 0021)
+    const plain = World.create({ seed: 3, config: FREE_FOOD })
     const whole = World.create({
       seed: 3,
-      config: { resources: { region: { x: 0, y: 0, width: 500, height: 500 } } }
+      config: {
+        ...FREE_FOOD,
+        resources: { ...FREE_FOOD.resources, region: { x: 0, y: 0, width: 500, height: 500 } }
+      }
     })
     plain.run(200)
     whole.run(200)

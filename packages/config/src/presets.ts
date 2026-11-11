@@ -19,21 +19,28 @@ export const PRESETS: readonly WorldPreset[] = [
   {
     name: 'balanced',
     label: 'Balanced',
-    description: 'The default world: regions, seasons, hazards and several kinds of food.',
+    description:
+      'The default world: patches of renewable plants over regions, seasons, hazards and several kinds of food.',
     overrides: {}
   },
   {
     name: 'lush',
     label: 'Lush',
     description: 'Plentiful food. Populations grow large and species have room to diverge.',
-    overrides: { resources: { spawnRate: 2.6, maxCount: 320 } }
+    overrides: {
+      resources: {
+        spawnRate: 0.4,
+        maxCount: 640,
+        plants: { maxPlants: 80, photosynthesis: 2 }
+      }
+    }
   },
   {
     name: 'harsh',
     label: 'Harsh',
     description: 'Scarcer food and twice the storms. Survival is hard and extinction is real.',
     overrides: {
-      resources: { spawnRate: 1.5 },
+      resources: { spawnRate: 0.22, plants: { maxPlants: 45 } },
       ecology: { hazards: { stormRate: 0.004, areaCount: 3 } }
     }
   },
@@ -50,7 +57,15 @@ export const PRESETS: readonly WorldPreset[] = [
       'The prototype world: six circular clusters with several biomes each, empty void between them, three species per cluster.',
     // The cluster founders build on one body; the parked cluster world keeps the founder plan.
     overrides: {
-      environment: { layout: 'clusters' },
+      environment: { layout: 'clusters', width: 500, height: 500 },
+      // The cluster layout keeps its free food: its food scaling is tuned on this (ADR 0014).
+      resources: {
+        initialCount: 100,
+        maxCount: 200,
+        spawnRate: 2,
+        distribution: { mode: 'uniform' },
+        plants: { enabled: false }
+      },
       anatomy: { startingBody: { mode: 'reference' } }
     }
   },
@@ -70,7 +85,15 @@ export const PRESETS: readonly WorldPreset[] = [
     overrides: {
       // The phase 3 world starts with the one founder body it always had.
       anatomy: { startingBody: { mode: 'reference' } },
-      resources: { spawnRate: 2 },
+      // ...on a 500 x 500 field of free food, an even spread, as it always was.
+      environment: { width: 500, height: 500 },
+      resources: {
+        initialCount: 100,
+        maxCount: 200,
+        spawnRate: 2,
+        distribution: { mode: 'uniform' },
+        plants: { enabled: false }
+      },
       // The phase 3 world: touch food and take it whole, with the phase 3 breeding and lifespans.
       // That way of eating wastes about a third of the food, so it cannot carry the restrained
       // breeding and shorter lives of the default world (3 of 8 worlds went extinct).

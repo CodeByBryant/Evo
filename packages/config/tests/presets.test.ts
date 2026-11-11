@@ -57,4 +57,36 @@ describe('presets', () => {
       expect(mode(name)).toBe('reference')
     }
   })
+
+  it('the default world and the plant presets have patches, plants and a 700 field; classic and clusters keep free food on 500', () => {
+    for (const name of ['balanced', 'lush', 'harsh', 'rapid-evolution', 'fixed-bodies']) {
+      const config = resolveWorldConfig(presetByName(name)?.overrides)
+      expect(config.resources.plants.enabled).toBe(true)
+      expect(config.resources.distribution.mode).toBe('noise')
+      expect(config.environment.width).toBe(700)
+    }
+    for (const name of ['classic', 'clusters']) {
+      const config = resolveWorldConfig(presetByName(name)?.overrides)
+      expect(config.resources.plants.enabled).toBe(false)
+      expect(config.resources.distribution.mode).toBe('uniform')
+      expect(config.environment.width).toBe(500)
+      expect(config.resources.spawnRate).toBe(2)
+      expect(config.resources.maxCount).toBe(200)
+      expect(config.resources.initialCount).toBe(100)
+    }
+  })
+
+  it('lush has more plants and more energy than balanced, harsh fewer, and harsh has more storms', () => {
+    const balanced = resolveWorldConfig(presetByName('balanced')?.overrides)
+    const lush = resolveWorldConfig(presetByName('lush')?.overrides)
+    const harsh = resolveWorldConfig(presetByName('harsh')?.overrides)
+    expect(lush.resources.plants.maxPlants).toBeGreaterThan(balanced.resources.plants.maxPlants)
+    expect(lush.resources.plants.photosynthesis).toBeGreaterThan(
+      balanced.resources.plants.photosynthesis
+    )
+    expect(lush.resources.spawnRate).toBeGreaterThan(balanced.resources.spawnRate)
+    expect(harsh.resources.plants.maxPlants).toBeLessThan(balanced.resources.plants.maxPlants)
+    expect(harsh.resources.spawnRate).toBeLessThan(balanced.resources.spawnRate)
+    expect(harsh.ecology.hazards.stormRate).toBeGreaterThan(balanced.ecology.hazards.stormRate)
+  })
 })

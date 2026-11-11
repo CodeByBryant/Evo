@@ -763,7 +763,7 @@ export class PixiRenderer implements Renderer {
       this.stemG
         .moveTo(hub.x, hub.y)
         .lineTo(r.x, r.y)
-        .stroke({ width: 1, color: 0x4d6b57, alpha: 0.9, pixelLine: true })
+        .stroke({ width: 1, color: 0x7aa588, alpha: 0.9, pixelLine: true })
     }
     for (const hub of hubs.values()) {
       const bud = hub.bud
@@ -771,7 +771,7 @@ export class PixiRenderer implements Renderer {
       this.stemG
         .moveTo(hub.x, hub.y)
         .lineTo(bud.x, bud.y)
-        .stroke({ width: 1, color: 0x4d6b57, alpha: 0.35, pixelLine: true })
+        .stroke({ width: 1, color: 0x7aa588, alpha: 0.4, pixelLine: true })
       const radius = Math.max(NODE_SCALE * hub.radius * bud.progress, 0.8 / zoom)
       this.stemG.circle(bud.x, bud.y, radius).stroke({
         width: 1,

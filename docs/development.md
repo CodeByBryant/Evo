@@ -356,3 +356,7 @@ Three smaller probes in `packages/simulation/tests/probe/` answer one question e
 ## License
 
 All contributions are subject to the MIT License. See [LICENSE](../LICENSE) for details.
+
+### The food probe
+
+`packages/simulation/tests/probe/food.probe.ts` measures a food setup (ADR 0021): worlds that died out, population (mean and lowest), the starved share of deaths, births per creature-minute, food and plants on the field, how clumped the food is (coefficient of variation per 50 x 50 cell), the **idle-spin** and **lost-spin** shares (creatures that barely moved but turned a lot over 20 ticks, and the same with nothing to eat within sensing range), how many part types and part lists the living carried, and ticks per second. Name a preset with `FOOD_PRESET=balanced`, or pass JSON overrides in `FOOD_CONFIG` with a label in `FOOD_NAME`; `FOOD_SEEDS` (default 1 to 8) and `FOOD_TICKS` (default 30,000) set the size. One line is written to `<tmpdir>/evo-probe/food-<name>.txt`. Run it directly, since the package `probe` script ignores a file filter: `pnpm exec vitest run --config vitest.probe.config.ts tests/probe/food.probe.ts` from `packages/simulation`. `starts.probe.ts` does the same for the starting bodies of ADR 0020.

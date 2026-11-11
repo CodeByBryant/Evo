@@ -218,10 +218,10 @@ describe('validateWorldConfig', () => {
     expect(errorsFor((c) => (c.resources.initialCount = c.resources.maxCount + 1))).toContain(
       'resources.initialCount must not exceed resources.maxCount'
     )
-    expect(errorsFor((c) => (c.organisms.radius = 250))).toContain(
+    expect(errorsFor((c) => (c.organisms.radius = 350))).toContain(
       'organisms.radius must be less than half of the smaller environment dimension'
     )
-    expect(errorsFor((c) => (c.resources.radius = 250))).toContain(
+    expect(errorsFor((c) => (c.resources.radius = 350))).toContain(
       'resources.radius must be less than half of the smaller environment dimension'
     )
     expect(errorsFor((c) => (c.organisms.maturityAge = c.organisms.senescenceAge))).toContain(

@@ -7,17 +7,19 @@ type Loose = Record<string, any>
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 describe('food distribution (ADR 0021)', () => {
-  it('defaults to a uniform spread, is valid, and merges field by field', () => {
+  it('defaults to drifting patches, is valid, and merges field by field', () => {
     expect(DEFAULT_WORLD_CONFIG.resources.distribution).toEqual({
-      mode: 'uniform',
+      mode: 'noise',
       scale: 120,
       contrast: 1,
       floor: 0.05,
       turnover: 1200
     })
-    const merged = resolveWorldConfig({ resources: { distribution: { mode: 'noise', scale: 80 } } })
+    const merged = resolveWorldConfig({
+      resources: { distribution: { mode: 'uniform', scale: 80 } }
+    })
     expect(merged.resources.distribution).toEqual({
-      mode: 'noise',
+      mode: 'uniform',
       scale: 80,
       contrast: 1,
       floor: 0.05,
@@ -58,11 +60,11 @@ describe('plants (ADR 0021)', () => {
     return [...validateWorldConfig(config).errors]
   }
 
-  it('are off by default, valid, and merge field by field', () => {
-    expect(DEFAULT_WORLD_CONFIG.resources.plants.enabled).toBe(false)
+  it('are on by default, valid, and merge field by field', () => {
+    expect(DEFAULT_WORLD_CONFIG.resources.plants.enabled).toBe(true)
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
-    const merged = resolveWorldConfig({ resources: { plants: { enabled: true, nodes: 4 } } })
-    expect(merged.resources.plants.enabled).toBe(true)
+    const merged = resolveWorldConfig({ resources: { plants: { enabled: false, nodes: 4 } } })
+    expect(merged.resources.plants.enabled).toBe(false)
     expect(merged.resources.plants.nodes).toBe(4)
     expect(merged.resources.plants.regrowRate).toBe(
       DEFAULT_WORLD_CONFIG.resources.plants.regrowRate
