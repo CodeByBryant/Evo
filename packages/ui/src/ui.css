@@ -345,31 +345,31 @@ select.evo-input option {
 }
 
 /* ---------- species ---------- */
-.evo-species {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.evo-species-scroll {
   max-height: 200px;
   overflow: auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 20px;
+  scrollbar-width: thin;
 }
-.evo-species li {
-  display: grid;
-  grid-template-columns: 10px 1fr auto;
-  align-items: center;
-  gap: 9px;
-  padding: 2px 0;
-  font-size: 0.8rem;
+.evo-species th,
+.evo-species td {
+  white-space: nowrap;
 }
-.evo-species-selected .evo-species-name {
+.evo-species tbody th {
+  color: var(--evo-text);
+  font-weight: 400;
+}
+.evo-species .evo-num {
+  width: auto;
+  padding-left: 8px;
+  color: var(--evo-muted);
+}
+.evo-species-selected th {
   color: var(--evo-accent);
 }
-.evo-species-count {
-  color: var(--evo-muted);
-  font-family: var(--evo-mono);
-  font-size: 0.75rem;
+.evo-species .evo-sparkline {
+  display: block;
+  width: 48px;
+  height: 14px;
 }
 .evo-swatch {
   display: inline-block;
@@ -646,9 +646,11 @@ select.evo-input option {
 .evo-strip {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-columns: minmax(150px, 1fr);
   height: 100%;
   min-height: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .evo-strip-panel {
   display: flex;
@@ -693,6 +695,10 @@ select.evo-input option {
 .evo-causes dt {
   color: var(--evo-muted);
 }
+.evo-causes dt,
+.evo-causes dd {
+  white-space: nowrap;
+}
 .evo-causes dd {
   margin: 0;
   font-family: var(--evo-mono);
@@ -720,5 +726,80 @@ select.evo-input option {
   * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* ---------- inspector: parent tree and part table ---------- */
+.evo-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.78rem;
+}
+.evo-tree li {
+  padding: 1px 0;
+  border-left: 1px solid var(--evo-line);
+  margin-left: 2px;
+}
+.evo-tree .evo-tree-body {
+  border-left: 0;
+  margin-left: 0;
+  color: var(--evo-muted);
+}
+.evo-num-inline {
+  font-family: var(--evo-mono);
+  font-size: 0.72rem;
+  color: var(--evo-dim);
+}
+.evo-dormant {
+  opacity: 0.55;
+}
+.evo-muted {
+  color: var(--evo-muted);
+}
+.evo-parts tbody + tbody,
+.evo-parts tfoot {
+  border-top: 1px solid var(--evo-line);
+}
+.evo-parts tfoot tr + tr {
+  border-top: 0;
+}
+.evo-parts th[scope='col'] {
+  font-size: 0.68rem;
+}
+.evo-part-toggle {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.evo-part-toggle:hover {
+  color: var(--evo-accent);
+}
+.evo-stat-table {
+  margin: 2px 0 6px;
+}
+.evo-stat-table .evo-num {
+  width: auto;
+}
+.evo-parts .evo-num {
+  width: auto;
+  padding-left: 8px;
+}
+.evo-parts td,
+.evo-parts th {
+  white-space: nowrap;
+}
+.evo-parts .evo-stat-table {
+  margin-left: 14px;
+  width: calc(100% - 14px);
+}
+
+@media (min-width: 801px) and (max-width: 1279px) {
+  .evo-species-since {
+    display: none;
   }
 }

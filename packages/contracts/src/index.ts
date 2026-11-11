@@ -131,7 +131,7 @@ export type {
   SpeedSetting,
   RunStatus,
   PresetOption,
-  PopulationPoint,
+  HistoryPoint,
   SpeciesRow,
   GeneRow,
   LabelledValue,

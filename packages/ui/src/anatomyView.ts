@@ -48,5 +48,81 @@ export const PART_TINT: Readonly<Record<string, string>> = {
   stomach: '#f0a8a8',
   armor: '#9fb3c8',
   membrane: '#7dd3fc',
-  mender: '#7dffb0'
+  mender: '#7dffb0',
+  eyestalk: '#f5f5f5',
+  gyro: '#80d8ff',
+  lipid: '#ffe082',
+  pheromone: '#f48fb1',
+  skeleton: '#bcaaa4',
+  join: '#b0bec5'
+}
+
+/** One line of the parent tree: a part and how deep it hangs below the body. */
+export interface TreeRow {
+  readonly slot: number
+  readonly type: string
+  /** 1 for a part on the body, 2 for its child, and so on (the body itself is depth 0, not a row). */
+  readonly depth: number
+  readonly functional: boolean
+}
+
+/**
+ * The parts as a tree in reading order (each part directly under its parent, children by slot).
+ * A part whose parent is not an earlier, existing slot hangs from the body, which is also where
+ * development puts it, so the tree always shows every part exactly once.
+ */
+export function partTree(
+  parts: readonly {
+    readonly slot: number
+    readonly parent: number
+    readonly type: string
+    readonly functional: boolean
+  }[]
+): TreeRow[] {
+  const known = new Set(parts.map((part) => part.slot))
+  const parentOf = (part: { slot: number; parent: number }): number =>
+    part.parent >= 0 && part.parent < part.slot && known.has(part.parent) ? part.parent : -1
+  const children = new Map<number, (typeof parts)[number][]>()
+  for (const part of parts) {
+    const key = parentOf(part)
+    const list = children.get(key)
+    if (list === undefined) children.set(key, [part])
+    else list.push(part)
+  }
+  const rows: TreeRow[] = []
+  const walk = (key: number, depth: number): void => {
+    for (const part of (children.get(key) ?? []).sort((a, b) => a.slot - b.slot)) {
+      rows.push({ slot: part.slot, type: part.type, depth, functional: part.functional })
+      walk(part.slot, depth + 1)
+    }
+  }
+  walk(-1, 1)
+  return rows
+}
+
+/** A stat in real units with its unit: three significant-ish digits, fewer as the number grows. */
+export function formatStat(value: number, unit: string): string {
+  if (!Number.isFinite(value)) return '-'
+  const magnitude = Math.abs(value)
+  const digits = magnitude >= 100 ? 0 : magnitude >= 10 ? 1 : 2
+  const number = value.toFixed(digits)
+  return unit === '' ? number : `${number} ${unit}`
+}
+
+/** What an eye sees as text: "all round, reach 60" or "56°, reach 109" (the half-angle doubled is the field of view). */
+export function sightLabel(sight: { readonly half: number; readonly reach: number }): string {
+  const reach = Math.round(sight.reach)
+  return sight.half >= Math.PI - 1e-6
+    ? `all round, reach ${reach}`
+    : `${Math.round(((2 * sight.half) / Math.PI) * 180)}°, reach ${reach}`
+}
+
+/** Mass and upkeep of the bare body: the whole body's totals minus what the parts add (never negative). */
+export function bareBody(
+  parts: readonly { readonly mass: number; readonly upkeep: number }[],
+  total: { readonly mass: number; readonly upkeep: number }
+): { mass: number; upkeep: number } {
+  const mass = parts.reduce((sum, part) => sum + part.mass, 0)
+  const upkeep = parts.reduce((sum, part) => sum + part.upkeep, 0)
+  return { mass: Math.max(0, total.mass - mass), upkeep: Math.max(0, total.upkeep - upkeep) }
 }

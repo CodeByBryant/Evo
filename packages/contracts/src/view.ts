@@ -24,9 +24,24 @@ export interface PresetOption {
   readonly description: string
 }
 
-export interface PopulationPoint {
+/**
+ * One sample of the run's history. Every series is sampled at the same ticks, so they line up; the
+ * death counters are cumulative (a rate is a difference over `time`, see the interface's helpers).
+ */
+export interface HistoryPoint {
   readonly tick: number
+  /** Simulated seconds. */
+  readonly time: number
+  /** Living organisms. */
   readonly count: number
+  /** Living species. */
+  readonly species: number
+  /** Food items in the world. */
+  readonly food: number
+  /** Deaths since the start, by cause. */
+  readonly starved: number
+  readonly aged: number
+  readonly damaged: number
 }
 
 export interface SpeciesRow {
@@ -76,6 +91,8 @@ export interface InspectorPart {
   readonly tipY: number
   readonly orientation: number
   readonly functional: boolean
+  /** What a working eye sees, in world units (`half` in radians, pi for all round); `null` for any other part. */
+  readonly sight: { readonly half: number; readonly reach: number } | null
   /** Developmental quality in `[0.1, 1]`. */
   readonly integrity: number
   /** What the part adds to the body's mass and upkeep (energy per second); a dormant part still counts. */
@@ -162,8 +179,8 @@ export interface ViewState {
   readonly resources: number
   readonly extinctionTick: number | null
   readonly metrics: MetricsSnapshot
-  /** Sampled population over the run, oldest first. */
-  readonly populationHistory: readonly PopulationPoint[]
+  /** Sampled history of the run (population, species, food, deaths), oldest first. */
+  readonly history: readonly HistoryPoint[]
   /** Living species, largest first. */
   readonly species: readonly SpeciesRow[]
   readonly activeSpecies: number

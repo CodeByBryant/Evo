@@ -1,5 +1,6 @@
 import type { SimulationControls, ViewState } from '@evo/contracts'
-import { PopulationChart } from './Charts'
+import { HistoryChart, PopulationChart, Sparkline } from './Charts'
+import { deathRates } from './history'
 import { Section } from './Section'
 import {
   barWidth,
@@ -117,58 +118,79 @@ export function StatsPanel({ view }: { view: ViewState }): React.JSX.Element {
 }
 
 const DEATH_CAUSES = [
-  { key: 'deathsByStarvation', label: 'Starved', tone: 'warn' },
-  { key: 'deathsByAge', label: 'Old age', tone: 'age' },
-  { key: 'deathsByDamage', label: 'Damage', tone: 'bad' }
+  { key: 'starved', total: 'deathsByStarvation', label: 'Starved', tone: 'warn' },
+  { key: 'aged', total: 'deathsByAge', label: 'Old age', tone: 'age' },
+  { key: 'damaged', total: 'deathsByDamage', label: 'Damage', tone: 'bad' }
 ] as const
 
-/** Deaths by cause since the world began: a count and a flat bar (its share of all deaths) each. */
+/** A rate per minute: one decimal under 10, none above, so a column of them lines up. */
+const perMinute = (rate: number): string => `${formatNumber(rate, rate >= 10 ? 0 : 1)} /min`
+
+/**
+ * Deaths by cause as rates (per simulated minute over the last two minutes), each with its share of
+ * those deaths as a flat bar and the count since the start in small text.
+ */
 export function DeathCauses({ view }: { view: ViewState }): React.JSX.Element {
-  const total = totalDeaths(view.metrics)
+  const rates = deathRates(view.history)
   return (
     <dl className="evo-causes">
-      {DEATH_CAUSES.map((cause) => {
-        const count = view.metrics[cause.key]
-        return (
-          <div key={cause.key}>
-            <dt>{cause.label}</dt>
-            <dd>
-              {formatCount(count)}
-              <small className="evo-hint"> {percent(count, total)}</small>
-            </dd>
-            <div className="evo-meter-track" aria-hidden="true">
-              <div
-                className={`evo-meter-fill evo-tone-${cause.tone}`}
-                style={{ width: barWidth(count, total) }}
-              />
-            </div>
+      {DEATH_CAUSES.map((cause) => (
+        <div key={cause.key}>
+          <dt>{cause.label}</dt>
+          <dd>
+            {perMinute(rates[cause.key])}
+            <small className="evo-hint" title="since the start">
+              {' '}
+              {formatCount(view.metrics[cause.total])}
+            </small>
+          </dd>
+          <div className="evo-meter-track" aria-hidden="true">
+            <div
+              className={`evo-meter-fill evo-tone-${cause.tone}`}
+              style={{ width: barWidth(rates[cause.key], rates.total) }}
+            />
           </div>
-        )
-      })}
+        </div>
+      ))}
     </dl>
   )
 }
+
+const stripTitle = (id: string, title: string, value: React.ReactNode): React.JSX.Element => (
+  <h2 id={id} className="evo-section-title">
+    <span>{title}</span>
+    <em>{value}</em>
+  </h2>
+)
 
 /**
  * The strip under the world: what is worth watching while the world runs. Each panel is a titled
  * cell; the per-cluster table is there only in a cluster world.
  */
 export function Strip({ view }: { view: ViewState }): React.JSX.Element {
+  const rates = deathRates(view.history)
   return (
     <section className="evo-strip" aria-label="Charts">
       <div className="evo-strip-panel">
-        <h2 className="evo-section-title">
-          <span>Population</span>
-          <em>{formatCount(view.population)}</em>
-        </h2>
-        <PopulationChart points={view.populationHistory} />
+        {stripTitle('evo-strip-population', 'Population', formatCount(view.population))}
+        <PopulationChart points={view.history} />
       </div>
       <div className="evo-strip-panel">
-        <h2 className="evo-section-title">
-          <span>Deaths by cause</span>
-          <em>{formatCount(totalDeaths(view.metrics))}</em>
-        </h2>
+        {stripTitle('evo-strip-species', 'Species', view.activeSpecies)}
+        <HistoryChart points={view.history} pick={(p) => p.species} label="Species" floor={3} />
+      </div>
+      <div className="evo-strip-panel">
+        {stripTitle('evo-strip-food', 'Food', formatCount(view.resources))}
+        <HistoryChart points={view.history} pick={(p) => p.food} label="Food" />
+      </div>
+      <div className="evo-strip-panel">
+        {stripTitle('evo-strip-deaths', 'Deaths by cause', perMinute(rates.total))}
         <DeathCauses view={view} />
+        <p className="evo-hint">
+          {rates.total > 0
+            ? `${percent(rates.starved, rates.total)} of the last ${formatTime(rates.seconds)} of deaths were starvation`
+            : 'No deaths in the recent window.'}
+        </p>
       </div>
       {view.clusters !== null && (
         <div className="evo-strip-panel evo-strip-scroll">
@@ -179,35 +201,66 @@ export function Strip({ view }: { view: ViewState }): React.JSX.Element {
   )
 }
 
+/**
+ * The living species as a table: trend (members over time), members now, the species it came from
+ * and how long ago it appeared. The selected organism's species is highlighted.
+ */
 export function SpeciesPanel({ view }: { view: ViewState }): React.JSX.Element {
+  // Simulated seconds per tick, from the clock itself (the timestep is configuration).
+  const secondsPerTick = view.tick > 0 ? view.time / view.tick : 0
   return (
     <Section id="evo-species" title="Species" aside={view.activeSpecies}>
       {view.species.length === 0 ? (
         <p className="evo-hint">No living species.</p>
       ) : (
-        <ul className="evo-species">
-          {view.species.map((species) => (
-            <li
-              key={species.id}
-              className={view.selected?.speciesId === species.id ? 'evo-species-selected' : ''}
-            >
-              <span
-                className="evo-swatch"
-                style={{ background: species.color, color: species.color }}
-                aria-hidden="true"
-              />
-              <span className="evo-species-name">
-                #{species.id}
-                {species.ancestorId !== null && (
-                  <small className="evo-hint"> from #{species.ancestorId}</small>
-                )}
-              </span>
-              <span className="evo-species-count" title="living members">
-                {formatCount(species.members)}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="evo-species-scroll">
+          <table className="evo-table evo-species">
+            <thead>
+              <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Trend</th>
+                <th scope="col" className="evo-num">
+                  Now
+                </th>
+                <th scope="col" className="evo-num">
+                  From
+                </th>
+                <th scope="col" className="evo-num evo-species-since">
+                  Since
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {view.species.map((species) => (
+                <tr
+                  key={species.id}
+                  className={view.selected?.speciesId === species.id ? 'evo-species-selected' : ''}
+                >
+                  <th scope="row">
+                    <span
+                      className="evo-swatch"
+                      style={{ background: species.color }}
+                      aria-hidden="true"
+                    />{' '}
+                    #{species.id}
+                  </th>
+                  <td>
+                    <Sparkline values={species.history} color={species.color} width={48} />
+                  </td>
+                  <td className="evo-num" title="living members">
+                    {formatCount(species.members)}
+                  </td>
+                  <td className="evo-num" title="the species it descends from">
+                    {species.ancestorId === null ? '-' : `#${species.ancestorId}`}
+                  </td>
+                  <td className="evo-num evo-species-since" title="time since it appeared">
+                    {formatTime(view.time - species.createdAtTick * secondsPerTick)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Section>
   )
@@ -244,8 +297,7 @@ export function ExtinctionBanner({
         </button>
       </div>
       <small className="evo-hint">
-        Peak population came to{' '}
-        {formatNumber(Math.max(0, ...view.populationHistory.map((p) => p.count)), 0)}.
+        Peak population came to {formatNumber(Math.max(0, ...view.history.map((p) => p.count)), 0)}.
       </small>
     </div>
   )
