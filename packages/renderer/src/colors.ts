@@ -1,4 +1,4 @@
-import type { PartType, RegionType, SpeciesId } from '@evo/contracts'
+import type { ObstacleKind, PartType, RegionType, SpeciesId } from '@evo/contracts'
 
 /** The hue step that spreads consecutive ids as far apart as possible (the golden angle). */
 const GOLDEN_ANGLE = 137.50776405003785
@@ -71,6 +71,21 @@ export const REGION_COLORS: Readonly<Record<RegionType, string>> = {
   desert: '#3a3320',
   cave: '#25222c',
   volcanic: '#3a2420'
+}
+
+/**
+ * Flat obstacle colours (ADR 0022): a fill, an edge and the fill's opacity. Rocks and trees are
+ * solid; a pond and reeds are translucent, because you can see across water and a reed bed is cover
+ * rather than a wall.
+ */
+export const OBSTACLE_COLORS: Readonly<
+  Record<ObstacleKind, { readonly fill: string; readonly edge: string; readonly alpha: number }>
+> = {
+  boulder: { fill: '#55565c', edge: '#7a7b82', alpha: 1 },
+  tree: { fill: '#2d6a45', edge: '#4f9468', alpha: 1 },
+  ridge: { fill: '#6a5b4b', edge: '#907e68', alpha: 1 },
+  pond: { fill: '#2a6a92', edge: '#5fa0c8', alpha: 0.7 },
+  reeds: { fill: '#8da35a', edge: '#b4c97c', alpha: 0.45 }
 }
 
 /** Food colors by kind index, cycling if a configuration defines more kinds. */
