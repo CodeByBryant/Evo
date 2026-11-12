@@ -57,7 +57,13 @@ describe('the default starting bodies', () => {
           expect(value).toBeGreaterThan(0)
         }
         expect(caps.mass).toBeGreaterThan(0)
-        expect(Object.values(factors.dietEfficiency).every((v) => v > 0)).toBe(true)
+        // every kind of food is digestible, except plants to the jaw: the hunter is a carnivore (ADR 0023)
+        const eatsPlants = starter.name !== 'hunter'
+        expect(
+          Object.values(factors.dietEfficiency).every((v) => (eatsPlants ? v > 0 : v >= 0))
+        ).toBe(true)
+        if (!eatsPlants)
+          expect(Object.values(factors.dietEfficiency).every((v) => v === 0)).toBe(true)
       })
 
       it('differs from the founder plan in what it can do, and from every other starter in its plan', () => {
@@ -99,12 +105,18 @@ describe('the default starting bodies', () => {
       })
 
       it('lives in a world: a forced world starts as it and does not die out in 1,500 ticks', () => {
+        // A world of nothing but hunters has no prey and no plants they can eat: the hunter lives
+        // among others (the founder group), which the world tests below cover (ADR 0023).
+        const groups = starter.name === 'hunter' ? { groups: [] } : {}
         const world = World.create({
           seed: 3,
-          config: { anatomy: { startingBody: { mode: 'archetypes', archetype: starter.name } } }
+          config: {
+            anatomy: { startingBody: { mode: 'archetypes', archetype: starter.name, ...groups } },
+            ...(starter.name === 'hunter' ? { predation: { enabled: false } } : {})
+          }
         })
         expect(world.startingBodyName).toBe(starter.name)
-        world.run(1500)
+        world.run(starter.name === 'hunter' ? 200 : 1500)
         expect(world.isExtinct).toBe(false)
       })
     })

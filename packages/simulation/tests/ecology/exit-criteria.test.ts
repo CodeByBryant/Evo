@@ -175,23 +175,28 @@ describe('regions affect survival', () => {
 })
 
 describe('seasons create measurable pressure', () => {
-  /** Births per 1,000 ticks inside each season's windows, over `years` years of a strong cycle. */
-  function birthsBySeason(config: WorldConfigOverrides, years: number): Record<string, number> {
+  /** Events of one type inside each season's windows, over `years` years of a strong cycle. */
+  function eventsBySeason(
+    type: 'organism-born' | 'resource-spawned',
+    config: WorldConfigOverrides,
+    years: number
+  ): Record<string, number> {
     const world = World.create({ seed: 4, config: { history: { maxEvents: 600_000 }, ...config } })
     const seasonTicks = 2000
     world.run(years * 4 * seasonTicks)
-    const births = { spring: 0, summer: 0, autumn: 0, winter: 0 } as Record<string, number>
+    const counts = { spring: 0, summer: 0, autumn: 0, winter: 0 } as Record<string, number>
     const names = ['spring', 'summer', 'autumn', 'winter']
     for (const e of world.events.list()) {
-      if (e.type === 'organism-born' && e.tick > 0) {
-        births[names[Math.floor(e.tick / seasonTicks) % 4] as string]! += 1
+      if (e.type === type && e.tick > 0) {
+        counts[names[Math.floor(e.tick / seasonTicks) % 4] as string]! += 1
       }
     }
-    return births
+    return counts
   }
 
-  it('a harsh winter measurably suppresses births, a mild default one does not break the world', () => {
-    const harsh = birthsBySeason(
+  it('a harsh winter measurably suppresses the food supply, and a mild default one does not break the world', () => {
+    const harsh = eventsBySeason(
+      'resource-spawned',
       {
         ecology: {
           seasons: {
@@ -204,8 +209,15 @@ describe('seasons create measurable pressure', () => {
       },
       3
     )
-    // the cold season has fewer births than the generous one by a clear margin
-    expect(harsh['winter']!).toBeLessThan(harsh['summer']! * 0.85)
+    // This was a claim about births ("winter births below 0.85 of summer's"). It held for seed 4
+    // only by luck: with the same cycle over seeds 2, 4, 6 and 7, winter births with
+    // reproductionScale 0.3 were 129, 140, 159 and 115 against 113, 125, 119 and 91 with 1 (not
+    // lower), because a lean winter is followed by births from the autumn surplus; five of six seeds
+    // already failed it before the carnivore jaw (ADR 0023 step three) moved seed 4. What the harsh
+    // cycle does deterministically is the supply: seed 4 spawns 874 items in winter against 1,505 in
+    // summer (0.58: a plant's nodes regrow from the hub on their own schedule, which is why it is
+    // not the 0.15 that regeneration 0.2 against 1.3 alone would give), so winter is clearly below summer.
+    expect(harsh['winter']!).toBeLessThan(harsh['summer']! * 0.75)
     const world = World.create({ seed: 4 })
     world.run(16_000)
     expect(world.validate().ok).toBe(true)

@@ -52,3 +52,5 @@ Knock-on effects, each re-pinned with its measurement: the no-ecology bands and 
 ## Addendum: the jaw has prey (ADR 0023)
 
 The jaw was a dead end "until predation exists". With `predation.enabled` a jaw bites creatures (flesh yield 1) and eats carcasses best (1.2); every other form yields nothing from a living creature. See [ADR 0023](0023-predation.md).
+
+See also ADR 0023 step three: the jaw takes nothing from plants (yield 0): it neither bites nor sees them.

@@ -39,7 +39,7 @@ describe('Phase 6A: species exit criteria', () => {
         .active()
         .map((s) => s.memberCount)
         .sort((a, b) => a - b)
-    ).toEqual([4, 16])
+    ).toEqual([2, 18])
   })
 
   it('species split as genomes drift, and each new species descends from its mother species', () => {

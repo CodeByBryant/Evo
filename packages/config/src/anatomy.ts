@@ -174,21 +174,22 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
   startingBody: {
     mode: 'archetypes',
     archetype: null,
-    groups: [{ archetype: 'hunter', share: 0.2 }]
+    groups: [{ archetype: 'hunter', share: 0.1 }]
   },
   outlineDrag: 0.5,
   // Energy yield of each mouth form on each kind of food (ADR 0017). The mandible is the
   // generalist and exactly 1 everywhere, so the founder is the reference; the specialists beat it on
-  // their own food and lose on the rest. The jaw was a carnivore's dead end (0.55 on every plant);
-  // with prey in the world (ADR 0023) it is as good as the mandible on plants, so a lineage is not
-  // selected out before prey can pay (measured: at 0.55 and 0.7 it died out in about nine worlds of
-  // sixteen, at 1.0 it held in about three of four). All provisional.
+  // their own food and lose on the rest. The jaw is a **carnivore's** (ADR 0023): 0 on every plant, so
+  // it neither bites nor sees plants and lives on creatures (`predation.fleshYield`) and carrion. It
+  // was 0.55, then 1.0 to keep a lineage alive; at 1.0 jaws were omnivores that took over a world
+  // (35 of 36 creatures at 100,000 ticks, 82 percent of the energy still from plants). A food kind
+  // that is not listed counts as 1. All provisional.
   mouthForms: {
     sprout: { grass: 1.3, fruit: 1.1, fungus: 0.6, nectar: 0.9 },
     proboscis: { grass: 0.6, fruit: 1.15, fungus: 0.7, nectar: 1.5 },
     mandible: { grass: 1, fruit: 1, fungus: 1, nectar: 1 },
     radula: { grass: 0.9, fruit: 0.8, fungus: 1.4, nectar: 0.5 },
-    jaw: { grass: 1, fruit: 1, fungus: 1, nectar: 1 }
+    jaw: { grass: 0, fruit: 0, fungus: 0, nectar: 0 }
   }
 }
 
@@ -353,8 +354,9 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
         errors.push(`anatomy.mouthForms.${form} must be an object of food kind to yield`)
       } else {
         for (const [kind, value] of Object.entries(kinds)) {
-          if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-            errors.push(`anatomy.mouthForms.${form}.${kind} must be a number greater than zero`)
+          // Zero is allowed: a carnivore's jaw takes nothing from plants (ADR 0023). The mandible is 1.
+          if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+            errors.push(`anatomy.mouthForms.${form}.${kind} must be a number, zero or more`)
           }
         }
       }

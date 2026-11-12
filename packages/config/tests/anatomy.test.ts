@@ -227,9 +227,16 @@ describe('mouth forms (ADR 0017)', () => {
     )
   })
 
-  it('every form is needed, yields must be positive, and an override merges per form and kind', () => {
+  it('every form is needed, yields are zero or more (a carnivore takes nothing from plants), and an override merges per form and kind', () => {
     expect(errorsFor((c) => delete c.anatomy.mouthForms.jaw).join('\n')).toContain('jaw')
-    expect(errorsFor((c) => (c.anatomy.mouthForms.sprout.grass = 0)).join('\n')).toContain('sprout')
+    // zero is allowed for a specialist (ADR 0023); negative and non-numbers are not
+    expect(errorsFor((c) => (c.anatomy.mouthForms.sprout.grass = 0))).toEqual([])
+    expect(errorsFor((c) => (c.anatomy.mouthForms.sprout.grass = -0.1)).join('\n')).toContain(
+      'sprout'
+    )
+    expect(errorsFor((c) => (c.anatomy.mouthForms.sprout.grass = 'lots')).join('\n')).toContain(
+      'sprout'
+    )
     const merged = resolveWorldConfig({ anatomy: { mouthForms: { sprout: { grass: 2 } } } })
     expect(merged.anatomy.mouthForms.sprout.grass).toBe(2)
     expect(merged.anatomy.mouthForms.sprout.fruit).toBe(
@@ -245,11 +252,15 @@ describe('mouth forms (ADR 0017)', () => {
     expect(yieldOf('proboscis', 'nectar')).toBeGreaterThan(yieldOf('mandible', 'nectar'))
     expect(yieldOf('radula', 'fungus')).toBeGreaterThan(yieldOf('mandible', 'fungus'))
     expect(yieldOf('sprout', 'fungus')).toBeLessThan(yieldOf('mandible', 'fungus'))
-    // the jaw is as good as the generalist on every plant (it was worse, 0.55, until prey arrived,
-    // ADR 0023): a jaw lineage must not be selected out before prey can pay; flesh is its edge
-    for (const [kind, value] of Object.entries(forms.jaw)) {
-      expect(value).toBe(forms.mandible[kind] as number)
+    // the jaw is a carnivore's (ADR 0023): it takes nothing from any plant, and only it does
+    for (const value of Object.values(forms.jaw)) expect(value).toBe(0)
+    for (const form of ['sprout', 'proboscis', 'mandible', 'radula'] as const) {
+      for (const value of Object.values(forms[form])) expect(value).toBeGreaterThan(0)
     }
+    // and the mandible is still exactly 1 (the founder's neutral generalist)
+    expect(errorsFor((c) => (c.anatomy.mouthForms.mandible.grass = 0)).join('\n')).toContain(
+      'mandible'
+    )
   })
 })
 
@@ -270,7 +281,7 @@ describe('starting bodies (ADR 0020)', () => {
     expect(anatomy.startingBody).toEqual({
       mode: 'archetypes',
       archetype: null,
-      groups: [{ archetype: 'hunter', share: 0.2 }]
+      groups: [{ archetype: 'hunter', share: 0.1 }]
     })
     expect(anatomy.starters.map((s) => s.name)).toEqual([
       'grazer',
