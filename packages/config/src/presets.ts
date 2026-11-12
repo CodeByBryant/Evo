@@ -20,7 +20,7 @@ export const PRESETS: readonly WorldPreset[] = [
     name: 'balanced',
     label: 'Balanced',
     description:
-      'The default world: patches of renewable plants over regions, seasons, hazards and several kinds of food.',
+      'The default world: patches of renewable plants over regions, seasons, hazards, obstacles and several kinds of food.',
     overrides: {}
   },
   {
