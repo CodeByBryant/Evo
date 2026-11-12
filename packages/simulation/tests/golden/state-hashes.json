@@ -292,7 +292,7 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 100000,
-      "expectedHash": "69124444d3c7733456a79c7ebe2ff243"
+      "expectedHash": "9b14b1c9595fbdf716dd831662c74f43"
     },
     {
       "name": "reflex-default-1k",
@@ -879,7 +879,7 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 12000,
-      "expectedHash": "97ec6b0c0fc2de61e5bc74028cdee3c3"
+      "expectedHash": "ff2654fdb2e6c32d46909bada36c85ca"
     },
     {
       "name": "archetypes-reflex-8k",
@@ -1073,7 +1073,7 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 4000,
-      "expectedHash": "bf2b68bce651ead5709046e0f5e8e379"
+      "expectedHash": "e5b02a027b6c7d306fea0512ff879bae"
     },
     {
       "name": "noise-reflex-3k",
@@ -1198,7 +1198,7 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 8000,
-      "expectedHash": "3ef20640b35f037269027a97b068e216"
+      "expectedHash": "4a6d5dee4873b7c856fc66f26ebbf366"
     },
     {
       "name": "food-default-1k",
@@ -1220,7 +1220,7 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 12000,
-      "expectedHash": "1fadd5464a12378774ecb6ba5f0ea151"
+      "expectedHash": "b1fb89450aa5df601208731420041546"
     },
     {
       "name": "food-default-reflex-8k",
@@ -1268,7 +1268,7 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 4000,
-      "expectedHash": "62a3815d5928de4fc3f9d1eff421ac53"
+      "expectedHash": "5d687f807cdcefc55e26e090dad7569e"
     },
     {
       "name": "obstacles-default-1k",
@@ -1288,7 +1288,7 @@
         "anatomy": { "startingBody": { "groups": [] } }
       },
       "steps": 12000,
-      "expectedHash": "e3b260093fdc1116854ab8ab31a83a2b"
+      "expectedHash": "1ec4c556a39840d57e1aa25c7b85eb9b"
     },
     {
       "name": "obstacles-reflex-8k",
@@ -1333,28 +1333,28 @@
         }
       },
       "steps": 4000,
-      "expectedHash": "e81f11fdd2ea3596557377750bc3d236"
+      "expectedHash": "a9ddf72a9c27d340994f78912b347fd0"
     },
     {
       "name": "predation-default-1k",
       "seed": 12345,
       "config": {},
       "steps": 1000,
-      "expectedHash": "01e09075a5fa010c0884ef9e3054bdf2"
+      "expectedHash": "90d27853de3997d3a6dfca57f2552a2a"
     },
     {
       "name": "predation-ecology-12k",
       "seed": 7,
       "config": {},
       "steps": 12000,
-      "expectedHash": "25a975c9bf173a274a8cf1d0779f2efd"
+      "expectedHash": "82a71ca77694b5cebe72b80fa1779218"
     },
     {
       "name": "predation-reflex-8k",
       "seed": 3,
       "config": { "learning": { "controller": "reflex" } },
       "steps": 8000,
-      "expectedHash": "baef5773263fa072a6dee4d0b1cea71a"
+      "expectedHash": "0fcc26dee9e091850c83b33aff8c5436"
     },
     {
       "name": "predation-evolving-bodies-6k",
@@ -1371,7 +1371,7 @@
         "genetics": { "mutationRateScale": 3 }
       },
       "steps": 6000,
-      "expectedHash": "a129f0765f415e900544d69a6a96e74b"
+      "expectedHash": "48d8b7e596b3cbc89a1d1bed1c358bf9"
     },
     {
       "name": "predation-lush-4k",
@@ -1384,7 +1384,7 @@
         }
       },
       "steps": 4000,
-      "expectedHash": "6e2b2d614d3c9afb3c5636f54eabb78a"
+      "expectedHash": "c96e1b5afdd6ffbdd8353f67b03454e7"
     },
     {
       "name": "predation-hunters-only-3k",
@@ -1393,7 +1393,7 @@
         "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "hunter", "groups": [] } }
       },
       "steps": 3000,
-      "expectedHash": "0db004864494b4b932cf4c698891aa79"
+      "expectedHash": "3c461f1ac3cd4bff8f63f0c36d06d467"
     }
   ]
 }

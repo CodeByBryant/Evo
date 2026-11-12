@@ -149,6 +149,8 @@ describe('drawnPartsOf: evolved bodies', () => {
         organisms: { initialCount: 24 },
         anatomy: {
           founder,
+          // The founder above is the body (not a starter or a hunter group, ADR 0020 and 0023).
+          startingBody: { mode: 'reference', groups: [] },
           mutation: { presenceRate: 0.2, typeRate: 0.2, parentRate: 0.2, continuousRate: 0.3 }
         },
         genetics: { mutationRateScale: 4 }
