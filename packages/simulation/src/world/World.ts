@@ -30,7 +30,9 @@ import type {
   PeerBuffer,
   PerceptionBuffer,
   PredationBuffer,
-  RegenBuffer
+  PreyBuffer,
+  RegenBuffer,
+  ThreatBuffer
 } from '../buffers/types'
 import type { ClockState } from '../clock/SimulationClock'
 import { SimulationClock } from '../clock/SimulationClock'
@@ -159,6 +161,9 @@ export class World {
   private readonly intentBuffer: IntentBuffer = new Map()
   private readonly hazardBuffer: HazardBuffer = new Map()
   private readonly mateBuffer: MateBuffer = new Map()
+  /** What each creature could bite and what could bite it, this tick (ADR 0023); empty with predation off. */
+  private readonly preyBuffer: PreyBuffer = new Map()
+  private readonly threatBuffer: ThreatBuffer = new Map()
   private readonly damageBuffer: DamageBuffer = new Map()
   /** Bite damage this tick, and who bit whom last (ADR 0023); both only used with predation on. */
   private readonly predationBuffer: PredationBuffer = new Map()
@@ -316,14 +321,20 @@ export class World {
         : undefined,
       // Creatures' bodies (ADR 0016 "Line of sight") and obstacles that block sight (ADR 0022) hide
       // what is behind them; with neither the occluding search is not used at all.
-      this.sightBlockers()
+      this.sightBlockers(),
+      // Prey and threats (ADR 0023): only with predation on; the buffers stay empty otherwise.
+      this.config.predation.enabled
+        ? { organismIndex: this.organismIndex, prey: this.preyBuffer, threat: this.threatBuffer }
+        : undefined
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
       this.organisms,
       this.perceptionBuffer,
       this.intentBuffer,
-      this.randomStreams.get('world')
+      this.randomStreams.get('world'),
+      this.config.predation.enabled ? this.preyBuffer : undefined,
+      this.config.predation.enabled ? this.threatBuffer : undefined
     )
     this.brainSystem = new BrainSystem(
       this.config,
@@ -335,7 +346,9 @@ export class World {
       this.randomStreams.get('learning'),
       this.ecology,
       this.hazardBuffer,
-      this.mateBuffer
+      this.mateBuffer,
+      this.preyBuffer,
+      this.threatBuffer
     )
     this.movementSystem = new MovementSystem(
       this.config,
@@ -1059,6 +1072,8 @@ export class World {
     hasher
       .writeFloat64(this.environmentSystem.spawnRemainder)
       .writeFloat64(this.environmentSystem.stormRemainder)
+    // Schema v12 tail: the predation counters (docs/decisions/0023).
+    hasher.writeUint32(metrics.deathsByPredation).writeUint32(metrics.predationBites)
 
     return hasher.digest()
   }

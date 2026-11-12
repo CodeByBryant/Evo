@@ -5,7 +5,9 @@ import type {
   IntentBuffer,
   MateBuffer,
   PeerBuffer,
-  PerceptionBuffer
+  PerceptionBuffer,
+  PreyBuffer,
+  ThreatBuffer
 } from '../buffers/types'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
@@ -64,7 +66,10 @@ export class BrainSystem {
     private readonly random: SeededRandom,
     private readonly ecology: EcologyModel | null = null,
     private readonly hazardBuffer?: HazardBuffer,
-    private readonly mateBuffer?: MateBuffer
+    private readonly mateBuffer?: MateBuffer,
+    /** Prey and threat sightings (ADR 0023): empty or absent with predation off. */
+    private readonly preyBuffer?: PreyBuffer,
+    private readonly threatBuffer?: ThreatBuffer
   ) {
     this.layout = brainLayoutOf(architectureOf(config.genetics.brain))
     this.learner = createLearner(config.learning.algorithm)
@@ -183,6 +188,8 @@ export class BrainSystem {
           : null
 
       const mate = this.mateBuffer?.get(organism.id)
+      const prey = this.preyBuffer?.get(organism.id)
+      const threat = this.threatBuffer?.get(organism.id)
       const hazardTarget = this.hazardBuffer?.get(organism.id)
       const hazard: HazardSighting | null = hazardTarget
         ? {
@@ -215,6 +222,8 @@ export class BrainSystem {
         food: sight(food),
         peer: sight(peer),
         mate: sight(mate),
+        prey: sight(prey),
+        threat: sight(threat),
         timeSinceFood: brain.timeSinceFood / foodHorizon,
         previousReward: brain.reward.total,
         previousAction: brain.prevAction,

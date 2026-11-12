@@ -65,6 +65,12 @@ export interface PerceivedHazard {
  */
 export type MateBuffer = Map<EntityId, PerceivedPeer | null>
 
+/** Organism id -> the nearest creature it could bite that it can see (ADR 0023); `null` for none. */
+export type PreyBuffer = Map<EntityId, PerceivedPeer | null>
+
+/** Organism id -> the nearest creature that could bite it that it can see (ADR 0023); `null` for none. */
+export type ThreatBuffer = Map<EntityId, PerceivedPeer | null>
+
 /** Organism id -> its nearest perceived hazard, or `null`. Filled only under the brain controller. */
 export type HazardBuffer = Map<EntityId, PerceivedHazard | null>
 

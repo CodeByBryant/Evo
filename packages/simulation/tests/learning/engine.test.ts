@@ -60,11 +60,11 @@ describe('contracts and layout', () => {
     })
   })
 
-  it('lays out eight blocks totalling 450 weights, learnable ones last', () => {
-    expect(brainBlockLengths(architecture)).toEqual([320, 32, 8, 32, 4, 40, 5, 9])
-    expect(brainWeightCount(architecture)).toBe(450)
-    expect(layout.total).toBe(450)
-    expect(layout.learnOffset).toBe(396)
+  it('lays out eight blocks totalling 514 weights, learnable ones last', () => {
+    expect(brainBlockLengths(architecture)).toEqual([384, 32, 8, 32, 4, 40, 5, 9])
+    expect(brainWeightCount(architecture)).toBe(514)
+    expect(layout.total).toBe(514)
+    expect(layout.learnOffset).toBe(460)
     expect(layout.learnLength).toBe(54)
     expect(layout.actorLength).toBe(45)
     expect(layout.hiddenToValue.offset + layout.hiddenToValue.length).toBe(layout.total)
@@ -200,6 +200,73 @@ describe('innate prior', () => {
     expect(nothing[0]).toBeGreaterThan(0.3)
   })
 
+  const react = (extra: Partial<ObservationInput>): number[] => {
+    const { hidden } = forwardHidden(
+      layout,
+      weights,
+      buildObservation({ ...base, ...extra }),
+      [0, 0, 0, 0]
+    )
+    return readOutput(layout, learned, hidden)
+  }
+
+  it('hunts: turns toward prey on either side and runs at it; with no prey it does neither (ADR 0023)', () => {
+    const left = react({ prey: { dx: 20, dy: 20, distanceSquared: 800 } })
+    const right = react({ prey: { dx: 20, dy: -20, distanceSquared: 800 } })
+    const none = react({})
+    expect(left[1]).toBeGreaterThan(0.5)
+    expect(right[1]).toBeLessThan(-0.5)
+    expect(Math.abs(none[1] as number)).toBeLessThan(0.05)
+    expect(left[0]).toBeGreaterThan((none[0] as number) + 0.2)
+  })
+
+  it('flees: turns away from a threat on either side and runs; dead ahead it turns left (ADR 0023)', () => {
+    const threatLeft = react({ threat: { dx: 20, dy: 20, distanceSquared: 800 } })
+    const threatRight = react({ threat: { dx: 20, dy: -20, distanceSquared: 800 } })
+    const ahead = react({ threat: { dx: 30, dy: 0, distanceSquared: 900 } })
+    const none = react({})
+    expect(threatLeft[1]).toBeLessThan(-0.5)
+    expect(threatRight[1]).toBeGreaterThan(0.5)
+    expect(ahead[1]).toBeGreaterThan(0.2)
+    expect(threatLeft[0]).toBeGreaterThan((none[0] as number) + 0.2)
+    // Prey and threat are opposites: the same bearing turns the other way.
+    const prey = react({ prey: { dx: 20, dy: 20, distanceSquared: 800 } })
+    expect(Math.sign(prey[1] as number)).toBe(-Math.sign(threatLeft[1] as number))
+  })
+
+  it('food in sight still wins the steering when the prey and threat groups are empty (negative)', () => {
+    const food = react({ food: { dx: 20, dy: 20, distanceSquared: 800 } })
+    expect(food[1]).toBeGreaterThan(0.5)
+    const o = buildObservation({ ...base, food: { dx: 20, dy: 20, distanceSquared: 800 } })
+    expect(o.slice(40, 48)).toEqual([0, 0, 0, 0, 0, 0, 0, 0])
+  })
+
+  it('writes the prey group at 40 to 43 and the threat group at 44 to 47', () => {
+    const o = buildObservation({
+      ...base,
+      prey: { dx: 0, dy: 10, distanceSquared: 100 },
+      threat: { dx: 10, dy: 0, distanceSquared: 100 }
+    })
+    expect(o[40]).toBe(1)
+    expect(o[44]).toBe(1)
+    expect(o[41]).toBeCloseTo(0, 12) // prey straight left: cos 0
+    expect(o[42]).toBeCloseTo(1, 12) // sin 1
+    expect(o[45]).toBeCloseTo(1, 12) // threat dead ahead
+    expect(o[46]).toBeCloseTo(0, 12)
+    expect(o[43]).toBeGreaterThan(0)
+    expect(o[47]).toBeGreaterThan(0)
+    expect(OBSERVATION_LABELS.slice(40, 48)).toEqual([
+      'preyPresent',
+      'preyBearingCos',
+      'preyBearingSin',
+      'preyProximity',
+      'threatPresent',
+      'threatBearingCos',
+      'threatBearingSin',
+      'threatProximity'
+    ])
+  })
+
   it('always tries to interact and starts neutral on strafe and explore', () => {
     const out = act(null)
     expect(out[3]).toBeGreaterThan(0)
@@ -224,8 +291,8 @@ describe('innate prior', () => {
       { ...config.genetics.brain, innatePrior: false },
       stream()
     )
-    expect(prior.brain.weights).toHaveLength(450)
-    expect(plain.brain.weights).toHaveLength(450)
+    expect(prior.brain.weights).toHaveLength(514)
+    expect(plain.brain.weights).toHaveLength(514)
     const worst = Math.max(
       ...prior.brain.weights.map((w, i) => Math.abs(w - (weights[i] as number)))
     )

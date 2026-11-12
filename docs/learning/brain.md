@@ -16,7 +16,7 @@ Memory is the network's own recurrence, not an input. `learning.controller: 'ref
 
 ## Observation
 
-`OBSERVATION_SIZE = 40` (23 until Phase 6, which appended ten values; Phase 7 appended four more and the cluster layout three, see below). The order is part of the contract (`OBSERVATION_LABELS` in `@evo/contracts`); changing it is a hash-schema change and a golden regeneration. "Body frame" means rotated by the organism's heading.
+`OBSERVATION_SIZE = 48` (23 until Phase 6, which appended ten values; Phase 7 appended four more, the cluster layout three and predation eight, see below). The order is part of the contract (`OBSERVATION_LABELS` in `@evo/contracts`); changing it is a hash-schema change and a golden regeneration. "Body frame" means rotated by the organism's heading.
 
 | #     | Label                      | Value                                                                                           | Range    |
 | ----- | -------------------------- | ----------------------------------------------------------------------------------------------- | -------- |
@@ -46,6 +46,12 @@ Memory is the network's own recurrence, not an input. `learning.controller: 'ref
 | 36    | `mateProximity`            | `1 - distance / sensor range`, clamped (0 beyond the sensor radius)                             | [0, 1]   |
 | 37    | `homePresent`              | cluster layout: 0 inside 0.7 of the cluster's radius, rising to 1 at 1.1; always 0 in the field | [0, 1]   |
 | 38-39 | `homeBearingCos/Sin`       | direction to the nearest cluster's centre, body frame (0 inside the core and in the field)      | [-1, 1]  |
+| 40    | `preyPresent`              | predation only: 1 when a creature this one could bite is in sight, else 0                       | {0, 1}   |
+| 41-42 | `preyBearingCos/Sin`       | direction to the nearest such creature, body frame (0 when absent)                              | [-1, 1]  |
+| 43    | `preyProximity`            | `1 - distance / sensor range` (0 when absent)                                                   | [0, 1]   |
+| 44    | `threatPresent`            | predation only: 1 when a creature that could bite this one is in sight, else 0                  | {0, 1}   |
+| 45-46 | `threatBearingCos/Sin`     | direction to the nearest such creature, body frame (0 when absent)                              | [-1, 1]  |
+| 47    | `threatProximity`          | `1 - distance / sensor range` (0 when absent)                                                   | [0, 1]   |
 
 Slots 23-32 were **appended** in Phase 6 (ADR 0009) so no existing slot moved and the innate prior, which addresses slots by number, is unchanged. With a feature off its slots carry their neutral value (health 1, movement 1, the rest 0), a constant the network can use as a bias. The hazard and the food kind are found by `PerceptionSystem` in brain mode only. Ties in "nearest" follow the engine-wide rule `(distance squared, id)`. The peer is found only in brain mode, so the reflex controller costs nothing extra.
 
@@ -53,9 +59,11 @@ Slots 33-36 were appended in Phase 7 (ADR 0010). They describe the nearest **eli
 
 Slots 37-39 were appended with the cluster layout's way-home sense (ADR 0015): how far out of its cluster an organism is and the bearing to the cluster's centre, so a brain can come back from the void. They are zero in the field layout. The innate prior turns the two steering units toward home when `homePresent` is above zero and keeps a presence unit moving, so founders drift back from the edge before any learning.
 
+Slots 40-47 were appended with predation (ADR 0023, step two): the nearest creature this one **could bite** (a body with a jaw, a creature no bigger than `predation.maxPreyRatio` times it, not a parent or child: the same rule the bite uses) and the nearest that **could bite it** (the same rule the other way round; a hunter that could bite back and is at least as big counts as prey, not as a threat). They are found in the peer search by the same eyes and cover as any peer, so a rock or reeds between the two hide the other, and are **all zero** unless `predation.enabled` is on, and for a creature that has nobody to hunt or fear. The innate prior wires them (see below): the same steering units turn toward prey and away from a threat (the flee term is stronger than the food term) and presence units run.
+
 ## Network
 
-Sizes: input `I = 40`, hidden `H` (default 8), memory `M` (default 4), output `O = 5`. `softsign(x) = x / (1 + |x|)`: bounded in (-1, 1), smooth, and needs only `+`, `/`, `abs` (the determinism policy bans platform `exp` and `tanh`).
+Sizes: input `I = 48`, hidden `H` (default 8), memory `M` (default 4), output `O = 5`. `softsign(x) = x / (1 + |x|)`: bounded in (-1, 1), smooth, and needs only `+`, `/`, `abs` (the determinism policy bans platform `exp` and `tanh`).
 
 ```text
 h      = softsign(W_ih x + W_mh m + b_h)       // hidden, from observation and previous memory
@@ -72,7 +80,7 @@ The genome's flat `weights` vector is eight consecutive blocks. Block 8 is new i
 
 | #   | Block            | Shape          | Default length | Learnable                         |
 | --- | ---------------- | -------------- | -------------- | --------------------------------- |
-| 1   | `inputToHidden`  | H x I          | 320            | no (evolution only)               |
+| 1   | `inputToHidden`  | H x I          | 384            | no (evolution only)               |
 | 2   | `memoryToHidden` | H x M          | 32             | no                                |
 | 3   | `hiddenBias`     | H              | 8              | no                                |
 | 4   | `hiddenToMemory` | M x H          | 32             | no                                |
@@ -81,7 +89,7 @@ The genome's flat `weights` vector is eight consecutive blocks. Block 8 is new i
 | 7   | `outputBias`     | O              | 5              | **yes** (actor)                   |
 | 8   | `hiddenToValue`  | H, then 1 bias | 9              | **yes** (critic; Hebbian ignores) |
 
-Default total: **450** weights (426 before the way-home inputs, 394 in Phase 6, 314 in Phase 5, 249 in Phase 4). Because the hidden layer and memory are fixed during a life, `h` depends only on genome weights, the observation and memory; learning changes only how `h` is read out.
+Default total: **514** weights (450 before the prey and threat inputs, 426 before the way-home inputs, 394 in Phase 6, 314 in Phase 5, 249 in Phase 4). Because the hidden layer and memory are fixed during a life, `h` depends only on genome weights, the observation and memory; learning changes only how `h` is read out.
 
 ## Action
 
@@ -166,7 +174,7 @@ Only the learnable blocks differ between modes. The child's `BrainState` starts 
 
 ## Founders: the innate prior
 
-With `genetics.brain.innatePrior` (default true) a founder's weights are a hand-wired template plus Gaussian noise (`initialWeightStd` scaled down) rather than pure random draws. The template wires: bearing-to-food to `turn`, food-present to `thrust`, a positive thrust bias for wandering, `interact` and `explore` biases on, and the value head near zero. Since Phase 7 the same two steering units also turn toward an eligible partner (weight 3 on `mateBearingSin`, against 5 for food) and the first presence unit speeds the organism up when one is in range; food and partner pulls add, so a forager with food in sight still goes for the food. A test drives the unmodified template against a food source and checks it turns toward and reaches it. Setting `innatePrior: false` draws every weight from `N(0, initialWeightStd)` as in Phase 4, for experiments about learning from scratch.
+With `genetics.brain.innatePrior` (default true) a founder's weights are a hand-wired template plus Gaussian noise (`initialWeightStd` scaled down) rather than pure random draws. The template wires: bearing-to-food to `turn`, food-present to `thrust`, a positive thrust bias for wandering, `interact` and `explore` biases on, and the value head near zero. Since Phase 7 the same two steering units also turn toward an eligible partner (weight 3 on `mateBearingSin`, against 5 for food) and the first presence unit speeds the organism up when one is in range; food and partner pulls add, so a forager with food in sight still goes for the food. Since ADR 0023 the steering units also turn toward prey (weight 3, like a mate) and **away** from a threat (weight 5 on the bearing, and a threat dead ahead turns the creature to the left rather than into it), and presence units add thrust for both; the slots are zero for a body that cannot bite and in a world without predation, so none of this acts there. A test drives the unmodified template against a food source and checks it turns toward and reaches it. Setting `innatePrior: false` draws every weight from `N(0, initialWeightStd)` as in Phase 4, for experiments about learning from scratch.
 
 ## Telemetry and inspection
 

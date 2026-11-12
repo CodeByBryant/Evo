@@ -35,7 +35,7 @@ describe('founders carry genomes', () => {
     }
     const brains = new Set(genomes.map((g) => g.brain.weights.join(',')))
     expect(brains.size).toBe(5)
-    expect(genomes[0]?.brain.weights).toHaveLength(450)
+    expect(genomes[0]?.brain.weights).toHaveLength(514)
   })
 
   it('records the founder genome on its birth event', () => {

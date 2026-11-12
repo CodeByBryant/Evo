@@ -79,7 +79,7 @@ At the baseline genome each quantity equals its Phase 3 value, which is what let
 
 ## Brain genome
 
-`brain = { architecture: { inputSize, hiddenSize, memorySize, outputSize }, weights: number[] }`. Every organism in a world has the same architecture (set by `genetics.brain`), so weight vectors are always compatible; topology does not evolve (roadmap 4.2). Since Phase 5 `inputSize` (37 since Phase 7) and `outputSize` (5) are not config: they are derived from the `OBSERVATION_SIZE` and `ACTION_SIZE` contract constants, and `hiddenSize` / `memorySize` (default 8 / 4) stay configurable. See [docs/learning/brain.md](../learning/brain.md).
+`brain = { architecture: { inputSize, hiddenSize, memorySize, outputSize }, weights: number[] }`. Every organism in a world has the same architecture (set by `genetics.brain`), so weight vectors are always compatible; topology does not evolve (roadmap 4.2). Since Phase 5 `inputSize` (48 since ADR 0023) and `outputSize` (5) are not config: they are derived from the `OBSERVATION_SIZE` and `ACTION_SIZE` contract constants, and `hiddenSize` / `memorySize` (default 8 / 4) stay configurable. See [docs/learning/brain.md](../learning/brain.md).
 
 `weights` is one flat vector made of eight consecutive **blocks** (the eighth, the critic's value head, was added in Phase 5). The layout is stable and documented; reordering it is a hash-schema change.
 
