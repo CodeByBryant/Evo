@@ -44,3 +44,7 @@ Default world (`balanced`), 16 seeds x 30,000 ticks per start, each archetype fo
 - The reference start still reproduces every earlier pinned number exactly; only worlds that draw an archetype differ.
 - Worlds from different seeds are less comparable by design. `startingBody.archetype` forces one for comparisons, and a later settings editor and the URL hash can carry it.
 - Not done here: a different archetype per cluster, a mixed population within one world, and making the species metric weigh what a body can do.
+
+## Addendum (ADR 0023, step two): founder groups and a group-only starter
+
+`anatomy.startingBody.groups` starts a share of a world's founders with another starter's body (no random draw: an even spread over the founders), and a starter may be `pool: false`, so it is never drawn as the world's base body (the new `hunter`, the grazer with a jaw). Adding it left every seed's base body and draw as they were. See [ADR 0023](0023-predation.md).
