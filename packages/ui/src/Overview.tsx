@@ -187,7 +187,7 @@ export function Strip({ view }: { view: ViewState }): React.JSX.Element {
         {stripTitle('evo-strip-food', 'Food', formatCount(view.resources))}
         <HistoryChart points={view.history} pick={(p) => p.food} label="Food" />
       </div>
-      <div className="evo-strip-panel">
+      <div className="evo-strip-panel evo-strip-deaths">
         {stripTitle('evo-strip-deaths', 'Deaths by cause', perMinute(rates.total))}
         <DeathCauses view={view} />
         <p className="evo-hint">
@@ -196,7 +196,7 @@ export function Strip({ view }: { view: ViewState }): React.JSX.Element {
             : 'No deaths in the recent window.'}
         </p>
       </div>
-      <div className="evo-strip-panel evo-strip-scroll">
+      <div className="evo-strip-panel evo-strip-scroll evo-strip-evolution">
         {stripTitle('evo-strip-evolution', 'Evolution', evolutionHeadline(view))}
         <EvolutionPanel view={view} />
       </div>
@@ -232,21 +232,25 @@ export function EvolutionPanel({ view }: { view: ViewState }): React.JSX.Element
   const rows = [
     {
       label: 'Plans that took hold',
+      short: 'New plans',
       values: samples.map((s) => s.persistentPlans),
       now: String(last.persistentPlans)
     },
     {
       label: 'Response types',
+      short: 'Responses',
       values: samples.map((s) => s.responseTypes),
       now: formatNumber(last.responseTypes, 1)
     },
     {
       label: 'Brain drift',
+      short: 'Drift',
       values: samples.map((s) => s.priorDrift * 100),
       now: `${formatNumber(last.priorDrift * 100, 1)}%`
     },
     {
       label: 'Trait change',
+      short: 'Traits',
       values: samples.map((s) => s.rate * 100),
       now: `${formatNumber(last.rate * 100, 2)}%`
     }
@@ -255,9 +259,9 @@ export function EvolutionPanel({ view }: { view: ViewState }): React.JSX.Element
     <div className="evo-evolution">
       <ul className="evo-evolution-rows" aria-label="Evolution indicators">
         {rows.map((row) => (
-          <li key={row.label}>
-            <span>{row.label}</span>
-            <Sparkline values={row.values} color="currentColor" width={72} />
+          <li key={row.label} title={row.label}>
+            <span>{row.short}</span>
+            <Sparkline values={row.values} color="currentColor" width={44} />
             <strong>{row.now}</strong>
           </li>
         ))}
