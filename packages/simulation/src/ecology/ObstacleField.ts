@@ -75,6 +75,14 @@ export class ObstacleField {
     return new ObstacleField([])
   }
 
+  /**
+   * A field of exactly these circles, ids in order. For scenario worlds and tests that need a
+   * known layout; `generate` is what a world uses.
+   */
+  static fromCircles(circles: readonly Omit<Obstacle, 'id'>[]): ObstacleField {
+    return new ObstacleField(circles.map((circle, id) => ({ ...circle, id })))
+  }
+
   get size(): number {
     return this.obstacles.length
   }

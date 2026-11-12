@@ -198,14 +198,20 @@ describe('ObstacleField generation', () => {
 
   it('draws the same number of numbers whatever it accepts', () => {
     // Two worlds with the same candidate count but different densities by biome place different
-    // fields, and leave the terrain stream (and so the whole state hash, which includes the stream
-    // states and where the hazards landed) exactly alike.
+    // fields. The static hazards are placed from the same `terrain` stream right after the
+    // obstacles, so if the obstacles drew the same number of numbers in both, the hazards land in
+    // exactly the same places.
     const spread = { forest: 3, meadow: 3, wetland: 3, desert: 3, cave: 3, volcanic: 3 }
     const peaked = { forest: 3, meadow: 0, wetland: 0, desert: 0, cave: 0, volcanic: 0 }
     const a = World.create({ seed: 11, config: only('boulder', spread) })
     const b = World.create({ seed: 11, config: only('boulder', peaked) })
     expect(a.obstacles()).not.toEqual(b.obstacles())
-    expect(a.stateHash()).toBe(b.stateHash())
+    const hazards = (world: World) => world.snapshot().hazards.map((h) => h.position)
+    expect(hazards(a).length).toBeGreaterThan(0)
+    expect(hazards(a)).toEqual(hazards(b))
+    // Negative: a different candidate count (a denser peak) moves them.
+    const more = World.create({ seed: 11, config: only('boulder', { ...peaked, forest: 6 }) })
+    expect(hazards(more)).not.toEqual(hazards(a))
   })
 
   it('lays a ridge out as a chain of overlapping circles of one size', () => {

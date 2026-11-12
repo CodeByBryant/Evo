@@ -323,7 +323,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     obstacles: {
       enabled: false,
       maxCoverage: 0.06,
-      clearance: 12,
+      clearance: 20,
       kinds: {
         boulder: {
           recipe: 'single',
