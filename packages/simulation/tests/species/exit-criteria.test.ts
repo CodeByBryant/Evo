@@ -64,7 +64,10 @@ describe('Phase 6A: species exit criteria', () => {
     }
     // every species descends from species 0 here: the only founding species
     expect(world.species.descendants(0)).toEqual(species.slice(1).map((s) => s.id))
-  })
+    // Time budget: this runs 30,000 ticks and took 61.4 s on a CI runner (PR #138, shard 1) against the
+    // 60 s default, with the default world's predation pass now in it; it took about 60 s locally
+    // too. The budget is the one its siblings that run as long already use; the claims are unchanged.
+  }, 240_000)
 
   it('species go extinct and remain queryable with their history', () => {
     // Whether a given seed produces a long-lived extinct species is luck, so look across seeds.
