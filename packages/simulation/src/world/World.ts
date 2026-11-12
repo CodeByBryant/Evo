@@ -11,6 +11,7 @@ import type {
   HazardSnapshot,
   HistoricalOrganismRecord,
   MigrationSummary,
+  ObstacleSnapshot,
   RegionType,
   ResourceSnapshot,
   Season,
@@ -35,6 +36,7 @@ import { EcologyModel } from '../ecology/EcologyModel'
 import { FoodField } from '../ecology/FoodField'
 import { HazardStore } from '../ecology/HazardStore'
 import { MigrationTracker } from '../ecology/MigrationTracker'
+import { ObstacleField } from '../ecology/ObstacleField'
 import { ClusterTerrain } from '../ecology/ClusterTerrain'
 import { RegionMap } from '../ecology/RegionMap'
 import { IdGenerator } from '../entities/IdGenerator'
@@ -89,6 +91,7 @@ import { InteractionSystem } from '../systems/InteractionSystem'
 import { MetabolismSystem } from '../systems/MetabolismSystem'
 import { MovementSystem } from '../systems/MovementSystem'
 import { PerceptionSystem } from '../systems/PerceptionSystem'
+import type { SightBlockers } from '../systems/PerceptionSystem'
 import { ReproductionSystem } from '../systems/ReproductionSystem'
 import { ClusterLayout } from '../ecology/ClusterLayout'
 import { effectiveConfig } from './clusterScaling'
@@ -132,6 +135,7 @@ export class World {
   private readonly lineageStore: LineageStore
   private readonly speciesRegistry: SpeciesRegistry
   private readonly regionMap: RegionMap | null
+  private readonly obstacleField: ObstacleField
   private readonly clusters: ClusterLayout | null
   private readonly clusterTerrain: ClusterTerrain | null
   private readonly ecology: EcologyModel
@@ -247,6 +251,13 @@ export class World {
       this.clusterTerrain ?? this.regionMap,
       this.clusters
     )
+    // Static obstacles (ADR 0022): drawn from the `terrain` stream after the region map and before
+    // the static hazards; with obstacles off nothing is drawn and the field is empty.
+    this.obstacleField = ObstacleField.generate(
+      this.config,
+      this.ecology,
+      this.randomStreams.get('terrain')
+    )
     this.founderCapabilities = capabilitiesOf(
       developAnatomy(this.founderBody, this.config.anatomy),
       this.config.anatomy,
@@ -270,7 +281,8 @@ export class World {
       this.clusters === null ? null : () => this.livingPerCluster(),
       this.config.resources.distribution.mode === 'noise'
         ? new FoodField(this.seed, this.config.resources.distribution)
-        : null
+        : null,
+      this.obstacleField
     )
     this.brainLayout = brainLayoutOf(architectureOf(this.config.genetics.brain))
     this.perceptionSystem = new PerceptionSystem(
@@ -293,8 +305,9 @@ export class World {
               this.speciesRegistry.speciesOf(a.id) === this.speciesRegistry.speciesOf(b.id)
           }
         : undefined,
-      // Creatures' bodies hide what is behind them (ADR 0016 "Line of sight").
-      this.config.perception.organismsBlockSight ? { organismIndex: this.organismIndex } : undefined
+      // Creatures' bodies (ADR 0016 "Line of sight") and obstacles that block sight (ADR 0022) hide
+      // what is behind them; with neither the occluding search is not used at all.
+      this.sightBlockers()
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
@@ -320,7 +333,8 @@ export class World {
       this.organisms,
       this.intentBuffer,
       this.events,
-      this.ecology
+      this.ecology,
+      this.obstacleField
     )
     this.migrationSystem = new MigrationSystem(
       this.config,
@@ -529,6 +543,25 @@ export class World {
    */
   terrain(): TerrainSnapshot | null {
     return this.regionMap === null ? null : this.regionMap.toSnapshot()
+  }
+
+  /** What hides things from a viewer, or `undefined` when nothing does (the cheaper searches are used then). */
+  private sightBlockers(): SightBlockers | undefined {
+    const organisms = this.config.perception.organismsBlockSight
+    const obstacles = this.obstacleField.maxSightRadius > 0
+    if (!organisms && !obstacles) return undefined
+    return {
+      organismIndex: organisms ? this.organismIndex : undefined,
+      obstacles: obstacles ? this.obstacleField : undefined
+    }
+  }
+
+  /**
+   * The static obstacle circles for drawing (empty when obstacles are off). A copy; the field never
+   * changes during a run, so a presentation layer reads it once. Not part of the state hash.
+   */
+  obstacles(): ObstacleSnapshot[] {
+    return this.obstacleField.toSnapshot()
   }
 
   /** The cluster layout for drawing, or `null` in the field layout. A copy; it never changes during a run. */

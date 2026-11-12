@@ -3,6 +3,7 @@ import { DEFAULT_RENDER_LAYERS, REGION_TYPES } from '@evo/contracts'
 import type {
   RenderResource,
   ClusterLayoutSnapshot,
+  ObstacleSnapshot,
   RenderLayers,
   RenderOrganism,
   RenderSnapshot,
@@ -10,7 +11,7 @@ import type {
 } from '@evo/contracts'
 import { Camera } from '../camera'
 import type { ViewInsets } from '../camera'
-import { REGION_COLORS, hexToNumber, resourceColor } from '../colors'
+import { OBSTACLE_COLORS, REGION_COLORS, hexToNumber, resourceColor } from '../colors'
 import { GestureTracker } from '../gestures'
 import type { GestureAction } from '../gestures'
 import { pickOrganism } from '../pick'
@@ -113,6 +114,8 @@ export class PixiRenderer implements Renderer {
   private clusterTerrain = new Container()
   private clusters: ClusterLayoutSnapshot | null = null
   private hazardG = new Graphics()
+  /** The static obstacle field (ADR 0022), drawn once per world. */
+  private obstacleG = new Graphics()
   /** One flat line from each plant's hub to each of its nodes, and the buds growing back. */
   private stemG = new Graphics()
   private trailG = new Graphics()
@@ -180,6 +183,7 @@ export class PixiRenderer implements Renderer {
       this.clusterTerrain,
       this.gridG,
       this.hazardG,
+      this.obstacleG,
       this.stemG,
       this.resources.container,
       this.bodies.container,
@@ -206,7 +210,8 @@ export class PixiRenderer implements Renderer {
     width: number,
     height: number,
     terrain: TerrainSnapshot | null,
-    clusters: ClusterLayoutSnapshot | null = null
+    clusters: ClusterLayoutSnapshot | null = null,
+    obstacles: readonly ObstacleSnapshot[] = []
   ): void {
     this.clusters = clusters
     this.worldWidth = width
@@ -221,6 +226,7 @@ export class PixiRenderer implements Renderer {
     this.drawGrid()
     this.buildTerrain(terrain)
     this.buildClusterTerrain(clusters)
+    this.drawObstacles(obstacles)
     this.camera.fit()
     this.fitted = true
     this.userMoved = false
@@ -323,6 +329,7 @@ export class PixiRenderer implements Renderer {
     this.terrainSprite.visible = layers.terrain && this.terrainSprite.texture !== Texture.EMPTY
     this.clusterTerrain.visible = layers.terrain
     this.hazardG.visible = layers.hazards
+    this.obstacleG.visible = layers.obstacles
     this.resources.container.visible = layers.resources
     this.bodies.container.visible = layers.organisms
     this.motionOn = layers.motion
@@ -779,6 +786,26 @@ export class PixiRenderer implements Renderer {
         alpha: 0.7,
         pixelLine: true
       })
+    }
+  }
+
+  /**
+   * Draws the obstacle field once: a flat filled circle with a thin edge per circle, in the colour of
+   * its kind. A ridge or a cluster is several overlapping circles, so it reads as one shape.
+   */
+  private drawObstacles(obstacles: readonly ObstacleSnapshot[]): void {
+    this.obstacleG.clear()
+    for (const o of obstacles) {
+      const colors = OBSTACLE_COLORS[o.kind]
+      this.obstacleG
+        .circle(o.x, o.y, o.radius)
+        .fill({ color: hexToNumber(colors.fill), alpha: colors.alpha })
+        .stroke({
+          width: 1,
+          color: hexToNumber(colors.edge),
+          alpha: Math.min(1, colors.alpha + 0.3),
+          pixelLine: true
+        })
     }
   }
 

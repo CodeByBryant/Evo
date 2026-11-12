@@ -1,6 +1,7 @@
 import type {
   ClusterLayoutSnapshot,
   EntityId,
+  ObstacleSnapshot,
   RenderLayers,
   RenderSnapshot,
   TerrainSnapshot
@@ -37,13 +38,14 @@ export interface Renderer {
   /**
    * Sets the world size and, when regions are on, the region map (static for a world's life). In
    * the cluster layout `clusters` describes the unbounded world and `width` and `height` are the
-   * size of its bounds.
+   * size of its bounds. `obstacles` is the static obstacle field (ADR 0022), drawn once.
    */
   setWorld(
     width: number,
     height: number,
     terrain: TerrainSnapshot | null,
-    clusters?: ClusterLayoutSnapshot | null
+    clusters?: ClusterLayoutSnapshot | null,
+    obstacles?: readonly ObstacleSnapshot[]
   ): void
   /** Draws a frame. Cheap to call every animation frame. */
   render(frame: RenderSnapshot): void

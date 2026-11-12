@@ -6,6 +6,7 @@ import type {
   EntityId,
   InspectorView,
   HistoryPoint,
+  ObstacleSnapshot,
   PresetOption,
   RenderEffect,
   RenderLayerName,
@@ -62,6 +63,8 @@ export interface WorldInfo {
   readonly width: number
   readonly height: number
   readonly terrain: TerrainSnapshot | null
+  /** The static obstacle circles (ADR 0022); empty when obstacles are off. */
+  readonly obstacles: readonly ObstacleSnapshot[]
   /** The cluster layout (ADR 0014), or `null` in the field layout. */
   readonly clusters: ClusterLayoutSnapshot | null
   /** The starting body this world drew (ADR 0020), or `null` when it started with the founder plan. */
@@ -374,6 +377,7 @@ export class SimulationHost implements SimulationControls {
       width,
       height,
       terrain: this.world.terrain(),
+      obstacles: this.world.obstacles(),
       clusters,
       startingBody: this.world.startingBodyName
     }

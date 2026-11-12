@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { OBSTACLE_KINDS } from '@evo/contracts'
 import type { RenderOrganism, WorldSnapshot } from '@evo/contracts'
 import {
+  OBSTACLE_COLORS,
   REGION_COLORS,
   buildRenderSnapshot,
   hexToNumber,
@@ -94,6 +96,20 @@ describe('colors', () => {
     expect(resourceColor(0)).toBe(resourceColor(4))
     expect(resourceColor(-1)).toBe(resourceColor(3))
     for (const color of Object.values(REGION_COLORS)) expect(color).toMatch(/^#[0-9a-f]{6}$/)
+  })
+
+  it('colours every obstacle kind flat, with the see-through kinds translucent (ADR 0022)', () => {
+    for (const kind of OBSTACLE_KINDS) {
+      const colors = OBSTACLE_COLORS[kind]
+      expect(colors.fill).toMatch(/^#[0-9a-f]{6}$/)
+      expect(colors.edge).toMatch(/^#[0-9a-f]{6}$/)
+      expect(colors.alpha).toBeGreaterThan(0)
+      expect(colors.alpha).toBeLessThanOrEqual(1)
+    }
+    // A rock is solid; water and a reed bed let you see what is behind them (negative: not solid).
+    expect(OBSTACLE_COLORS.boulder.alpha).toBe(1)
+    expect(OBSTACLE_COLORS.pond.alpha).toBeLessThan(1)
+    expect(OBSTACLE_COLORS.reeds.alpha).toBeLessThan(OBSTACLE_COLORS.pond.alpha)
   })
 })
 

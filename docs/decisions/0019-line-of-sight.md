@@ -20,3 +20,7 @@ A creature saw food **straight through another creature** standing in front of i
 - A creature in a crowd can lose sight of food, which makes position and timing matter. For peers the effect is small by construction: the nearest peer is nearer than anything that could hide it, so a peer is hidden only by a nearer body that sits slightly off the line.
 - The same blocker test is what boulders will use (a circle that blocks sight), with a per-kind `blocksSight`: one rock blocks, a pond does not.
 - Cost: one spatial query per checked candidate, capped at six per sense per creature per tick. The probe reports ticks per second against the transparent world.
+
+## Addendum: obstacles (ADR 0022)
+
+The blocker test above is now also used for the static obstacle field: a circle whose kind has `blocksSight` hides food and peers behind it whether or not `perception.organismsBlockSight` is on, and a pond (`blocksSight: false`) does not. The occluding search runs when either kind of blocker exists. See [ADR 0022](0022-obstacles.md).

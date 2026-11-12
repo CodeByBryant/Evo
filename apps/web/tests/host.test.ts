@@ -57,6 +57,27 @@ describe('SimulationHost: running', () => {
     expect(classic.getWorldInfo().terrain).toBeNull() // no regions in classic
   })
 
+  it('hands the interface the static obstacle field once, empty unless the world has obstacles (ADR 0022)', () => {
+    const presets = [
+      { name: 'balanced', label: 'Balanced', description: 'The default world.', overrides: {} },
+      {
+        name: 'open',
+        label: 'Open',
+        description: 'No obstacles.',
+        overrides: { ecology: { obstacles: { enabled: false } } }
+      }
+    ]
+    const { host: rocky } = host({ presets, preset: 'balanced' })
+    const circles = rocky.getWorldInfo().obstacles
+    expect(circles.length).toBeGreaterThan(0)
+    expect(circles).toEqual(World.create({ seed: SEED }).obstacles())
+    // negative: a world without them has none, and a new world replaces the field
+    const { host: plain } = host({ presets, preset: 'open' })
+    expect(plain.getWorldInfo().obstacles).toEqual([])
+    plain.setPreset('balanced')
+    expect(plain.getWorldInfo().obstacles.length).toBeGreaterThan(0)
+  })
+
   it('advances at the requested speed and reports what it achieved', () => {
     const { env, host: h } = host({ speed: 5 }) // 50 ticks per second
     env.runUntil(() => env.time > 3100)

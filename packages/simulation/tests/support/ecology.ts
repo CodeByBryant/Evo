@@ -7,7 +7,9 @@ const OFF = {
   seasons: { enabled: false },
   hazards: { enabled: false },
   resourceKinds: { enabled: false },
-  migration: { enabled: false }
+  migration: { enabled: false },
+  // The Phase 5 field was open (ADR 0022).
+  obstacles: { enabled: false }
 } as const
 
 /**
@@ -25,7 +27,8 @@ export function withoutEcology(config: WorldConfigOverrides = {}): WorldConfigOv
     seasons: { ...OFF.seasons, ...given.seasons },
     hazards: { ...OFF.hazards, ...given.hazards },
     resourceKinds: { ...OFF.resourceKinds, ...given.resourceKinds },
-    migration: { ...OFF.migration, ...given.migration }
+    migration: { ...OFF.migration, ...given.migration },
+    obstacles: { ...OFF.obstacles, ...given.obstacles }
   }
   return {
     ...config,

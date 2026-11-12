@@ -6,6 +6,7 @@ import { missingSlot, nodePosition } from '../ecology/Plants'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { ClusterLayout } from '../ecology/ClusterLayout'
 import type { FoodField } from '../ecology/FoodField'
+import type { ObstacleField } from '../ecology/ObstacleField'
 import type { HazardStore } from '../ecology/HazardStore'
 import type { EventLog } from '../events/EventLog'
 import type { RandomSource } from '../random/RandomSource'
@@ -52,8 +53,24 @@ export class EnvironmentSystem {
     /** Living organisms per cluster, for steering food toward them (cluster layout only). */
     private readonly livingPerCluster: (() => readonly number[]) | null = null,
     /** The pattern food follows in `noise` mode (ADR 0021); `null` spreads it evenly. */
-    private readonly foodField: FoodField | null = null
+    private readonly foodField: FoodField | null = null,
+    /** The static obstacles (ADR 0022): food and plants are never placed inside one that blocks movement. */
+    private readonly obstacles: ObstacleField | null = null
   ) {}
+
+  /**
+   * Whether a site for an item of `kind` is inside, or too close to, an obstacle that blocks
+   * movement: close enough that the item, or (for a plant) one of its nodes, would end up in a rock,
+   * out of any body's reach. Always `false` when there are no such obstacles.
+   */
+  private blockedByObstacle(x: number, y: number, kind: number): boolean {
+    const field = this.obstacles
+    if (field === null || field.maxMovementRadius === 0) return false
+    const radius = this.radiusOf(kind)
+    const plants = this.plantsOn ? this.config.resources.plants : null
+    const margin = plants === null ? radius + 1 : (plants.ring + 1) * radius + 1
+    return field.blocksMovementAt(x, y, margin)
+  }
 
   /** Simulated seconds at the current tick, for the drifting pattern. */
   private time = 0
@@ -149,6 +166,7 @@ export class EnvironmentSystem {
       if (found !== null) continue
       if (accept >= field.density(x, y, this.time)) continue
       if (kind !== null && eco !== null && !eco.kindGrowsAt(kind, x, y)) continue
+      if (this.blockedByObstacle(x, y, kind ?? 0)) continue
       found = { x, y }
     }
     return found
@@ -192,7 +210,11 @@ export class EnvironmentSystem {
       kind = eco.chooseKind(this.random.float())
       x = area.x + this.random.float() * area.width
       y = area.y + this.random.float() * area.height
-      for (let attempt = 1; !eco.kindGrowsAt(kind, x, y); attempt++) {
+      for (
+        let attempt = 1;
+        !eco.kindGrowsAt(kind, x, y) || this.blockedByObstacle(x, y, kind);
+        attempt++
+      ) {
         // A kind whose regions do not exist on this map never appears: the spawn is dropped.
         if (attempt >= PLACEMENT_ATTEMPTS) return null
         x = area.x + this.random.float() * area.width
@@ -201,6 +223,8 @@ export class EnvironmentSystem {
     } else {
       x = area.x + this.random.float() * area.width
       y = area.y + this.random.float() * area.height
+      // Two draws and no retry (Phase 4's): a site inside an obstacle drops the spawn.
+      if (this.blockedByObstacle(x, y, kind)) return null
     }
     return { x, y, kind }
   }

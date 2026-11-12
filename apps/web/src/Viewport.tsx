@@ -49,12 +49,12 @@ export function Viewport({
         renderer.current = instance
         const info = host.getWorldInfo()
         instance.setInsets(latestInsets.current)
-        instance.setWorld(info.width, info.height, info.terrain, info.clusters)
+        instance.setWorld(info.width, info.height, info.terrain, info.clusters, info.obstacles)
         instance.setLayers(latestLayers.current)
         instance.render(host.getFrame())
         cleanups.push(
           host.onWorld((next) =>
-            instance.setWorld(next.width, next.height, next.terrain, next.clusters)
+            instance.setWorld(next.width, next.height, next.terrain, next.clusters, next.obstacles)
           ),
           host.onFrame((frame) => instance.render(frame))
         )

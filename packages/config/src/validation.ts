@@ -464,8 +464,37 @@ function mergeSpecies(base: object, override: unknown): unknown {
 }
 
 /**
+ * Merges the obstacles section: fields merge one by one, `kinds` merges per kind and each kind's
+ * `density` merges per region type, so a preset can change one density without restating the rest.
+ */
+function mergeObstacles(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override) || !isObject(override['kinds'])) {
+    return mergeSection(base, override)
+  }
+  const defaults = base as Record<string, Record<string, Record<string, unknown>>>
+  const given = override['kinds']
+  const kinds: Record<string, unknown> = {}
+  for (const name of Object.keys(defaults['kinds']!)) {
+    const baseKind = defaults['kinds']![name] as Record<string, unknown>
+    const kind = given[name]
+    kinds[name] = isObject(kind)
+      ? {
+          ...baseKind,
+          ...kind,
+          density: mergeSection(baseKind['density'] as object, kind['density'])
+        }
+      : mergeSection(baseKind, kind)
+  }
+  for (const name of Object.keys(given)) {
+    if (!(name in defaults['kinds']!)) kinds[name] = given[name]
+  }
+  return { ...(mergeSection(base, override) as object), kinds }
+}
+
+/**
  * Merges the ecology section: each feature merges field by field; `regions.types` and
- * `seasons.seasons` merge per name; `resourceKinds.kinds` is replaced whole.
+ * `seasons.seasons` merge per name; `resourceKinds.kinds` is replaced whole; `obstacles` merges per
+ * kind and per density.
  */
 function mergeEcology(base: object, override: unknown): unknown {
   if (override === undefined || !isObject(override)) return mergeSection(base, override)
@@ -474,6 +503,7 @@ function mergeEcology(base: object, override: unknown): unknown {
   for (const key of ['health', 'hazards', 'resourceKinds', 'migration']) {
     merged[key] = mergeSection(defaults[key] as object, override[key])
   }
+  merged['obstacles'] = mergeObstacles(defaults['obstacles'] as object, override['obstacles'])
   const regions = override['regions']
   merged['regions'] =
     isObject(regions) && isObject(regions['types'])

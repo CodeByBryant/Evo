@@ -9,6 +9,7 @@ import type {
 } from '../buffers/types'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { HazardStore } from '../ecology/HazardStore'
+import type { ObstacleField } from '../ecology/ObstacleField'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
 import { cos, sin } from '../math/trig'
@@ -42,6 +43,16 @@ export interface MateSensing {
 }
 
 /**
+ * What hides things from a viewer (ADR 0016 "Line of sight", ADR 0022): other creatures' bodies when
+ * `perception.organismsBlockSight` is on, and the obstacles whose kind blocks sight. Either may be
+ * absent; when neither is present the occluding search is not used at all.
+ */
+export interface SightBlockers {
+  readonly organismIndex?: SpatialHash<OrganismState> | undefined
+  readonly obstacles?: ObstacleField | undefined
+}
+
+/**
  * Finds the nearest resource within each organism's own sensor range (the baseline range times its eyes),
  * and, when `peers` is given, the nearest other organism within the same range, and, when
  * `hazardSensing` is given, the hazard whose edge is nearest, and, when `mateSensing` is given,
@@ -68,8 +79,8 @@ export class PerceptionSystem {
     private readonly ecology: EcologyModel | null = null,
     private readonly hazardSensing?: HazardSensing,
     private readonly mateSensing?: MateSensing,
-    /** When given, creatures' bodies block sight (`perception.organismsBlockSight`). */
-    private readonly blockers?: { readonly organismIndex: SpatialHash<OrganismState> }
+    /** When given, creatures' bodies and sight-blocking obstacles hide what is behind them. */
+    private readonly blockers?: SightBlockers
   ) {}
 
   private readonly foodScratch: SpatialHit<ResourceState>[] = []
@@ -148,13 +159,29 @@ export class PerceptionSystem {
     if (distanceSquared <= reach * reach) this.peerScratch.push({ item, distanceSquared })
   }
 
-  /** Whether another body stands on the line from `viewer` to (`tx`, `ty`); `targetId` is the peer being looked at, if any. */
+  /**
+   * Whether an obstacle that blocks sight, or another body, stands on the line from `viewer` to
+   * (`tx`, `ty`); `targetId` is the peer being looked at, if any.
+   */
   private blocked(viewer: OrganismState, tx: number, ty: number, targetId: number | null): boolean {
-    const index = (this.blockers as { organismIndex: SpatialHash<OrganismState> }).organismIndex
+    const blockers = this.blockers as SightBlockers
     const dx = tx - viewer.x
     const dy = ty - viewer.y
+    const half = Math.sqrt(dx * dx + dy * dy) / 2
+    const obstacles = blockers.obstacles
+    if (obstacles !== undefined) {
+      const hidden = obstacles.some(
+        viewer.x + dx / 2,
+        viewer.y + dy / 2,
+        half + obstacles.maxSightRadius,
+        (o) => o.blocksSight && segmentHitsCircle(viewer.x, viewer.y, tx, ty, o.x, o.y, o.radius)
+      )
+      if (hidden) return true
+    }
+    const index = blockers.organismIndex
+    if (index === undefined) return false
     const middle = { x: viewer.x + dx / 2, y: viewer.y + dy / 2 }
-    const around = Math.sqrt(dx * dx + dy * dy) / 2 + SIGHT_BLOCKER_MARGIN
+    const around = half + SIGHT_BLOCKER_MARGIN
     return index.some(middle, around, (other) => {
       if (other.id === viewer.id || other.id === targetId) return false
       return segmentHitsCircle(
