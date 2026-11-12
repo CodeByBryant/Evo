@@ -100,6 +100,8 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     mateSenseRadius: 250
   },
   history: { maxEvents: 10_000, eventDetail: 'essential', maxHistoricalOrganisms: 10_000 },
+  // The evolution observatory (ADR 0024): derived indicators, sampled every 50 simulated seconds.
+  observatory: { enabled: true, sampleEvery: 500, behaviourEvery: 10, maxSamples: 1000 },
   genetics: {
     mutationRateScale: 1,
     mutationStrengthScale: 1,

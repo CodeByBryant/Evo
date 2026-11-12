@@ -134,6 +134,8 @@ export class SimulationHost implements SimulationControls {
   private lastViewAt = -Infinity
   private speciesCache: { rows: readonly SpeciesRow[]; extinct: number } = { rows: [], extinct: 0 }
   private speciesAt = -Infinity
+  /** The observatory's series, fetched with the species rows (about once a second: it is a copy). */
+  private evolutionCache: ViewState['evolution'] = null
   private lineageCache: {
     id: EntityId
     counts: { ancestors: number; descendants: number }
@@ -555,6 +557,7 @@ export class SimulationHost implements SimulationControls {
     this.lastViewAt = now
     if (force || now - this.speciesAt >= this.speciesIntervalMs) {
       this.speciesCache = buildSpeciesRows(this.world)
+      this.evolutionCache = this.world.observatory()
       this.speciesAt = now
     }
     this.inspector = this.buildSelected(now)
@@ -572,6 +575,7 @@ export class SimulationHost implements SimulationControls {
       achievedTicksPerSecond: this.achieved,
       history: this.history,
       species: this.speciesCache,
+      evolution: this.evolutionCache,
       clusters: this.world.clusterReport(),
       layers: this.layers,
       following: this.following,

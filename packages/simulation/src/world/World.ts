@@ -7,6 +7,7 @@ import type {
   ClusterLayoutSnapshot,
   ClusterReport,
   EntityId,
+  EvolutionSeries,
   Genome,
   HazardSnapshot,
   HistoricalOrganismRecord,
@@ -85,6 +86,9 @@ import { brainLayoutOf } from '../learning/BrainLayout'
 import type { BrainLayout } from '../learning/BrainLayout'
 import { createBrainState, writeBrainState } from '../learning/BrainState'
 import { MetricsCollector } from '../metrics/MetricsCollector'
+import { innatePriorWeights } from '../learning/InnatePrior'
+import { learnedGap, priorDistance } from '../observatory/brainDrift'
+import { ObservatoryRecorder } from '../observatory/ObservatoryRecorder'
 import { RandomStreams, STREAM_NAMES } from '../random/streams'
 import { SpeciesRegistry } from '../species/SpeciesRegistry'
 import type { SpeciesQueries } from '../species/SpeciesRegistry'
@@ -140,6 +144,8 @@ export class World {
   private readonly organisms: OrganismStore
   private readonly resources: ResourceStore
   private readonly metricsCollector: MetricsCollector
+  /** The evolution observatory (ADR 0024): read-only, unhashed, `null` when switched off. */
+  private readonly observatoryRecorder: ObservatoryRecorder | null = null
   private readonly resourceIndex: SpatialHash<ResourceState>
   private readonly organismIndex: SpatialHash<OrganismState>
   private readonly historyStore: HistoryStore
@@ -452,6 +458,18 @@ export class World {
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, 0)
     this.speciesRegistry.observe(0)
+    if (this.config.observatory.enabled) {
+      this.observatoryRecorder = new ObservatoryRecorder({
+        config: this.config,
+        organisms: this.organisms,
+        lineage: this.lineageStore,
+        species: this.speciesRegistry,
+        geneSpecs: this.geneSpecs,
+        bodySpecs: this.bodySpecs,
+        carrionKind: kindNamesOf(this.config).indexOf(CARRION_KIND)
+      })
+      this.observatoryRecorder.afterTick(0, this.events.eventsThisTick())
+    }
   }
 
   /** Equivalent to `new World(options)`. */
@@ -801,6 +819,15 @@ export class World {
     })
   }
 
+  /**
+   * What the evolution observatory has recorded (ADR 0024): indicators of whether the world is still
+   * changing, sampled every `observatory.sampleEvery` ticks. A derived view, never hashed and never
+   * read back by the simulation; `null` when `observatory.enabled` is false.
+   */
+  observatory(): EvolutionSeries | null {
+    return this.observatoryRecorder?.series() ?? null
+  }
+
   get startingBodyName(): string | null {
     return this.startName
   }
@@ -853,7 +880,25 @@ export class World {
         rewardTotal: brain.rewardTotal,
         updates: brain.updates,
         weightChange: brain.weightChange
-      }
+      },
+      drift: this.driftOf(organismId)
+    }
+  }
+
+  private brainPrior: number[] | null = null
+
+  /** How far an organism's inherited weights are from the innate prior, and how far its life has moved them (ADR 0024). */
+  private driftOf(organismId: EntityId): { fromPrior: number; learned: number } {
+    const organism = this.organisms.get(organismId)
+    if (organism === undefined) return { fromPrior: 0, learned: 0 }
+    this.brainPrior ??= innatePriorWeights(this.brainLayout.architecture)
+    const weights = organism.genome.brain.weights
+    return {
+      fromPrior: priorDistance(weights, this.brainPrior),
+      learned:
+        organism.brain === null
+          ? 0
+          : learnedGap(weights.slice(this.brainLayout.learnOffset), organism.brain.learned)
     }
   }
 
@@ -893,6 +938,7 @@ export class World {
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, tick)
     this.speciesRegistry.observe(tick)
+    this.observatoryRecorder?.afterTick(tick, this.events.eventsThisTick())
 
     if (this.validateEveryTicks !== undefined && tick % this.validateEveryTicks === 0) {
       const result = this.validate()

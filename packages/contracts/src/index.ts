@@ -101,6 +101,7 @@ export type {
   PerceptionConfig,
   ReproductionConfig,
   HistoryConfig,
+  ObservatoryConfig,
   WorldConfig,
   WorldConfigOverrides,
   WorldOptions
@@ -217,3 +218,6 @@ export type {
   VisionCone,
   VisualField
 } from './anatomy'
+
+export { BRAIN_INPUT_GROUPS } from './evolution'
+export type { BrainInputGroup, EvolutionSample, EvolutionSeries } from './evolution'

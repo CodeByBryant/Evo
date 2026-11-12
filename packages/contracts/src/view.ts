@@ -1,5 +1,6 @@
 import type { PartType } from './anatomy'
 import type { EntityId } from './entity'
+import type { EvolutionSeries } from './evolution'
 import type { LifeStage } from './organism'
 import type { ClusterReport, MigrationSummary, RegionType, Season } from './ecology'
 import type { MetricsSnapshot } from './snapshots'
@@ -77,6 +78,10 @@ export interface InspectorBrain {
   readonly rewardTotal: number
   readonly updates: number
   readonly weightChange: number
+  /** Distance of the inherited weights from the innate prior, relative to the prior (ADR 0024). */
+  readonly fromPrior: number
+  /** How much this life has changed the weights it was born with, relative to their size. */
+  readonly learnedGap: number
 }
 
 /** One part in the inspector's anatomy tab; positions are in body-radius units (front along +x). */
@@ -187,6 +192,8 @@ export interface ViewState {
   readonly metrics: MetricsSnapshot
   /** Sampled history of the run (population, species, food, deaths), oldest first. */
   readonly history: readonly HistoryPoint[]
+  /** The evolution observatory's indicators over time (ADR 0024), or `null` when it is switched off. */
+  readonly evolution: EvolutionSeries | null
   /** Living species, largest first. */
   readonly species: readonly SpeciesRow[]
   readonly activeSpecies: number

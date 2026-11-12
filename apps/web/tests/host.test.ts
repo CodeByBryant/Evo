@@ -166,6 +166,45 @@ describe('SimulationHost: determinism through the interface path', () => {
   })
 })
 
+describe('SimulationHost: the evolution observatory (ADR 0024)', () => {
+  it('hands the interface the indicators, with the baseline sample at tick 0', () => {
+    const { host: h } = host({ speed: 'max' })
+    const view = h.getViewState()
+    expect(view.evolution).not.toBeNull()
+    expect(view.evolution?.samples[0]?.tick).toBe(0)
+    expect(view.evolution?.baseline?.population).toBe(view.population)
+  })
+
+  it('samples keep arriving as the world runs, and the inspector brain carries the drift line', () => {
+    // the series is a copy, fetched with the species rows (about once a second): here every frame
+    const { env, host: h } = host({ speed: 'max', speciesIntervalMs: 0 })
+    env.runUntil(() => h.getViewState().tick >= 1200)
+    const view = h.getViewState()
+    expect(view.evolution!.samples.length).toBeGreaterThan(1)
+    expect(view.evolution!.samples.at(-1)!.tick).toBeLessThanOrEqual(view.tick)
+    const id = h.getFrame().organisms[0]!.id
+    h.select(id)
+    const brain = h.getViewState().selected?.brain
+    expect(brain).not.toBeNull()
+    expect(brain!.fromPrior).toBeGreaterThan(0)
+    expect(brain!.learnedGap).toBeGreaterThanOrEqual(0)
+  })
+
+  it('a world with the observatory off hands the interface null (negative), and the world is the same', () => {
+    const { host: h } = host({
+      presets: [
+        {
+          name: 'balanced',
+          label: 'Balanced',
+          description: 'No observatory.',
+          overrides: { observatory: { enabled: false } }
+        }
+      ]
+    })
+    expect(h.getViewState().evolution).toBeNull()
+  })
+})
+
 describe('SimulationHost: the interface is not updated per tick', () => {
   it('notifies React at a low, bounded rate however many ticks run', () => {
     const { env, host: h } = host({ speed: 'max' })

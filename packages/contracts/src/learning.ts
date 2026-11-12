@@ -152,4 +152,6 @@ export interface BrainSnapshot {
   /** The reward settled at the end of the previous tick. */
   readonly reward: RewardBreakdown
   readonly telemetry: BrainTelemetry
+  /** How far the inherited weights are from the innate prior, and how far this life has moved them (ADR 0024). */
+  readonly drift: { readonly fromPrior: number; readonly learned: number }
 }

@@ -182,7 +182,9 @@ export function buildInspector(
           ],
           rewardTotal: brain.reward.total,
           updates: brain.telemetry.updates,
-          weightChange: brain.telemetry.weightChange
+          weightChange: brain.telemetry.weightChange,
+          fromPrior: brain.drift.fromPrior,
+          learnedGap: brain.drift.learned
         }
   return {
     id,
@@ -232,6 +234,7 @@ export interface ViewInputs {
   readonly speed: SpeedSetting
   readonly achievedTicksPerSecond: number
   readonly history: readonly HistoryPoint[]
+  readonly evolution: ViewState['evolution']
   readonly species: { rows: readonly SpeciesRow[]; extinct: number }
   readonly clusters: ClusterReport | null
   readonly layers: RenderLayers
@@ -260,6 +263,7 @@ export function buildViewState(inputs: ViewInputs): ViewState {
     extinctionTick: snapshot.population.extinctionTick,
     metrics: snapshot.metrics,
     history: inputs.history,
+    evolution: inputs.evolution,
     species: inputs.species.rows,
     activeSpecies: inputs.species.rows.length,
     extinctSpecies: inputs.species.extinct,
