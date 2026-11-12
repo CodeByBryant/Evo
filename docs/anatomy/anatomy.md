@@ -31,7 +31,7 @@ A body has 12 slots; each is empty or holds one part. The types are in the order
 | `cilia`     | length, density, rate                                                                                            |
 | `eye`       | range, resolution, field of view (a cone about the eye's axis; narrower reaches further, see Directional vision) |
 | `sniffer`   | range, sensitivity, selectivity (which food kind)                                                                |
-| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw), bite rate                                          |
+| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw; the jaw is meat only), bite rate                    |
 | `intestine` | length, absorption, filter                                                                                       |
 | `stomach`   | capacity, throughput                                                                                             |
 | `armor`     | thickness, coverage, hardness                                                                                    |

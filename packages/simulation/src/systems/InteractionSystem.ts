@@ -1,4 +1,5 @@
-import type { EntityId, WorldConfig } from '@evo/contracts'
+import { MOUTH_FORMS } from '@evo/contracts'
+import type { EntityId, MouthForm, WorldConfig } from '@evo/contracts'
 import type { DamageBuffer, IntentBuffer, LastBitten, PredationBuffer } from '../buffers/types'
 import type { EcologyModel, KindProperties } from '../ecology/EcologyModel'
 import type { ObstacleField } from '../ecology/ObstacleField'
@@ -7,7 +8,7 @@ import { HUB_SLOT } from '../entities/ResourceStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
-import { factorsOf } from '../organisms/bodyFactors'
+import { factorsOf, kindNamesOf } from '../organisms/bodyFactors'
 import { cos, sin } from '../math/trig'
 import { mouthsOf } from '../organisms/mouths'
 import { bodyRadiusOf, gutCapacityOf, maxEnergyOf } from '../organisms/traits'
@@ -51,6 +52,8 @@ export class InteractionSystem {
   private readonly kindsOn: boolean
   /** Query reach: the largest resource radius of any kind. */
   private readonly largestResourceRadius: number
+  /** What each mouth form takes from each kind of food (by kind index): a mouth only bites what it can digest. */
+  private readonly formYields: Readonly<Record<MouthForm, readonly number[]>>
 
   constructor(
     private readonly config: WorldConfig,
@@ -75,6 +78,12 @@ export class InteractionSystem {
         largest = Math.max(largest, ecology.kind(i).radius)
     }
     this.largestResourceRadius = largest
+    const names = kindNamesOf(config)
+    const yields = {} as Record<MouthForm, number[]>
+    for (const form of MOUTH_FORMS) {
+      yields[form] = names.map((name) => config.anatomy.mouthForms[form][name] ?? 1)
+    }
+    this.formYields = yields
   }
 
   update(tick: number): void {
@@ -116,6 +125,8 @@ export class InteractionSystem {
           reach + this.largestResourceRadius,
           (resource, distanceSquared) => {
             if (!this.resources.has(resource.id) || resource.remaining <= EPSILON) return false
+            // A jaw does not bite a plant (ADR 0023): a mouth takes only what it can digest.
+            if ((this.formYields[mouth.form][resource.kind] ?? 1) <= 0) return false
             const limit = reach + this.kindOf(resource.kind).radius
             if (distanceSquared > limit * limit) return false
             // Only food in front of the mouth: inside the cone around the way the mouth points.

@@ -106,6 +106,8 @@ export class PerceptionSystem {
   private cRadius = 0
   private cScale = 1
   private cModified = false
+  /** The aimed body cannot digest some kind of food (a carnivore): it does not see those kinds as food. */
+  private cPicky = false
   private cSelf = 0
   private cX = 0
   private cY = 0
@@ -132,8 +134,14 @@ export class PerceptionSystem {
     return reach
   }
 
+  /** Whether the aimed body can take energy from this kind of food (always, unless it is a carnivore). */
+  private edible(kind: number): boolean {
+    return !this.cPicky || ((this.cBody as CapabilityFactors).dietEfficiency[kind] ?? 1) > 0
+  }
+
   /** One food candidate of a directional body: keeps the nearest one it can see (ties to the lower id). */
   private readonly visitFood = (item: ResourceState, distanceSquared: number): void => {
+    if (!this.edible(item.kind)) return
     const reach = this.foodReach(item, distanceSquared)
     if (distanceSquared > reach * reach) return
     if (
@@ -161,6 +169,7 @@ export class PerceptionSystem {
 
   /** The candidates of the occluding search that are in reach and cone, for sorting and the hidden test. */
   private readonly collectFood = (item: ResourceState, distanceSquared: number): void => {
+    if (!this.edible(item.kind)) return
     const reach = this.foodReach(item, distanceSquared)
     if (distanceSquared <= reach * reach) this.foodScratch.push({ item, distanceSquared })
   }
@@ -316,7 +325,7 @@ export class PerceptionSystem {
               }
             : null
         )
-      } else if (!modified) {
+      } else if (!modified && !this.cPicky) {
         const hit = this.resourceIndex.nearest(origin, radius)
         this.perceptionBuffer.set(
           organism.id,
@@ -331,8 +340,10 @@ export class PerceptionSystem {
         )
       } else {
         const hit = this.resourceIndex.nearestWhere(origin, radius, (item, distanceSquared) => {
+          if (!this.edible(item.kind)) return false
+          if (!modified) return distanceSquared <= radius * radius
           const detection = body.foodDetection[item.kind] ?? 1
-          const reach = radius * eco.kind(item.kind).detectability * detection
+          const reach = radius * (eco as EcologyModel).kind(item.kind).detectability * detection
           return distanceSquared <= reach * reach
         })
         this.perceptionBuffer.set(
@@ -492,6 +503,8 @@ export class PerceptionSystem {
     this.cRadius = radius
     this.cScale = scale
     this.cModified = modified
+    // A body that cannot digest some kind of food (a jaw and plants, ADR 0023) does not see it as food.
+    this.cPicky = body.dietEfficiency.some((efficiency) => efficiency <= 0)
     this.cSelf = organism.id
     this.cX = organism.x
     this.cY = organism.y

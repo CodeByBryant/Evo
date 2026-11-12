@@ -36,7 +36,10 @@ export function describeBrainBand(seeds: readonly number[]): void {
         expect(mean).toBeGreaterThan(25)
         expect(mean).toBeLessThan(90)
         expect(Math.min(...samples)).toBeGreaterThanOrEqual(15)
-        expect(Math.max(...samples)).toBeLessThanOrEqual(140)
+        // The ceiling was 140. With the jaw eating meat only (ADR 0023 step three) seeds 1-4 give means
+        // 59.3-75.6, minimum 30, maximum 85-154 (seed 2 peaks at 154, a seventh to a sixth of
+        // `maxPopulation`, a single boom), none extinct; the ceiling is 180, about a fifth of it.
+        expect(Math.max(...samples)).toBeLessThanOrEqual(180)
         expect(world.validate()).toEqual({ ok: true, errors: [] })
       },
       300_000

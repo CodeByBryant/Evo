@@ -1,6 +1,6 @@
 # ADR 0023: Predation, in two steps: the mechanism now, the senses next
 
-Status: accepted (steps one and two). Follows [ADR 0017](0017-feeding.md) (bites, mouth forms, "the jaw is a dead end until predation exists"), [ADR 0019](0019-line-of-sight.md) (line of sight), [ADR 0022](0022-obstacles.md) (obstacles, whose measurements named predation as the next lever on part variety).
+Status: accepted (steps one, two and three). Follows [ADR 0017](0017-feeding.md) (bites, mouth forms, "the jaw is a dead end until predation exists"), [ADR 0019](0019-line-of-sight.md) (line of sight), [ADR 0022](0022-obstacles.md) (obstacles, whose measurements named predation as the next lever on part variety).
 
 ## The problem
 
@@ -109,3 +109,43 @@ Held-out seeds 17 to 48 (32 worlds, not used in tuning):
 ### Verification
 
 Unit suites of every package (simulation 1,200 tests among them), the golden suite (52 entries: 44 old plus 6 new `predation-*` entries for the default world), every other determinism file, the tools tests, format, lint and typecheck. **Goldens:** the senses commit regenerated all 44 (schema 12). The flip commit moved 8 entries that evolve bodies because the jaw yield changed; proof: with the old yield pinned (`anatomy.mouthForms.jaw` 0.55) all 8 reproduce their pinned hashes. Every older entry now pins `predation.enabled: false` and no founder group. `long-run-extinction` moved to seed 6 (seed 5 stopped going extinct after the extra founder weights; the scarce world is a knife edge, 7 of 12 seeds go extinct, measured). Tests with negatives: prey and threat for a jaw, a grazer, a founder, kin, size, behind, out of reach, a rock between and a rock off the line, predation off; the rule itself; the prior and the reflex controller hunt and flee; founder groups (even spread, no draw, pool exclusion, every validation error); the counters are in the hash.
+
+## Step three: the jaw eats meat only
+
+Owner, after running the live build for 100,000 ticks (seed 3246115366): "all other mouths died out and predation was dominated. Also predator jaws can eat other food sources which is bad. Jaws should only be able to eat meat (eventually eggs) and attack other agents."
+
+**It reproduced, and it was my doing.** In step two I set the jaw's plant yield to 1.0 (equal to the mandible) so a lineage would survive, and the step-two PR said plainly that the jaw had become "a free omnivore ... hard to keep from spreading". At tick 100,000 of the owner's seed, **35 of 36 creatures were jaws; in the last 10,000 ticks 199 deaths were predation and 86 starvation; 82 percent of the energy that came into creatures was from plants and 12 percent from flesh**. They were not predators. They were grazers with a jaw that also ate each other. The 30,000-tick sweeps of step two could not see it: it only shows late.
+
+### What it does
+
+1. **A mouth yield may be 0** (validation: zero or more; the mandible is still exactly 1), and **the jaw's yield on every plant is 0**. Its food is creatures (`predation.fleshYield.jaw`, 1) and carrion (1.2). An egg food kind later is one more yield.
+2. **A mouth bites only what it can digest.** `InteractionSystem` looks up each form's yield per food kind once and rejects food a mouth yields nothing from, so a jaw never touches a plant (without this a bite on a zero-yield plant would destroy it for no energy).
+3. **A creature sees only food it can digest.** `PerceptionSystem` skips food kinds a body cannot digest in all four search branches (occluding, directional, omni, ecology-modified), so a jaw does not see plants as food, and the innate prior and the reflex controller stop steering it to them; it hunts by its prey sense and eats carrion. A body that digests everything takes the exact code path it had.
+4. **The default hunter group is 10 percent** (was 20), because at 20 percent hunters massacre the prey and starve, and 1 to 3 of 16 worlds went extinct.
+
+### Measured
+
+Strict carnivory is a hard niche here. Seeds 1 to 16, 30,000 ticks (a jaw alive at the end):
+
+| setup (jaw plant yield 0)                                     | extinct | mean pop    | lowest | starved | predation share | bites  | jaw alive at end |
+| ------------------------------------------------------------- | ------- | ----------- | ------ | ------- | --------------- | ------ | ---------------- |
+| predation off (control)                                       | 0       | 56.8        | 17     | 55%     | 0               | 0      | 2 of 16          |
+| group 20%                                                     | **1**   | 50.2        | 0      | 52%     | 2.5%            | 159    | 1 of 16          |
+| group 10% (**shipped**)                                       | 0       | 58.1        | 15     | 51%     | 1.7%            | 119    | 4 of 16          |
+| group 5%                                                      | 0       | 58.2        | 19     | 53%     | 1.8%            | 135    | 3 of 16          |
+| 10%, meat yield 2 / 3, biteEnergy 24 (the "economics" levers) | 0       | 56 to 61    | 15-25  | 51-53%  | 1.5 to 1.9%     | 92-184 | 5 to 6 of 16     |
+| 10%, hunter with long strong tails (and a narrow far eye)     | 0       | 55.6        | 9      | 53%     | 2.2%            | 124    | 5 of 16          |
+| 20%, same body                                                | 1 and 3 | 53.3 / 44.3 | 0      | 51-53%  | 1.9-2.0%        | 98-122 | 5 and 2 of 16    |
+
+**100,000 ticks, 8 seeds (the owner's and 1 to 7), group 10%, shipped:** no world extinct; a jaw alive at the end in **1 of 8** (3 of 60 creatures); jaws are 0 to 5 percent of any population (was 97 percent); predation is almost absent in 7 of 8 worlds (0 to 16 deaths in the last 10,000 ticks); the energy that comes in is 92 to 99 percent plants. The strongest meat settings tried (meat yield 3; meat yield 2 with double bites) were run for 100,000 ticks too, 8 seeds each: a jaw alive at the end in 1 of 8 in both. **None of the levers moves long-run persistence.**
+
+Why, as far as I can tell: the founding hunters mostly survive the first 3,000 ticks (55 to 85 bites each in the three seeds traced; one that never found prey died at tick 889). What fails is reproduction: over 12,000 ticks a world sees 0 to 15 births with a jaw parent (7 with both parents jaws in the best), about half or more of those children are jaws, so a lineage of two to four founders is at about replacement level and drifts out. It is not starvation and it is not the energy per bite.
+
+### What this leaves, and the choices
+
+- **The monoculture complaint is solved for jaws and not for mouths.** On the owner's seed all 71 creatures at 100,000 ticks carry a sprout (no jaw anywhere). Mouth forms compete like any trait: one form often wins a world (2 or more forms alive at 100,000 ticks in 5 of 8 worlds). That is ordinary competitive exclusion and a separate question; the evolution observatory (branch `feature/observatory`) measures it.
+- **Carnivory is now rare.** To make it hold, the options are, with my recommendation first: (a) a **hunter lineage that breeds true** (the jaw is a mouth stat of 0.8 or more that crossover blends toward the mandible; choosing a parent's value for the mouth form, or mating within the hunter group, would keep a lineage whole): a genetics change that moves every evolving golden; (b) a **bigger hunter founding group with its own start energy**, which needs a group knob I did not add and risks the massacre seen at 20 percent; (c) accept carnivory as a rare niche that appears in about one world in eight. I did not pick one: the owner asked for meat-only jaws, which is done and proved.
+
+### Verification
+
+Tests with negatives (`carnivore.test.ts`): a jaw next to a plant leaves it untouched and its gut empty, and bites carrion; a mandible still bites the same plant; a jaw does not see a plant (directional and occluding search) but sees carrion, a mandible sees both; hunters take 0 plant energy over 4,000 ticks, and with the old yield of 1 they did (so the test can fail); config accepts a 0 yield for the jaw and rejects it for the mandible. **Goldens:** with the old jaw yield (1.0) and the old 20 percent group pinned, all 50 entries reproduce their hashes (the gates are inert for positive yields); the 14 entries that contain jaw bodies (8 that evolve bodies, 6 `predation-*`) were regenerated. **Re-pinned with a measurement:** the harsh-winter test claimed that births fall in winter; it failed for 5 of 6 seeds before this change (with the winter `reproductionScale` at 0.3 against 1, winter births were 129, 140, 159 and 115 against 113, 125, 119 and 91, not lower, because a lean winter is followed by births from the autumn surplus), so it now asserts the food supply, which is deterministic (winter 874 spawns, summer 1,505).

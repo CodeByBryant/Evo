@@ -376,12 +376,12 @@ describe('the mouth', () => {
       s.interact()
       return s.organism.gut
     }
-    // Grass (kind 0): mandible 1, sprout 1.3, radula 0.9, jaw 1 (it was 0.55 until prey arrived, ADR
-    // 0023); a sprout is poor on fungus (kind 2).
+    // Grass (kind 0): mandible 1, sprout 1.3, radula 0.9, jaw 0 (a carnivore, ADR 0023); a sprout is poor on fungus (kind 2).
     expect(intakeOf(0.5)).toBe(12)
     expect(intakeOf(0.05)).toBeCloseTo(12 * 1.3, 12)
     expect(intakeOf(0.7)).toBeCloseTo(12 * 0.9, 12)
-    expect(intakeOf(0.95)).toBeCloseTo(12 * 1, 12)
+    // The jaw takes nothing from a plant and does not bite one (ADR 0023): the gut stays empty.
+    expect(intakeOf(0.95)).toBe(0)
     expect(intakeOf(0.05, 2)).toBeLessThan(intakeOf(0.5, 2) / (1 / 0.6) + 1e-9 + 12)
     expect(intakeOf(0.05, 2)).toBeCloseTo((12 / 1.5) * 0.6, 12)
   })
