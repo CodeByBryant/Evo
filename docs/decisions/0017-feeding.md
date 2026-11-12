@@ -48,3 +48,7 @@ Knock-on effects, each re-pinned with its measurement: the no-ecology bands and 
 - A brain input for gut fullness (the body gates waste by itself; the input belongs with the new-senses work).
 - Body-versus-body hitboxes; the same bite geometry is reused when predation lands.
 - Final numbers: `biteRadius`, `biteCone`, `biteSize`, `biteInterval`, `gutCapacity`, `absorption`, `chewSlow`, hardness and the form yields are provisional and tuned in the starvation work.
+
+## Addendum: the jaw has prey (ADR 0023)
+
+The jaw was a dead end "until predation exists". With `predation.enabled` a jaw bites creatures (flesh yield 1) and eats carcasses best (1.2); every other form yields nothing from a living creature. See [ADR 0023](0023-predation.md).
