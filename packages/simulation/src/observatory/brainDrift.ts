@@ -1,3 +1,5 @@
+import { BRAIN_INPUT_GROUPS } from '@evo/contracts'
+import type { BrainInputGroup } from '@evo/contracts'
 import type { BrainLayout } from '../learning/BrainLayout'
 import { meanPairwise } from './stats'
 
@@ -6,18 +8,8 @@ import { meanPairwise } from './stats'
  * name. Indices follow `OBSERVATION_LABELS` (docs/learning/brain.md); a test pins the table to the
  * labels so a new input cannot be added without saying which group it belongs to.
  */
-export const INPUT_GROUPS = [
-  'self',
-  'food',
-  'peer',
-  'hazard',
-  'season',
-  'mate',
-  'home',
-  'prey',
-  'threat'
-] as const
-export type InputGroup = (typeof INPUT_GROUPS)[number]
+export const INPUT_GROUPS = BRAIN_INPUT_GROUPS
+export type InputGroup = BrainInputGroup
 
 /** The group an observation slot belongs to. */
 export function inputGroupOf(index: number): InputGroup {

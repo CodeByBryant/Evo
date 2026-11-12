@@ -36,7 +36,8 @@ const ROOT_KEYS = [
   'anatomy',
   'feeding',
   'predation',
-  'perception'
+  'perception',
+  'observatory'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height', 'layout', 'clusters']
 const ORGANISM_KEYS = [
@@ -93,6 +94,7 @@ const REPRODUCTION_KEYS = [
   'mateSenseRadius'
 ]
 const HISTORY_KEYS = ['maxEvents', 'eventDetail', 'maxHistoricalOrganisms']
+const OBSERVATORY_KEYS = ['enabled', 'sampleEvery', 'behaviourEvery', 'maxSamples']
 
 const EXTINCTION_POLICIES = ['stop', 'allow-immigration', 'seed-bank', 'sandbox-recovery']
 const EVENT_DETAILS = ['essential', 'verbose']
@@ -393,6 +395,16 @@ export function validateWorldConfig(value: unknown): ValidationResult {
     )
   }
 
+  const observatory = checkSection(value, 'observatory', OBSERVATORY_KEYS, errors)
+  if (observatory) {
+    if (typeof observatory['enabled'] !== 'boolean') {
+      errors.push('observatory.enabled must be a boolean')
+    }
+    for (const key of ['sampleEvery', 'behaviourEvery', 'maxSamples']) {
+      checkNumber(observatory, key, `observatory.${key}`, { integer: true, positive: true }, errors)
+    }
+  }
+
   checkGenetics(value, errors)
   checkLearning(value, errors)
   checkSpecies(value, errors)
@@ -635,6 +647,7 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     resources: mergeResources(base.resources, given['resources']),
     reproduction: mergeSection(base.reproduction, given['reproduction']),
     history: mergeSection(base.history, given['history']),
+    observatory: mergeSection(base.observatory, given['observatory']),
     genetics: mergeGenetics(base.genetics, given['genetics']),
     learning: mergeLearning(base.learning, given['learning']),
     species: mergeSpecies(base.species, given['species']),

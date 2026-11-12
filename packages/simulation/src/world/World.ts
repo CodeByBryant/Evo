@@ -7,6 +7,7 @@ import type {
   ClusterLayoutSnapshot,
   ClusterReport,
   EntityId,
+  EvolutionSeries,
   Genome,
   HazardSnapshot,
   HistoricalOrganismRecord,
@@ -85,6 +86,7 @@ import { brainLayoutOf } from '../learning/BrainLayout'
 import type { BrainLayout } from '../learning/BrainLayout'
 import { createBrainState, writeBrainState } from '../learning/BrainState'
 import { MetricsCollector } from '../metrics/MetricsCollector'
+import { ObservatoryRecorder } from '../observatory/ObservatoryRecorder'
 import { RandomStreams, STREAM_NAMES } from '../random/streams'
 import { SpeciesRegistry } from '../species/SpeciesRegistry'
 import type { SpeciesQueries } from '../species/SpeciesRegistry'
@@ -140,6 +142,8 @@ export class World {
   private readonly organisms: OrganismStore
   private readonly resources: ResourceStore
   private readonly metricsCollector: MetricsCollector
+  /** The evolution observatory (ADR 0024): read-only, unhashed, `null` when switched off. */
+  private readonly observatoryRecorder: ObservatoryRecorder | null = null
   private readonly resourceIndex: SpatialHash<ResourceState>
   private readonly organismIndex: SpatialHash<OrganismState>
   private readonly historyStore: HistoryStore
@@ -452,6 +456,17 @@ export class World {
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, 0)
     this.speciesRegistry.observe(0)
+    if (this.config.observatory.enabled) {
+      this.observatoryRecorder = new ObservatoryRecorder({
+        config: this.config,
+        organisms: this.organisms,
+        lineage: this.lineageStore,
+        species: this.speciesRegistry,
+        bodySpecs: this.bodySpecs,
+        carrionKind: kindNamesOf(this.config).indexOf(CARRION_KIND)
+      })
+      this.observatoryRecorder.afterTick(0, this.events.eventsThisTick())
+    }
   }
 
   /** Equivalent to `new World(options)`. */
@@ -801,6 +816,15 @@ export class World {
     })
   }
 
+  /**
+   * What the evolution observatory has recorded (ADR 0024): indicators of whether the world is still
+   * changing, sampled every `observatory.sampleEvery` ticks. A derived view, never hashed and never
+   * read back by the simulation; `null` when `observatory.enabled` is false.
+   */
+  observatory(): EvolutionSeries | null {
+    return this.observatoryRecorder?.series() ?? null
+  }
+
   get startingBodyName(): string | null {
     return this.startName
   }
@@ -893,6 +917,7 @@ export class World {
     this.metricsCollector.recordEvents(this.events.eventsThisTick())
     this.metricsCollector.updatePopulation(this.organisms.size, tick)
     this.speciesRegistry.observe(tick)
+    this.observatoryRecorder?.afterTick(tick, this.events.eventsThisTick())
 
     if (this.validateEveryTicks !== undefined && tick % this.validateEveryTicks === 0) {
       const result = this.validate()

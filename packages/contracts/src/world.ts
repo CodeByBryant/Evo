@@ -302,6 +302,18 @@ export interface HistoryConfig {
   maxHistoricalOrganisms: number
 }
 
+/** The evolution observatory (ADR 0024): read-only indicators sampled over time; never hashed, never fed back. */
+export interface ObservatoryConfig {
+  /** `false` does no work at all. */
+  enabled: boolean
+  /** Ticks between samples of the indicators. */
+  sampleEvery: number
+  /** Ticks between observations of what each creature is doing (speed, turning, resting). */
+  behaviourEvery: number
+  /** Samples kept; the oldest are dropped past this. */
+  maxSamples: number
+}
+
 /**
  * Everything that shapes a world other than its seed.
  * Time is measured in seconds; one tick advances time by `timestep`.
@@ -324,6 +336,7 @@ export interface WorldConfig {
   feeding: FeedingConfig
   predation: PredationConfig
   perception: PerceptionConfig
+  observatory: ObservatoryConfig
 }
 
 /** A partial configuration merged onto the defaults. */
@@ -336,6 +349,7 @@ export interface WorldConfigOverrides {
   resources?: ResourceConfigOverrides
   reproduction?: Partial<ReproductionConfig>
   history?: Partial<HistoryConfig>
+  observatory?: Partial<ObservatoryConfig>
   genetics?: GeneticsConfigOverrides
   learning?: LearningConfigOverrides
   species?: SpeciesConfigOverrides
