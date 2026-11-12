@@ -24,6 +24,8 @@ export function view(overrides: Partial<ViewState> = {}): ViewState {
       deathsByStarvation: 200,
       deathsByAge: 100,
       deathsByDamage: 50,
+      deathsByPredation: 0,
+      predationBites: 0,
       resourcesSpawned: 0,
       resourcesConsumed: 0,
       reproductionAttempts: 1000,
@@ -34,9 +36,39 @@ export function view(overrides: Partial<ViewState> = {}): ViewState {
       damageTaken: 0
     },
     history: [
-      { tick: 0, time: 0, count: 20, species: 1, food: 200, starved: 0, aged: 0, damaged: 0 },
-      { tick: 600, time: 60, count: 24, species: 1, food: 150, starved: 6, aged: 2, damaged: 0 },
-      { tick: 1200, time: 120, count: 31, species: 2, food: 120, starved: 12, aged: 4, damaged: 2 }
+      {
+        tick: 0,
+        time: 0,
+        count: 20,
+        species: 1,
+        food: 200,
+        starved: 0,
+        aged: 0,
+        damaged: 0,
+        predated: 0
+      },
+      {
+        tick: 600,
+        time: 60,
+        count: 24,
+        species: 1,
+        food: 150,
+        starved: 6,
+        aged: 2,
+        damaged: 0,
+        predated: 0
+      },
+      {
+        tick: 1200,
+        time: 120,
+        count: 31,
+        species: 2,
+        food: 120,
+        starved: 12,
+        aged: 4,
+        damaged: 2,
+        predated: 0
+      }
     ],
     species: [
       {

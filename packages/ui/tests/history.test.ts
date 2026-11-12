@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { HistoryPoint } from '@evo/contracts'
 import { deathRates, shareOf } from '../src/history'
 
-const point = (time: number, starved: number, aged = 0, damaged = 0): HistoryPoint => ({
+const point = (
+  time: number,
+  starved: number,
+  aged = 0,
+  damaged = 0,
+  predated = 0
+): HistoryPoint => ({
   tick: time * 10,
   time,
   count: 10,
@@ -10,7 +16,8 @@ const point = (time: number, starved: number, aged = 0, damaged = 0): HistoryPoi
   food: 10,
   starved,
   aged,
-  damaged
+  damaged,
+  predated
 })
 
 describe('deathRates', () => {
@@ -39,7 +46,7 @@ describe('deathRates', () => {
   })
 
   it('gives zeros, not NaN, with no history, one sample or no time passing', () => {
-    const zero = { starved: 0, aged: 0, damaged: 0, total: 0, seconds: 0 }
+    const zero = { starved: 0, aged: 0, damaged: 0, predated: 0, total: 0, seconds: 0 }
     expect(deathRates([])).toEqual(zero)
     expect(deathRates([point(10, 5)])).toEqual(zero)
     expect(deathRates([point(10, 5), point(10, 9)])).toEqual(zero)

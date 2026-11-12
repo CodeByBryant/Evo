@@ -89,6 +89,8 @@ export interface HistoricalOrganismRecord {
   readonly birthTick: number
   readonly deathTick: number
   readonly deathCause: DeathCause
+  /** The creature whose bite the death is counted against, for a death by predation. */
+  readonly killedBy?: EntityId
   /** Region movement over the organism's life; `null` when migration tracking is off. */
   readonly migration: MigrationSummary | null
   /** What the organism's brain did over its life; `null` under the reflex controller. */
@@ -122,6 +124,10 @@ export interface MetricsSnapshot {
   readonly deathsByStarvation: number
   readonly deathsByAge: number
   readonly deathsByDamage: number
+  /** Deaths of a creature that was bitten within `predation.attackWindow` (ADR 0023). */
+  readonly deathsByPredation: number
+  /** Bites taken out of creatures. */
+  readonly predationBites: number
   readonly resourcesSpawned: number
   readonly resourcesConsumed: number
   readonly reproductionAttempts: number

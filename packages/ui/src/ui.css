@@ -571,6 +571,9 @@ select.evo-input option {
 .evo-tone-bad {
   background: var(--evo-bad);
 }
+.evo-tone-predation {
+  background: var(--evo-accent);
+}
 .evo-tone-age {
   background: var(--evo-dim);
 }

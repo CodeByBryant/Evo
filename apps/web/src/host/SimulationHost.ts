@@ -451,6 +451,14 @@ export class SimulationHost implements SimulationControls {
           y: event.position.y,
           tick: event.tick
         })
+      } else if (event.type === 'organism-bitten') {
+        // A bite on a creature (ADR 0023): a ring where the victim is, a short-lived marker like a birth.
+        this.effects.push({
+          kind: 'bite',
+          x: event.position.x,
+          y: event.position.y,
+          tick: event.tick
+        })
       } else if (event.type === 'organism-damaged') {
         const last = this.lastDamageMarker.get(event.organismId)
         if (last === undefined || event.tick - last >= EFFECT_TICKS) {

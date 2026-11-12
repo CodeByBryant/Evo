@@ -1,10 +1,13 @@
-import type { Genome, WorldConfig } from '@evo/contracts'
+import { mouthFormOf } from '@evo/contracts'
+import type { Genome, MouthForm, WorldConfig } from '@evo/contracts'
 import { developAnatomy } from '../development/develop'
 
 /** Where a working mouth sits on the body, in body radii (x forward, y left). */
 export interface MouthPoint {
   readonly x: number
   readonly y: number
+  /** The mouth's form (ADR 0017): what it can eat, and whether it bites creatures (ADR 0023). */
+  readonly form: MouthForm
 }
 
 const known = new WeakMap<
@@ -26,7 +29,11 @@ export function mouthsOf(genome: Genome, config: WorldConfig): readonly MouthPoi
   const mouths: MouthPoint[] = []
   for (const part of anatomy.parts) {
     if (part.type === 'mouth' && part.functional) {
-      mouths.push({ x: part.x / unit, y: part.y / unit })
+      mouths.push({
+        x: part.x / unit,
+        y: part.y / unit,
+        form: mouthFormOf(part.stats[2] as number)
+      })
     }
   }
   known.set(genes, { config: config.anatomy, mouths })

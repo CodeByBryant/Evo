@@ -398,6 +398,28 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     absorption: 6,
     chewSlow: 0.15
   },
+  // Predation (ADR 0023): off until the senses arrive and the numbers are tuned. Only a jaw bites
+  // creatures; every other mouth form yields nothing from them. A bite takes `biteEnergy` from the
+  // victim and puts `trophicYield` of it in the predator's gut; a dead body leaves a carcass.
+  predation: {
+    enabled: false,
+    biteDamage: 15,
+    biteEnergy: 12,
+    trophicYield: 0.6,
+    maxPreyRatio: 1.5,
+    fleshYield: { sprout: 0, proboscis: 0, mandible: 0, radula: 0, jaw: 1 },
+    attackWindow: 3,
+    carcass: {
+      enabled: true,
+      energyFraction: 0.6,
+      minEnergy: 5,
+      lifespan: 120,
+      maxCount: 40,
+      radius: 4,
+      hardness: 1,
+      yields: { sprout: 0.1, proboscis: 0.2, mandible: 0.8, radula: 0.6, jaw: 1.2 }
+    }
+  },
   // Another creature's body hides what is behind it (ADR 0016 "Line of sight"); a creature checks
   // at most six candidates for something in the way, so a crowded patch costs a bounded amount.
   perception: {

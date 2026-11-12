@@ -120,7 +120,8 @@ export function StatsPanel({ view }: { view: ViewState }): React.JSX.Element {
 const DEATH_CAUSES = [
   { key: 'starved', total: 'deathsByStarvation', label: 'Starved', tone: 'warn' },
   { key: 'aged', total: 'deathsByAge', label: 'Old age', tone: 'age' },
-  { key: 'damaged', total: 'deathsByDamage', label: 'Damage', tone: 'bad' }
+  { key: 'damaged', total: 'deathsByDamage', label: 'Damage', tone: 'bad' },
+  { key: 'predated', total: 'deathsByPredation', label: 'Predation', tone: 'predation' }
 ] as const
 
 /** A rate per minute: one decimal under 10, none above, so a column of them lines up. */
@@ -134,7 +135,10 @@ export function DeathCauses({ view }: { view: ViewState }): React.JSX.Element {
   const rates = deathRates(view.history)
   return (
     <dl className="evo-causes">
-      {DEATH_CAUSES.map((cause) => (
+      {/* Predation is shown only in a world where something has been killed by a bite (ADR 0023). */}
+      {DEATH_CAUSES.filter(
+        (cause) => cause.key !== 'predated' || view.metrics.deathsByPredation > 0
+      ).map((cause) => (
         <div key={cause.key}>
           <dt>{cause.label}</dt>
           <dd>

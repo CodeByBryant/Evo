@@ -21,6 +21,8 @@ const zeroMetrics: MetricsSnapshot = {
   deathsByStarvation: 0,
   deathsByAge: 0,
   deathsByDamage: 0,
+  deathsByPredation: 0,
+  predationBites: 0,
   resourcesSpawned: 0,
   resourcesConsumed: 0,
   reproductionAttempts: 0,

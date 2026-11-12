@@ -67,8 +67,10 @@ export const PRESETS: readonly WorldPreset[] = [
         plants: { enabled: false }
       },
       anatomy: { startingBody: { mode: 'reference' } },
-      // The cluster layout has no region map to place obstacles by; it has none (ADR 0022).
-      ecology: { obstacles: { enabled: false } }
+      // The cluster layout has no region map to place obstacles by; it has none (ADR 0022), and it
+      // keeps its creatures to their food (ADR 0023).
+      ecology: { obstacles: { enabled: false } },
+      predation: { enabled: false }
     }
   },
   {
@@ -100,6 +102,8 @@ export const PRESETS: readonly WorldPreset[] = [
       // That way of eating wastes about a third of the food, so it cannot carry the restrained
       // breeding and shorter lives of the default world (3 of 8 worlds went extinct).
       feeding: { enabled: false },
+      // ...and nothing eats anything but food (ADR 0023).
+      predation: { enabled: false },
       // ...and creatures see through each other, as they always did (ADR 0016 "Line of sight").
       perception: { organismsBlockSight: false },
       reproduction: { minEnergy: 60, cooldown: 30 },

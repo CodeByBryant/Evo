@@ -21,6 +21,8 @@ function describeEvent(event: WorldEvent): string {
       return `spawned ${event.resourceId}`
     case 'resource-bitten':
       return `bitten ${event.resourceId}`
+    case 'organism-bitten':
+      return `bitten ${event.preyId} by ${event.predatorId}`
     case 'resource-consumed':
       return `consumed ${event.resourceId}`
     case 'organism-moved':
@@ -62,6 +64,7 @@ describe('contracts', () => {
       'organism-died',
       'resource-spawned',
       'resource-bitten',
+      'organism-bitten',
       'resource-consumed',
       'organism-moved',
       'energy-changed',
@@ -71,9 +74,9 @@ describe('contracts', () => {
       'hazard-spawned',
       'hazard-expired'
     ]
-    const causes: DeathCause[] = ['starvation', 'age', 'damage', 'environment']
-    expect(new Set(types).size).toBe(12)
-    expect(new Set(causes).size).toBe(4)
+    const causes: DeathCause[] = ['starvation', 'age', 'damage', 'predation', 'environment']
+    expect(new Set(types).size).toBe(13)
+    expect(new Set(causes).size).toBe(5)
   })
 
   it('MAX_SEED is the largest uint32', () => {

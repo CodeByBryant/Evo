@@ -28,7 +28,12 @@ export function statusLabel(status: RunStatus): string {
 }
 
 export function totalDeaths(metrics: MetricsSnapshot): number {
-  return metrics.deathsByStarvation + metrics.deathsByAge + metrics.deathsByDamage
+  return (
+    metrics.deathsByStarvation +
+    metrics.deathsByAge +
+    metrics.deathsByDamage +
+    metrics.deathsByPredation
+  )
 }
 
 /** `count / total` as a percentage string, or a dash when there is nothing to divide. */

@@ -1,7 +1,8 @@
 import type { EntityId, WorldConfig } from '@evo/contracts'
-import type { DamageBuffer, IntentBuffer } from '../buffers/types'
+import type { DamageBuffer, IntentBuffer, LastBitten, PredationBuffer } from '../buffers/types'
 import type { EcologyModel, KindProperties } from '../ecology/EcologyModel'
-import type { OrganismStore } from '../entities/OrganismStore'
+import type { ObstacleField } from '../ecology/ObstacleField'
+import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import { HUB_SLOT } from '../entities/ResourceStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
 import type { EventLog } from '../events/EventLog'
@@ -10,13 +11,25 @@ import { factorsOf } from '../organisms/bodyFactors'
 import { cos, sin } from '../math/trig'
 import { mouthsOf } from '../organisms/mouths'
 import { bodyRadiusOf, gutCapacityOf, maxEnergyOf } from '../organisms/traits'
-import type { SpatialHash } from '../spatial/SpatialHash'
+import { SIGHT_BLOCKER_MARGIN, segmentHitsCircle } from '../spatial/sight'
+import type { SpatialHash, SpatialHit } from '../spatial/SpatialHash'
 
 /** Below this a gut counts as full and a resource as finished. */
 const EPSILON = 1e-9
 
 /** A bite needs room in the gut for at least this share of its size. */
 const MIN_BITE_FRACTION = 0.5
+
+/** What `InteractionSystem` needs to let creatures bite creatures (ADR 0023). */
+export interface PredationSensing {
+  readonly organismIndex: SpatialHash<OrganismState>
+  /** Where bite damage is written for `HealthSystem`. */
+  readonly buffer: PredationBuffer
+  /** Who bit whom, last, so `DeathSystem` can label a death by predation. */
+  readonly lastBitten: LastBitten
+  /** Obstacles that block movement also stop a bite. */
+  readonly obstacles: ObstacleField
+}
 
 /**
  * Feeds organisms. With `feeding.enabled` (the default) they bite (ADR 0017): a working mouth must
@@ -48,7 +61,9 @@ export class InteractionSystem {
     private readonly intents?: IntentBuffer,
     private readonly ecology: EcologyModel | null = null,
     /** Where the toxicity of what was eaten is written for `HealthSystem`. */
-    private readonly damage?: DamageBuffer
+    private readonly damage?: DamageBuffer,
+    /** Present only with `predation.enabled`: creatures with the right mouth also bite creatures. */
+    private readonly predation?: PredationSensing
   ) {
     this.emitVerbose = config.history.eventDetail === 'verbose'
     this.kindsOn = ecology !== null && ecology.kindsOn
@@ -72,6 +87,7 @@ export class InteractionSystem {
     const { juvenileSizeScale } = this.config.organisms
     const cosCone = cos(this.config.feeding.biteCone)
     this.damage?.clear()
+    this.predation?.buffer.clear()
 
     for (const organism of this.organisms.values()) {
       organism.biteCooldown = Math.max(0, organism.biteCooldown - dt)
@@ -112,6 +128,23 @@ export class InteractionSystem {
             return true
           }
         )
+        // A jaw (or any mouth with a flesh yield) may take the nearer creature instead (ADR 0023).
+        if (this.predation !== undefined) {
+          const flesh = this.config.predation.fleshYield[mouth.form]
+          if (flesh > 0) {
+            const prey = this.preyFor(organism, organism.x + mx, organism.y + my, {
+              mx,
+              my,
+              reach,
+              bodyRadius,
+              cosCone
+            })
+            if (prey !== null && (!hit || prey.distanceSquared < hit.distanceSquared)) {
+              this.bitePrey(organism, body.biteSize, body.biteRate, prey.item, flesh, room, tick)
+              break
+            }
+          }
+        }
         if (!hit) continue
 
         const resource = hit.item
@@ -165,6 +198,128 @@ export class InteractionSystem {
         break
       }
     }
+  }
+
+  /**
+   * The nearest creature this mouth could bite: not itself, not a parent or child, alive, no bigger
+   * than `maxPreyRatio` of its own body, within reach, inside the cone in front of the mouth and
+   * with no solid obstacle in between.
+   */
+  private preyFor(
+    predator: OrganismState,
+    mouthX: number,
+    mouthY: number,
+    geometry: {
+      readonly mx: number
+      readonly my: number
+      readonly reach: number
+      readonly bodyRadius: number
+      readonly cosCone: number
+    }
+  ): SpatialHit<OrganismState> | null {
+    const { organismIndex, obstacles } = this.predation as PredationSensing
+    const { maxPreyRatio } = this.config.predation
+    const { juvenileSizeScale } = this.config.organisms
+    // Bodies move after the index is built: leave room for one tick of travel.
+    const slack = 2 * this.config.organisms.maxSpeed * this.config.timestep
+    return organismIndex.nearestWhere(
+      { x: mouthX, y: mouthY },
+      geometry.reach + SIGHT_BLOCKER_MARGIN + slack,
+      (candidate, distanceSquared) => {
+        if (candidate.id === predator.id || candidate.health <= 0) return false
+        if (
+          predator.parentIds.includes(candidate.id) ||
+          candidate.parentIds.includes(predator.id)
+        ) {
+          return false
+        }
+        const scale =
+          lifeStageFor(candidate.age, candidate.genome.physical) === 'juvenile'
+            ? juvenileSizeScale
+            : 1
+        const preyRadius = bodyRadiusOf(candidate.genome, this.config) * scale
+        if (preyRadius > maxPreyRatio * geometry.bodyRadius) return false
+        const limit = geometry.reach + preyRadius
+        if (distanceSquared > limit * limit) return false
+        const fx = candidate.x - predator.x
+        const fy = candidate.y - predator.y
+        const target = fx * fx + fy * fy
+        const mouthLength = geometry.mx * geometry.mx + geometry.my * geometry.my
+        if (target > 0 && mouthLength > 0) {
+          if (
+            fx * geometry.mx + fy * geometry.my <
+            geometry.cosCone * Math.sqrt(target * mouthLength)
+          ) {
+            return false
+          }
+        }
+        if (obstacles.maxMovementRadius > 0) {
+          const half = Math.sqrt(distanceSquared) / 2
+          const blocked = obstacles.some(
+            (mouthX + candidate.x) / 2,
+            (mouthY + candidate.y) / 2,
+            half + obstacles.maxMovementRadius,
+            (o) =>
+              o.blocksMovement &&
+              segmentHitsCircle(mouthX, mouthY, candidate.x, candidate.y, o.x, o.y, o.radius)
+          )
+          if (blocked) return false
+        }
+        return true
+      }
+    )
+  }
+
+  /**
+   * One bite of a creature (ADR 0023): the victim loses energy (at most what it has, and what the
+   * bitter's gut can take) and health (armor applies); the bitter's gut gains the energy taken times
+   * the trophic yield and the mouth's flesh yield, the rest being the trophic loss, so no energy is
+   * created. Returns whether the bite landed.
+   */
+  private bitePrey(
+    predator: OrganismState,
+    biteSize: number,
+    biteRate: number,
+    prey: OrganismState,
+    flesh: number,
+    room: number,
+    tick: number
+  ): boolean {
+    const { predation, feeding } = this.config
+    const { buffer, lastBitten } = this.predation as PredationSensing
+    const perEnergy = predation.trophicYield * flesh
+    const wanted = Math.min(prey.energy, predation.biteEnergy * biteSize)
+    if (wanted <= EPSILON) return false
+    // A gut with no real room for a bite is full, as for food.
+    if (room < MIN_BITE_FRACTION * wanted * perEnergy) return false
+    const taken = Math.min(wanted, room / perEnergy)
+    const intake = taken * perEnergy
+    prey.energy -= taken
+    predator.gut = Math.min(predator.gut + intake, room + predator.gut)
+    predator.biteCooldown = feeding.biteInterval / biteRate
+    const damage = predation.biteDamage * biteSize * factorsOf(prey.genome, this.config).damageTaken
+    const entry = buffer.get(prey.id)
+    if (entry === undefined) {
+      buffer.set(prey.id, { damage, attackerId: predator.id, hardest: damage })
+    } else {
+      entry.damage += damage
+      if (damage > entry.hardest) {
+        entry.hardest = damage
+        entry.attackerId = predator.id
+      }
+    }
+    lastBitten.set(prey.id, { attackerId: predator.id, tick })
+    this.events.record({
+      type: 'organism-bitten',
+      tick,
+      predatorId: predator.id,
+      preyId: prey.id,
+      damage,
+      energyTaken: taken,
+      intake,
+      position: { x: prey.x, y: prey.y }
+    })
+    return true
   }
 
   /** The kind a resource is, with the baseline applied (one plain kind when kinds are off). */

@@ -42,6 +42,8 @@ export interface HistoryPoint {
   readonly starved: number
   readonly aged: number
   readonly damaged: number
+  /** Cumulative deaths by predation (ADR 0023). */
+  readonly predated: number
 }
 
 export interface SpeciesRow {

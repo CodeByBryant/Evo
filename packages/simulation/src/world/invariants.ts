@@ -270,6 +270,8 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
   checkFinite('metrics', 'damageTaken', metrics.damageTaken, errors)
   if (metrics.damageTaken < 0) errors.push('metrics.damageTaken is negative')
   if (metrics.deathsByDamage < 0) errors.push('metrics.deathsByDamage is negative')
+  if (metrics.deathsByPredation < 0) errors.push('metrics.deathsByPredation is negative')
+  if (metrics.predationBites < 0) errors.push('metrics.predationBites is negative')
   if (metrics.organismsBorn < 0) errors.push('metrics.organismsBorn is negative')
   if (metrics.deathsByStarvation < 0) errors.push('metrics.deathsByStarvation is negative')
   if (metrics.deathsByAge < 0) errors.push('metrics.deathsByAge is negative')

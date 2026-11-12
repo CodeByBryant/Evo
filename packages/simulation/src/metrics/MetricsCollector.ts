@@ -10,6 +10,8 @@ export class MetricsCollector {
   private deathsByStarvation = 0
   private deathsByAge = 0
   private deathsByDamage = 0
+  private deathsByPredation = 0
+  private predationBites = 0
   private resourcesSpawned = 0
   private resourcesConsumed = 0
   private reproductionAttempts = 0
@@ -38,6 +40,9 @@ export class MetricsCollector {
             case 'damage':
               this.deathsByDamage += 1
               break
+            case 'predation':
+              this.deathsByPredation += 1
+              break
             case 'environment':
               // Never produced: heat and storms are damage (docs/ecology/ecology.md).
               break
@@ -50,6 +55,12 @@ export class MetricsCollector {
           // Energy that entered a gut; what a poor mouth could not use is lost.
           this.energyConsumed += event.intake
           this.energyWasted += Math.max(0, event.chunk - event.intake)
+          break
+        case 'organism-bitten':
+          // Energy moved between creatures; it enters a gut, and the rest is the trophic loss.
+          this.predationBites += 1
+          this.energyConsumed += event.intake
+          this.energyWasted += Math.max(0, event.energyTaken - event.intake)
           break
         case 'resource-consumed':
           this.resourcesConsumed += 1
@@ -96,6 +107,8 @@ export class MetricsCollector {
       deathsByStarvation: this.deathsByStarvation,
       deathsByAge: this.deathsByAge,
       deathsByDamage: this.deathsByDamage,
+      deathsByPredation: this.deathsByPredation,
+      predationBites: this.predationBites,
       resourcesSpawned: this.resourcesSpawned,
       resourcesConsumed: this.resourcesConsumed,
       reproductionAttempts: this.reproductionAttempts,

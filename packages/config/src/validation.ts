@@ -17,6 +17,7 @@ import { checkSpecies } from './species'
 import { checkAnatomy } from './anatomy'
 import { checkFeeding } from './feeding'
 import { checkPerception } from './perception'
+import { checkPredation } from './predation'
 import { checkClusters } from './clusters'
 
 const ROOT_KEYS = [
@@ -34,6 +35,7 @@ const ROOT_KEYS = [
   'ecology',
   'anatomy',
   'feeding',
+  'predation',
   'perception'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height', 'layout', 'clusters']
@@ -397,6 +399,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   checkEcology(value, errors)
   checkAnatomy(value, errors)
   checkFeeding(value, errors)
+  checkPredation(value, errors)
   checkPerception(value, errors)
 
   return { ok: errors.length === 0, errors }
@@ -460,6 +463,27 @@ function mergeSpecies(base: object, override: unknown): unknown {
       defaults['distanceWeights'] as object,
       override['distanceWeights']
     )
+  }
+}
+
+/**
+ * Merges the predation section: fields merge one by one, `fleshYield` per mouth form, and the
+ * carcass section field by field with its `yields` per mouth form (ADR 0023).
+ */
+function mergePredation(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, Record<string, unknown>>
+  const carcass = override['carcass']
+  return {
+    ...(mergeSection(base, override) as object),
+    fleshYield: mergeSection(defaults['fleshYield'] as object, override['fleshYield']),
+    carcass:
+      isObject(carcass) && isObject(carcass['yields'])
+        ? {
+            ...(mergeSection(defaults['carcass'] as object, carcass) as object),
+            yields: mergeSection(defaults['carcass']!['yields'] as object, carcass['yields'])
+          }
+        : mergeSection(defaults['carcass'] as object, carcass)
   }
 }
 
@@ -617,6 +641,7 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     ecology: mergeEcology(base.ecology, given['ecology']),
     anatomy: mergeAnatomy(base.anatomy, given['anatomy']),
     feeding: mergeSection(base.feeding, given['feeding']),
+    predation: mergePredation(base.predation, given['predation']),
     perception: mergeSection(base.perception, given['perception'])
   }
   const result = validateWorldConfig(merged)

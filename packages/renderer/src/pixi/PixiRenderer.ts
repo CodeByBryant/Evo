@@ -53,7 +53,12 @@ const FIELD = 0x050505
 /** The grid, the world's edge and the cluster rims: white lines at low strength, so one pixel hairlines. */
 const LINE = 0xffffff
 
-const EFFECT_COLORS = { birth: 0x7dffb0, death: 0xff6b6b, damage: 0xffb347 } as const
+const EFFECT_COLORS = {
+  birth: 0x7dffb0,
+  death: 0xff6b6b,
+  damage: 0xffb347,
+  bite: 0xe0524a
+} as const
 
 type PoolHost = { container: Container; pool: Sprite[] }
 
