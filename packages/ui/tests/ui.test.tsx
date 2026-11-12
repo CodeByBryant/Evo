@@ -200,6 +200,22 @@ describe('components render', () => {
     expect(none).toContain('width:0')
   })
 
+  it('shows a Predation row only in a world where something was killed by a bite (ADR 0023)', () => {
+    const quiet = renderToStaticMarkup(<DeathCauses view={view()} />)
+    expect(quiet).not.toContain('Predation')
+    const base = view()
+    const eaten = view({
+      metrics: { ...base.metrics, deathsByPredation: 7 },
+      history: base.history.map((p, i) => ({ ...p, predated: i === 2 ? 6 : 0 }))
+    })
+    const html = renderToStaticMarkup(<DeathCauses view={eaten} />)
+    // 6 killed by bites in the 120 s: 3.0 a minute, 7 since the start; 18 recent deaths become 24
+    expect(html).toMatch(/Predation.*>3\.0 \/min<small[^>]*> 7<\/small>/s)
+    expect(html).toContain('evo-tone-predation')
+    expect(html).toContain('width:50') // starved is now 12 of 24 recent deaths
+    expect(totalDeaths({ ...base.metrics, deathsByPredation: 7 })).toBe(357)
+  })
+
   it('strip shows the population chart and the death causes, and clusters only in a cluster world', () => {
     const html = renderToStaticMarkup(<Strip view={view()} />)
     expect(html).toContain('aria-label="Charts"')

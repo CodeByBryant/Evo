@@ -5,6 +5,7 @@ export interface DeathRates {
   readonly starved: number
   readonly aged: number
   readonly damaged: number
+  readonly predated: number
   readonly total: number
   /** Simulated seconds the rates were measured over (0 when there are not two samples). */
   readonly seconds: number
@@ -23,7 +24,7 @@ export function deathRates(
   windowSeconds = DEATH_RATE_WINDOW
 ): DeathRates {
   const latest = points[points.length - 1]
-  const zero: DeathRates = { starved: 0, aged: 0, damaged: 0, total: 0, seconds: 0 }
+  const zero: DeathRates = { starved: 0, aged: 0, damaged: 0, predated: 0, total: 0, seconds: 0 }
   if (latest === undefined) return zero
   const from = points.find((point) => point.time >= latest.time - windowSeconds)
   if (from === undefined) return zero
@@ -34,7 +35,8 @@ export function deathRates(
   const starved = perMinute(latest.starved, from.starved)
   const aged = perMinute(latest.aged, from.aged)
   const damaged = perMinute(latest.damaged, from.damaged)
-  return { starved, aged, damaged, total: starved + aged + damaged, seconds }
+  const predated = perMinute(latest.predated, from.predated)
+  return { starved, aged, damaged, predated, total: starved + aged + damaged + predated, seconds }
 }
 
 /** The share of `part` in `total` as a fraction in `[0, 1]`, or 0 when there is no total. */

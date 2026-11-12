@@ -26,8 +26,10 @@ import type {
   HazardBuffer,
   MateBuffer,
   IntentBuffer,
+  LastBitten,
   PeerBuffer,
   PerceptionBuffer,
+  PredationBuffer,
   RegenBuffer
 } from '../buffers/types'
 import type { ClockState } from '../clock/SimulationClock'
@@ -36,6 +38,7 @@ import { EcologyModel } from '../ecology/EcologyModel'
 import { FoodField } from '../ecology/FoodField'
 import { HazardStore } from '../ecology/HazardStore'
 import { MigrationTracker } from '../ecology/MigrationTracker'
+import { Carcasses } from '../ecology/Carcasses'
 import { ObstacleField } from '../ecology/ObstacleField'
 import { ClusterTerrain } from '../ecology/ClusterTerrain'
 import { RegionMap } from '../ecology/RegionMap'
@@ -95,6 +98,7 @@ import type { SightBlockers } from '../systems/PerceptionSystem'
 import { ReproductionSystem } from '../systems/ReproductionSystem'
 import { ClusterLayout } from '../ecology/ClusterLayout'
 import { effectiveConfig } from './clusterScaling'
+import { CARRION_KIND, withCarrion } from './predationConfig'
 import { checkInvariants } from './invariants'
 
 export interface WorldCreateOptions extends WorldOptions {
@@ -156,6 +160,11 @@ export class World {
   private readonly hazardBuffer: HazardBuffer = new Map()
   private readonly mateBuffer: MateBuffer = new Map()
   private readonly damageBuffer: DamageBuffer = new Map()
+  /** Bite damage this tick, and who bit whom last (ADR 0023); both only used with predation on. */
+  private readonly predationBuffer: PredationBuffer = new Map()
+  private readonly lastBitten: LastBitten = new Map()
+  /** What the dead leave for scavengers, or `null` without predation or carcasses. */
+  private readonly carcasses: Carcasses | null
   private readonly regenBuffer: RegenBuffer = new Map()
   private readonly brainLayout: BrainLayout
 
@@ -185,7 +194,7 @@ export class World {
     }
 
     this.seed = options.seed
-    this.config = effectiveConfig(resolveWorldConfig(options.config))
+    this.config = withCarrion(effectiveConfig(resolveWorldConfig(options.config)))
     this.validateEveryTicks = options.validateEveryTicks
 
     this.clockImpl = new SimulationClock(this.config.timestep)
@@ -350,7 +359,15 @@ export class World {
       this.events,
       this.intentBuffer,
       this.ecology,
-      this.damageBuffer
+      this.damageBuffer,
+      this.config.predation.enabled
+        ? {
+            organismIndex: this.organismIndex,
+            buffer: this.predationBuffer,
+            lastBitten: this.lastBitten,
+            obstacles: this.obstacleField
+          }
+        : undefined
     )
     this.digestionSystem = new DigestionSystem(this.config, this.organisms, this.events)
     this.healthSystem = new HealthSystem(
@@ -360,7 +377,8 @@ export class World {
       this.damageBuffer,
       this.regenBuffer,
       this.events,
-      this.ecology
+      this.ecology,
+      this.config.predation.enabled ? this.predationBuffer : undefined
     )
     this.metabolismSystem = new MetabolismSystem(
       this.config,
@@ -386,13 +404,27 @@ export class World {
       this.speciesRegistry,
       this.ecology
     )
+    const carrionKind = kindNamesOf(this.config).indexOf(CARRION_KIND)
+    this.carcasses =
+      carrionKind >= 0
+        ? new Carcasses(this.config, this.resources, this.ids, this.events, carrionKind)
+        : null
     this.deathSystem = new DeathSystem(
       this.organisms,
       this.events,
       this.historyStore,
       this.lineageStore,
       this.speciesRegistry,
-      this.migrationTracker
+      this.migrationTracker,
+      this.config.predation.enabled
+        ? {
+            lastBitten: this.lastBitten,
+            windowTicks: Math.ceil(this.config.predation.attackWindow / this.config.timestep)
+          }
+        : undefined,
+      this.carcasses === null
+        ? undefined
+        : (organism, _cause, tick) => (this.carcasses as Carcasses).drop(organism, tick)
     )
 
     this.events.beginTick()
@@ -815,6 +847,7 @@ export class World {
     this.metabolismSystem.update(tick)
     this.reproductionSystem.update(tick)
     this.deathSystem.update(tick)
+    this.carcasses?.update(tick)
     if (this.config.learning.controller === 'brain') this.brainSystem.settle(tick)
 
     this.metricsCollector.recordEvents(this.events.eventsThisTick())

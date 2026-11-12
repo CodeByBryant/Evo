@@ -3,12 +3,12 @@ import type { LearningConfig, LearningConfigOverrides } from './learning'
 import type { Rect } from './math'
 import type { EcologyConfig, EcologyConfigOverrides } from './ecology'
 import type { SpeciesConfig, SpeciesConfigOverrides } from './species'
-import type { AnatomyConfig, AnatomyConfigOverrides } from './anatomy'
+import type { AnatomyConfig, AnatomyConfigOverrides, MouthForm } from './anatomy'
 
 /** Largest valid world seed (seeds are unsigned 32-bit integers). */
 export const MAX_SEED = 4_294_967_295
 
-export type DeathCause = 'starvation' | 'age' | 'damage' | 'environment'
+export type DeathCause = 'starvation' | 'age' | 'damage' | 'predation' | 'environment'
 
 export type ExtinctionPolicy = 'stop' | 'allow-immigration' | 'seed-bank' | 'sandbox-recovery'
 
@@ -139,6 +139,44 @@ export interface PerceptionConfig {
   organismsBlockSight: boolean
   /** The most candidates a creature checks for something in the way before it gives up (at least 1). */
   maxSightChecks: number
+}
+
+/** What a dead creature leaves behind for scavengers (ADR 0023). */
+export interface PredationCarcassConfig {
+  /** `false` leaves nothing: the energy of the dead is lost, as before. */
+  enabled: boolean
+  /** The share of a dead creature's energy and gut that becomes a carcass, in `(0, 1]`. */
+  energyFraction: number
+  /** A carcass worth less than this is not left. */
+  minEnergy: number
+  /** Seconds before a carcass rots away (0: never). */
+  lifespan: number
+  /** The most carcasses on the field at once. */
+  maxCount: number
+  /** A carcass's radius, in world units. */
+  radius: number
+  /** How many times harder a carcass is to bite than the baseline, `> 0`. */
+  hardness: number
+  /** What each mouth form yields from a carcass, per unit bitten, `> 0`. */
+  yields: Record<MouthForm, number>
+}
+
+/** Creatures that bite other creatures (ADR 0023). Needs `feeding` and `ecology.health`. */
+export interface PredationConfig {
+  enabled: boolean
+  /** Health damage of a bite at the baseline gape, before the victim's armor. */
+  biteDamage: number
+  /** Energy a bite takes from the victim at the baseline gape. */
+  biteEnergy: number
+  /** The share of the energy taken that reaches the predator's gut, in `(0, 1]` (the rest is the trophic loss). */
+  trophicYield: number
+  /** A creature bites only prey whose body radius is at most this many times its own. */
+  maxPreyRatio: number
+  /** What each mouth form yields from a creature it bites, `>= 0`; zero means that form never bites creatures. */
+  fleshYield: Record<MouthForm, number>
+  /** Seconds after a bite during which a death by starvation or damage counts as predation. */
+  attackWindow: number
+  carcass: PredationCarcassConfig
 }
 
 export interface FeedingConfig {
@@ -284,6 +322,7 @@ export interface WorldConfig {
   ecology: EcologyConfig
   anatomy: AnatomyConfig
   feeding: FeedingConfig
+  predation: PredationConfig
   perception: PerceptionConfig
 }
 
@@ -303,6 +342,12 @@ export interface WorldConfigOverrides {
   ecology?: EcologyConfigOverrides
   anatomy?: AnatomyConfigOverrides
   feeding?: Partial<FeedingConfig>
+  predation?: Partial<Omit<PredationConfig, 'fleshYield' | 'carcass'>> & {
+    fleshYield?: Partial<Record<MouthForm, number>>
+    carcass?: Partial<Omit<PredationCarcassConfig, 'yields'>> & {
+      yields?: Partial<Record<MouthForm, number>>
+    }
+  }
   perception?: Partial<PerceptionConfig>
 }
 

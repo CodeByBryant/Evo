@@ -264,6 +264,9 @@ export class BrainSystem {
     for (const event of this.events.eventsThisTick()) {
       if (event.type === 'resource-bitten') {
         gained.set(event.organismId, (gained.get(event.organismId) ?? 0) + event.intake)
+      } else if (event.type === 'organism-bitten') {
+        // A predator's meal is a meal: its gut intake counts like a bite of food (ADR 0023).
+        gained.set(event.predatorId, (gained.get(event.predatorId) ?? 0) + event.intake)
       } else if (event.type === 'resource-consumed') {
         gained.set(event.organismId, (gained.get(event.organismId) ?? 0) + event.energyGained)
       } else if (event.type === 'organism-damaged') {

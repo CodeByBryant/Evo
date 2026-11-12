@@ -1,5 +1,5 @@
 import type { WorldConfig } from '@evo/contracts'
-import type { DamageBuffer, RegenBuffer } from '../buffers/types'
+import type { DamageBuffer, PredationBuffer, RegenBuffer } from '../buffers/types'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { HazardStore } from '../ecology/HazardStore'
 import type { OrganismStore } from '../entities/OrganismStore'
@@ -12,8 +12,8 @@ import { maxEnergyOf, maxHealthOf } from '../organisms/traits'
  * interaction and before metabolism. In ascending id order it:
  *
  * 1. sums the damage from every hazard circle the organism stands in
- *    (`damagePerSecond * regionExposure * seasonIntensity * dt`) and the toxin of what it just ate,
- *    and, if there is any, lowers health and records one `organism-damaged` event;
+ *    (`damagePerSecond * regionExposure * seasonIntensity * dt`), the toxin of what it just ate and
+ *    the bites it took (already reduced by its armor, ADR 0023), and, if there is any, lowers health and records one `organism-damaged` event;
  * 2. otherwise, if it is hurt and holds at least `regenMinEnergyFraction` of its capacity, heals up
  *    to `regenRate * dt` and writes the energy that costs to the regen buffer, which metabolism
  *    charges (energy stays owned by metabolism).
@@ -29,7 +29,9 @@ export class HealthSystem {
     private readonly toxins: DamageBuffer,
     private readonly regen: RegenBuffer,
     private readonly events: EventLog,
-    private readonly ecology: EcologyModel
+    private readonly ecology: EcologyModel,
+    /** Present only with `predation.enabled`: the damage bites dealt this tick (ADR 0023). */
+    private readonly bites?: PredationBuffer
   ) {}
 
   update(tick: number): void {
@@ -54,7 +56,9 @@ export class HealthSystem {
         }
       }
       const fromToxin = this.toxins.get(organism.id) ?? 0
-      const damage = fromHazards + fromToxin
+      const bite = this.bites?.get(organism.id)
+      const fromBites = bite?.damage ?? 0
+      const damage = fromHazards + fromToxin + fromBites
 
       if (damage > 0) {
         const lost = Math.min(damage, organism.health)
@@ -64,7 +68,15 @@ export class HealthSystem {
           tick,
           organismId: organism.id,
           amount: lost,
-          source: fromHazards > 0 && fromToxin > 0 ? 'both' : fromToxin > 0 ? 'toxin' : 'hazard',
+          source:
+            (fromHazards > 0 ? 1 : 0) + (fromToxin > 0 ? 1 : 0) + (fromBites > 0 ? 1 : 0) > 1
+              ? 'both'
+              : fromBites > 0
+                ? 'bite'
+                : fromToxin > 0
+                  ? 'toxin'
+                  : 'hazard',
+          ...(bite !== undefined && fromBites > 0 ? { attackerId: bite.attackerId } : {}),
           healthAfter: organism.health,
           position: { x: organism.x, y: organism.y }
         })

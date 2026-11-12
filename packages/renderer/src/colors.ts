@@ -89,7 +89,14 @@ export const OBSTACLE_COLORS: Readonly<
 }
 
 /** Food colors by kind index, cycling if a configuration defines more kinds. */
-export const RESOURCE_COLORS: readonly string[] = ['#9be15d', '#ff7a8a', '#c9a0ff', '#ffd166']
+export const RESOURCE_COLORS: readonly string[] = [
+  '#9be15d',
+  '#ff7a8a',
+  '#c9a0ff',
+  '#ffd166',
+  // The fifth kind exists only with predation: a carcass (ADR 0023), a dull red.
+  '#b5524a'
+]
 
 export function resourceColor(kind: number): string {
   return RESOURCE_COLORS[

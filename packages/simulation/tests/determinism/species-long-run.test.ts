@@ -36,7 +36,10 @@ describe('species long run', () => {
     // and 18 living species at populations of 45, 60, 59 and 70, so the bound is 36, the highest
     // doubled. The claim is unchanged: living species stay well below the living population.
     expect(reference.species.active().length).toBeLessThanOrEqual(36)
-  })
+    // Time budget: this runs 100,000 ticks (the reference and the chunked world) and timed out at the
+    // 180 s default on a Windows CI runner (PR #137, Windows shard 3) while main's own run passed; the
+    // budget is the one long-run-validity already uses. What the test asserts is unchanged.
+  }, 420_000)
 
   it('turning species off leaves the 50,000-tick state hash unchanged', () => {
     // The reference run of seed 11 has species on (the default); only the switched-off world is new.

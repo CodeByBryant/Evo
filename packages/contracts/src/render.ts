@@ -67,7 +67,7 @@ export interface RenderHazard {
 
 /** A short-lived marker for something that just happened (derived from events). */
 export interface RenderEffect {
-  readonly kind: 'birth' | 'death' | 'damage'
+  readonly kind: 'birth' | 'death' | 'damage' | 'bite'
   readonly x: number
   readonly y: number
   /** The tick it happened, so the renderer can fade it out. */

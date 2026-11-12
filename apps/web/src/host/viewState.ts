@@ -63,7 +63,8 @@ export function historyPointOf(snapshot: WorldSnapshot): HistoryPoint {
     food: snapshot.resources.length,
     starved: snapshot.metrics.deathsByStarvation,
     aged: snapshot.metrics.deathsByAge,
-    damaged: snapshot.metrics.deathsByDamage
+    damaged: snapshot.metrics.deathsByDamage,
+    predated: snapshot.metrics.deathsByPredation
   }
 }
 

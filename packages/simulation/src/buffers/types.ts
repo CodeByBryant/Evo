@@ -71,5 +71,21 @@ export type HazardBuffer = Map<EntityId, PerceivedHazard | null>
 /** Organism id -> health damage from the resource it ate this tick (`InteractionSystem` writes, `HealthSystem` reads). */
 export type DamageBuffer = Map<EntityId, number>
 
+/**
+ * Victim id -> the health damage bites dealt it this tick, after its armor, and the creature that bit
+ * hardest (`InteractionSystem` writes, `HealthSystem` reads; ADR 0023).
+ */
+export type PredationBuffer = Map<
+  EntityId,
+  { damage: number; attackerId: EntityId; hardest: number }
+>
+
+/**
+ * Victim id -> the creature that bit it last and when (a tick), kept for `attackWindow` seconds so
+ * `DeathSystem` can tell a death by predation from a starvation. It only labels deaths and never
+ * feeds back into the dynamics, so it is not hashed.
+ */
+export type LastBitten = Map<EntityId, { attackerId: EntityId; tick: number }>
+
 /** Organism id -> energy spent healing this tick (`HealthSystem` writes, `MetabolismSystem` charges). */
 export type RegenBuffer = Map<EntityId, number>

@@ -25,6 +25,8 @@ export interface OrganismDiedEvent extends BaseEvent {
   readonly type: 'organism-died'
   readonly organismId: EntityId
   readonly cause: DeathCause
+  /** For a death by predation: the creature that bit it last. */
+  readonly killerId?: EntityId
   readonly position: Readonly<Vec2>
 }
 
@@ -48,6 +50,21 @@ export interface ResourceBittenEvent extends BaseEvent {
   readonly intake: number
   /** Food energy still on the resource after the bite. */
   readonly remaining: number
+  readonly position: Readonly<Vec2>
+}
+
+/** A creature bit another creature (ADR 0023). */
+export interface OrganismBittenEvent extends BaseEvent {
+  readonly type: 'organism-bitten'
+  readonly predatorId: EntityId
+  readonly preyId: EntityId
+  /** Health damage the bite dealt, after the prey's armor. */
+  readonly damage: number
+  /** Energy taken from the prey. */
+  readonly energyTaken: number
+  /** Energy that entered the predator's gut: the energy taken times the trophic yield and the mouth's flesh yield. */
+  readonly intake: number
+  /** Where the prey was. */
   readonly position: Readonly<Vec2>
 }
 
@@ -107,11 +124,13 @@ export interface OrganismDamagedEvent extends BaseEvent {
   /** Health lost this tick. */
   readonly amount: number
   readonly source: DamageSource
+  /** For damage from a bite: the creature that bit (the one that bit hardest this tick). */
+  readonly attackerId?: EntityId
   readonly healthAfter: number
   readonly position: Readonly<Vec2>
 }
 
-export type DamageSource = 'hazard' | 'toxin' | 'both'
+export type DamageSource = 'hazard' | 'toxin' | 'bite' | 'both'
 
 /** A new season began. */
 export interface SeasonChangedEvent extends BaseEvent {
@@ -138,6 +157,7 @@ export type WorldEvent =
   | OrganismDiedEvent
   | ResourceSpawnedEvent
   | ResourceBittenEvent
+  | OrganismBittenEvent
   | ResourceConsumedEvent
   | OrganismMovedEvent
   | EnergyChangedEvent
