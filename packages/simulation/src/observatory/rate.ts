@@ -1,43 +1,35 @@
-import { mean, standardDeviation } from './stats'
+import { mean } from './stats'
 
 /**
- * How fast a population's trait means are moving between two samples, in units of the population's
- * own spread (a Haldane-like standardised rate): the mean over dimensions of `|change in mean| /
- * pooled standard deviation`. Dimensions with no spread at either sample are skipped (nothing
- * varies there, so nothing can be said). Exactly 0 when no mean moved.
+ * How fast a population's trait means are moving between two samples: the mean over dimensions of
+ * `|change in mean| / scale`, where each dimension's scale is the width of its range (a gene's
+ * min to max, or a stated bound for a derived trait). Dimensions with no scale are skipped. Exactly 0
+ * when no mean moved. The first version divided by the population's own standard deviation, as
+ * Haldane's rate does; the control run showed why that fails here: in a world with mutation switched
+ * off the variation left is tiny, so ordinary selection moved the means by many "standard
+ * deviations" and the frozen world read four times as fast as the evolving one (ADR 0024).
  */
 export function evolutionaryRate(
   previousMeans: readonly number[],
   currentMeans: readonly number[],
-  previousSd: readonly number[],
-  currentSd: readonly number[]
+  scales: readonly number[]
 ): number {
   const rates: number[] = []
-  const n = Math.min(previousMeans.length, currentMeans.length)
+  const n = Math.min(previousMeans.length, currentMeans.length, scales.length)
   for (let i = 0; i < n; i++) {
-    const sdA = previousSd[i] as number
-    const sdB = currentSd[i] as number
-    const pooled = Math.sqrt((sdA * sdA + sdB * sdB) / 2)
-    if (pooled <= 0) continue
-    rates.push(Math.abs((currentMeans[i] as number) - (previousMeans[i] as number)) / pooled)
+    const scale = scales[i] as number
+    if (scale <= 0) continue
+    rates.push(Math.abs((currentMeans[i] as number) - (previousMeans[i] as number)) / scale)
   }
   return mean(rates)
 }
 
-/** Means and standard deviations of each column of `rows` (one row a creature). */
-export function columnStatistics(rows: readonly (readonly number[])[]): {
-  means: number[]
-  sds: number[]
-} {
+/** The mean of each column of `rows` (one row a creature). */
+export function columnMeans(rows: readonly (readonly number[])[]): number[] {
   const width = rows.length === 0 ? 0 : (rows[0] as readonly number[]).length
   const means: number[] = []
-  const sds: number[] = []
-  for (let c = 0; c < width; c++) {
-    const column = rows.map((row) => row[c] as number)
-    means.push(mean(column))
-    sds.push(standardDeviation(column))
-  }
-  return { means, sds }
+  for (let c = 0; c < width; c++) means.push(mean(rows.map((row) => row[c] as number)))
+  return means
 }
 
 /** What counts as "nothing is happening" at one sample. */
@@ -50,8 +42,8 @@ export interface QuietSignals {
 }
 
 export const STASIS_SAMPLES = 10
-export const STASIS_RATE = 0.05
-export const STASIS_DRIFT = 0.005
+export const STASIS_RATE = 0.001
+export const STASIS_DRIFT = 0.0003
 
 /**
  * The stasis indicator: true once `STASIS_SAMPLES` samples in a row have had no new body plan taking

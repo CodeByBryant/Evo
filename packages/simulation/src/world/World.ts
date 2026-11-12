@@ -462,6 +462,7 @@ export class World {
         organisms: this.organisms,
         lineage: this.lineageStore,
         species: this.speciesRegistry,
+        geneSpecs: this.geneSpecs,
         bodySpecs: this.bodySpecs,
         carrionKind: kindNamesOf(this.config).indexOf(CARRION_KIND)
       })

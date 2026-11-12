@@ -1,4 +1,4 @@
-import { BRAIN_INPUT_GROUPS } from '@evo/contracts'
+import { BODY_SLOT_COUNT, BRAIN_INPUT_GROUPS, PART_TYPES } from '@evo/contracts'
 import type {
   BrainInputGroup,
   EntityId,
@@ -20,7 +20,8 @@ import { BehaviourLedger, behaviourDiversity } from './behaviour'
 import type { IntakeKind } from './behaviour'
 import { brainDiversity, groupUsage, learnedGap, priorDistance } from './brainDrift'
 import type { InputGroup } from './brainDrift'
-import { columnStatistics, evolutionaryRate, StasisDetector } from './rate'
+import { columnMeans, evolutionaryRate, StasisDetector } from './rate'
+import { responseDiversity, responseVector } from './responses'
 import { NoveltyTracker, bodyComplexity, bodySignature } from './signatures'
 import { effectiveTypes, mean, stridedSample } from './stats'
 
@@ -35,7 +36,8 @@ export interface ObservatorySources {
   readonly organisms: OrganismStore
   readonly lineage: LineageStore
   readonly species: SpeciesRegistry
-  /** The body gene specs (for body-plan distances). */
+  /** The scalar gene specs (their ranges scale the rate) and the body gene specs (for body-plan distances). */
+  readonly geneSpecs: readonly GeneSpec[]
   readonly bodySpecs: readonly GeneSpec[]
   /** The index of the carrion food kind, or -1 when the world has none. */
   readonly carrionKind: number
@@ -59,7 +61,8 @@ export class ObservatoryRecorder {
   private readonly prior: number[]
   private readonly layout
   private previousMeans: number[] | null = null
-  private previousSds: number[] | null = null
+  /** The width of each trait's range, in the order of a row: scalar genes, then parts, part types, drift. */
+  private readonly scales: number[]
   private previousDrift = 0
   private previousSpeciesEver = 0
 
@@ -71,6 +74,13 @@ export class ObservatoryRecorder {
     const architecture = architectureOf(config.genetics.brain)
     this.layout = brainLayoutOf(architecture)
     this.prior = innatePriorWeights(architecture)
+    // Cosmetic genes (colour, pattern) never count; derived traits use a stated bound.
+    this.scales = [
+      ...sources.geneSpecs.map((spec) => (spec.cosmetic === true ? 0 : spec.max - spec.min)),
+      BODY_SLOT_COUNT,
+      PART_TYPES.length,
+      1
+    ]
   }
 
   /** Folds one tick's events in, and watches what each creature is doing every `behaviourEvery` ticks. */
@@ -150,6 +160,7 @@ export class ObservatoryRecorder {
     const usageSums = new Map<BrainInputGroup, number>()
     const rows: number[][] = []
     const descriptors: number[][] = []
+    const responses: number[][] = []
     let generationSum = 0
     let generationMax = 0
 
@@ -175,6 +186,7 @@ export class ObservatoryRecorder {
       }
 
       rows.push([...genomeToVector(o.genome), c.parts, c.types, drift])
+      responses.push(responseVector(w, this.layout))
       const d = this.ledger.descriptor(o.id)
       if (d !== undefined) descriptors.push(d)
       const g = this.generation.get(o.id) ?? 0
@@ -183,13 +195,10 @@ export class ObservatoryRecorder {
     }
 
     const novelty = this.novelty.observe(signatures)
-    const stats = columnStatistics(rows)
+    const means = columnMeans(rows)
     const rate =
-      this.previousMeans === null || this.previousSds === null
-        ? 0
-        : evolutionaryRate(this.previousMeans, stats.means, this.previousSds, stats.sds)
-    this.previousMeans = stats.means
-    this.previousSds = stats.sds
+      this.previousMeans === null ? 0 : evolutionaryRate(this.previousMeans, means, this.scales)
+    this.previousMeans = means
 
     const priorDrift = mean(drifts)
     const driftChange = this.samples.length === 0 ? 0 : Math.abs(priorDrift - this.previousDrift)
@@ -202,6 +211,7 @@ export class ObservatoryRecorder {
     })
 
     const behaviour = behaviourDiversity(descriptors)
+    const response = responseDiversity(responses, PAIR_CAP)
     const intake = this.ledger.intakeTotals()
     const intakeTotal = intake.plant + intake.flesh + intake.carrion
     const share = (kind: IntakeKind): number => (intakeTotal === 0 ? 0 : intake[kind] / intakeTotal)
@@ -254,6 +264,8 @@ export class ObservatoryRecorder {
       brainSpread: brainDiversity(weights, config.genetics.brain.initialWeightStd, PAIR_CAP),
       learnedGap: mean(gaps),
       inputUsage,
+      responseTypes: response.types,
+      responseSpread: response.spread,
       behaviourTypes: behaviour.types,
       behaviourSpread: behaviour.spread,
       intakePlant: share('plant'),

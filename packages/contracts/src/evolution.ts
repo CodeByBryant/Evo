@@ -54,7 +54,18 @@ export interface EvolutionSample {
   /** Mean absolute input weight per input group. */
   readonly inputUsage: Readonly<Record<BrainInputGroup, number>>
 
-  /** Effective number of behavioural types and the mean pairwise descriptor distance. */
+  /**
+   * How differently the living brains **respond** to the same fixed situations (heritable: only genes
+   * make two brains differ here): effective number of response patterns, and the mean pairwise
+   * difference of their responses, 0 to 1.
+   */
+  readonly responseTypes: number
+  readonly responseSpread: number
+  /**
+   * Realised behaviour (speed, turning, resting, where each went): effective types and mean pairwise
+   * difference. Descriptive only: a world with no mutation shows nearly as much, because it mostly
+   * reflects circumstance.
+   */
   readonly behaviourTypes: number
   readonly behaviourSpread: number
   /** Where the energy taken in so far by the creatures alive now came from; shares add to 1 (all 0 with no intake). */
@@ -62,7 +73,7 @@ export interface EvolutionSample {
   readonly intakeFlesh: number
   readonly intakeCarrion: number
 
-  /** Standardised movement of the trait means since the last sample (0 when nothing moved). */
+  /** Movement of the trait means since the last sample, as a share of their ranges (0 when nothing moved). */
   readonly rate: number
   /** Species alive, species ever created, created since the last sample, and the population share in species younger than 5,000 ticks. */
   readonly speciesAlive: number
