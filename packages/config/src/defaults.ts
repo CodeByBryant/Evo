@@ -317,6 +317,72 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     migration: {
       enabled: true,
       dwellTime: 20
+    },
+    // Static obstacles, by biome (ADR 0022). Off in this commit; the densities are first guesses,
+    // set by the obstacle probe. Sites per 10,000 square units of each region type.
+    obstacles: {
+      enabled: false,
+      maxCoverage: 0.06,
+      clearance: 12,
+      kinds: {
+        boulder: {
+          recipe: 'single',
+          blocksMovement: true,
+          blocksSight: true,
+          radiusMin: 6,
+          radiusMax: 14,
+          membersMin: 1,
+          membersMax: 1,
+          density: {
+            meadow: 0.5,
+            forest: 0.8,
+            wetland: 0.2,
+            desert: 1,
+            cave: 2.5,
+            volcanic: 1.5
+          }
+        },
+        tree: {
+          recipe: 'single',
+          blocksMovement: true,
+          blocksSight: true,
+          radiusMin: 6,
+          radiusMax: 9,
+          membersMin: 1,
+          membersMax: 1,
+          density: { meadow: 0.3, forest: 3, wetland: 0, desert: 0, cave: 0, volcanic: 0 }
+        },
+        ridge: {
+          recipe: 'chain',
+          blocksMovement: true,
+          blocksSight: true,
+          radiusMin: 6,
+          radiusMax: 8,
+          membersMin: 4,
+          membersMax: 8,
+          density: { meadow: 0, forest: 0, wetland: 0, desert: 0.4, cave: 0.8, volcanic: 1.2 }
+        },
+        pond: {
+          recipe: 'single',
+          blocksMovement: true,
+          blocksSight: false,
+          radiusMin: 14,
+          radiusMax: 26,
+          membersMin: 1,
+          membersMax: 1,
+          density: { meadow: 0.1, forest: 0, wetland: 0.6, desert: 0, cave: 0, volcanic: 0 }
+        },
+        reeds: {
+          recipe: 'cluster',
+          blocksMovement: false,
+          blocksSight: true,
+          radiusMin: 6,
+          radiusMax: 7,
+          membersMin: 3,
+          membersMax: 5,
+          density: { meadow: 0, forest: 0.2, wetland: 2, desert: 0, cave: 0, volcanic: 0 }
+        }
+      }
     }
   },
   anatomy: DEFAULT_ANATOMY,

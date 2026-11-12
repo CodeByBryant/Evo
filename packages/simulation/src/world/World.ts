@@ -11,6 +11,7 @@ import type {
   HazardSnapshot,
   HistoricalOrganismRecord,
   MigrationSummary,
+  ObstacleSnapshot,
   RegionType,
   ResourceSnapshot,
   Season,
@@ -35,6 +36,7 @@ import { EcologyModel } from '../ecology/EcologyModel'
 import { FoodField } from '../ecology/FoodField'
 import { HazardStore } from '../ecology/HazardStore'
 import { MigrationTracker } from '../ecology/MigrationTracker'
+import { ObstacleField } from '../ecology/ObstacleField'
 import { ClusterTerrain } from '../ecology/ClusterTerrain'
 import { RegionMap } from '../ecology/RegionMap'
 import { IdGenerator } from '../entities/IdGenerator'
@@ -132,6 +134,7 @@ export class World {
   private readonly lineageStore: LineageStore
   private readonly speciesRegistry: SpeciesRegistry
   private readonly regionMap: RegionMap | null
+  private readonly obstacleField: ObstacleField
   private readonly clusters: ClusterLayout | null
   private readonly clusterTerrain: ClusterTerrain | null
   private readonly ecology: EcologyModel
@@ -246,6 +249,13 @@ export class World {
       this.config,
       this.clusterTerrain ?? this.regionMap,
       this.clusters
+    )
+    // Static obstacles (ADR 0022): drawn from the `terrain` stream after the region map and before
+    // the static hazards; with obstacles off nothing is drawn and the field is empty.
+    this.obstacleField = ObstacleField.generate(
+      this.config,
+      this.ecology,
+      this.randomStreams.get('terrain')
     )
     this.founderCapabilities = capabilitiesOf(
       developAnatomy(this.founderBody, this.config.anatomy),
@@ -529,6 +539,14 @@ export class World {
    */
   terrain(): TerrainSnapshot | null {
     return this.regionMap === null ? null : this.regionMap.toSnapshot()
+  }
+
+  /**
+   * The static obstacle circles for drawing (empty when obstacles are off). A copy; the field never
+   * changes during a run, so a presentation layer reads it once. Not part of the state hash.
+   */
+  obstacles(): ObstacleSnapshot[] {
+    return this.obstacleField.toSnapshot()
   }
 
   /** The cluster layout for drawing, or `null` in the field layout. A copy; it never changes during a run. */

@@ -116,6 +116,47 @@ export interface MigrationConfig {
   dwellTime: number
 }
 
+/** The kinds of obstacle a biome can hold (ADR 0022). The order is canonical. */
+export const OBSTACLE_KINDS = ['boulder', 'tree', 'ridge', 'pond', 'reeds'] as const
+export type ObstacleKind = (typeof OBSTACLE_KINDS)[number]
+
+/** How a kind is laid out: one circle, a row of overlapping circles (a wall), or a tight cluster. */
+export const OBSTACLE_RECIPES = ['single', 'chain', 'cluster'] as const
+export type ObstacleRecipe = (typeof OBSTACLE_RECIPES)[number]
+
+/**
+ * The smallest circle an obstacle may be made of. A body moves at most `maxSpeed * timestep`
+ * (about 2 units) a tick and is pushed out of an obstacle one step at a time, so a circle this size
+ * cannot be tunnelled through; validation rejects a smaller radius.
+ */
+export const MIN_OBSTACLE_RADIUS = 6
+
+export interface ObstacleKindConfig {
+  recipe: ObstacleRecipe
+  /** Bodies cannot enter it (they slide along its edge). */
+  blocksMovement: boolean
+  /** It hides what is behind it from food, peer and similar line-of-sight senses. */
+  blocksSight: boolean
+  /** One circle's radius is drawn between these, each at least `MIN_OBSTACLE_RADIUS`. */
+  radiusMin: number
+  radiusMax: number
+  /** Circles in a chain or cluster, an integer drawn between these; `1` and `1` for `single`. */
+  membersMin: number
+  membersMax: number
+  /** Expected sites per 10,000 square units of each region type, `>= 0`. */
+  density: Record<RegionType, number>
+}
+
+/** Static obstacles placed by biome at creation (ADR 0022). */
+export interface ObstaclesConfig {
+  enabled: boolean
+  /** The share of the field the obstacles may cover, in `[0, 1)`; once reached no more are placed. */
+  maxCoverage: number
+  /** Nothing is placed closer than this to the world's edge. */
+  clearance: number
+  kinds: Record<ObstacleKind, ObstacleKindConfig>
+}
+
 export interface EcologyConfig {
   health: HealthConfig
   regions: RegionsConfig
@@ -123,6 +164,7 @@ export interface EcologyConfig {
   hazards: HazardsConfig
   resourceKinds: ResourceKindsConfig
   migration: MigrationConfig
+  obstacles: ObstaclesConfig
 }
 
 type PartialDeep<T> = { [K in keyof T]?: Partial<T[K]> }
@@ -139,6 +181,25 @@ export interface EcologyConfigOverrides {
   hazards?: Partial<HazardsConfig>
   resourceKinds?: Partial<ResourceKindsConfig>
   migration?: Partial<MigrationConfig>
+  /** `obstacles.kinds` merges per kind and each kind's `density` merges per region type. */
+  obstacles?: Partial<Omit<ObstaclesConfig, 'kinds'>> & {
+    kinds?: {
+      [K in ObstacleKind]?: Partial<Omit<ObstacleKindConfig, 'density'>> & {
+        density?: Partial<Record<RegionType, number>>
+      }
+    }
+  }
+}
+
+/** One circle of the static obstacle field (`World.obstacles()`); a ridge or a cluster is several. */
+export interface ObstacleSnapshot {
+  readonly id: number
+  readonly kind: ObstacleKind
+  readonly x: number
+  readonly y: number
+  readonly radius: number
+  readonly blocksMovement: boolean
+  readonly blocksSight: boolean
 }
 
 /** A circle that damages whoever stands in it. */

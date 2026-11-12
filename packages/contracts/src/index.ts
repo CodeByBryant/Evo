@@ -40,10 +40,21 @@ export type {
   BrainTelemetry,
   BrainSnapshot
 } from './learning'
-export { REGION_TYPES, SEASONS } from './ecology'
+export {
+  MIN_OBSTACLE_RADIUS,
+  OBSTACLE_KINDS,
+  OBSTACLE_RECIPES,
+  REGION_TYPES,
+  SEASONS
+} from './ecology'
 export type {
   ClusterLayoutSnapshot,
   ClusterReport,
+  ObstacleKind,
+  ObstacleKindConfig,
+  ObstacleRecipe,
+  ObstacleSnapshot,
+  ObstaclesConfig,
   RegionType,
   Season,
   HazardKind,

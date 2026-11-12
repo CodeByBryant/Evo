@@ -1,6 +1,12 @@
-import { REGION_TYPES, SEASONS } from '@evo/contracts'
+import {
+  MIN_OBSTACLE_RADIUS,
+  OBSTACLE_KINDS,
+  OBSTACLE_RECIPES,
+  REGION_TYPES,
+  SEASONS
+} from '@evo/contracts'
 import type { RegionType } from '@evo/contracts'
-import { checkNumber, checkSection, isObject } from './checks'
+import { checkChoice, checkNumber, checkSection, isObject } from './checks'
 import type { PlainObject } from './checks'
 
 const HEALTH_KEYS = [
@@ -56,7 +62,26 @@ const RESOURCE_KIND_KEYS = [
   'regions'
 ]
 const MIGRATION_KEYS = ['enabled', 'dwellTime']
-const ECOLOGY_KEYS = ['health', 'regions', 'seasons', 'hazards', 'resourceKinds', 'migration']
+const OBSTACLES_KEYS = ['enabled', 'maxCoverage', 'clearance', 'kinds']
+const OBSTACLE_KIND_KEYS = [
+  'recipe',
+  'blocksMovement',
+  'blocksSight',
+  'radiusMin',
+  'radiusMax',
+  'membersMin',
+  'membersMax',
+  'density'
+]
+const ECOLOGY_KEYS = [
+  'health',
+  'regions',
+  'seasons',
+  'hazards',
+  'resourceKinds',
+  'migration',
+  'obstacles'
+]
 
 function checkEnabled(section: PlainObject, path: string, errors: string[]): void {
   const value = section['enabled']
@@ -266,6 +291,78 @@ function checkMigration(ecology: PlainObject, errors: string[]): void {
   checkNumber(migration, 'dwellTime', 'ecology.migration.dwellTime', { positive: true }, errors)
 }
 
+function checkBoolean(section: PlainObject, key: string, path: string, errors: string[]): void {
+  const value = section[key]
+  if (value === undefined) errors.push(`${path} is required`)
+  else if (typeof value !== 'boolean') errors.push(`${path} must be a boolean`)
+}
+
+function checkObstacles(ecology: PlainObject, errors: string[]): void {
+  const obstacles = checkSection(ecology, 'obstacles', OBSTACLES_KEYS, errors, 'ecology.obstacles')
+  if (!obstacles) return
+  checkEnabled(obstacles, 'ecology.obstacles', errors)
+  const coverage = checkNumber(
+    obstacles,
+    'maxCoverage',
+    'ecology.obstacles.maxCoverage',
+    { nonnegative: true },
+    errors
+  )
+  if (coverage !== undefined && coverage >= 1) {
+    errors.push('ecology.obstacles.maxCoverage must be less than one')
+  }
+  checkNumber(obstacles, 'clearance', 'ecology.obstacles.clearance', { nonnegative: true }, errors)
+  const kinds = checkSection(
+    obstacles,
+    'kinds',
+    [...OBSTACLE_KINDS],
+    errors,
+    'ecology.obstacles.kinds'
+  )
+  if (!kinds) return
+  for (const kind of OBSTACLE_KINDS) {
+    const path = `ecology.obstacles.kinds.${kind}`
+    const entry = checkSection(kinds, kind, OBSTACLE_KIND_KEYS, errors, path)
+    if (!entry) continue
+    const recipe = checkChoice(entry, 'recipe', `${path}.recipe`, [...OBSTACLE_RECIPES], errors)
+    checkBoolean(entry, 'blocksMovement', `${path}.blocksMovement`, errors)
+    checkBoolean(entry, 'blocksSight', `${path}.blocksSight`, errors)
+    const radiusMin = checkNumber(entry, 'radiusMin', `${path}.radiusMin`, {}, errors)
+    const radiusMax = checkNumber(entry, 'radiusMax', `${path}.radiusMax`, {}, errors)
+    if (radiusMin !== undefined && radiusMin < MIN_OBSTACLE_RADIUS) {
+      errors.push(`${path}.radiusMin must be at least ${MIN_OBSTACLE_RADIUS}`)
+    }
+    if (radiusMin !== undefined && radiusMax !== undefined && radiusMax < radiusMin) {
+      errors.push(`${path}.radiusMax must not be below radiusMin`)
+    }
+    const membersMin = checkNumber(
+      entry,
+      'membersMin',
+      `${path}.membersMin`,
+      { integer: true, positive: true },
+      errors
+    )
+    const membersMax = checkNumber(
+      entry,
+      'membersMax',
+      `${path}.membersMax`,
+      { integer: true, positive: true },
+      errors
+    )
+    if (membersMin !== undefined && membersMax !== undefined && membersMax < membersMin) {
+      errors.push(`${path}.membersMax must not be below membersMin`)
+    }
+    if (recipe === 'single' && (membersMin !== 1 || membersMax !== 1)) {
+      errors.push(`${path} is a single circle, so membersMin and membersMax must both be 1`)
+    }
+    const density = checkSection(entry, 'density', [...REGION_TYPES], errors, `${path}.density`)
+    if (!density) continue
+    for (const type of REGION_TYPES) {
+      checkNumber(density, type, `${path}.density.${type}`, { nonnegative: true }, errors)
+    }
+  }
+}
+
 /** Validates the top-level `ecology` section of a complete configuration. */
 export function checkEcology(root: PlainObject, errors: string[]): void {
   const ecology = checkSection(root, 'ecology', ECOLOGY_KEYS, errors)
@@ -276,4 +373,5 @@ export function checkEcology(root: PlainObject, errors: string[]): void {
   checkHazards(ecology, errors)
   checkResourceKinds(ecology, errors)
   checkMigration(ecology, errors)
+  checkObstacles(ecology, errors)
 }
