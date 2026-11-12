@@ -204,6 +204,7 @@ export type {
   FounderPart,
   StartingBody,
   StartingBodyConfig,
+  StartingGroup,
   StartingBodyMode,
   PartConfig,
   PartEffectsConfig,

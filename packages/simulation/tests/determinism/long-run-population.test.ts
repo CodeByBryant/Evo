@@ -19,7 +19,8 @@ describe('long-run population', () => {
       config: withoutEcology({
         ...PHASE3_ECONOMY,
         learning: { controller: 'reflex' },
-        feeding: { enabled: false }
+        feeding: { enabled: false },
+        predation: { enabled: false }
       }),
       validateEveryTicks: 1000
     })

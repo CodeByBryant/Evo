@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { resolveWorldConfig } from '@evo/config'
@@ -16,7 +16,8 @@ import { World } from '../../src/index'
  *
  * Environment: `PRED_NAME` (label), `PRED_CONFIG` (JSON overrides, merged under `predation.enabled`),
  * `PRED_SEEDS` (default 1..8), `PRED_TICKS` (default 30000), `PRED_OFF=1` for the control (predation
- * off). One line goes to `<tmpdir>/evo-probe/predation-<name>.txt`.
+ * off), `PRED_GROUPS` (JSON, e.g. `[{"archetype":"hunter","share":0.1}]`, the founder groups; the
+ * default config's own are used when unset, `[]` for none). One line goes to `<tmpdir>/evo-probe/predation-<name>.txt`.
  */
 const NAME = process.env.PRED_NAME ?? 'on'
 const OFF = process.env.PRED_OFF === '1'
@@ -26,6 +27,8 @@ const TICKS = Number(process.env.PRED_TICKS ?? 30_000)
 const SAMPLE = 2_500
 /** `PRED_HUNTERS=1` starts every world as hunters (the grazer with a jaw): the mechanism, not the evolution. */
 const HUNTERS = process.env.PRED_HUNTERS === '1'
+const GROUPS =
+  process.env.PRED_GROUPS === undefined ? undefined : JSON.parse(process.env.PRED_GROUPS)
 
 /** The grazer starter with its mouth turned into a jaw, forced as the world's only start. */
 function hunterAnatomy(): Record<string, unknown> {
@@ -57,6 +60,8 @@ describe('predation probe', () => {
       let jawSum = 0
       let jawSamples = 0
       let seedsWithJaw = 0
+      let seedsJawAtEnd = 0
+      let jawEndSum = 0
       let types = 0
       let lists = 0
       let milliseconds = 0
@@ -64,6 +69,14 @@ describe('predation probe', () => {
         const config = {
           ...BASE,
           ...(HUNTERS ? { anatomy: hunterAnatomy() } : {}),
+          ...(GROUPS !== undefined && !HUNTERS
+            ? {
+                anatomy: {
+                  ...((BASE['anatomy'] as object | undefined) ?? {}),
+                  startingBody: { mode: 'archetypes', groups: GROUPS }
+                }
+              }
+            : {}),
           predation: {
             ...((BASE['predation'] as object | undefined) ?? {}),
             enabled: !OFF
@@ -77,6 +90,7 @@ describe('predation probe', () => {
         let sum = 0
         let samples = 0
         let everJaw = false
+        let lastJaws = 0
         const started = performance.now()
         for (let tick = 0; tick < TICKS; tick += SAMPLE) {
           for (let t = 0; t < SAMPLE; t++) {
@@ -103,6 +117,7 @@ describe('predation probe', () => {
             }
           }
           jawSum += jaws
+          lastJaws = jaws
           jawSamples++
           if (jaws > 0) everJaw = true
         }
@@ -116,6 +131,16 @@ describe('predation probe', () => {
         bites += m.predationBites
         deaths += m.deathsByStarvation + m.deathsByAge + m.deathsByDamage + m.deathsByPredation
         if (everJaw) seedsWithJaw++
+        {
+          const dir = join(tmpdir(), 'evo-probe')
+          mkdirSync(dir, { recursive: true })
+          appendFileSync(
+            join(dir, `predation-seeds-${NAME}.txt`),
+            `seed ${seed} base ${world.startingBodyName} jaws at end ${lastJaws} pop ${snapshot.organisms.length} bites ${snapshot.metrics.predationBites} kills ${snapshot.metrics.deathsByPredation} species ${world.species.active().length}\n`
+          )
+        }
+        if (lastJaws > 0) seedsJawAtEnd++
+        jawEndSum += lastJaws
         const typeSet = new Set<string>()
         const plans = new Set<string>()
         for (const o of snapshot.organisms) {
@@ -135,7 +160,7 @@ describe('predation probe', () => {
       const line =
         `${NAME.padEnd(14)} seeds ${n} extinct ${extinct} pop ${(popSum / n).toFixed(1)} low ${Number.isFinite(lowest) ? lowest : 0} ` +
         `starved ${((100 * starved) / Math.max(1, deaths)).toFixed(0)}% predation ${((100 * predated) / Math.max(1, deaths)).toFixed(1)}% ` +
-        `bites ${(bites / n).toFixed(0)} kills ${(predated / n).toFixed(0)} jaws alive ${(jawSum / jawSamples).toFixed(2)} seeds with a jaw ${seedsWithJaw}/${n} ` +
+        `bites ${(bites / n).toFixed(0)} kills ${(predated / n).toFixed(0)} jaws alive ${(jawSum / jawSamples).toFixed(2)} seeds with a jaw ${seedsWithJaw}/${n} jaw alive at end ${seedsJawAtEnd}/${n} (mean ${(jawEndSum / n).toFixed(1)}) ` +
         `carcasses ${(carcasses / n).toFixed(0)} eaten ${(carrionBites / n).toFixed(0)} types end ${(types / n).toFixed(1)}/${PART_TYPES.length} lists ${(lists / n).toFixed(1)} ` +
         `ticks/s ${((n * TICKS) / (milliseconds / 1000)).toFixed(0)}`
       const dir = join(tmpdir(), 'evo-probe')

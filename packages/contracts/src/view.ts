@@ -171,6 +171,8 @@ export interface ViewState {
   readonly preset: string
   /** The starting body this world drew (ADR 0020), or `null` when its founders started with the founder plan. */
   readonly startingBody: string | null
+  /** Founder groups that started with a body of their own, with their founder counts (ADR 0023). */
+  readonly startingGroups: readonly { readonly name: string; readonly count: number }[]
   readonly presets: readonly PresetOption[]
   readonly speed: SpeedSetting
   /** Ticks per second actually achieved over the last second (0 while paused). */

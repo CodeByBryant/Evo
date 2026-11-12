@@ -63,6 +63,15 @@ export function WorldPanel({
             <dt>Started as</dt>
             <dd className="evo-capitalize">{view.startingBody}</dd>
           </div>
+          {view.startingGroups.map((group) => (
+            <div key={group.name}>
+              <dt>Plus</dt>
+              <dd className="evo-capitalize">
+                {group.name} {'\u00d7'}
+                {group.count}
+              </dd>
+            </div>
+          ))}
         </dl>
       )}
 

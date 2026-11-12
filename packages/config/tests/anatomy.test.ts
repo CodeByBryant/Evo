@@ -187,7 +187,10 @@ describe('feeding config (ADR 0017)', () => {
   it('defaults are valid, bites are on, and a preset can switch them off', () => {
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
     expect(DEFAULT_WORLD_CONFIG.feeding.enabled).toBe(true)
-    expect(resolveWorldConfig({ feeding: { enabled: false } }).feeding.enabled).toBe(false)
+    expect(
+      resolveWorldConfig({ feeding: { enabled: false }, predation: { enabled: false } }).feeding
+        .enabled
+    ).toBe(false)
     // overrides merge field by field
     const merged = resolveWorldConfig({ feeding: { biteSize: 20 } }).feeding
     expect(merged.biteSize).toBe(20)
@@ -242,9 +245,10 @@ describe('mouth forms (ADR 0017)', () => {
     expect(yieldOf('proboscis', 'nectar')).toBeGreaterThan(yieldOf('mandible', 'nectar'))
     expect(yieldOf('radula', 'fungus')).toBeGreaterThan(yieldOf('mandible', 'fungus'))
     expect(yieldOf('sprout', 'fungus')).toBeLessThan(yieldOf('mandible', 'fungus'))
-    // the jaw is worse than the generalist on every plant
+    // the jaw is as good as the generalist on every plant (it was worse, 0.55, until prey arrived,
+    // ADR 0023): a jaw lineage must not be selected out before prey can pay; flesh is its edge
     for (const [kind, value] of Object.entries(forms.jaw)) {
-      expect(value).toBeLessThan(forms.mandible[kind] as number)
+      expect(value).toBe(forms.mandible[kind] as number)
     }
   })
 })
@@ -261,16 +265,23 @@ describe('starting bodies (ADR 0020)', () => {
     }
   }
 
-  it('ship five named starters, default to drawing one, and that is valid', () => {
+  it('ship five drawn starters and the group-only hunter, default to drawing one, and that is valid', () => {
     const { anatomy } = DEFAULT_WORLD_CONFIG
-    expect(anatomy.startingBody).toEqual({ mode: 'archetypes', archetype: null })
+    expect(anatomy.startingBody).toEqual({
+      mode: 'archetypes',
+      archetype: null,
+      groups: [{ archetype: 'hunter', share: 0.2 }]
+    })
     expect(anatomy.starters.map((s) => s.name)).toEqual([
       'grazer',
       'nectar-sipper',
       'fungus-scraper',
       'scout',
-      'tank'
+      'tank',
+      'hunter'
     ])
+    // Only the hunter is kept out of the base draw (ADR 0023).
+    expect(anatomy.starters.filter((s) => s.pool === false).map((s) => s.name)).toEqual(['hunter'])
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
   })
 
@@ -278,18 +289,28 @@ describe('starting bodies (ADR 0020)', () => {
     const config = resolveWorldConfig({
       anatomy: {
         starters: [starterOf('a'), starterOf('b')] as never,
-        startingBody: { mode: 'archetypes' }
+        // the default group names the hunter, which a replaced list no longer has
+        startingBody: { mode: 'archetypes', groups: [] }
       }
     })
-    expect(config.anatomy.startingBody).toEqual({ mode: 'archetypes', archetype: null })
+    expect(config.anatomy.startingBody).toEqual({ mode: 'archetypes', archetype: null, groups: [] })
+    // negative: replacing the starters without dropping the default group is an error that says so
+    expect(() => resolveWorldConfig({ anatomy: { starters: [starterOf('a')] as never } })).toThrow(
+      /groups\[0\]\.archetype must be the name of a starter/
+    )
     expect(config.anatomy.starters.map((s) => s.name)).toEqual(['a', 'b'])
     const forced = resolveWorldConfig({
-      anatomy: { starters: [starterOf('a')] as never, startingBody: { archetype: 'a' } }
+      anatomy: {
+        starters: [starterOf('a')] as never,
+        startingBody: { archetype: 'a', groups: [] }
+      }
     })
     expect(forced.anatomy.startingBody.archetype).toBe('a')
     // a second override replaces the list, it does not append
     expect(
-      resolveWorldConfig({ anatomy: { starters: [starterOf('z')] as never } }).anatomy.starters
+      resolveWorldConfig({
+        anatomy: { starters: [starterOf('z')] as never, startingBody: { groups: [] } }
+      }).anatomy.starters
     ).toHaveLength(1)
   })
 

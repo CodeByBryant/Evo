@@ -28,7 +28,7 @@ import { idsFrom, makeReproduction, organismFor, withGenes } from './support/org
  * was retired (docs/decisions/0015).
  */
 // These tests are about the original way of eating (touch food and take it whole); bites are tested in feeding/.
-const config = resolveWorldConfig({ feeding: { enabled: false } })
+const config = resolveWorldConfig({ feeding: { enabled: false }, predation: { enabled: false } })
 const MATURE = 200
 
 const mature = (id: number, overrides: Partial<OrganismState> = {}): OrganismState =>

@@ -79,7 +79,11 @@ export const PRESETS: readonly WorldPreset[] = [
     description:
       'Every creature keeps the founder body: no part, outline or colour ever changes, so only brains and the other genes evolve.',
     // Anatomy off reads every body as the founder plan, so an archetype would only be paint.
-    overrides: { anatomy: { enabled: false, startingBody: { mode: 'reference' } } }
+    overrides: {
+      anatomy: { enabled: false, startingBody: { mode: 'reference' } },
+      // No body ever changes, so no jaw ever appears: nothing to bite with (ADR 0023).
+      predation: { enabled: false }
+    }
   },
   {
     name: 'classic',

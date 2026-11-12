@@ -16,11 +16,30 @@ const run = (seed: number, ticks: number, config: WorldConfigOverrides = {}): Wo
 describe('Phase 6A: species exit criteria', () => {
   it('founders, which differ only in their brain weights, form one species', () => {
     for (const seed of [1, 2, 3, 4]) {
-      const world = World.create({ seed })
+      // no founder group: every founder has the one body (the default hunter group is below)
+      const world = World.create({ seed, config: { anatomy: { startingBody: { groups: [] } } } })
       expect(world.species.size).toBe(1)
       expect(world.species.active()[0]?.memberCount).toBe(world.snapshot().population.active)
       expect(world.species.get(0)).toMatchObject({ ancestorSpeciesId: null, createdAtTick: 0 })
     }
+  })
+
+  it('the default hunter group is its own species only when its body differs from the base body (ADR 0023)', () => {
+    // The hunter is the grazer with a jaw: in a world whose base body is the grazer (seed 2) the
+    // mouth is the only difference, below the species threshold, so there is one species at
+    // the start; in a nectar sipper's world (seed 3) it is a different body plan, a second species.
+    const grazers = World.create({ seed: 2 })
+    expect(grazers.startingBodyName).toBe('grazer')
+    expect(grazers.species.size).toBe(1)
+    const mixed = World.create({ seed: 3 })
+    expect(mixed.startingBodyName).toBe('nectar-sipper')
+    expect(mixed.species.size).toBe(2)
+    expect(
+      mixed.species
+        .active()
+        .map((s) => s.memberCount)
+        .sort((a, b) => a - b)
+    ).toEqual([4, 16])
   })
 
   it('species split as genomes drift, and each new species descends from its mother species', () => {

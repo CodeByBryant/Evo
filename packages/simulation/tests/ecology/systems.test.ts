@@ -499,7 +499,7 @@ describe('InteractionSystem with resource kinds', () => {
   // The original way of eating (touch and take whole); bites are tested in feeding/.
   const cfg = config(
     { resourceKinds: { enabled: true, kinds }, health: { enabled: true } },
-    { feeding: { enabled: false } }
+    { feeding: { enabled: false }, predation: { enabled: false } }
   )
 
   function feed(placements: Array<{ kind: number; dx: number }>) {

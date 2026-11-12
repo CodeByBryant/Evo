@@ -245,12 +245,14 @@ describe('what a creature sees', () => {
 })
 
 describe('in a world', () => {
-  const worldWith = (predation: boolean) =>
+  const worldWith = (predation: boolean, groups: boolean = false) =>
     World.create({
       seed: 3,
       config: withoutEcology({
         ecology: { health: { enabled: true } },
-        predation: { enabled: predation }
+        predation: { enabled: predation },
+        // the default hunter group is off here: these worlds are about founders without jaws
+        anatomy: { startingBody: { groups: groups ? [{ archetype: 'hunter', share: 0.2 }] : [] } }
       })
     })
 

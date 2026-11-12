@@ -227,6 +227,7 @@ export interface ViewInputs {
   readonly seed: number
   readonly preset: string
   readonly startingBody: string | null
+  readonly startingGroups: ViewState['startingGroups']
   readonly presets: readonly PresetOption[]
   readonly speed: SpeedSetting
   readonly achievedTicksPerSecond: number
@@ -247,6 +248,7 @@ export function buildViewState(inputs: ViewInputs): ViewState {
     seed: inputs.seed,
     preset: inputs.preset,
     startingBody: inputs.startingBody,
+    startingGroups: inputs.startingGroups,
     presets: inputs.presets,
     speed: inputs.speed,
     achievedTicksPerSecond: inputs.achievedTicksPerSecond,

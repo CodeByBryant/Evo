@@ -63,7 +63,12 @@ import { missingSlot, nodePosition } from '../ecology/Plants'
 import { EventLog } from '../events/EventLog'
 import { capabilitiesOf, viewOf } from '../development/capabilities'
 import { developAnatomy } from '../development/develop'
-import { buildBodySpecs, chooseStartingBody, founderBodyVector } from '../genetics/BodyGenes'
+import {
+  assignFounderGroups,
+  buildBodySpecs,
+  chooseStartingBody,
+  founderBodyVector
+} from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
 import { kindNamesOf, massScaleOf } from '../organisms/bodyFactors'
@@ -154,6 +159,7 @@ export class World {
   /** The body this world's founders start with, and its archetype's name (`null`: the founder plan). */
   private startBody: number[]
   private startName: string | null = null
+  private startGroups: { name: string; count: number }[] = []
   private readonly founderCapabilities: Capabilities
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
@@ -464,6 +470,17 @@ export class World {
     const start = chooseStartingBody(this.config.anatomy, geneticsRandom)
     this.startBody = start.body
     this.startName = start.name
+    // A small group of founders may start with a different body (ADR 0023): chosen by an even
+    // spread over the founders, so it spends no draw and the base body above is unchanged.
+    const initialCount = this.config.organisms.initialCount
+    const groupOf = assignFounderGroups(
+      initialCount,
+      start.groups.map((group) => group.share)
+    )
+    this.startGroups = start.groups.map((group, g) => ({
+      name: group.name,
+      count: groupOf.filter((member) => member === g).length
+    }))
     // In the cluster layout the founders are planned first (a body of genes per species), then
     // placed species by species inside their home cluster (docs/decisions/0014).
     const clusters = this.clusters
@@ -498,12 +515,17 @@ export class World {
         y = worldRandom.float() * height
       }
       const heading = wrapAngle(worldRandom.float() * TWO_PI)
+      const group = groupOf[i] as number
       const genome = createFounderGenome(
         this.genomeIds.allocate(),
         this.geneSpecs,
         this.config.genetics.brain,
         geneticsRandom,
-        plan === undefined ? this.startBody : plan.body,
+        group >= 0
+          ? (start.groups[group] as { body: number[] }).body
+          : plan === undefined
+            ? this.startBody
+            : plan.body,
         plan?.vector
       )
       const organism: OrganismState = {
@@ -781,6 +803,11 @@ export class World {
 
   get startingBodyName(): string | null {
     return this.startName
+  }
+
+  /** The founder groups that started with a body of their own, and how many founders each has (ADR 0023). */
+  get startingGroups(): readonly { name: string; count: number }[] {
+    return this.startGroups
   }
 
   /**

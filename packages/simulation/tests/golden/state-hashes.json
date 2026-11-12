@@ -6,6 +6,7 @@
       "name": "default-1k",
       "seed": 12345,
       "config": {
+        "predation": { "enabled": false },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
         "resources": {
@@ -35,6 +36,7 @@
       "name": "default-instant-eating-3k",
       "seed": 12345,
       "config": {
+        "predation": { "enabled": false },
         "feeding": { "enabled": false },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
@@ -65,6 +67,7 @@
       "name": "scenario-a-instant-eating-5k",
       "seed": 1,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 10 },
         "ecology": {
           "health": { "enabled": false },
@@ -105,6 +108,7 @@
       "name": "scenario-a-foraging-5k",
       "seed": 1,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 10 },
         "ecology": {
           "health": { "enabled": false },
@@ -144,6 +148,7 @@
       "name": "scenario-b-extinction-20k",
       "seed": 1,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 10 },
         "resources": {
           "initialCount": 0,
@@ -183,6 +188,7 @@
       "name": "verbose-events-200",
       "seed": 7,
       "config": {
+        "predation": { "enabled": false },
         "history": { "eventDetail": "verbose", "maxEvents": 100000 },
         "ecology": {
           "health": { "enabled": false },
@@ -222,6 +228,7 @@
       "name": "zero-population-100",
       "seed": 3,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 0 },
         "resources": {
           "initialCount": 0,
@@ -261,6 +268,7 @@
       "name": "long-run-100k",
       "seed": 999,
       "config": {
+        "predation": { "enabled": false },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
         "resources": {
@@ -284,12 +292,13 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 100000,
-      "expectedHash": "12dcd5dcfc580cd69e3dede0524db8a7"
+      "expectedHash": "69124444d3c7733456a79c7ebe2ff243"
     },
     {
       "name": "reflex-default-1k",
       "seed": 12345,
       "config": {
+        "predation": { "enabled": false },
         "learning": { "controller": "reflex", "rewardWeights": { "damage": 0, "exploration": 0 } },
         "ecology": {
           "health": { "enabled": false },
@@ -328,6 +337,7 @@
       "name": "reflex-scenario-a-5k",
       "seed": 1,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 10 },
         "learning": { "controller": "reflex", "rewardWeights": { "damage": 0, "exploration": 0 } },
         "ecology": {
@@ -367,6 +377,7 @@
       "name": "reflex-scenario-b-20k",
       "seed": 1,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 10 },
         "resources": {
           "initialCount": 0,
@@ -406,6 +417,7 @@
       "name": "reflex-long-run-100k",
       "seed": 999,
       "config": {
+        "predation": { "enabled": false },
         "learning": { "controller": "reflex", "rewardWeights": { "damage": 0, "exploration": 0 } },
         "ecology": {
           "health": { "enabled": false },
@@ -444,6 +456,7 @@
       "name": "brain-hebbian-5k",
       "seed": 1,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 10 },
         "learning": { "algorithm": "hebbian", "rewardWeights": { "damage": 0, "exploration": 0 } },
         "ecology": {
@@ -483,6 +496,7 @@
       "name": "brain-learning-off-5k",
       "seed": 1,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 10 },
         "learning": { "enabled": false, "rewardWeights": { "damage": 0, "exploration": 0 } },
         "ecology": {
@@ -522,6 +536,7 @@
       "name": "brain-random-prior-off-5k",
       "seed": 2,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 10 },
         "genetics": { "brain": { "innatePrior": false } },
         "ecology": {
@@ -562,6 +577,7 @@
       "name": "ecology-default-12k",
       "seed": 7,
       "config": {
+        "predation": { "enabled": false },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
         "resources": {
@@ -591,6 +607,7 @@
       "name": "ecology-reflex-8k",
       "seed": 3,
       "config": {
+        "predation": { "enabled": false },
         "learning": { "controller": "reflex" },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
@@ -621,6 +638,7 @@
       "name": "ecology-lethal-hazards-3k",
       "seed": 5,
       "config": {
+        "predation": { "enabled": false },
         "organisms": { "initialCount": 40 },
         "ecology": {
           "health": { "maxHealth": 8 },
@@ -655,6 +673,7 @@
       "name": "anatomy-on-evolving-6k",
       "seed": 7,
       "config": {
+        "predation": { "enabled": false },
         "anatomy": {
           "enabled": true,
           "mutation": {
@@ -694,6 +713,7 @@
       "name": "anatomy-on-reflex-4k",
       "seed": 11,
       "config": {
+        "predation": { "enabled": false },
         "anatomy": {
           "enabled": true,
           "mutation": {
@@ -734,6 +754,7 @@
       "name": "clusters-small-6k",
       "seed": 3,
       "config": {
+        "predation": { "enabled": false },
         "environment": {
           "layout": "clusters",
           "clusters": { "organismsPerSpecies": 4 },
@@ -768,6 +789,7 @@
       "name": "clusters-small-reflex-4k",
       "seed": 8,
       "config": {
+        "predation": { "enabled": false },
         "environment": {
           "layout": "clusters",
           "clusters": { "organismsPerSpecies": 4 },
@@ -803,6 +825,8 @@
       "name": "archetypes-default-1k",
       "seed": 12345,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "environment": { "width": 500, "height": 500 },
         "resources": {
           "initialCount": 100,
@@ -831,6 +855,8 @@
       "name": "archetypes-ecology-12k",
       "seed": 7,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "environment": { "width": 500, "height": 500 },
         "resources": {
           "initialCount": 100,
@@ -853,12 +879,14 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 12000,
-      "expectedHash": "e51d63361e5d7bf10f861c130423829d"
+      "expectedHash": "97ec6b0c0fc2de61e5bc74028cdee3c3"
     },
     {
       "name": "archetypes-reflex-8k",
       "seed": 3,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "learning": { "controller": "reflex" },
         "environment": { "width": 500, "height": 500 },
         "resources": {
@@ -888,7 +916,9 @@
       "name": "archetypes-evolving-bodies-6k",
       "seed": 7,
       "config": {
+        "predation": { "enabled": false },
         "anatomy": {
+          "startingBody": { "groups": [] },
           "mutation": {
             "presenceRate": 0.1,
             "typeRate": 0.1,
@@ -925,7 +955,10 @@
       "name": "archetype-forced-grazer-3k",
       "seed": 1,
       "config": {
-        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "grazer" } },
+        "predation": { "enabled": false },
+        "anatomy": {
+          "startingBody": { "mode": "archetypes", "archetype": "grazer", "groups": [] }
+        },
         "environment": { "width": 500, "height": 500 },
         "resources": {
           "initialCount": 100,
@@ -954,7 +987,10 @@
       "name": "archetype-forced-fungus-scraper-3k",
       "seed": 2,
       "config": {
-        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "fungus-scraper" } },
+        "predation": { "enabled": false },
+        "anatomy": {
+          "startingBody": { "mode": "archetypes", "archetype": "fungus-scraper", "groups": [] }
+        },
         "environment": { "width": 500, "height": 500 },
         "resources": {
           "initialCount": 100,
@@ -983,7 +1019,8 @@
       "name": "archetype-forced-tank-3k",
       "seed": 5,
       "config": {
-        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "tank" } },
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "tank", "groups": [] } },
         "environment": { "width": 500, "height": 500 },
         "resources": {
           "initialCount": 100,
@@ -1012,6 +1049,8 @@
       "name": "noise-food-4k",
       "seed": 5,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "resources": {
           "distribution": { "mode": "noise" },
           "initialCount": 100,
@@ -1034,12 +1073,14 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 4000,
-      "expectedHash": "a11fe98368844e6fdbb91dcc742321a8"
+      "expectedHash": "bf2b68bce651ead5709046e0f5e8e379"
     },
     {
       "name": "noise-reflex-3k",
       "seed": 9,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "learning": { "controller": "reflex" },
         "resources": {
           "distribution": { "mode": "noise", "contrast": 0.6, "scale": 80 },
@@ -1069,6 +1110,8 @@
       "name": "plants-6k",
       "seed": 4,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "resources": {
           "spawnRate": 0.3,
           "plants": {
@@ -1097,6 +1140,8 @@
       "name": "plants-noise-reflex-5k",
       "seed": 6,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "learning": { "controller": "reflex" },
         "resources": {
           "spawnRate": 0.3,
@@ -1126,6 +1171,7 @@
       "name": "plants-brain-evolving-8k",
       "seed": 12,
       "config": {
+        "predation": { "enabled": false },
         "resources": {
           "spawnRate": 0.4,
           "distribution": { "mode": "noise" },
@@ -1144,31 +1190,44 @@
           "initialCount": 100,
           "maxCount": 200
         },
-        "anatomy": { "mutation": { "presenceRate": 0.05, "typeRate": 0.05 } },
+        "anatomy": {
+          "startingBody": { "groups": [] },
+          "mutation": { "presenceRate": 0.05, "typeRate": 0.05 }
+        },
         "environment": { "width": 500, "height": 500 },
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 8000,
-      "expectedHash": "3c4d92a77638dc17b9d4dc44fa649bfb"
+      "expectedHash": "3ef20640b35f037269027a97b068e216"
     },
     {
       "name": "food-default-1k",
       "seed": 12345,
-      "config": { "ecology": { "obstacles": { "enabled": false } } },
+      "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
+        "ecology": { "obstacles": { "enabled": false } }
+      },
       "steps": 1000,
       "expectedHash": "31b76e0bfbf24213d61276d8cba0c26c"
     },
     {
       "name": "food-default-ecology-12k",
       "seed": 7,
-      "config": { "ecology": { "obstacles": { "enabled": false } } },
+      "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
+        "ecology": { "obstacles": { "enabled": false } }
+      },
       "steps": 12000,
-      "expectedHash": "5783f639e25461bcf0c48ff1fd1a84b8"
+      "expectedHash": "1fadd5464a12378774ecb6ba5f0ea151"
     },
     {
       "name": "food-default-reflex-8k",
       "seed": 3,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "learning": { "controller": "reflex" },
         "ecology": { "obstacles": { "enabled": false } }
       },
@@ -1179,7 +1238,9 @@
       "name": "food-default-evolving-bodies-6k",
       "seed": 7,
       "config": {
+        "predation": { "enabled": false },
         "anatomy": {
+          "startingBody": { "groups": [] },
           "mutation": {
             "presenceRate": 0.1,
             "typeRate": 0.1,
@@ -1197,6 +1258,8 @@
       "name": "food-lush-4k",
       "seed": 5,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "resources": {
           "spawnRate": 0.4,
           "maxCount": 640,
@@ -1205,26 +1268,36 @@
         "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 4000,
-      "expectedHash": "7b11d8ce4d15c879994e284326a40700"
+      "expectedHash": "62a3815d5928de4fc3f9d1eff421ac53"
     },
     {
       "name": "obstacles-default-1k",
       "seed": 12345,
-      "config": {},
+      "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } }
+      },
       "steps": 1000,
       "expectedHash": "81738362d81609084a5376e18ea20c52"
     },
     {
       "name": "obstacles-ecology-12k",
       "seed": 7,
-      "config": {},
+      "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } }
+      },
       "steps": 12000,
-      "expectedHash": "183f2ef368f4aaed76acc2bd05afa379"
+      "expectedHash": "e3b260093fdc1116854ab8ab31a83a2b"
     },
     {
       "name": "obstacles-reflex-8k",
       "seed": 3,
-      "config": { "learning": { "controller": "reflex" } },
+      "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
+        "learning": { "controller": "reflex" }
+      },
       "steps": 8000,
       "expectedHash": "cb2b8dbe71778f9dd75314861ea9b641"
     },
@@ -1232,7 +1305,9 @@
       "name": "obstacles-evolving-bodies-6k",
       "seed": 7,
       "config": {
+        "predation": { "enabled": false },
         "anatomy": {
+          "startingBody": { "groups": [] },
           "mutation": {
             "presenceRate": 0.1,
             "typeRate": 0.1,
@@ -1249,6 +1324,8 @@
       "name": "obstacles-lush-4k",
       "seed": 5,
       "config": {
+        "predation": { "enabled": false },
+        "anatomy": { "startingBody": { "groups": [] } },
         "resources": {
           "spawnRate": 0.4,
           "maxCount": 640,
@@ -1256,7 +1333,67 @@
         }
       },
       "steps": 4000,
-      "expectedHash": "bed77c059a4b47a8f325b8855d9670f2"
+      "expectedHash": "e81f11fdd2ea3596557377750bc3d236"
+    },
+    {
+      "name": "predation-default-1k",
+      "seed": 12345,
+      "config": {},
+      "steps": 1000,
+      "expectedHash": "01e09075a5fa010c0884ef9e3054bdf2"
+    },
+    {
+      "name": "predation-ecology-12k",
+      "seed": 7,
+      "config": {},
+      "steps": 12000,
+      "expectedHash": "25a975c9bf173a274a8cf1d0779f2efd"
+    },
+    {
+      "name": "predation-reflex-8k",
+      "seed": 3,
+      "config": { "learning": { "controller": "reflex" } },
+      "steps": 8000,
+      "expectedHash": "baef5773263fa072a6dee4d0b1cea71a"
+    },
+    {
+      "name": "predation-evolving-bodies-6k",
+      "seed": 7,
+      "config": {
+        "anatomy": {
+          "mutation": {
+            "presenceRate": 0.1,
+            "typeRate": 0.1,
+            "continuousRate": 0.3,
+            "visualRate": 0.5
+          }
+        },
+        "genetics": { "mutationRateScale": 3 }
+      },
+      "steps": 6000,
+      "expectedHash": "a129f0765f415e900544d69a6a96e74b"
+    },
+    {
+      "name": "predation-lush-4k",
+      "seed": 5,
+      "config": {
+        "resources": {
+          "spawnRate": 0.4,
+          "maxCount": 640,
+          "plants": { "maxPlants": 80, "photosynthesis": 2 }
+        }
+      },
+      "steps": 4000,
+      "expectedHash": "6e2b2d614d3c9afb3c5636f54eabb78a"
+    },
+    {
+      "name": "predation-hunters-only-3k",
+      "seed": 4,
+      "config": {
+        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "hunter", "groups": [] } }
+      },
+      "steps": 3000,
+      "expectedHash": "0db004864494b4b932cf4c698891aa79"
     }
   ]
 }

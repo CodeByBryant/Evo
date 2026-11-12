@@ -203,6 +203,7 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
         learning: { controller: 'reflex' },
         // Phase 3 ate by touching and taking the whole item; bites came with ADR 0017.
         feeding: { enabled: false },
+        predation: { enabled: false },
         // ...and had no line of sight (ADR 0016 "Line of sight").
         perception: { organismsBlockSight: false }
       }),

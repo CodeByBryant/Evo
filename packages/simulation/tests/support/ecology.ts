@@ -45,6 +45,9 @@ export function withoutEcology(config: WorldConfigOverrides = {}): WorldConfigOv
       plants: { ...FREE_FOOD.resources?.plants, ...(config.resources?.plants ?? {}) }
     },
     ecology,
+    // Nothing eats anything but food in the Phase 5 world (ADR 0023); a config that mentions
+    // `predation` decides for itself.
+    predation: { enabled: false, ...(config.predation ?? {}) },
     learning: {
       ...(config.learning ?? {}),
       rewardWeights: { damage: 0, exploration: 0, ...(config.learning?.rewardWeights ?? {}) }

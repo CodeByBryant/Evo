@@ -216,7 +216,7 @@ describe('carcasses', () => {
       expect(cfg.anatomy.mouthForms[form][CARRION_KIND]).toBe(cfg.predation.carcass.yields[form])
     }
     // Predation off, carcasses off, or kinds off: the very same object (negatives).
-    const base = resolveWorldConfig()
+    const base = resolveWorldConfig({ predation: { enabled: false } })
     expect(withCarrion(base)).toBe(base)
     const noCarcass = config({ predation: { carcass: { enabled: false } } })
     expect(withCarrion(noCarcass)).toBe(noCarcass)
@@ -319,7 +319,10 @@ function hunterWorld(extra: WorldConfigOverrides = {}, seed = 1): World {
     seed,
     config: {
       ...extra,
-      anatomy: { starters: [hunter], startingBody: { mode: 'archetypes', archetype: 'hunter' } },
+      anatomy: {
+        starters: [hunter],
+        startingBody: { mode: 'archetypes', archetype: 'hunter', groups: [] }
+      },
       predation: { enabled: true, ...extra.predation }
     }
   })
@@ -382,12 +385,16 @@ describe('a world of hunters', () => {
 
 describe('the switch', () => {
   it('a world with predation on but no jaw is the world without it, carcasses aside', () => {
-    // The default world starts without jaws; with carcasses off the only difference is the code
-    // path, which must change nothing until a jaw is born by mutation (400 ticks, seed 5).
-    const off = World.create({ seed: 5, config: { predation: { enabled: false } } })
+    // With no founder group the world starts without jaws; with carcasses off the only difference
+    // is the code path, which must change nothing until a jaw is born by mutation (400 ticks, seed 5).
+    const nobody = { startingBody: { groups: [] } }
+    const off = World.create({
+      seed: 5,
+      config: { predation: { enabled: false }, anatomy: nobody }
+    })
     const on = World.create({
       seed: 5,
-      config: { predation: { enabled: true, carcass: { enabled: false } } }
+      config: { predation: { enabled: true, carcass: { enabled: false } }, anatomy: nobody }
     })
     off.run(400)
     on.run(400)
