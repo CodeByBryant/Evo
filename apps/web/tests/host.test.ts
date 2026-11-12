@@ -59,22 +59,22 @@ describe('SimulationHost: running', () => {
 
   it('hands the interface the static obstacle field once, empty unless the world has obstacles (ADR 0022)', () => {
     const presets = [
+      { name: 'balanced', label: 'Balanced', description: 'The default world.', overrides: {} },
       {
-        name: 'rocky',
-        label: 'Rocky',
-        description: 'Obstacles on.',
-        overrides: { ecology: { obstacles: { enabled: true } } }
-      },
-      { name: 'balanced', label: 'Balanced', description: 'The default world.', overrides: {} }
+        name: 'open',
+        label: 'Open',
+        description: 'No obstacles.',
+        overrides: { ecology: { obstacles: { enabled: false } } }
+      }
     ]
-    const { host: rocky } = host({ presets, preset: 'rocky' })
+    const { host: rocky } = host({ presets, preset: 'balanced' })
     const circles = rocky.getWorldInfo().obstacles
     expect(circles.length).toBeGreaterThan(0)
-    expect(circles).toEqual(World.create({ seed: SEED, config: presets[0]!.overrides }).obstacles())
+    expect(circles).toEqual(World.create({ seed: SEED }).obstacles())
     // negative: a world without them has none, and a new world replaces the field
-    const { host: plain } = host({ presets, preset: 'balanced' })
+    const { host: plain } = host({ presets, preset: 'open' })
     expect(plain.getWorldInfo().obstacles).toEqual([])
-    plain.setPreset('rocky')
+    plain.setPreset('balanced')
     expect(plain.getWorldInfo().obstacles.length).toBeGreaterThan(0)
   })
 

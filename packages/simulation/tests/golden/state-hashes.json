@@ -25,7 +25,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 1000,
       "expectedHash": "13e0a0cb7c48250db38b79da8f2b1de6"
@@ -54,7 +55,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 3000,
       "expectedHash": "ae05456c6673b34f4ebadb898358ddd5"
@@ -70,7 +72,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
         "feeding": { "enabled": false },
@@ -109,7 +112,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
         "anatomy": { "startingBody": { "mode": "reference" } },
@@ -165,7 +169,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
         "anatomy": { "startingBody": { "mode": "reference" } },
@@ -185,7 +190,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
         "anatomy": { "startingBody": { "mode": "reference" } },
@@ -241,7 +247,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
         "anatomy": { "startingBody": { "mode": "reference" } },
@@ -273,7 +280,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 100000,
       "expectedHash": "19eccb7ebed70efaecd24dec64d31c39"
@@ -289,7 +297,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
@@ -327,7 +336,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
@@ -383,7 +393,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 }
@@ -402,7 +413,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
@@ -440,7 +452,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
@@ -478,7 +491,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
@@ -516,7 +530,8 @@
           "seasons": { "enabled": false },
           "hazards": { "enabled": false },
           "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false }
+          "migration": { "enabled": false },
+          "obstacles": { "enabled": false }
         },
         "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
         "anatomy": { "startingBody": { "mode": "reference" } },
@@ -566,7 +581,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 12000,
       "expectedHash": "e5c970dcd8112a52e5c1eef5366ecc20"
@@ -595,7 +611,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 8000,
       "expectedHash": "70d073b2f550af393c9125164146109e"
@@ -607,7 +624,8 @@
         "organisms": { "initialCount": 40 },
         "ecology": {
           "health": { "maxHealth": 8 },
-          "hazards": { "areaCount": 10, "areaRadius": 120, "areaDamage": 40 }
+          "hazards": { "areaCount": 10, "areaRadius": 120, "areaDamage": 40 },
+          "obstacles": { "enabled": false }
         },
         "anatomy": { "startingBody": { "mode": "reference" } },
         "environment": { "width": 500, "height": 500 },
@@ -666,7 +684,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 6000,
       "expectedHash": "b4c421e2b23244741a5be109138e2711"
@@ -705,7 +724,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 4000,
       "expectedHash": "eed85255c70baa6c03bf6890d9dc3f07"
@@ -738,7 +758,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 6000,
       "expectedHash": "11b9a171a03d54b1009a1cc6c6d9ccd9"
@@ -772,7 +793,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 4000,
       "expectedHash": "258acfa2f3f3419b9fdfede1ef7ad724"
@@ -799,7 +821,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 1000,
       "expectedHash": "257dad98a4a25f7eb42cb6285fbebd18"
@@ -826,7 +849,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 12000,
       "expectedHash": "cae1a5211aa1d28ab7c2a40eb4875222"
@@ -854,7 +878,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 8000,
       "expectedHash": "bec47959e8aa80ac78631f197cd7aa45"
@@ -890,7 +915,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 6000,
       "expectedHash": "21b0669a72494b79aa0b226e376674b0"
@@ -918,7 +944,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 3000,
       "expectedHash": "8c712bcb32ef6241ec4042810413a711"
@@ -946,7 +973,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 3000,
       "expectedHash": "c5e80cf748957a0cf4c0d1c0791e6b11"
@@ -974,7 +1002,8 @@
             "lifespan": 600,
             "maxPlants": 40
           }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 3000,
       "expectedHash": "50c1a145ddb7b1e6dfaea784eace3a4e"
@@ -1001,7 +1030,8 @@
             "maxPlants": 40
           }
         },
-        "environment": { "width": 500, "height": 500 }
+        "environment": { "width": 500, "height": 500 },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 4000,
       "expectedHash": "03beca123ec4c7659a9e214cedf964ef"
@@ -1029,7 +1059,8 @@
             "maxPlants": 40
           }
         },
-        "environment": { "width": 500, "height": 500 }
+        "environment": { "width": 500, "height": 500 },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 3000,
       "expectedHash": "891bf41b7457610c8e3dff5fbc02b418"
@@ -1056,7 +1087,8 @@
           "maxCount": 200,
           "distribution": { "mode": "uniform" }
         },
-        "environment": { "width": 500, "height": 500 }
+        "environment": { "width": 500, "height": 500 },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 6000,
       "expectedHash": "0322ef67166021b03cd87581d4a50ab5"
@@ -1084,7 +1116,8 @@
           "initialCount": 100,
           "maxCount": 200
         },
-        "environment": { "width": 500, "height": 500 }
+        "environment": { "width": 500, "height": 500 },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 5000,
       "expectedHash": "449d0dc89dafe183bb3329303403a90e"
@@ -1112,7 +1145,8 @@
           "maxCount": 200
         },
         "anatomy": { "mutation": { "presenceRate": 0.05, "typeRate": 0.05 } },
-        "environment": { "width": 500, "height": 500 }
+        "environment": { "width": 500, "height": 500 },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 8000,
       "expectedHash": "d7f1f35c3159fa81893293c599f9f19f"
@@ -1120,21 +1154,24 @@
     {
       "name": "food-default-1k",
       "seed": 12345,
-      "config": {},
+      "config": { "ecology": { "obstacles": { "enabled": false } } },
       "steps": 1000,
       "expectedHash": "856fc636714d7fac9fa3eb653da9588b"
     },
     {
       "name": "food-default-ecology-12k",
       "seed": 7,
-      "config": {},
+      "config": { "ecology": { "obstacles": { "enabled": false } } },
       "steps": 12000,
       "expectedHash": "7c5a23cef97bfa41c4986de23f8cdd5e"
     },
     {
       "name": "food-default-reflex-8k",
       "seed": 3,
-      "config": { "learning": { "controller": "reflex" } },
+      "config": {
+        "learning": { "controller": "reflex" },
+        "ecology": { "obstacles": { "enabled": false } }
+      },
       "steps": 8000,
       "expectedHash": "4f266aab1306c8821e09b78715959ef9"
     },
@@ -1150,7 +1187,8 @@
             "visualRate": 0.5
           }
         },
-        "genetics": { "mutationRateScale": 3 }
+        "genetics": { "mutationRateScale": 3 },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 6000,
       "expectedHash": "f80f7f7cf23d3f8b83bf7883410d137f"
@@ -1163,10 +1201,62 @@
           "spawnRate": 0.4,
           "maxCount": 640,
           "plants": { "maxPlants": 80, "photosynthesis": 2 }
-        }
+        },
+        "ecology": { "obstacles": { "enabled": false } }
       },
       "steps": 4000,
       "expectedHash": "9a20ee009f21951803e4780070af5d9e"
+    },
+    {
+      "name": "obstacles-default-1k",
+      "seed": 12345,
+      "config": {},
+      "steps": 1000,
+      "expectedHash": "2be7e2b45fab265a95fe6f683f43f11d"
+    },
+    {
+      "name": "obstacles-ecology-12k",
+      "seed": 7,
+      "config": {},
+      "steps": 12000,
+      "expectedHash": "d8f1e15271b0c84a55da2bd8c9a9dc33"
+    },
+    {
+      "name": "obstacles-reflex-8k",
+      "seed": 3,
+      "config": { "learning": { "controller": "reflex" } },
+      "steps": 8000,
+      "expectedHash": "b831d42792d128c659360d5a27f904a1"
+    },
+    {
+      "name": "obstacles-evolving-bodies-6k",
+      "seed": 7,
+      "config": {
+        "anatomy": {
+          "mutation": {
+            "presenceRate": 0.1,
+            "typeRate": 0.1,
+            "continuousRate": 0.3,
+            "visualRate": 0.5
+          }
+        },
+        "genetics": { "mutationRateScale": 3 }
+      },
+      "steps": 6000,
+      "expectedHash": "494824fd8e78991dc70630f64a6229d8"
+    },
+    {
+      "name": "obstacles-lush-4k",
+      "seed": 5,
+      "config": {
+        "resources": {
+          "spawnRate": 0.4,
+          "maxCount": 640,
+          "plants": { "maxPlants": 80, "photosynthesis": 2 }
+        }
+      },
+      "steps": 4000,
+      "expectedHash": "66baaf934e044a579f7b450e409155a1"
     }
   ]
 }

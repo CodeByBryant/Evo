@@ -19,11 +19,11 @@ const kind = (obstacles: Loose, name: string): Record<string, unknown> =>
   (obstacles['kinds'] as unknown as Loose)[name] as Record<string, unknown>
 
 describe('obstacles config', () => {
-  it('has valid defaults, one entry for every kind, and starts switched off', () => {
+  it('has valid defaults and one entry for every kind, switched on in the default world', () => {
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
     const { obstacles } = DEFAULT_WORLD_CONFIG.ecology
     expect(Object.keys(obstacles.kinds)).toEqual([...OBSTACLE_KINDS])
-    expect(obstacles.enabled).toBe(false)
+    expect(obstacles.enabled).toBe(true)
   })
 
   it('gives each kind a different job (the kinds are not boulders in other colours)', () => {

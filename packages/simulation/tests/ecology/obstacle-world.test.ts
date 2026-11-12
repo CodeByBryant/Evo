@@ -127,7 +127,10 @@ describe('determinism with obstacles', () => {
   })
 
   it('obstacles actually change the run (the switch does something)', () => {
-    const without = World.create({ seed: 9 })
+    const without = World.create({
+      seed: 9,
+      config: { ecology: { obstacles: { enabled: false } } }
+    })
     const withRocks = World.create({ seed: 9, config: dense() })
     without.run(300)
     withRocks.run(300)
@@ -141,7 +144,7 @@ describe('determinism with obstacles', () => {
     const empty: WorldConfigOverrides = {
       ecology: { obstacles: { enabled: true, kinds } as never }
     }
-    const a = World.create({ seed: 13 })
+    const a = World.create({ seed: 13, config: { ecology: { obstacles: { enabled: false } } } })
     const b = World.create({ seed: 13, config: empty })
     expect(b.obstacles()).toEqual([])
     a.run(400)

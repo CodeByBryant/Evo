@@ -179,6 +179,7 @@ describe('render and view contracts', () => {
       'grid',
       'terrain',
       'hazards',
+      'obstacles',
       'resources',
       'organisms',
       'trails',

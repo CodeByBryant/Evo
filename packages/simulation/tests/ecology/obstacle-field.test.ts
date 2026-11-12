@@ -6,7 +6,7 @@ import type {
   RegionType,
   WorldConfigOverrides
 } from '@evo/contracts'
-import { resolveWorldConfig } from '@evo/config'
+import { presetByName, resolveWorldConfig } from '@evo/config'
 import { ObstacleField } from '../../src/ecology/ObstacleField'
 import type { Obstacle } from '../../src/ecology/ObstacleField'
 import { SeededRandom } from '../../src/random/SeededRandom'
@@ -52,14 +52,19 @@ function typeAt(world: World, x: number, y: number): RegionType {
 }
 
 describe('ObstacleField generation', () => {
-  it('is empty by default and when switched off, and draws nothing then', () => {
-    expect(World.create({ seed: 1 }).obstacles()).toEqual([])
+  it('is there in the default world, absent when switched off, and absent in the classic preset', () => {
+    expect(World.create({ seed: 1 }).obstacles().length).toBeGreaterThan(0)
     expect(field(1, { ecology: { obstacles: { enabled: false } } })).toEqual([])
-    // Off draws nothing: the world is identical to one that never heard of obstacles (the 41
-    // golden entries prove the same against the pinned hashes).
-    const a = World.create({ seed: 5 })
-    const b = World.create({ seed: 5, config: { ecology: { obstacles: { enabled: false } } } })
-    expect(a.stateHash()).toBe(b.stateHash())
+    expect(
+      World.create({ seed: 1, config: presetByName('classic')?.overrides ?? {} }).obstacles()
+    ).toEqual([])
+    // Switched off draws nothing: the hazards land where they did before there were obstacles
+    // (and the golden entries pinned to `enabled: false` prove the whole world is unchanged).
+    const hazards = (config: WorldConfigOverrides) =>
+      World.create({ seed: 5, config })
+        .snapshot()
+        .hazards.map((h) => h.position)
+    expect(hazards({ ecology: { obstacles: { enabled: false } } })).not.toEqual(hazards({}))
   })
 
   it('places a field when it is on: the same seed gives the same one, another seed another', () => {

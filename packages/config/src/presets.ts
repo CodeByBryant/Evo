@@ -66,7 +66,9 @@ export const PRESETS: readonly WorldPreset[] = [
         distribution: { mode: 'uniform' },
         plants: { enabled: false }
       },
-      anatomy: { startingBody: { mode: 'reference' } }
+      anatomy: { startingBody: { mode: 'reference' } },
+      // The cluster layout has no region map to place obstacles by; it has none (ADR 0022).
+      ecology: { obstacles: { enabled: false } }
     }
   },
   {
@@ -108,7 +110,9 @@ export const PRESETS: readonly WorldPreset[] = [
         seasons: { enabled: false },
         hazards: { enabled: false },
         resourceKinds: { enabled: false },
-        migration: { enabled: false }
+        migration: { enabled: false },
+        // ...and an open field, as it always was (ADR 0022).
+        obstacles: { enabled: false }
       }
     }
   }
