@@ -21,6 +21,8 @@ const COUNT = 6
 
 function configWith(clusters: object, resources: object = {}): WorldConfig {
   return resolveWorldConfig({
+    // Predation needs health, which this world has off (ADR 0023).
+    predation: { enabled: false },
     environment: { layout: 'clusters', clusters: { count: COUNT, ...clusters } },
     resources: {
       initialCount: 0,

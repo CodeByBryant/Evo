@@ -398,12 +398,13 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     absorption: 6,
     chewSlow: 0.15
   },
-  // Predation (ADR 0023): off until the senses arrive and the numbers are tuned. Only a jaw bites
+  // Predation (ADR 0023): on, with a small hunter group among the founders (`anatomy.startingBody.groups`)
+  // and the jaw as good as the mandible on plants, tuned over 48 seeds. Only a jaw bites
   // creatures; every other mouth form yields nothing from them. A bite takes `biteEnergy` from the
   // victim and puts `trophicYield` of it in the predator's gut; a dead body leaves a carcass.
   predation: {
-    enabled: false,
-    biteDamage: 15,
+    enabled: true,
+    biteDamage: 12,
     biteEnergy: 12,
     trophicYield: 0.6,
     maxPreyRatio: 1.5,

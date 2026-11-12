@@ -69,6 +69,8 @@ export interface WorldInfo {
   readonly clusters: ClusterLayoutSnapshot | null
   /** The starting body this world drew (ADR 0020), or `null` when it started with the founder plan. */
   readonly startingBody: string | null
+  /** Founder groups with a body of their own (ADR 0023), each with its founder count. */
+  readonly startingGroups: readonly { readonly name: string; readonly count: number }[]
 }
 
 export interface HostOptions {
@@ -379,7 +381,8 @@ export class SimulationHost implements SimulationControls {
       terrain: this.world.terrain(),
       obstacles: this.world.obstacles(),
       clusters,
-      startingBody: this.world.startingBodyName
+      startingBody: this.world.startingBodyName,
+      startingGroups: this.world.startingGroups.filter((group) => group.count > 0)
     }
     for (const listener of this.worldListeners) listener(this.worldInfo)
     this.publishFrame(true)
@@ -563,6 +566,7 @@ export class SimulationHost implements SimulationControls {
       seed: this.seed,
       preset: this.preset,
       startingBody: this.worldInfo.startingBody,
+      startingGroups: this.worldInfo.startingGroups,
       presets: this.presets,
       speed: this.speed,
       achievedTicksPerSecond: this.achieved,

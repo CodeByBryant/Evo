@@ -168,6 +168,27 @@ describe('components render', () => {
     )
   })
 
+  it('world panel names the founder groups that started with a body of their own (ADR 0023)', () => {
+    const { controls } = recorder()
+    const html = renderToStaticMarkup(
+      <WorldPanel
+        view={view({ startingBody: 'grazer', startingGroups: [{ name: 'hunter', count: 4 }] })}
+        controls={controls}
+      />
+    )
+    expect(html).toContain('Plus')
+    expect(html).toContain('hunter')
+    expect(html).toContain('\u00d74')
+    // no group: no extra row (negative), and no groups without a starting body at all
+    const plain = renderToStaticMarkup(
+      <WorldPanel view={view({ startingBody: 'grazer' })} controls={controls} />
+    )
+    expect(plain).not.toContain('Plus')
+    expect(renderToStaticMarkup(<WorldPanel view={view()} controls={controls} />)).not.toContain(
+      'Plus'
+    )
+  })
+
   it('hud shows the three headline numbers and no chart (the chart is in the strip)', () => {
     const html = renderToStaticMarkup(<Hud view={view()} />)
     expect(html).toContain('>31<')

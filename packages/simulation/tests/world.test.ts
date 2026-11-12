@@ -202,8 +202,12 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     // so mutated bodies move and turn differently.)
     // They moved once more when every part type became reachable (ADR 0016 "Every part type is
     // reachable"): bodies mutate differently, 27 active / 45 born / 18 starved before, now 29 / 47 / 18.
-    expect(snapshot.population.active).toBe(29)
-    expect(snapshot.metrics.organismsBorn).toBe(47)
+    // And once more when the brain gained a prey and a threat group (observation 40 to 48, ADR 0023
+    // step two): founders draw 64 more weights from the `genetics` stream, which shifts every later
+    // mutation. Measured on this seed: 29 / 47 / 18 before, 28 / 46 / 18 now; the reflex controller
+    // ignores the weights, so nothing but the mutation draws moved.
+    expect(snapshot.population.active).toBe(28)
+    expect(snapshot.metrics.organismsBorn).toBe(46)
     expect(snapshot.metrics.deathsByStarvation).toBe(18)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()

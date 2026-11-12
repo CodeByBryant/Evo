@@ -45,6 +45,10 @@ export interface ObservationInput {
   readonly movementScale?: number
   /** The nearest eligible partner, seen only while the organism is itself ready (default none). */
   readonly mate?: Sighting | null
+  /** The nearest creature this one could bite that it can see (predation only, ADR 0023; default none). */
+  readonly prey?: Sighting | null
+  /** The nearest creature that could bite this one that it can see (predation only; default none). */
+  readonly threat?: Sighting | null
   /** The way back to the cluster's centre (cluster layout only; omitted in the field). */
   readonly home?: {
     readonly present: number
@@ -109,7 +113,7 @@ function writeHazard(
 }
 
 /**
- * Builds the 40-number observation in the fixed order of `OBSERVATION_LABELS`
+ * Builds the 48-number observation in the fixed order of `OBSERVATION_LABELS`
  * (docs/learning/brain.md). Pure; every value is bounded to `[-1, 1]`.
  */
 export function buildObservation(input: ObservationInput): Observation {
@@ -149,6 +153,9 @@ export function buildObservation(input: ObservationInput): Observation {
     home === null ? 0 : clamp(home.bearingCos, -1, 1),
     home === null ? 0 : clamp(home.bearingSin, -1, 1)
   )
+  // What it could eat and what could eat it (ADR 0023): zeros unless predation is on.
+  writeSighting(out, input.prey ?? null, cosHeading, sinHeading, input.sensorRadius)
+  writeSighting(out, input.threat ?? null, cosHeading, sinHeading, input.sensorRadius)
   if (out.length !== OBSERVATION_SIZE) {
     throw new Error(`observation has ${out.length} values, expected ${OBSERVATION_SIZE}`)
   }

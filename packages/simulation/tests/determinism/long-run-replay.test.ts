@@ -30,14 +30,18 @@ describe('40,000-tick replays', () => {
     expect(a.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(a.stateHash()).toBe(b.stateHash())
     expect(a.snapshot()).toEqual(b.snapshot())
-  })
+    // Time budget: this builds the shared pair, two 40,000-tick worlds, and timed out at the 180 s
+    // default on a Windows CI runner (PR #138, Windows shard 1) with the default world's predation
+    // pass in it; the budget is the 420 s long-run-validity uses. What it asserts is unchanged.
+  }, 420_000)
 
   it('a different seed produces a different hash after 40,000 ticks', () => {
     const { a } = seed55()
     const other = World.create({ seed: 56 })
     other.run(40_000)
     expect(a.stateHash()).not.toBe(other.stateHash())
-  })
+    // One more 40,000-tick run (and the pair, if this test runs first): the same budget.
+  }, 420_000)
 
   it('mutation visibly changes genomes over a long run, identically each time', () => {
     // The default config mutates at every birth, so the same pair also shows mutation: the living

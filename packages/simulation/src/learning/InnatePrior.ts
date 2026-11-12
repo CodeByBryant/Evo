@@ -22,6 +22,19 @@ const HOME_BEARING_SIN = 39
 const HOME_STEER = 4
 const HOME_THRUST = 6
 
+// What it could bite and what could bite it, seen only with predation on (ADR 0023): zero otherwise,
+// so these terms never act in a world without predators.
+const PREY_PRESENT = 40
+const PREY_BEARING_COS = 41
+const PREY_BEARING_SIN = 42
+const HUNT_STEER = 3
+const HUNT_THRUST = 20
+const THREAT_PRESENT = 44
+const THREAT_BEARING_COS = 45
+const THREAT_BEARING_SIN = 46
+const FLEE_STEER = 5
+const FLEE_THRUST = 20
+
 // Output indices.
 const THRUST = 0
 const TURN = 1
@@ -36,6 +49,7 @@ const INTERACT = 3
  *   saturate toward the side the food is on, and lean left when it is directly behind. Each
  *   drives `turn` with weight 3.
  * - Three presence units compute `softsign(20 present)` and each drives `thrust` with weight 3.
+ * - Mates, the way home, prey (hunt) and threats (flee) steer the same units; see below.
  * - `thrust` has bias 1 (half speed with nothing in sight, as the reflex wanderer); `interact`
  *   has bias 2, so the organism always tries to eat; `strafe` and `explore` start neutral.
  *
@@ -78,6 +92,23 @@ export function innatePriorWeights(architecture: BrainArchitecture): number[] {
     input(steering, HOME_BEARING_COS, -HOME_STEER * 0.05)
   }
   input(3, HOME_PRESENT, HOME_THRUST)
+  // Hunting (ADR 0023): the two steering units also turn toward something the organism could bite,
+  // as they turn toward a mate, and a presence unit keeps it running at it (it already tries to bite
+  // all the time). The prey slots are zero for a body that cannot bite creatures.
+  for (const steering of [0, 1]) {
+    input(steering, PREY_BEARING_SIN, HUNT_STEER)
+    input(steering, PREY_PRESENT, HUNT_STEER * 0.05)
+    input(steering, PREY_BEARING_COS, -HUNT_STEER * 0.05)
+  }
+  input(2, PREY_PRESENT, HUNT_THRUST)
+  // Fleeing (ADR 0023): turn away from something that could bite it, harder than toward food, and
+  // run. A threat dead ahead turns the organism to the left rather than straight into it.
+  for (const steering of [0, 1]) {
+    input(steering, THREAT_BEARING_SIN, -FLEE_STEER)
+    input(steering, THREAT_PRESENT, FLEE_STEER * 0.05)
+    input(steering, THREAT_BEARING_COS, FLEE_STEER * 0.05)
+  }
+  input(3, THREAT_PRESENT, FLEE_THRUST)
 
   const output = (out: number, hidden: number, value: number): void => {
     weights[layout.hiddenToOutput.offset + out * hiddenSize + hidden] = value

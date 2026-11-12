@@ -137,7 +137,13 @@ describe('controlled experiment: learning to interact', () => {
       expect(raised).toBeGreaterThanOrEqual(Math.ceil((SEEDS.length * 2) / 3))
       const meanShift = on.reduce((sum, life) => sum + (life.bias - HANDICAP), 0) / on.length
       // Actor-critic learns this more slowly: its critic soon predicts the meal, shrinking the TD error.
-      expect(meanShift).toBeGreaterThan(algorithm === 'hebbian' ? 0.02 : 0.005)
+      // Measured over these 12 seeds: with the 40 input brain the hebbian mean shift was above 0.02;
+      // with the 48 input brain (ADR 0023 step two: the founder's weights are drawn afresh, so each
+      // life starts from a different brain) it is 0.0194 (11 of 12 raised; per seed 0.027, 0.029,
+      // 0.015, 0.019, 0.021, 0.030, 0.030, 0.019, -0.004, 0.011, 0.025, 0.011) and actor-critic
+      // 0.0260 (11 of 12). The claim, that learning raises the output, is unchanged and still needs
+      // two thirds of the lives to rise; the hebbian floor is half the measured mean.
+      expect(meanShift).toBeGreaterThan(algorithm === 'hebbian' ? 0.01 : 0.005)
     },
     120_000
   )

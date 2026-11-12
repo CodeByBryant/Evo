@@ -30,5 +30,9 @@ describe('anatomy replay', () => {
     expect(chunked.stateHash()).toBe(single.stateHash())
     expect(stepped.stateHash()).toBe(hashAtStepped)
     expect(single.validate()).toEqual({ ok: true, errors: [] })
-  }, 300_000)
+    // Time budget: this runs 110,000 ticks (single, chunked and the stepped prefix) and timed out at the
+    // 300 s it had on a Windows CI runner (PR #138, Windows shard 2) with the default world's predation
+    // pass in it; every other test in the shard passed. 600 s, the budget the golden suite gives its
+    // longest entry. What it asserts is unchanged.
+  }, 600_000)
 })

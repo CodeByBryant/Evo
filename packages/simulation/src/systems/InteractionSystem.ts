@@ -11,6 +11,7 @@ import { factorsOf } from '../organisms/bodyFactors'
 import { cos, sin } from '../math/trig'
 import { mouthsOf } from '../organisms/mouths'
 import { bodyRadiusOf, gutCapacityOf, maxEnergyOf } from '../organisms/traits'
+import { canBite, currentRadiusOf } from '../organisms/predation'
 import { SIGHT_BLOCKER_MARGIN, segmentHitsCircle } from '../spatial/sight'
 import type { SpatialHash, SpatialHit } from '../spatial/SpatialHash'
 
@@ -218,27 +219,16 @@ export class InteractionSystem {
     }
   ): SpatialHit<OrganismState> | null {
     const { organismIndex, obstacles } = this.predation as PredationSensing
-    const { maxPreyRatio } = this.config.predation
-    const { juvenileSizeScale } = this.config.organisms
     // Bodies move after the index is built: leave room for one tick of travel.
     const slack = 2 * this.config.organisms.maxSpeed * this.config.timestep
     return organismIndex.nearestWhere(
       { x: mouthX, y: mouthY },
       geometry.reach + SIGHT_BLOCKER_MARGIN + slack,
       (candidate, distanceSquared) => {
-        if (candidate.id === predator.id || candidate.health <= 0) return false
-        if (
-          predator.parentIds.includes(candidate.id) ||
-          candidate.parentIds.includes(predator.id)
-        ) {
-          return false
-        }
-        const scale =
-          lifeStageFor(candidate.age, candidate.genome.physical) === 'juvenile'
-            ? juvenileSizeScale
-            : 1
-        const preyRadius = bodyRadiusOf(candidate.genome, this.config) * scale
-        if (preyRadius > maxPreyRatio * geometry.bodyRadius) return false
+        // Not itself, alive, not kin, no bigger than the ratio allows: the same rule the senses use
+        // for prey and threat, so what a creature sees as prey is what its mouth can bite.
+        if (!canBite(predator, candidate, this.config)) return false
+        const preyRadius = currentRadiusOf(candidate, this.config)
         const limit = geometry.reach + preyRadius
         if (distanceSquared > limit * limit) return false
         const fx = candidate.x - predator.x

@@ -33,7 +33,9 @@ const withStarters = (
       ? S
       : never
     : never
-): WorldConfigOverrides => ({ anatomy: { starters: STARTERS, startingBody } })
+): WorldConfigOverrides => ({
+  anatomy: { starters: STARTERS, startingBody: { groups: [], ...startingBody } }
+})
 
 const draw = (seed: number): ReturnType<typeof chooseStartingBody> =>
   chooseStartingBody(
@@ -44,7 +46,7 @@ const draw = (seed: number): ReturnType<typeof chooseStartingBody> =>
 describe('chooseStartingBody', () => {
   it('reference mode is the founder plan, with no name and no draw', () => {
     const anatomy = resolveWorldConfig({
-      anatomy: { starters: STARTERS, startingBody: { mode: 'reference' } }
+      anatomy: { starters: STARTERS, startingBody: { mode: 'reference', groups: [] } }
     }).anatomy
     expect(anatomy.startingBody.mode).toBe('reference')
     const streams = new RandomStreams(7)
@@ -111,7 +113,7 @@ describe('chooseStartingBody', () => {
     const empty = {
       ...base,
       starters: [],
-      startingBody: { mode: 'archetypes' as const, archetype: null }
+      startingBody: { mode: 'archetypes' as const, archetype: null, groups: [] }
     }
     expect(() => chooseStartingBody(empty, new RandomStreams(1).get('genetics'))).toThrow(
       RangeError
@@ -119,13 +121,15 @@ describe('chooseStartingBody', () => {
     const unknown = {
       ...base,
       starters: STARTERS,
-      startingBody: { mode: 'archetypes' as const, archetype: 'nope' }
+      startingBody: { mode: 'archetypes' as const, archetype: 'nope', groups: [] }
     }
     expect(() => chooseStartingBody(unknown, new RandomStreams(1).get('genetics'))).toThrow(
       RangeError
     )
     expect(() =>
-      resolveWorldConfig({ anatomy: { starters: [], startingBody: { mode: 'archetypes' } } })
+      resolveWorldConfig({
+        anatomy: { starters: [], startingBody: { mode: 'archetypes', groups: [] } }
+      })
     ).toThrow()
     expect(() =>
       resolveWorldConfig(withStarters({ mode: 'archetypes', archetype: 'nope' }))
@@ -153,7 +157,10 @@ describe('a world with starting bodies', () => {
   it('is the founder plan, nameless, in reference mode (the default)', () => {
     const world = World.create({
       seed: 5,
-      config: { ...small, anatomy: { starters: STARTERS, startingBody: { mode: 'reference' } } }
+      config: {
+        ...small,
+        anatomy: { starters: STARTERS, startingBody: { mode: 'reference', groups: [] } }
+      }
     })
     expect(world.startingBodyName).toBeNull()
     for (const organism of world.snapshot().organisms) {
@@ -166,7 +173,7 @@ describe('a world with starting bodies', () => {
   it('keeps the founder plan as the reference: an archetype body has factors against it, not all 1', () => {
     const world = World.create({
       seed: 5,
-      config: { ...small, ...withStarters({ mode: 'archetypes', archetype: 'a' }) }
+      config: { ...small, ...withStarters({ mode: 'archetypes', archetype: 'a', groups: [] }) }
     })
     const id = world.snapshot().organisms[0]!.id
     const view = world.anatomyOf(id)!
@@ -174,7 +181,11 @@ describe('a world with starting bodies', () => {
     expect(view.factors.speed).toBe(1)
     expect(Object.values(view.factors.dietEfficiency).some((v) => v !== 1)).toBe(true)
     // negative: the founder plan itself is exactly 1 everywhere
-    const plain = World.create({ seed: 5, config: { ...small, ...REFERENCE_START } })
+    // (predation off: its carrion kind is one the mandible digests at 0.8, not 1, ADR 0023)
+    const plain = World.create({
+      seed: 5,
+      config: { ...small, ...REFERENCE_START, predation: { enabled: false } }
+    })
     const founderView = plain.anatomyOf(plain.snapshot().organisms[0]!.id)!
     expect(Object.values(founderView.factors.dietEfficiency).every((v) => v === 1)).toBe(true)
   })

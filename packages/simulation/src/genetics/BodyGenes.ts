@@ -12,7 +12,7 @@ import {
   slotGeneIndex,
   visualGeneIndex
 } from '@evo/contracts'
-import type { AnatomyConfig, FounderPart } from '@evo/contracts'
+import type { AnatomyConfig, FounderPart, StartingBody } from '@evo/contracts'
 import { DEFAULT_ANATOMY } from '@evo/config'
 import type { RandomSource } from '../random/RandomSource'
 import type { GeneSpec } from './GeneSpecs'
@@ -93,34 +93,72 @@ export function bodyVectorOf(plan: BodyPlan): number[] {
   return out
 }
 
+/** A group of founders that start with a body of their own (ADR 0023), resolved from the config. */
+export interface StartingGroupChoice {
+  readonly name: string
+  readonly share: number
+  readonly body: number[]
+}
+
 /** The body a world's founders start with, and the name of the archetype it came from (`null` for the founder plan). */
 export interface StartingBodyChoice {
   readonly name: string | null
   readonly body: number[]
+  /** Founder groups with their own bodies, in config order (empty in `reference` mode). */
+  readonly groups: readonly StartingGroupChoice[]
 }
 
 /**
  * Picks the body a world starts with (ADR 0020). `reference` is the founder plan and draws
  * nothing. `archetypes` always takes exactly one draw from `random`, whether or not an archetype is
- * forced, so forcing one gives the same streams as drawing it. Throws on an empty pool or an
- * unknown forced name (validation catches both first).
+ * forced, so forcing one gives the same streams as drawing it. The draw is over the **pool**: the
+ * starters not marked `pool: false`, so a group-only body (the hunter) never shifts it. Throws on an
+ * empty pool or an unknown forced name (validation catches both first).
  */
 export function chooseStartingBody(
   anatomy: AnatomyConfig,
   random: RandomSource
 ): StartingBodyChoice {
   const { mode, archetype } = anatomy.startingBody
-  if (mode === 'reference') return { name: null, body: founderBodyVector(anatomy) }
+  if (mode === 'reference') return { name: null, body: founderBodyVector(anatomy), groups: [] }
   const starters = anatomy.starters
   if (starters.length === 0) throw new RangeError('anatomy.starters is empty')
-  const drawn = Math.min(starters.length - 1, Math.floor(random.float() * starters.length))
-  const index = archetype === null ? drawn : starters.findIndex((s) => s.name === archetype)
-  const chosen = starters[index]
+  const pool = starters.filter((s) => s.pool !== false)
+  if (pool.length === 0) throw new RangeError('anatomy.starters has no starter in the pool')
+  const drawn = Math.min(pool.length - 1, Math.floor(random.float() * pool.length))
+  const chosen = archetype === null ? pool[drawn] : starters.find((s) => s.name === archetype)
   if (chosen === undefined) throw new RangeError(`unknown starting body "${String(archetype)}"`)
-  return {
-    name: chosen.name,
-    body: bodyVectorOf({ parts: chosen.parts, look: chosen.look, outline: chosen.outline })
+  const bodyOf = (entry: StartingBody): number[] =>
+    bodyVectorOf({ parts: entry.parts, look: entry.look, outline: entry.outline })
+  const groups: StartingGroupChoice[] = []
+  for (const group of anatomy.startingBody.groups) {
+    const entry = starters.find((s) => s.name === group.archetype)
+    if (entry === undefined) throw new RangeError(`unknown founder group "${group.archetype}"`)
+    groups.push({ name: entry.name, share: group.share, body: bodyOf(entry) })
   }
+  return { name: chosen.name, body: bodyOf(chosen), groups }
+}
+
+/**
+ * Which founders belong to which group (ADR 0023): `result[i]` is the index of the group founder `i`
+ * of `count` starts in, or `-1` for the base body. Group `g` takes `round(count x share)` founders (at
+ * most what is left), spread **evenly** over the founders no earlier group took: of the `k` that
+ * remain, the `j`-th is taken when `floor((j + 1) n / k) > floor(j n / k)`. Integer arithmetic and no
+ * random draw, so the same config gives the same assignment on every platform and a world's other
+ * streams are untouched.
+ */
+export function assignFounderGroups(count: number, shares: readonly number[]): readonly number[] {
+  const assigned = new Array<number>(count).fill(-1)
+  shares.forEach((share, g) => {
+    const open: number[] = []
+    for (let i = 0; i < count; i++) if (assigned[i] === -1) open.push(i)
+    const n = Math.min(open.length, Math.round(count * share))
+    const k = open.length
+    for (let j = 0; j < k; j++) {
+      if (Math.floor(((j + 1) * n) / k) > Math.floor((j * n) / k)) assigned[open[j] as number] = g
+    }
+  })
+  return assigned
 }
 
 /** The founder body of the default configuration (used where a genome is built without a config). */

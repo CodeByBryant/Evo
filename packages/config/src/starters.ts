@@ -40,7 +40,7 @@ function outline(half: number[]): StartingBody['outline'] {
   }
 }
 
-export const DEFAULT_STARTERS: StartingBody[] = [
+const POOL_STARTERS: StartingBody[] = [
   {
     name: 'grazer',
     description:
@@ -122,3 +122,31 @@ export const DEFAULT_STARTERS: StartingBody[] = [
     outline: outline([0.92, 0.92, 0.9, 0.9])
   }
 ]
+
+/**
+ * The hunter (ADR 0023): the grazer's body with a **jaw** (mouth stat 2 at 0.9, the form is
+ * `floor(stat x 5)`, so 0.8 and above) and the same forward eye, so it sees and bites like the
+ * grazer and eats creatures too. It is never drawn as a world's base body (`pool: false`): it starts a
+ * world only as a founder group (`anatomy.startingBody.groups`) or when forced by name, so adding it
+ * leaves every seed's base body and draws exactly as they were.
+ */
+const GRAZER = POOL_STARTERS[0] as StartingBody
+const HUNTER: StartingBody = {
+  name: 'hunter',
+  description:
+    'The grazer with a hinged jaw: bites creatures as well as plants, and runs at smaller ones. Starts as a small group among the founders.',
+  parts: GRAZER.parts.map((p) =>
+    p.type === 'mouth'
+      ? { ...p, stats: [p.stats[0] ?? 0.5, p.stats[1] ?? 0.5, 0.9, 0.5, 0.5, 0.5] }
+      : { ...p, stats: [...p.stats] }
+  ),
+  look: { pattern: 2, accentHue: 0.98 },
+  outline: {
+    count: GRAZER.outline.count,
+    radii: [...GRAZER.outline.radii],
+    angles: [...GRAZER.outline.angles]
+  },
+  pool: false
+}
+
+export const DEFAULT_STARTERS: StartingBody[] = [...POOL_STARTERS, HUNTER]

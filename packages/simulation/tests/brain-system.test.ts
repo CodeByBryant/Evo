@@ -345,7 +345,10 @@ describe('strafe and interact', () => {
 
   it('an organism that does not interact eats nothing, one that does eats the food', () => {
     const run = (interact: boolean) => {
-      const config = resolveWorldConfig({ feeding: { enabled: false } })
+      const config = resolveWorldConfig({
+        feeding: { enabled: false },
+        predation: { enabled: false }
+      })
       const organisms = new OrganismStore()
       organisms.add(organismFor(config, 1, { x: 10, y: 10, energy: 50, age: 100 }))
       const resources = new ResourceStore()
@@ -465,7 +468,7 @@ describe('children and learning inheritance', () => {
 
   it('does not alter the non-learnable weights, whatever the mode', () => {
     const { child, layout, parentTails } = birth('lamarckian')
-    expect(child.genome.brain.weights.slice(0, layout.learnOffset)).toHaveLength(396)
+    expect(child.genome.brain.weights.slice(0, layout.learnOffset)).toHaveLength(460)
     expect(parentTails[0]).toHaveLength(54)
   })
 })

@@ -171,18 +171,24 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
   },
   // Bodies a world can start with instead of the founder (ADR 0020).
   starters: DEFAULT_STARTERS,
-  startingBody: { mode: 'archetypes', archetype: null },
+  startingBody: {
+    mode: 'archetypes',
+    archetype: null,
+    groups: [{ archetype: 'hunter', share: 0.2 }]
+  },
   outlineDrag: 0.5,
   // Energy yield of each mouth form on each kind of food (ADR 0017). The mandible is the
   // generalist and exactly 1 everywhere, so the founder is the reference; the specialists beat it on
-  // their own food and lose on the rest. The jaw is a carnivore's: poor on plants, and a dead end
-  // until there is prey. All provisional.
+  // their own food and lose on the rest. The jaw was a carnivore's dead end (0.55 on every plant);
+  // with prey in the world (ADR 0023) it is as good as the mandible on plants, so a lineage is not
+  // selected out before prey can pay (measured: at 0.55 and 0.7 it died out in about nine worlds of
+  // sixteen, at 1.0 it held in about three of four). All provisional.
   mouthForms: {
     sprout: { grass: 1.3, fruit: 1.1, fungus: 0.6, nectar: 0.9 },
     proboscis: { grass: 0.6, fruit: 1.15, fungus: 0.7, nectar: 1.5 },
     mandible: { grass: 1, fruit: 1, fungus: 1, nectar: 1 },
     radula: { grass: 0.9, fruit: 0.8, fungus: 1.4, nectar: 0.5 },
-    jaw: { grass: 0.55, fruit: 0.55, fungus: 0.55, nectar: 0.55 }
+    jaw: { grass: 1, fruit: 1, fungus: 1, nectar: 1 }
   }
 }
 
@@ -233,8 +239,9 @@ const FOUNDER_PART_KEYS = [
   'stats'
 ]
 const LOOK_KEYS = ['pattern', 'accentHue']
-const STARTER_KEYS = ['name', 'description', 'parts', 'look', 'outline']
-const STARTING_BODY_KEYS = ['mode', 'archetype']
+const STARTER_KEYS = ['name', 'description', 'parts', 'look', 'outline', 'pool']
+const STARTING_BODY_KEYS = ['mode', 'archetype', 'groups']
+const STARTING_GROUP_KEYS = ['archetype', 'share']
 const STARTING_BODY_MODES = ['reference', 'archetypes']
 const OUTLINE_KEYS = ['count', 'radii', 'angles']
 
@@ -501,6 +508,9 @@ function checkStarters(anatomy: PlainObject, errors: string[], budget: number | 
       if (typeof entry['description'] !== 'string') {
         errors.push(`${path}.description must be a string`)
       }
+      if (entry['pool'] !== undefined && typeof entry['pool'] !== 'boolean') {
+        errors.push(`${path}.pool must be true or false`)
+      }
       checkParts(entry['parts'], `${path}.parts`, budget, errors, 'starting body')
       checkLook(
         checkSection(entry, 'look', LOOK_KEYS, errors, `${path}.look`),
@@ -533,4 +543,49 @@ function checkStarters(anatomy: PlainObject, errors: string[], budget: number | 
   if (choice['mode'] === 'archetypes' && Array.isArray(starters) && starters.length === 0) {
     errors.push('anatomy.startingBody.mode is "archetypes" but anatomy.starters is empty')
   }
+  if (
+    choice['mode'] === 'archetypes' &&
+    Array.isArray(starters) &&
+    starters.length > 0 &&
+    !starters.some((entry) => isObject(entry) && entry['pool'] !== false)
+  ) {
+    errors.push('anatomy.starters has no starter in the pool (every one has pool: false)')
+  }
+  checkGroups(choice['groups'], names, errors)
+}
+
+/** The founder groups (ADR 0023): known starters, each share in (0, 0.5], and at most half of all founders. */
+function checkGroups(groups: unknown, names: readonly string[], errors: string[]): void {
+  const at = 'anatomy.startingBody.groups'
+  if (!Array.isArray(groups)) {
+    errors.push(`${at} must be an array`)
+    return
+  }
+  let total = 0
+  const used: string[] = []
+  groups.forEach((entry: unknown, index: number) => {
+    const path = `${at}[${index}]`
+    if (!isObject(entry)) {
+      errors.push(`${path} must be an object`)
+      return
+    }
+    for (const key of Object.keys(entry)) {
+      if (!STARTING_GROUP_KEYS.includes(key)) errors.push(`unknown property "${path}.${key}"`)
+    }
+    const archetype = entry['archetype']
+    if (typeof archetype !== 'string' || !names.includes(archetype)) {
+      errors.push(`${path}.archetype must be the name of a starter in anatomy.starters`)
+    } else if (used.includes(archetype)) {
+      errors.push(`${path}.archetype "${archetype}" is used by two groups`)
+    } else {
+      used.push(archetype)
+    }
+    const share = entry['share']
+    if (typeof share !== 'number' || !Number.isFinite(share) || share <= 0 || share > 0.5) {
+      errors.push(`${path}.share must be a number above 0 and at most 0.5`)
+    } else {
+      total += share
+    }
+  })
+  if (total > 0.5) errors.push(`${at} shares add up to ${total}, which is more than 0.5`)
 }

@@ -38,7 +38,7 @@ describe('extinction over a long run', () => {
     // reproducing population) still goes fully and permanently extinct once resources run out -
     // reproduction having worked earlier gives it nothing to revive from once organisms=0.
     const world = World.create({
-      seed: 5,
+      seed: 6,
       config: withoutEcology({
         ...PHASE3_ECONOMY,
         // The Phase 3 body: an all-round eye (the founder's own 135 degree cone moved this tick to
@@ -51,7 +51,7 @@ describe('extinction over a long run', () => {
         // reachable (ADR 0016 "Every part type is reachable") this scarce world no longer dies out:
         // 15 to 27 creatures are alive through 100,000 ticks with lipid stores, intestines and
         // pheromone glands among their parts. This test is about extinction, so it keeps the world
-        // that goes extinct, and the old mutation reproduces tick 10,231 exactly.
+        // that goes extinct, and the old mutation reproduces that world's extinction (tick 10,231 for seed 5 before step two).
         anatomy: {
           ...ALL_ROUND.anatomy,
           mutation: { openTypes: false, presenceRate: 0.004, typeRate: 0.004 }
@@ -63,23 +63,29 @@ describe('extinction over a long run', () => {
         // (ADR 0015: bodies are on by default and five scalar genes retired) to 10,231 (ADR 0016:
         // per-type stats and outline anchoring) only because the genome changes how many values the
         // genetics stream draws and what each body can do; the population hovers at 5-10
-        // for a long time before the last animals die.
+        // for a long time before the last animals die. It moved once more (ADR 0023 step two): the
+        // brain gained eight inputs, so founders draw 64 more weights from the `genetics` stream and
+        // every later mutation shifts. Seed 5 then stopped going extinct (14 alive at 60,000 ticks); this
+        // scarce world is a knife edge, measured over seeds 1 to 12 at 60,000 ticks: 7 go extinct (at
+        // 14,130, 16,430, 19,582, 20,110, 23,431, 31,664 and 47,640) and 5 do not. The test is about
+        // extinction, so it uses seed 6, which goes extinct at 19,582 with 28 successful births.
         learning: { controller: 'reflex' },
         // Phase 3's way of eating: with bites (ADR 0017) nothing is wasted and this world no longer dies out.
-        feeding: { enabled: false }
+        feeding: { enabled: false },
+        predation: { enabled: false }
       }),
       validateEveryTicks: 1000
     })
 
     world.run(60_000)
     expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(10_231)
+    expect(world.snapshot().population.extinctionTick).toBe(19_582)
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
 
     world.run(40_000)
 
     expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(10_231)
+    expect(world.snapshot().population.extinctionTick).toBe(19_582)
     expect(world.snapshot().organisms).toEqual([])
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })
@@ -92,7 +98,8 @@ describe('extinction over a long run', () => {
         organisms: { initialCount: 15 },
         resources: { initialCount: 80, maxCount: 80, spawnRate: 1 },
         // Phase 3's way of eating: with bites (ADR 0017) nothing is wasted and this world no longer dies out.
-        feeding: { enabled: false }
+        feeding: { enabled: false },
+        predation: { enabled: false }
       }
     })
     world.run(20_000)

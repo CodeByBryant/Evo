@@ -35,7 +35,7 @@ describe('founders carry genomes', () => {
     }
     const brains = new Set(genomes.map((g) => g.brain.weights.join(',')))
     expect(brains.size).toBe(5)
-    expect(genomes[0]?.brain.weights).toHaveLength(450)
+    expect(genomes[0]?.brain.weights).toHaveLength(514)
   })
 
   it('records the founder genome on its birth event', () => {
@@ -203,6 +203,7 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
         learning: { controller: 'reflex' },
         // Phase 3 ate by touching and taking the whole item; bites came with ADR 0017.
         feeding: { enabled: false },
+        predation: { enabled: false },
         // ...and had no line of sight (ADR 0016 "Line of sight").
         perception: { organismsBlockSight: false }
       }),

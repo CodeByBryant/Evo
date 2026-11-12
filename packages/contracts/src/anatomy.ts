@@ -589,10 +589,28 @@ export interface StartingBody {
   readonly parts: FounderPart[]
   readonly look: BodyLook
   readonly outline: FounderOutline
+  /**
+   * `false`: the seed never draws this body as the world's base body; it appears only as a founder
+   * group (`startingBody.groups`) or when forced by name (default `true`). Keeps the base draw, and so
+   * every seed's base body, the same however many group-only bodies there are.
+   */
+  readonly pool?: boolean
 }
 
 /** Which body the founders of a world start with. */
 export type StartingBodyMode = 'reference' | 'archetypes'
+
+/**
+ * A share of a world's founders that start with a different body from the rest (ADR 0023: a small
+ * hunter group at tick 0). Founders are chosen by an even spread over their order, so no random
+ * draw is spent and every seed keeps its base body.
+ */
+export interface StartingGroup {
+  /** The name of a starter in `anatomy.starters`. */
+  archetype: string
+  /** Share of the founders, in `(0, 0.5]`: `round(share x initialCount)` of them. */
+  share: number
+}
 
 export interface StartingBodyConfig {
   /**
@@ -604,6 +622,11 @@ export interface StartingBodyConfig {
   mode: StartingBodyMode
   /** In `archetypes` mode, the name of the starter to use instead of the drawn one; `null` lets the seed choose. */
   archetype: string | null
+  /**
+   * Founder groups with their own bodies, in `archetypes` mode only (`reference` ignores them): the
+   * world's base body for everyone else. Names must be starters; the shares add up to at most 0.5.
+   */
+  groups: StartingGroup[]
 }
 
 export interface AnatomyMutationConfig {

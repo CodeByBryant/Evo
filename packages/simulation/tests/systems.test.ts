@@ -360,6 +360,7 @@ describe('InteractionSystem', () => {
   it('consumes the nearest resource, gaining energy up to maxEnergy', () => {
     const config = resolveWorldConfig({
       feeding: { enabled: false },
+      predation: { enabled: false },
       organisms: { radius: 1, maxEnergy: 60 },
       resources: { radius: 1 }
     })
@@ -411,6 +412,7 @@ describe('InteractionSystem', () => {
   it('never lets two organisms consume the same resource in one tick', () => {
     const config = resolveWorldConfig({
       feeding: { enabled: false },
+      predation: { enabled: false },
       organisms: { radius: 5 },
       resources: { radius: 5 }
     })
@@ -456,6 +458,7 @@ describe('InteractionSystem', () => {
   it('emits energy-changed only when history.eventDetail is verbose', () => {
     const config = resolveWorldConfig({
       feeding: { enabled: false },
+      predation: { enabled: false },
       organisms: { radius: 1, maxEnergy: 1000 },
       resources: { radius: 1 },
       history: { maxEvents: 10, eventDetail: 'verbose' }

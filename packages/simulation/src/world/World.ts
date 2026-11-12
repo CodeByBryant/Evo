@@ -30,7 +30,9 @@ import type {
   PeerBuffer,
   PerceptionBuffer,
   PredationBuffer,
-  RegenBuffer
+  PreyBuffer,
+  RegenBuffer,
+  ThreatBuffer
 } from '../buffers/types'
 import type { ClockState } from '../clock/SimulationClock'
 import { SimulationClock } from '../clock/SimulationClock'
@@ -61,7 +63,12 @@ import { missingSlot, nodePosition } from '../ecology/Plants'
 import { EventLog } from '../events/EventLog'
 import { capabilitiesOf, viewOf } from '../development/capabilities'
 import { developAnatomy } from '../development/develop'
-import { buildBodySpecs, chooseStartingBody, founderBodyVector } from '../genetics/BodyGenes'
+import {
+  assignFounderGroups,
+  buildBodySpecs,
+  chooseStartingBody,
+  founderBodyVector
+} from '../genetics/BodyGenes'
 import { buildGeneSpecs } from '../genetics/GeneSpecs'
 import type { GeneSpec } from '../genetics/GeneSpecs'
 import { kindNamesOf, massScaleOf } from '../organisms/bodyFactors'
@@ -152,6 +159,7 @@ export class World {
   /** The body this world's founders start with, and its archetype's name (`null`: the founder plan). */
   private startBody: number[]
   private startName: string | null = null
+  private startGroups: { name: string; count: number }[] = []
   private readonly founderCapabilities: Capabilities
   private readonly genomeIds: IdGenerator
   private readonly perceptionBuffer: PerceptionBuffer = new Map()
@@ -159,6 +167,9 @@ export class World {
   private readonly intentBuffer: IntentBuffer = new Map()
   private readonly hazardBuffer: HazardBuffer = new Map()
   private readonly mateBuffer: MateBuffer = new Map()
+  /** What each creature could bite and what could bite it, this tick (ADR 0023); empty with predation off. */
+  private readonly preyBuffer: PreyBuffer = new Map()
+  private readonly threatBuffer: ThreatBuffer = new Map()
   private readonly damageBuffer: DamageBuffer = new Map()
   /** Bite damage this tick, and who bit whom last (ADR 0023); both only used with predation on. */
   private readonly predationBuffer: PredationBuffer = new Map()
@@ -316,14 +327,20 @@ export class World {
         : undefined,
       // Creatures' bodies (ADR 0016 "Line of sight") and obstacles that block sight (ADR 0022) hide
       // what is behind them; with neither the occluding search is not used at all.
-      this.sightBlockers()
+      this.sightBlockers(),
+      // Prey and threats (ADR 0023): only with predation on; the buffers stay empty otherwise.
+      this.config.predation.enabled
+        ? { organismIndex: this.organismIndex, prey: this.preyBuffer, threat: this.threatBuffer }
+        : undefined
     )
     this.decisionSystem = new DecisionSystem(
       this.config,
       this.organisms,
       this.perceptionBuffer,
       this.intentBuffer,
-      this.randomStreams.get('world')
+      this.randomStreams.get('world'),
+      this.config.predation.enabled ? this.preyBuffer : undefined,
+      this.config.predation.enabled ? this.threatBuffer : undefined
     )
     this.brainSystem = new BrainSystem(
       this.config,
@@ -335,7 +352,9 @@ export class World {
       this.randomStreams.get('learning'),
       this.ecology,
       this.hazardBuffer,
-      this.mateBuffer
+      this.mateBuffer,
+      this.preyBuffer,
+      this.threatBuffer
     )
     this.movementSystem = new MovementSystem(
       this.config,
@@ -451,6 +470,17 @@ export class World {
     const start = chooseStartingBody(this.config.anatomy, geneticsRandom)
     this.startBody = start.body
     this.startName = start.name
+    // A small group of founders may start with a different body (ADR 0023): chosen by an even
+    // spread over the founders, so it spends no draw and the base body above is unchanged.
+    const initialCount = this.config.organisms.initialCount
+    const groupOf = assignFounderGroups(
+      initialCount,
+      start.groups.map((group) => group.share)
+    )
+    this.startGroups = start.groups.map((group, g) => ({
+      name: group.name,
+      count: groupOf.filter((member) => member === g).length
+    }))
     // In the cluster layout the founders are planned first (a body of genes per species), then
     // placed species by species inside their home cluster (docs/decisions/0014).
     const clusters = this.clusters
@@ -485,12 +515,17 @@ export class World {
         y = worldRandom.float() * height
       }
       const heading = wrapAngle(worldRandom.float() * TWO_PI)
+      const group = groupOf[i] as number
       const genome = createFounderGenome(
         this.genomeIds.allocate(),
         this.geneSpecs,
         this.config.genetics.brain,
         geneticsRandom,
-        plan === undefined ? this.startBody : plan.body,
+        group >= 0
+          ? (start.groups[group] as { body: number[] }).body
+          : plan === undefined
+            ? this.startBody
+            : plan.body,
         plan?.vector
       )
       const organism: OrganismState = {
@@ -768,6 +803,11 @@ export class World {
 
   get startingBodyName(): string | null {
     return this.startName
+  }
+
+  /** The founder groups that started with a body of their own, and how many founders each has (ADR 0023). */
+  get startingGroups(): readonly { name: string; count: number }[] {
+    return this.startGroups
   }
 
   /**
@@ -1059,6 +1099,8 @@ export class World {
     hasher
       .writeFloat64(this.environmentSystem.spawnRemainder)
       .writeFloat64(this.environmentSystem.stormRemainder)
+    // Schema v12 tail: the predation counters (docs/decisions/0023).
+    hasher.writeUint32(metrics.deathsByPredation).writeUint32(metrics.predationBites)
 
     return hasher.digest()
   }

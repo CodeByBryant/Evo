@@ -20,10 +20,10 @@ function errorsFor(mutate: (predation: Loose) => void): string[] {
 }
 
 describe('predation config', () => {
-  it('has valid defaults, switched off, and only a jaw bites creatures', () => {
+  it('has valid defaults, switched on, and only a jaw bites creatures', () => {
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
     const { predation } = DEFAULT_WORLD_CONFIG
-    expect(predation.enabled).toBe(false)
+    expect(predation.enabled).toBe(true)
     expect(Object.keys(predation.fleshYield)).toEqual([...MOUTH_FORMS])
     expect(predation.fleshYield.jaw).toBeGreaterThan(0)
     for (const form of MOUTH_FORMS) {
@@ -100,6 +100,10 @@ describe('predation config', () => {
 
   it('needs feeding and health when switched on, and not when it is off (negative)', () => {
     expect(() => resolveWorldConfig({ predation: { enabled: true } })).not.toThrow()
+    // On by default, so a world that turns feeding or health off must turn predation off with it.
+    expect(() => resolveWorldConfig({ feeding: { enabled: false } })).toThrow(
+      /predation.enabled needs feeding.enabled/
+    )
     expect(() =>
       resolveWorldConfig({ predation: { enabled: true }, feeding: { enabled: false } })
     ).toThrow(/predation.enabled needs feeding.enabled/)
@@ -107,15 +111,21 @@ describe('predation config', () => {
       resolveWorldConfig({ predation: { enabled: true }, ecology: { health: { enabled: false } } })
     ).toThrow(/predation.enabled needs ecology.health.enabled/)
     expect(() =>
-      resolveWorldConfig({ feeding: { enabled: false }, ecology: { health: { enabled: false } } })
+      resolveWorldConfig({
+        predation: { enabled: false },
+        feeding: { enabled: false },
+        ecology: { health: { enabled: false } }
+      })
     ).not.toThrow()
   })
 
-  it('is off in every preset, and pinned off for classic and clusters', () => {
-    for (const name of ['balanced', 'lush', 'harsh', 'rapid-evolution', 'fixed-bodies']) {
+  it('is on in the presets that evolve bodies, and pinned off for fixed bodies, classic and clusters', () => {
+    for (const name of ['balanced', 'lush', 'harsh', 'rapid-evolution']) {
+      expect(resolveWorldConfig(presetByName(name)?.overrides).predation.enabled).toBe(true)
+    }
+    for (const name of ['fixed-bodies', 'classic', 'clusters']) {
+      expect(presetByName(name)?.overrides.predation).toEqual({ enabled: false })
       expect(resolveWorldConfig(presetByName(name)?.overrides).predation.enabled).toBe(false)
     }
-    expect(presetByName('classic')?.overrides.predation).toEqual({ enabled: false })
-    expect(presetByName('clusters')?.overrides.predation).toEqual({ enabled: false })
   })
 })

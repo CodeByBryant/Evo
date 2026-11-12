@@ -5,7 +5,9 @@ import type {
   PeerBuffer,
   PerceptionBuffer,
   PerceivedHazard,
-  PerceivedPeer
+  PerceivedPeer,
+  PreyBuffer,
+  ThreatBuffer
 } from '../buffers/types'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { HazardStore } from '../ecology/HazardStore'
@@ -18,6 +20,7 @@ import { bodyRadiusOf } from '../organisms/traits'
 import type { ReproductionReadiness } from '../organisms/reproductionReadiness'
 import { SIGHT_BLOCKER_MARGIN, segmentHitsCircle } from '../spatial/sight'
 import type { SpatialHash, SpatialHit } from '../spatial/SpatialHash'
+import { peerRole } from '../organisms/predation'
 
 /** What `PerceptionSystem` needs to also find the nearest other organism (brain controller only). */
 export interface PeerSensing {
@@ -40,6 +43,13 @@ export interface MateSensing {
   readonly radius: number
   /** Whether two organisms may mate (same species when `species.reproductiveIsolation` is on). */
   readonly compatible: (a: OrganismState, b: OrganismState) => boolean
+}
+
+/** What `PerceptionSystem` needs to find prey and threats (ADR 0023): present only with predation on. */
+export interface PredationSensing {
+  readonly organismIndex: SpatialHash<OrganismState>
+  readonly prey: PreyBuffer
+  readonly threat: ThreatBuffer
 }
 
 /**
@@ -80,7 +90,9 @@ export class PerceptionSystem {
     private readonly hazardSensing?: HazardSensing,
     private readonly mateSensing?: MateSensing,
     /** When given, creatures' bodies and sight-blocking obstacles hide what is behind them. */
-    private readonly blockers?: SightBlockers
+    private readonly blockers?: SightBlockers,
+    /** Prey and threat sensing (ADR 0023): absent with predation off, and the buffers stay empty. */
+    private readonly predationSensing?: PredationSensing
   ) {}
 
   private readonly foodScratch: SpatialHit<ResourceState>[] = []
@@ -196,11 +208,57 @@ export class PerceptionSystem {
     })
   }
 
+  /**
+   * The nearest creature this one could bite and the nearest that could bite it, among those it
+   * can see (ADR 0023): in reach, in the cone, and not hidden by an obstacle or another body, like
+   * any peer. Candidates are looked at nearest first, at most `maxSightChecks` of those that matter
+   * (the budget the food and peer searches already have).
+   */
+  private sensePredation(
+    organism: OrganismState,
+    origin: { x: number; y: number },
+    widest: number,
+    sensing: PredationSensing
+  ): void {
+    const found = this.peerScratch
+    found.length = 0
+    sensing.organismIndex.scan(origin, widest, this.collectPeer)
+    found.sort((a, b) => a.distanceSquared - b.distanceSquared || a.item.id - b.item.id)
+    let prey: PerceivedPeer | null = null
+    let threat: PerceivedPeer | null = null
+    let checks = 0
+    for (const candidate of found) {
+      if (prey !== null && threat !== null) break
+      if (checks >= this.config.perception.maxSightChecks) break
+      const role = peerRole(organism, candidate.item, this.config)
+      if (role === 'none' || (role === 'prey' && prey !== null)) continue
+      if (role === 'threat' && threat !== null) continue
+      checks += 1
+      if (
+        this.blockers !== undefined &&
+        this.blocked(organism, candidate.item.x, candidate.item.y, candidate.item.id)
+      ) {
+        continue
+      }
+      const seen: PerceivedPeer = {
+        organismId: candidate.item.id,
+        position: { x: candidate.item.x, y: candidate.item.y },
+        distanceSquared: candidate.distanceSquared
+      }
+      if (role === 'prey') prey = seen
+      else threat = seen
+    }
+    sensing.prey.set(organism.id, prey)
+    sensing.threat.set(organism.id, threat)
+  }
+
   update(tick = 0): void {
     this.perceptionBuffer.clear()
     this.peers?.buffer.clear()
     this.hazardSensing?.buffer.clear()
     this.mateSensing?.buffer.clear()
+    this.predationSensing?.prey.clear()
+    this.predationSensing?.threat.clear()
     const eco = this.ecology
     const modified = eco !== null && eco.perceptionModified
     const zones = this.hazardSensing ? this.hazardSensing.hazards.values() : []
@@ -341,6 +399,10 @@ export class PerceptionSystem {
               }
             : null
         )
+      }
+
+      if (this.predationSensing !== undefined) {
+        this.sensePredation(organism, origin, widest, this.predationSensing)
       }
 
       const mating = this.mateSensing

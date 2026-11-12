@@ -79,6 +79,13 @@ describe('the default starting bodies', () => {
         const weight = config.species.distanceWeights.body
         for (const other of anatomy.starters) {
           if (other.name === starter.name) continue
+          // the hunter is the grazer with a jaw (ADR 0023): the same plan but for one mouth stat, so
+          // that pair is told apart by what the mouth does, which the founder-groups tests cover
+          if (
+            new Set([starter.name, other.name]).size === 2 &&
+            [starter.name, other.name].every((n) => n === 'grazer' || n === 'hunter')
+          )
+            continue
           // the weighted plan distance of one part gained or lost is about 0.03: two or more parts apart
           expect(weight * bodyPlanDistance(body, vectorOf(other), specs)).toBeGreaterThan(0.05)
         }
@@ -106,7 +113,10 @@ describe('the default starting bodies', () => {
   it('the starters differ from each other in looks too (a first screen you can tell apart)', () => {
     const looks = anatomy.starters.map((s) => `${s.look.pattern}/${s.look.accentHue}`)
     expect(new Set(looks).size).toBe(anatomy.starters.length)
-    const outlines = anatomy.starters.map((s) => s.outline.radii.slice(0, 8).join(','))
-    expect(new Set(outlines).size).toBe(anatomy.starters.length)
+    // the hunter keeps the grazer's hull (it is the grazer with a jaw), so hulls are compared
+    // among the starters a world can draw
+    const drawn = anatomy.starters.filter((s) => s.pool !== false)
+    const outlines = drawn.map((s) => s.outline.radii.slice(0, 8).join(','))
+    expect(new Set(outlines).size).toBe(drawn.length)
   })
 })
