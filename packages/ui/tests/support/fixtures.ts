@@ -8,6 +8,7 @@ export function view(overrides: Partial<ViewState> = {}): ViewState {
     preset: 'balanced',
     startingBody: null,
     startingGroups: [],
+    evolution: null,
     presets: [
       { name: 'balanced', label: 'Balanced', description: 'The default world.' },
       { name: 'harsh', label: 'Harsh', description: 'Scarce food.' }
@@ -141,7 +142,9 @@ export function inspector(overrides: Partial<InspectorView> = {}): InspectorView
       reward: [{ label: 'feeding', value: 0.2 }],
       rewardTotal: 0.2,
       updates: 1500,
-      weightChange: 3.21
+      weightChange: 3.21,
+      fromPrior: 0.043,
+      learnedGap: 0.12
     },
     lineage: {
       parentIds: [10, 11],

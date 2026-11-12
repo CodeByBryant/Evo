@@ -329,7 +329,7 @@ function Genome({ inspector }: { inspector: InspectorView }): React.JSX.Element 
   )
 }
 
-function Brain({ inspector }: { inspector: InspectorView }): React.JSX.Element {
+export function BrainTab({ inspector }: { inspector: InspectorView }): React.JSX.Element {
   const brain = inspector.brain
   if (brain === null) {
     return (
@@ -345,6 +345,10 @@ function Brain({ inspector }: { inspector: InspectorView }): React.JSX.Element {
       <p className="evo-hint">
         Value estimate {formatNumber(brain.value, 3)}. Learned {formatCount(brain.updates)} times,
         total weight change {formatNumber(brain.weightChange, 2)}.
+      </p>
+      <p className="evo-hint">
+        Inherited weights are {formatNumber(brain.fromPrior * 100, 1)} percent from the innate
+        prior; this life has moved them {formatNumber(brain.learnedGap * 100, 1)} percent.
       </p>
       <details>
         <summary>What it senses ({brain.inputs.length} inputs)</summary>
@@ -498,7 +502,7 @@ export function Inspector({
       >
         {tab === 'Body' && <Body inspector={inspector} />}
         {tab === 'Genome' && <Genome inspector={inspector} />}
-        {tab === 'Brain' && <Brain inspector={inspector} />}
+        {tab === 'Brain' && <BrainTab inspector={inspector} />}
         {tab === 'Lineage' && <Lineage inspector={inspector} />}
         {tab === 'Env' && <Environment inspector={inspector} />}
       </div>

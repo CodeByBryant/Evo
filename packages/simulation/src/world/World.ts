@@ -86,6 +86,8 @@ import { brainLayoutOf } from '../learning/BrainLayout'
 import type { BrainLayout } from '../learning/BrainLayout'
 import { createBrainState, writeBrainState } from '../learning/BrainState'
 import { MetricsCollector } from '../metrics/MetricsCollector'
+import { innatePriorWeights } from '../learning/InnatePrior'
+import { learnedGap, priorDistance } from '../observatory/brainDrift'
 import { ObservatoryRecorder } from '../observatory/ObservatoryRecorder'
 import { RandomStreams, STREAM_NAMES } from '../random/streams'
 import { SpeciesRegistry } from '../species/SpeciesRegistry'
@@ -878,7 +880,25 @@ export class World {
         rewardTotal: brain.rewardTotal,
         updates: brain.updates,
         weightChange: brain.weightChange
-      }
+      },
+      drift: this.driftOf(organismId)
+    }
+  }
+
+  private brainPrior: number[] | null = null
+
+  /** How far an organism's inherited weights are from the innate prior, and how far its life has moved them (ADR 0024). */
+  private driftOf(organismId: EntityId): { fromPrior: number; learned: number } {
+    const organism = this.organisms.get(organismId)
+    if (organism === undefined) return { fromPrior: 0, learned: 0 }
+    this.brainPrior ??= innatePriorWeights(this.brainLayout.architecture)
+    const weights = organism.genome.brain.weights
+    return {
+      fromPrior: priorDistance(weights, this.brainPrior),
+      learned:
+        organism.brain === null
+          ? 0
+          : learnedGap(weights.slice(this.brainLayout.learnOffset), organism.brain.learned)
     }
   }
 

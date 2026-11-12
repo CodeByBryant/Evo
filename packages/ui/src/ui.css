@@ -833,3 +833,24 @@ select.evo-input option {
     display: none;
   }
 }
+
+.evo-evolution-rows {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+}
+.evo-evolution-rows li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 0.8rem;
+  color: var(--evo-muted);
+}
+.evo-evolution-rows strong {
+  min-width: 3.4em;
+  text-align: right;
+  color: var(--evo-text);
+  font-variant-numeric: tabular-nums;
+}

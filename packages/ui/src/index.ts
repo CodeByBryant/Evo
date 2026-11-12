@@ -16,6 +16,7 @@ export { Section } from './Section'
 export {
   ClusterPanel,
   DeathCauses,
+  EvolutionPanel,
   ExtinctionBanner,
   Hud,
   SpeciesPanel,
@@ -23,7 +24,7 @@ export {
   Strip,
   TopBar
 } from './Overview'
-export { AnatomyTab, Inspector, InspectorEmpty } from './Inspector'
+export { AnatomyTab, BrainTab, Inspector, InspectorEmpty } from './Inspector'
 export { LAPTOP_MAX_WIDTH, PHONE_MAX_WIDTH, layoutFor } from './layout'
 export type { LayoutKind } from './layout'
 export {

@@ -120,3 +120,4 @@ export {
 } from './development/capabilities'
 export { developAnatomy, resolveFunctional } from './development/develop'
 export type { DependencyRule } from './development/develop'
+export { observatoryCsv } from './observatory/csv'

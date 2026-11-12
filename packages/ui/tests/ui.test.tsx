@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { RENDER_LAYERS } from '@evo/contracts'
+import { BRAIN_INPUT_GROUPS, RENDER_LAYERS } from '@evo/contracts'
+import type { EvolutionSample } from '@evo/contracts'
 import {
+  BrainTab,
   ClusterPanel,
   DeathCauses,
   Dock,
+  EvolutionPanel,
   ExtinctionBanner,
   Hud,
   Inspector,
@@ -235,6 +238,140 @@ describe('components render', () => {
     expect(html).toContain('evo-tone-predation')
     expect(html).toContain('width:50') // starved is now 12 of 24 recent deaths
     expect(totalDeaths({ ...base.metrics, deathsByPredation: 7 })).toBe(357)
+  })
+
+  describe('the evolution panel (ADR 0024)', () => {
+    const sample = (tick: number, extra: Partial<EvolutionSample> = {}): EvolutionSample => ({
+      tick,
+      time: tick / 10,
+      population: 40,
+      newPlans: 0,
+      plansEver: 10,
+      plansAlive: 6,
+      newlyPersistentPlans: 0,
+      persistentPlans: 5,
+      effectivePlans: 3.2,
+      bodySpread: 0.1,
+      partsMean: 7,
+      partsMax: 9,
+      partTypes: 10,
+      priorDrift: 0.043,
+      brainSpread: 0.18,
+      learnedGap: 0.12,
+      inputUsage: Object.fromEntries(
+        BRAIN_INPUT_GROUPS.map((g) => [g, 0.5])
+      ) as EvolutionSample['inputUsage'],
+      responseTypes: 8.5,
+      responseSpread: 0.09,
+      behaviourTypes: 12,
+      behaviourSpread: 0.24,
+      intakePlant: 0.9,
+      intakeFlesh: 0.04,
+      intakeCarrion: 0.06,
+      rate: 0.003,
+      speciesAlive: 9,
+      speciesEver: 30,
+      newSpecies: 0,
+      youngSpeciesShare: 0.2,
+      foundersAlive: 12,
+      meanGeneration: 20,
+      maxGeneration: 30,
+      stasis: false,
+      quietSamples: 0,
+      ...extra
+    })
+    const series = (samples: EvolutionSample[]) => ({
+      sampleEvery: 500,
+      baseline: samples[0] ?? null,
+      samples
+    })
+
+    it('shows four trends with their latest values and no verdict while the world is changing', () => {
+      const html = renderToStaticMarkup(
+        <EvolutionPanel
+          view={view({ evolution: series([sample(0), sample(500), sample(1000)]) })}
+        />
+      )
+      for (const label of [
+        'Plans that took hold',
+        'Response types',
+        'Brain drift',
+        'Trait change'
+      ]) {
+        expect(html).toContain(label)
+      }
+      expect(html).toContain('>5<') // plans that took hold
+      expect(html).toContain('8.5')
+      expect(html).toContain('4.3%')
+      expect(html).toContain('0.30%')
+      expect(html).toContain('Still changing.')
+      expect(html).not.toContain('Nothing new has taken hold')
+    })
+
+    it('says plainly when nothing has moved for ten samples, and only then (negative first)', () => {
+      const quiet = renderToStaticMarkup(
+        <EvolutionPanel view={view({ evolution: series([sample(0), sample(500)]) })} />
+      )
+      expect(quiet).not.toContain('Nothing new has taken hold')
+      const stasis = renderToStaticMarkup(
+        <EvolutionPanel
+          view={view({
+            evolution: series([sample(0), sample(5000, { stasis: true, quietSamples: 10 })])
+          })}
+        />
+      )
+      expect(stasis).toContain('Nothing new has taken hold and no trait has moved for 10 samples.')
+    })
+
+    it('reports new body plans since the last sample, singular and plural', () => {
+      const one = renderToStaticMarkup(
+        <EvolutionPanel
+          view={view({ evolution: series([sample(0), sample(500, { newPlans: 1 })]) })}
+        />
+      )
+      expect(one).toContain('1 new body plan since the last sample.')
+      const many = renderToStaticMarkup(
+        <EvolutionPanel
+          view={view({ evolution: series([sample(0), sample(500, { newPlans: 3 })]) })}
+        />
+      )
+      expect(many).toContain('3 new body plans since the last sample.')
+    })
+
+    it('says so when the observatory is off or has no samples yet', () => {
+      expect(renderToStaticMarkup(<EvolutionPanel view={view({ evolution: null })} />)).toContain(
+        'switched off'
+      )
+      expect(
+        renderToStaticMarkup(<EvolutionPanel view={view({ evolution: series([]) })} />)
+      ).toContain('No samples yet.')
+    })
+
+    it('is a panel of the strip, with the plan count as its headline', () => {
+      const html = renderToStaticMarkup(
+        <Strip view={view({ evolution: series([sample(0), sample(500)]) })} />
+      )
+      expect(html).toContain('Evolution')
+      expect(html).toContain('5 plans')
+    })
+  })
+
+  it('inspector brain tab says how far the creature is from the innate prior and how much it has learned', () => {
+    const base = inspector()
+    const html = renderToStaticMarkup(<BrainTab inspector={base} />)
+    expect(html).toContain('Inherited weights are 4.3 percent from the innate prior')
+    expect(html).toContain('this life has moved them 12.0 percent')
+    // a brain that has not moved reads 0, and a reflex creature has no brain to show (negatives)
+    const still = {
+      ...base,
+      brain: { ...(base.brain as NonNullable<typeof base.brain>), fromPrior: 0, learnedGap: 0 }
+    }
+    expect(renderToStaticMarkup(<BrainTab inspector={still} />)).toContain(
+      '0.0 percent from the innate prior'
+    )
+    expect(renderToStaticMarkup(<BrainTab inspector={{ ...base, brain: null }} />)).not.toContain(
+      'innate prior'
+    )
   })
 
   it('strip shows the population chart and the death causes, and clusters only in a cluster world', () => {

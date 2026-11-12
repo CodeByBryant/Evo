@@ -196,12 +196,80 @@ export function Strip({ view }: { view: ViewState }): React.JSX.Element {
             : 'No deaths in the recent window.'}
         </p>
       </div>
+      <div className="evo-strip-panel evo-strip-scroll">
+        {stripTitle('evo-strip-evolution', 'Evolution', evolutionHeadline(view))}
+        <EvolutionPanel view={view} />
+      </div>
       {view.clusters !== null && (
         <div className="evo-strip-panel evo-strip-scroll">
           <ClusterPanel view={view} />
         </div>
       )}
     </section>
+  )
+}
+
+/** The headline number of the Evolution panel: body plans that have taken hold (ADR 0024). */
+function evolutionHeadline(view: ViewState): string {
+  const last = view.evolution?.samples.at(-1)
+  return last === undefined ? '' : `${last.persistentPlans} plans`
+}
+
+/**
+ * Indicators of whether the world is still changing (ADR 0024): body plans that took hold, how
+ * differently brains respond, how far brains are from the innate prior, and how fast the traits
+ * move, each as a trend, and one plain sentence for the stasis indicator. They are indicators, not a
+ * verdict: the sentence says what was measured, not what it means.
+ */
+export function EvolutionPanel({ view }: { view: ViewState }): React.JSX.Element {
+  const series = view.evolution
+  if (series === null) {
+    return <p className="evo-hint">The evolution observatory is switched off for this world.</p>
+  }
+  const samples = series.samples
+  const last = samples.at(-1)
+  if (last === undefined) return <p className="evo-hint">No samples yet.</p>
+  const rows = [
+    {
+      label: 'Plans that took hold',
+      values: samples.map((s) => s.persistentPlans),
+      now: String(last.persistentPlans)
+    },
+    {
+      label: 'Response types',
+      values: samples.map((s) => s.responseTypes),
+      now: formatNumber(last.responseTypes, 1)
+    },
+    {
+      label: 'Brain drift',
+      values: samples.map((s) => s.priorDrift * 100),
+      now: `${formatNumber(last.priorDrift * 100, 1)}%`
+    },
+    {
+      label: 'Trait change',
+      values: samples.map((s) => s.rate * 100),
+      now: `${formatNumber(last.rate * 100, 2)}%`
+    }
+  ]
+  return (
+    <div className="evo-evolution">
+      <ul className="evo-evolution-rows" aria-label="Evolution indicators">
+        {rows.map((row) => (
+          <li key={row.label}>
+            <span>{row.label}</span>
+            <Sparkline values={row.values} color="currentColor" width={72} />
+            <strong>{row.now}</strong>
+          </li>
+        ))}
+      </ul>
+      <p className="evo-hint">
+        {last.stasis
+          ? `Nothing new has taken hold and no trait has moved for ${last.quietSamples} samples.`
+          : last.newPlans > 0
+            ? `${last.newPlans} new body ${last.newPlans === 1 ? 'plan' : 'plans'} since the last sample.`
+            : 'Still changing.'}
+      </p>
+    </div>
   )
 }
 
