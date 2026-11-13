@@ -102,14 +102,6 @@ describe('genetics validation', () => {
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
   })
 
-  it('validates genetics.linkedMouths as a boolean (ADR 0023 step four)', () => {
-    expect(
-      errorsFor((c) => ((c.genetics as { linkedMouths: unknown }).linkedMouths = 1))
-    ).toContain('genetics.linkedMouths must be a boolean')
-    expect(errorsFor((c) => (c.genetics.linkedMouths = true))).toEqual([])
-    expect(errorsFor((c) => (c.genetics.linkedMouths = false))).toEqual([])
-  })
-
   it('validates the global mutation and blend knobs', () => {
     expect(errorsFor((c) => (c.genetics.mutationRateScale = -1))).toContain(
       'genetics.mutationRateScale must be nonnegative'

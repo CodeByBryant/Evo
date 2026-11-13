@@ -202,11 +202,6 @@ export interface GeneticsConfig {
   mutationStrengthScale: number
   /** Blend-crossover extension past the parents' values, as a fraction of their difference. */
   blendAlpha: number
-  /**
-   * A body slot that holds a mouth in either parent is inherited whole from one parent instead of
-   * gene by gene, so a mouth (and its form) breeds true rather than blending (ADR 0023 step four).
-   */
-  linkedMouths: boolean
   brain: BrainConfig
   learning: LearningBaseline
   learningInheritance: LearningInheritanceConfig
@@ -230,7 +225,6 @@ export interface GeneticsConfigOverrides {
   mutationRateScale?: number
   mutationStrengthScale?: number
   blendAlpha?: number
-  linkedMouths?: boolean
   brain?: Partial<BrainConfig>
   learning?: Partial<LearningBaseline>
   learningInheritance?: Partial<LearningInheritanceConfig>
