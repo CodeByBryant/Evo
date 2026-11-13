@@ -16,6 +16,7 @@ import { checkEcology } from './ecology'
 import { checkSpecies } from './species'
 import { checkAnatomy } from './anatomy'
 import { checkFeeding } from './feeding'
+import { checkAgeing } from './ageing'
 import { checkPerception } from './perception'
 import { checkPredation } from './predation'
 import { checkClusters } from './clusters'
@@ -37,6 +38,7 @@ const ROOT_KEYS = [
   'feeding',
   'predation',
   'perception',
+  'ageing',
   'observatory'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height', 'layout', 'clusters']
@@ -85,13 +87,35 @@ const PLANT_KEYS = [
   'lifespan',
   'maxPlants'
 ]
+const SEXES_KEYS = ['enabled']
+const EGGS_KEYS = [
+  'enabled',
+  'incubation',
+  'hatch',
+  'carryCost',
+  'guardRadius',
+  'guardCost',
+  'guardDamage'
+]
+const MATE_CHOICE_KEYS = [
+  'enabled',
+  'choosiness',
+  'preference',
+  'threshold',
+  'searchCost',
+  'retryDelay',
+  'candidates'
+]
 const REPRODUCTION_KEYS = [
   'minEnergy',
   'offspringInvestment',
   'overheadFraction',
   'cooldown',
   'searchRadius',
-  'mateSenseRadius'
+  'mateSenseRadius',
+  'sexes',
+  'eggs',
+  'mateChoice'
 ]
 const HISTORY_KEYS = ['maxEvents', 'eventDetail', 'maxHistoricalOrganisms']
 const OBSERVATORY_KEYS = ['enabled', 'sampleEvery', 'behaviourEvery', 'maxSamples']
@@ -356,6 +380,80 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       { positive: true },
       errors
     )
+    const sexes = checkSection(reproduction, 'sexes', SEXES_KEYS, errors, 'reproduction.sexes')
+    if (sexes && typeof sexes['enabled'] !== 'boolean') {
+      errors.push('reproduction.sexes.enabled must be a boolean')
+    }
+    const eggs = checkSection(reproduction, 'eggs', EGGS_KEYS, errors, 'reproduction.eggs')
+    if (eggs) {
+      if (typeof eggs['enabled'] !== 'boolean') {
+        errors.push('reproduction.eggs.enabled must be a boolean')
+      }
+      for (const key of ['incubation', 'hatch', 'guardRadius'] as const) {
+        checkNumber(eggs, key, `reproduction.eggs.${key}`, { positive: true }, errors)
+      }
+      for (const key of ['carryCost', 'guardCost', 'guardDamage'] as const) {
+        checkNumber(eggs, key, `reproduction.eggs.${key}`, { nonnegative: true }, errors)
+      }
+      if (eggs['enabled'] === true && sexes && sexes['enabled'] !== true) {
+        errors.push(
+          'reproduction.eggs.enabled requires reproduction.sexes.enabled (the female lays)'
+        )
+      }
+    }
+
+    const choice = checkSection(
+      reproduction,
+      'mateChoice',
+      MATE_CHOICE_KEYS,
+      errors,
+      'reproduction.mateChoice'
+    )
+    if (choice) {
+      if (typeof choice['enabled'] !== 'boolean') {
+        errors.push('reproduction.mateChoice.enabled must be a boolean')
+      }
+      for (const key of ['choosiness', 'preference'] as const) {
+        const value = checkNumber(choice, key, `reproduction.mateChoice.${key}`, {}, errors)
+        if (value !== undefined && (value < 0 || value > 1)) {
+          errors.push(`reproduction.mateChoice.${key} must be from 0 to 1`)
+        }
+      }
+      const threshold = checkNumber(
+        choice,
+        'threshold',
+        'reproduction.mateChoice.threshold',
+        {},
+        errors
+      )
+      if (threshold !== undefined && (threshold <= 0 || threshold > 1)) {
+        errors.push('reproduction.mateChoice.threshold must be greater than 0 and at most 1')
+      }
+      checkNumber(
+        choice,
+        'searchCost',
+        'reproduction.mateChoice.searchCost',
+        { nonnegative: true },
+        errors
+      )
+      checkNumber(
+        choice,
+        'retryDelay',
+        'reproduction.mateChoice.retryDelay',
+        { nonnegative: true },
+        errors
+      )
+      checkNumber(
+        choice,
+        'candidates',
+        'reproduction.mateChoice.candidates',
+        { integer: true, positive: true },
+        errors
+      )
+      if (choice['enabled'] === true && sexes && sexes['enabled'] !== true) {
+        errors.push('reproduction.mateChoice.enabled requires reproduction.sexes.enabled')
+      }
+    }
 
     if (
       investment !== undefined &&
@@ -413,6 +511,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   checkFeeding(value, errors)
   checkPredation(value, errors)
   checkPerception(value, errors)
+  checkAgeing(value, errors)
 
   return { ok: errors.length === 0, errors }
 }
@@ -613,6 +712,19 @@ function mergeEnvironment(base: object, override: unknown): unknown {
   }
 }
 
+/** Merges the reproduction section: `sexes` and `eggs` merge field by field. */
+function mergeReproduction(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  return {
+    ...base,
+    ...override,
+    sexes: mergeSection(defaults['sexes'] as object, override['sexes']),
+    eggs: mergeSection(defaults['eggs'] as object, override['eggs']),
+    mateChoice: mergeSection(defaults['mateChoice'] as object, override['mateChoice'])
+  }
+}
+
 /** Merges a table of named sections, keeping unknown names so validation can report them. */
 function mergeNamed(base: Record<string, object>, override: Record<string, unknown>): unknown {
   const result: Record<string, unknown> = { ...base }
@@ -645,7 +757,7 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     environment: mergeEnvironment(base.environment, given['environment']),
     organisms: mergeSection(base.organisms, given['organisms']),
     resources: mergeResources(base.resources, given['resources']),
-    reproduction: mergeSection(base.reproduction, given['reproduction']),
+    reproduction: mergeReproduction(base.reproduction, given['reproduction']),
     history: mergeSection(base.history, given['history']),
     observatory: mergeSection(base.observatory, given['observatory']),
     genetics: mergeGenetics(base.genetics, given['genetics']),
@@ -655,7 +767,8 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     anatomy: mergeAnatomy(base.anatomy, given['anatomy']),
     feeding: mergeSection(base.feeding, given['feeding']),
     predation: mergePredation(base.predation, given['predation']),
-    perception: mergeSection(base.perception, given['perception'])
+    perception: mergeSection(base.perception, given['perception']),
+    ageing: mergeSection(base.ageing, given['ageing'])
   }
   const result = validateWorldConfig(merged)
   if (!result.ok) throw new ConfigValidationError(result.errors)

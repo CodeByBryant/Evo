@@ -28,6 +28,8 @@ Founders start at the **baseline** (the existing `organisms.*` / `reproduction.*
 | `learning.riskTolerance`           | float            | 0.5 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | scales the damage penalty (Phase 6: `1 - riskTolerance`)     |
 | `learning.noveltyPreference`       | float            | 0.5 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | scales the novelty reward (Phase 6)                          |
 | `learning.persistence`             | float            | 0.5 (`genetics.learning`)                 | 0 - 1        | 0.1  | 0.05 | Brain (exploration annealing)                                |
+| `reproduction.choosiness`          | float            | 0.3 (`reproduction.mateChoice`)           | 0 - 1        | 0.1  | 0.05 | Mate choice (how demanding of a partner; ADR 0027)           |
+| `reproduction.preference`          | float            | 0.3 (`reproduction.mateChoice`)           | 0 - 1        | 0.1  | 0.05 | Mate choice (condition against difference; ADR 0027)         |
 
 The ordering `maturityAge < senescenceAge < maxAge` is enforced by the operators: `senescenceAge` is declared `orderedAfter` `maturityAge`, and `maxAge` after `senescenceAge`, and mutation, recombination and repair raise such a gene's lower bound above the earlier gene (by a 1e-6 margin) even when the later gene itself did not mutate. Config validation requires each ordered gene's range maximum to exceed the earlier gene's, so there is always room. The default ranges of `maturityAge` and `senescenceAge` overlap (45 - 180 and 150 - 560) since ADR 0018, which nothing relies on being otherwise.
 

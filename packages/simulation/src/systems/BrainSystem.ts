@@ -10,6 +10,7 @@ import type {
   ThreatBuffer
 } from '../buffers/types'
 import type { EcologyModel } from '../ecology/EcologyModel'
+import type { EggState, EggStore } from '../entities/EggStore'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { architectureOf } from '../genetics/GenomeFactory'
@@ -24,6 +25,7 @@ import { TWO_PI } from '../math/scalar'
 import { atan2, cos, sin } from '../math/trig'
 import { computeReward } from '../learning/RewardModel'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { ageingSpeedFactor } from '../organisms/ageing'
 import { factorsOf } from '../organisms/bodyFactors'
 import { maxEnergyOf, maxHealthOf, reproductionCostOf, sensorRadiusOf } from '../organisms/traits'
 import type { SeededRandom } from '../random/SeededRandom'
@@ -53,6 +55,8 @@ const HOME_OUTER = 1.1
  */
 export class BrainSystem {
   private readonly layout: BrainLayout
+  /** Each parent's eggs this tick, by parent id (ADR 0027); empty without eggs. */
+  private parentEggs = new Map<EntityId, EggState[]>()
   private readonly learner: LearningAlgorithm
   private readonly params: LearningParams
 
@@ -69,7 +73,9 @@ export class BrainSystem {
     private readonly mateBuffer?: MateBuffer,
     /** Prey and threat sightings (ADR 0023): empty or absent with predation off. */
     private readonly preyBuffer?: PreyBuffer,
-    private readonly threatBuffer?: ThreatBuffer
+    private readonly threatBuffer?: ThreatBuffer,
+    /** The eggs, with `reproduction.eggs` on: a parent senses the way back to its own egg (ADR 0027). */
+    private readonly eggs?: EggStore
   ) {
     this.layout = brainLayoutOf(architectureOf(config.genetics.brain))
     this.learner = createLearner(config.learning.algorithm)
@@ -89,7 +95,8 @@ export class BrainSystem {
       maxSpeed:
         this.config.organisms.maxSpeed *
         (juvenile ? juvenileSpeedScale : 1) *
-        factorsOf(organism.genome, this.config).speed
+        factorsOf(organism.genome, this.config).speed *
+        ageingSpeedFactor(this.config.ageing, organism.age, organism.genome.physical)
     }
   }
 
@@ -125,8 +132,12 @@ export class BrainSystem {
   private homeOf(
     organism: OrganismState
   ): { present: number; bearingCos: number; bearingSin: number } | null {
+    // A parent with an egg lying about senses the way back to it instead (ADR 0027), once it has
+    // strayed beyond the guard radius; the same three inputs, so the brain needs no new weights.
+    const nest = this.nestOf(organism)
+    if (nest !== null && nest.present > 0) return nest
     const layout = this.ecology === null ? null : this.ecology.clusters
-    if (layout === null) return null
+    if (layout === null) return nest
     const centre = layout.centres[layout.nearestCluster(organism.x, organism.y)] as {
       x: number
       y: number
@@ -146,6 +157,36 @@ export class BrainSystem {
     return { present, bearingCos: cos(bearing), bearingSin: sin(bearing) }
   }
 
+  /**
+   * The way back to the nearest egg this organism laid or fathered (ADR 0027): `present` grows from 0
+   * at the guard radius to 1 at three times it, and the bearing is in the body frame. `null` without
+   * an egg of its own, and `present` 0 while it is within the guard radius (it is already there).
+   */
+  private nestOf(
+    organism: OrganismState
+  ): { present: number; bearingCos: number; bearingSin: number } | null {
+    const mine = this.parentEggs.get(organism.id)
+    if (mine === undefined) return null
+    let best: EggState | null = null
+    let bestDistance = Infinity
+    for (const egg of mine) {
+      const dx = egg.x - organism.x
+      const dy = egg.y - organism.y
+      const d = dx * dx + dy * dy
+      if (d < bestDistance) {
+        best = egg
+        bestDistance = d
+      }
+    }
+    if (best === null) return null
+    const radius = this.config.reproduction.eggs.guardRadius
+    const distance = Math.sqrt(bestDistance)
+    const present = Math.min(1, Math.max(0, (distance - radius) / (2 * radius)))
+    if (present === 0) return { present: 0, bearingCos: 0, bearingSin: 0 }
+    const bearing = atan2(best.y - organism.y, best.x - organism.x) - organism.heading
+    return { present, bearingCos: cos(bearing), bearingSin: sin(bearing) }
+  }
+
   /** The coarse novelty-grid cell an organism stands in. */
   private cellOf(organism: OrganismState): number {
     const place = this.local(organism)
@@ -162,6 +203,17 @@ export class BrainSystem {
 
   decide(tick = 0): void {
     this.intentBuffer.clear()
+    // Who has an egg lying about, and where (ADR 0027); the sense is only worked out for them.
+    this.parentEggs.clear()
+    if (this.eggs !== undefined) {
+      for (const egg of this.eggs.values()) {
+        for (const parentId of [egg.motherId, egg.fatherId]) {
+          const list = this.parentEggs.get(parentId)
+          if (list === undefined) this.parentEggs.set(parentId, [egg])
+          else list.push(egg)
+        }
+      }
+    }
     const dt = this.config.timestep
     const { foodHorizon, enabled } = this.config.learning
 

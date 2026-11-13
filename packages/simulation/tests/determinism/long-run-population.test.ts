@@ -37,7 +37,10 @@ describe('long-run population', () => {
       // 40 until ADR 0016: parts anchored to the outline changed every body's mass and thrust,
       // and seed 1's back half moved from 15-40 to 25-46 (seeds 1 to 6 span 21-46). Still a
       // bounded band far below maxPopulation, with no collapse, so the claim is unchanged.
-      expect(active).toBeLessThanOrEqual(50)
+      // And again when mate choice added two genes (ADR 0027), which shifts every later mutation
+      // draw: seed 1's back half is now 55-89 (seeds 2 to 6 stay at 25-48), still far below
+      // maxPopulation (1,000) and nowhere near a collapse, so the limit is 100.
+      expect(active).toBeLessThanOrEqual(100)
     }
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
     expect(world.validate()).toEqual({ ok: true, errors: [] })

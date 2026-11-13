@@ -6,6 +6,7 @@ import type {
   Capabilities,
   ClusterLayoutSnapshot,
   ClusterReport,
+  EggSnapshot,
   EntityId,
   EvolutionSeries,
   Genome,
@@ -45,9 +46,11 @@ import { Carcasses } from '../ecology/Carcasses'
 import { ObstacleField } from '../ecology/ObstacleField'
 import { ClusterTerrain } from '../ecology/ClusterTerrain'
 import { RegionMap } from '../ecology/RegionMap'
+import { EggStore } from '../entities/EggStore'
 import { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
+import { guardsOf } from '../organisms/eggs'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { ReproductionReadiness } from '../organisms/reproductionReadiness'
 import {
@@ -76,6 +79,7 @@ import { kindNamesOf, massScaleOf } from '../organisms/bodyFactors'
 import { planClusterFounders } from '../genetics/ClusterFounders'
 import type { FounderPlan } from '../genetics/ClusterFounders'
 import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
+import { genomeDistance, weightedDistance } from '../genetics/GeneticDistance'
 import { GenomeRecombiner } from '../genetics/Recombination'
 import { HistoryStore } from '../history/HistoryStore'
 import { LineageStore } from '../lineage/LineageStore'
@@ -96,6 +100,7 @@ import { StateHasher } from '../serialization/hash'
 import { SpatialHash } from '../spatial/SpatialHash'
 import { BrainSystem } from '../systems/BrainSystem'
 import { DeathSystem } from '../systems/DeathSystem'
+import { EggSystem } from '../systems/EggSystem'
 import { DecisionSystem } from '../systems/DecisionSystem'
 import { EnvironmentSystem } from '../systems/EnvironmentSystem'
 import { HealthSystem } from '../systems/HealthSystem'
@@ -142,6 +147,8 @@ export class World {
   private readonly ids: IdGenerator
   private readonly randomStreams: RandomStreams
   private readonly organisms: OrganismStore
+  /** The eggs in the world (ADR 0027); always empty with `reproduction.eggs` off. */
+  private readonly eggStore: EggStore = new EggStore()
   private readonly resources: ResourceStore
   private readonly metricsCollector: MetricsCollector
   /** The evolution observatory (ADR 0024): read-only, unhashed, `null` when switched off. */
@@ -196,6 +203,8 @@ export class World {
   private readonly healthSystem: HealthSystem
   private readonly migrationSystem: MigrationSystem
   private readonly reproductionSystem: ReproductionSystem
+  /** Lays and hatches eggs (ADR 0027); `null` with eggs off. */
+  private readonly eggSystem: EggSystem | null
   private readonly deathSystem: DeathSystem
 
   private readonly validateEveryTicks: number | undefined
@@ -326,9 +335,10 @@ export class World {
             radius: this.config.reproduction.mateSenseRadius,
             readiness: new ReproductionReadiness(this.config, this.ecology),
             compatible: (a, b) =>
-              !this.config.species.enabled ||
-              !this.config.species.reproductiveIsolation ||
-              this.speciesRegistry.speciesOf(a.id) === this.speciesRegistry.speciesOf(b.id)
+              (!this.config.reproduction.sexes.enabled || a.sex !== b.sex) &&
+              (!this.config.species.enabled ||
+                !this.config.species.reproductiveIsolation ||
+                this.speciesRegistry.speciesOf(a.id) === this.speciesRegistry.speciesOf(b.id))
           }
         : undefined,
       // Creatures' bodies (ADR 0016 "Line of sight") and obstacles that block sight (ADR 0022) hide
@@ -336,7 +346,12 @@ export class World {
       this.sightBlockers(),
       // Prey and threats (ADR 0023): only with predation on; the buffers stay empty otherwise.
       this.config.predation.enabled
-        ? { organismIndex: this.organismIndex, prey: this.preyBuffer, threat: this.threatBuffer }
+        ? {
+            organismIndex: this.organismIndex,
+            prey: this.preyBuffer,
+            threat: this.threatBuffer,
+            ...(this.config.reproduction.eggs.enabled ? { eggs: this.eggStore } : {})
+          }
         : undefined
     )
     this.decisionSystem = new DecisionSystem(
@@ -360,7 +375,8 @@ export class World {
       this.hazardBuffer,
       this.mateBuffer,
       this.preyBuffer,
-      this.threatBuffer
+      this.threatBuffer,
+      this.config.reproduction.eggs.enabled ? this.eggStore : undefined
     )
     this.movementSystem = new MovementSystem(
       this.config,
@@ -390,7 +406,8 @@ export class World {
             organismIndex: this.organismIndex,
             buffer: this.predationBuffer,
             lastBitten: this.lastBitten,
-            obstacles: this.obstacleField
+            obstacles: this.obstacleField,
+            ...(this.config.reproduction.eggs.enabled ? { eggs: this.eggStore } : {})
           }
         : undefined
     )
@@ -427,8 +444,37 @@ export class World {
       this.randomStreams.get('reproduction'),
       this.events,
       this.speciesRegistry,
-      this.ecology
+      this.ecology,
+      this.eggStore,
+      this.config.reproduction.mateChoice.enabled
+        ? (a, b) =>
+            Math.min(
+              1,
+              weightedDistance(
+                genomeDistance(
+                  a,
+                  b,
+                  this.geneSpecs,
+                  this.config.genetics.brain.initialWeightStd,
+                  this.bodySpecs
+                ),
+                this.config.species.distanceWeights
+              ) / Math.max(this.config.species.threshold, 1e-9)
+            )
+        : undefined
     )
+    this.eggSystem = this.config.reproduction.eggs.enabled
+      ? new EggSystem(
+          this.config,
+          this.organisms,
+          this.eggStore,
+          this.ids,
+          this.lineageStore,
+          this.randomStreams.get('reproduction'),
+          this.events,
+          this.speciesRegistry
+        )
+      : null
     const carrionKind = kindNamesOf(this.config).indexOf(CARRION_KIND)
     this.carcasses =
       carrionKind >= 0
@@ -447,9 +493,25 @@ export class World {
             windowTicks: Math.ceil(this.config.predation.attackWindow / this.config.timestep)
           }
         : undefined,
-      this.carcasses === null
-        ? undefined
-        : (organism, _cause, tick) => (this.carcasses as Carcasses).drop(organism, tick)
+      (organism, _cause, tick) => {
+        this.carcasses?.drop(organism, tick)
+        // A carrying mother who dies loses the clutch and its energy (ADR 0027).
+        if (organism.pregnancy !== null) {
+          this.events.record({
+            type: 'clutch-lost',
+            tick,
+            motherId: organism.id,
+            fatherId: organism.pregnancy.fatherId
+          })
+        }
+      },
+      this.config.ageing.enabled
+        ? {
+            config: this.config.ageing,
+            timestep: this.config.timestep,
+            random: this.randomStreams.get('world')
+          }
+        : undefined
     )
 
     this.events.beginTick()
@@ -566,7 +628,10 @@ export class World {
         brain:
           this.config.learning.controller === 'brain'
             ? createBrainState(genome, this.brainLayout, this.config.organisms.initialEnergy)
-            : null
+            : null,
+        // Founders alternate sex, draw-free (ADR 0027); all the same sex with one sex.
+        sex: this.config.reproduction.sexes.enabled ? ((i % 2) as 0 | 1) : 0,
+        pregnancy: null
       }
       this.organisms.add(organism)
       this.lineageStore.register({
@@ -931,6 +996,7 @@ export class World {
     this.healthSystem.update(tick)
     this.metabolismSystem.update(tick)
     this.reproductionSystem.update(tick)
+    this.eggSystem?.update(tick)
     this.deathSystem.update(tick)
     this.carcasses?.update(tick)
     if (this.config.learning.controller === 'brain') this.brainSystem.settle(tick)
@@ -960,6 +1026,7 @@ export class World {
   validate(): ValidationResult {
     return checkInvariants({
       organisms: this.organisms.values(),
+      eggs: this.eggStore.values(),
       resources: this.resources.values(),
       config: this.config,
       tick: this.clockImpl.tick,
@@ -973,6 +1040,20 @@ export class World {
       species: this.speciesRegistry,
       hazards: this.hazardStore.values()
     })
+  }
+
+  /** The eggs, ascending id (ADR 0027). Deep-copied. */
+  private eggSnapshots(): EggSnapshot[] {
+    const tick = this.clockImpl.tick
+    return this.eggStore.values().map((egg) => ({
+      id: egg.id,
+      position: { x: egg.x, y: egg.y },
+      motherId: egg.motherId,
+      fatherId: egg.fatherId,
+      energy: egg.energy,
+      progress: Math.min(1, Math.max(0, (tick - egg.layTick) / (egg.hatchTick - egg.layTick))),
+      guarded: guardsOf(egg, this.organisms, this.config.reproduction.eggs.guardRadius).length > 0
+    }))
   }
 
   /** A read-only, deep-copied view of the world, safe to hand to a renderer or UI. */
@@ -1006,13 +1087,19 @@ export class World {
         maxEnergy: maxEnergyOf(organism.genome, this.config),
         health: organism.health,
         maxHealth: maxHealthOf(organism.genome, this.config),
-        lifeStage: lifeStageFor(organism.age, this.config.organisms),
+        lifeStage: lifeStageFor(organism.age, organism.genome.physical),
         reproductionCooldownRemaining: organism.reproductionCooldownRemaining,
         gut: organism.gut,
-        gutCapacity: this.config.feeding.enabled ? gutCapacityOf(organism.genome, this.config) : 0
+        gutCapacity: this.config.feeding.enabled ? gutCapacityOf(organism.genome, this.config) : 0,
+        sex: organism.sex,
+        carrying:
+          organism.pregnancy === null
+            ? null
+            : Math.max(0, organism.pregnancy.layTick - clockState.tick) * this.config.timestep
       })),
       resources: this.resourceSnapshots(),
       hazards: this.hazardSnapshots(),
+      eggs: this.eggSnapshots(),
       metrics: this.metricsCollector.snapshot()
     }
   }
@@ -1071,22 +1158,7 @@ export class World {
       hasher.writeUint32(organism.parentIds.length)
       for (const parentId of organism.parentIds) hasher.writeUint32(parentId)
 
-      const genome = organism.genome
-      hasher.writeUint32(genome.id)
-      hasher.writeUint32(genome.parentIds.length)
-      for (const parentId of genome.parentIds) hasher.writeUint32(parentId)
-      for (const value of genomeToVector(genome)) hasher.writeFloat64(value)
-      const { architecture, weights } = genome.brain
-      hasher
-        .writeUint32(architecture.inputSize)
-        .writeUint32(architecture.hiddenSize)
-        .writeUint32(architecture.memorySize)
-        .writeUint32(architecture.outputSize)
-        .writeUint32(weights.length)
-      for (const weight of weights) hasher.writeFloat64(weight)
-      // Schema v6: the body genes follow the brain weights (docs/decisions/0012).
-      hasher.writeUint32(genome.body.genes.length)
-      for (const gene of genome.body.genes) hasher.writeFloat64(gene)
+      writeGenome(hasher, organism.genome)
       writeBrainState(hasher, organism.brain)
       hasher.writeFloat64(organism.health)
       // Schema v10: the feeding state follows health (docs/decisions/0017).
@@ -1147,9 +1219,62 @@ export class World {
       .writeFloat64(this.environmentSystem.stormRemainder)
     // Schema v12 tail: the predation counters (docs/decisions/0023).
     hasher.writeUint32(metrics.deathsByPredation).writeUint32(metrics.predationBites)
+    // Schema v13 tail: the life cycle (docs/decisions/0027): the egg counters, each creature's sex
+    // and carried clutch, and the eggs. All zero or empty with sexes and eggs off. The species an egg
+    // will hatch into is not hashed: species are a derived view and never part of the state.
+    hasher
+      .writeUint32(metrics.eggsLaid)
+      .writeUint32(metrics.eggsHatched)
+      .writeUint32(metrics.eggsEaten)
+      .writeUint32(metrics.clutchesLost)
+    for (const organism of organisms) {
+      hasher.writeUint8(organism.sex)
+      const pregnancy = organism.pregnancy
+      hasher.writeBoolean(pregnancy !== null)
+      if (pregnancy !== null) {
+        writeGenome(hasher, pregnancy.genome)
+        hasher
+          .writeUint32(pregnancy.fatherId)
+          .writeFloat64(pregnancy.energy)
+          .writeFloat64(pregnancy.layTick)
+      }
+    }
+    const eggs = this.eggStore.values()
+    hasher.writeUint32(eggs.length)
+    for (const egg of eggs) {
+      hasher
+        .writeUint32(egg.id)
+        .writeFloat64(egg.x)
+        .writeFloat64(egg.y)
+        .writeUint32(egg.motherId)
+        .writeUint32(egg.fatherId)
+        .writeFloat64(egg.energy)
+        .writeFloat64(egg.layTick)
+        .writeFloat64(egg.hatchTick)
+      writeGenome(hasher, egg.genome)
+    }
 
     return hasher.digest()
   }
+}
+
+/** Writes a genome: its ids, gene vector, brain and body (the order the hash has always used). */
+function writeGenome(hasher: StateHasher, genome: Genome): void {
+  hasher.writeUint32(genome.id)
+  hasher.writeUint32(genome.parentIds.length)
+  for (const parentId of genome.parentIds) hasher.writeUint32(parentId)
+  for (const value of genomeToVector(genome)) hasher.writeFloat64(value)
+  const { architecture, weights } = genome.brain
+  hasher
+    .writeUint32(architecture.inputSize)
+    .writeUint32(architecture.hiddenSize)
+    .writeUint32(architecture.memorySize)
+    .writeUint32(architecture.outputSize)
+    .writeUint32(weights.length)
+  for (const weight of weights) hasher.writeFloat64(weight)
+  // Schema v6: the body genes follow the brain weights (docs/decisions/0012).
+  hasher.writeUint32(genome.body.genes.length)
+  for (const gene of genome.body.genes) hasher.writeFloat64(gene)
 }
 
 /** The upper bound of a gene's range, used to size spatial grids. */

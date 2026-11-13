@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { World } from '../src/index'
+import { createBefore } from './support/life'
 import { genomeToVector } from '../src/genetics/GenomeFactory'
 import { withoutEcology } from './support/ecology'
 import { ALL_ROUND, REFERENCE_START } from './support/bodies'
@@ -7,7 +7,7 @@ import { PHASE3_ECONOMY } from './support/phase3'
 
 /** The world wiring of genomes (docs/decisions/0006); Phase 3 behavior is pinned in world.test.ts. */
 describe('founders carry genomes', () => {
-  const world = World.create({ seed: 1, config: { organisms: { initialCount: 5 } } })
+  const world = createBefore({ seed: 1, config: { organisms: { initialCount: 5 } } })
   const snapshot = world.snapshot()
 
   it('gives every founder its own genome, in birth order', () => {
@@ -54,7 +54,7 @@ describe('founders carry genomes', () => {
 
 describe('config baselines reach the genes', () => {
   it('starts every founder at the configured baseline', () => {
-    const world = World.create({
+    const world = createBefore({
       seed: 3,
       config: {
         organisms: { initialCount: 4, basalCost: 0.6, radius: 3, hue: 0.2 },
@@ -72,7 +72,7 @@ describe('config baselines reach the genes', () => {
   })
 
   it('reports the organism’s own radius gene in the snapshot', () => {
-    const world = World.create({
+    const world = createBefore({
       seed: 3,
       config: { ...REFERENCE_START, organisms: { initialCount: 2, radius: 4 } }
     })
@@ -81,7 +81,7 @@ describe('config baselines reach the genes', () => {
 })
 
 describe('children get new genomes', () => {
-  const world = World.create({
+  const world = createBefore({
     seed: 42,
     config: {
       environment: { width: 100, height: 100 },
@@ -140,7 +140,7 @@ describe('children get new genomes', () => {
 })
 
 describe('genome identity over a long run', () => {
-  const world = World.create({
+  const world = createBefore({
     seed: 1,
     validateEveryTicks: 250,
     config: { history: { maxEvents: 200_000 } }
@@ -172,8 +172,8 @@ describe('genome identity over a long run', () => {
 
 describe('genomes are part of the state hash', () => {
   it('differs when only the founders’ brains differ', () => {
-    const a = World.create({ seed: 1, config: { organisms: { initialCount: 3 } } })
-    const b = World.create({
+    const a = createBefore({ seed: 1, config: { organisms: { initialCount: 3 } } })
+    const b = createBefore({
       seed: 1,
       config: { organisms: { initialCount: 3 }, genetics: { brain: { initialWeightStd: 0.5 } } }
     })
@@ -181,8 +181,8 @@ describe('genomes are part of the state hash', () => {
   })
 
   it('is reproducible for the same seed and configuration', () => {
-    const a = World.create({ seed: 8, config: { organisms: { initialCount: 3 } } })
-    const b = World.create({ seed: 8, config: { organisms: { initialCount: 3 } } })
+    const a = createBefore({ seed: 8, config: { organisms: { initialCount: 3 } } })
+    const b = createBefore({ seed: 8, config: { organisms: { initialCount: 3 } } })
     a.run(300)
     b.run(300)
     expect(a.stateHash()).toBe(b.stateHash())
@@ -193,7 +193,7 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
   // With mutation disabled every child blends identical parent genes, so only the brains differ
   // and nothing the simulation does depends on a brain yet: Phase 3's pinned Scenario A returns.
   it('reproduces Phase 3 Scenario A exactly when mutation is off', () => {
-    const world = World.create({
+    const world = createBefore({
       seed: 1,
       config: withoutEcology({
         ...PHASE3_ECONOMY,
@@ -218,7 +218,7 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
 
   it('changes the trajectory when mutation is on', () => {
     const run = (genetics: object) => {
-      const world = World.create({ seed: 1, config: { organisms: { initialCount: 10 }, genetics } })
+      const world = createBefore({ seed: 1, config: { organisms: { initialCount: 10 }, genetics } })
       world.run(2000)
       return world.stateHash()
     }
@@ -227,7 +227,7 @@ describe('heritable genomes build on, and do not disturb, Phase 3 dynamics', () 
 })
 
 describe('lineage over a run', () => {
-  const world = World.create({
+  const world = createBefore({
     seed: 1,
     validateEveryTicks: 250,
     config: { history: { maxEvents: 200_000 } }

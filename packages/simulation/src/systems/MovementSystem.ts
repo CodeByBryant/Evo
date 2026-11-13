@@ -6,6 +6,7 @@ import { clamp, wrapAngle } from '../math/scalar'
 import { cos, sin } from '../math/trig'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { Obstacle, ObstacleField } from '../ecology/ObstacleField'
+import { ageingSpeedFactor } from '../organisms/ageing'
 import { factorsOf } from '../organisms/bodyFactors'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { bodyRadiusOf } from '../organisms/traits'
@@ -126,7 +127,11 @@ export class MovementSystem {
           chew
         : baseMaxSpeed * chew
       // The parts decide how much of that speed forward and sideways thrust can deliver.
-      const scaledMaxSpeed = terrainSpeed * body.speed
+      const scaledMaxSpeed =
+        terrainSpeed *
+        body.speed *
+        // An old creature is slower (ADR 0027); exactly 1 with ageing off or before senescence.
+        ageingSpeedFactor(this.config.ageing, organism.age, genes)
       const speed = clamp(intent.thrust, 0, 1) * scaledMaxSpeed
       let vx = cos(heading) * speed
       let vy = sin(heading) * speed

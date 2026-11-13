@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { resolveBefore } from './support/life'
 import { resolveWorldConfig } from '@evo/config'
 import {
   basalCostOf,
@@ -10,7 +11,7 @@ import {
 } from '../src/organisms/traits'
 import { organismFor, withGenes } from './support/organism'
 
-const config = resolveWorldConfig()
+const config = resolveBefore()
 const founder = organismFor(config, 1).genome
 
 describe('derived traits at the founder baseline equal their Phase 3 values exactly', () => {
@@ -71,7 +72,7 @@ describe('capability is not free', () => {
       'reproduction.offspringInvestment': 25
     }).genome
     expect(reproductionCostOf(generous, config)).toBe(40)
-    const overheadFree = resolveWorldConfig({ reproduction: { overheadFraction: 0 } })
+    const overheadFree = resolveBefore({ reproduction: { overheadFraction: 0 } })
     expect(reproductionCostOf(generous, overheadFree)).toBe(25)
   })
 })

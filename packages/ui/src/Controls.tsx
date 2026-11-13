@@ -12,6 +12,7 @@ const LAYER_LABELS: Readonly<Record<RenderLayerName, string>> = {
   hazards: 'Hazards',
   obstacles: 'Obstacles',
   resources: 'Food',
+  eggs: 'Eggs',
   organisms: 'Organisms',
   trails: 'Trails',
   selection: 'Selection and events',

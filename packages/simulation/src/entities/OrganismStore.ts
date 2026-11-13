@@ -1,6 +1,21 @@
 import type { EntityId, Genome } from '@evo/contracts'
 import type { BrainState } from '../learning/BrainState'
 
+/**
+ * A clutch a female is carrying (ADR 0027): the child's genome was recombined at conception, so
+ * what hatches is fixed from the moment the pair mated. Lost with the mother if she dies first.
+ */
+export interface PregnancyState {
+  readonly genome: Genome
+  readonly fatherId: EntityId
+  /** The mother's species at conception, kept for the child because she may be dead by then. */
+  readonly speciesId: number | null
+  /** Energy the egg will hold: what the parents invested, capped by the child's capacity. */
+  readonly energy: number
+  /** The tick the egg is laid. */
+  readonly layTick: number
+}
+
 /** Live, mutable organism state. Systems mutate these fields directly through `values()`. */
 export interface OrganismState {
   readonly id: EntityId
@@ -28,6 +43,10 @@ export interface OrganismState {
    * under `'reflex'`. The genome stays immutable; learning moves the overlay in here.
    */
   brain: BrainState | null
+  /** `0` female, `1` male (ADR 0027); always `0` with `reproduction.sexes` off. */
+  readonly sex: 0 | 1
+  /** The clutch being carried; `null` for males, and for a female who is not pregnant. */
+  pregnancy: PregnancyState | null
 }
 
 /**

@@ -39,6 +39,13 @@ function describeEvent(event: WorldEvent): string {
       return `hazard ${event.hazardId}`
     case 'hazard-expired':
       return `expired ${event.hazardId}`
+    case 'egg-laid':
+    case 'egg-hatched':
+    case 'egg-eaten':
+    case 'egg-guarded':
+      return `egg ${event.eggId}`
+    case 'clutch-lost':
+      return `clutch lost ${event.motherId}`
     default: {
       const unreachable: never = event
       return unreachable
@@ -155,7 +162,9 @@ describe('contracts', () => {
       lifeStage: 'mature',
       reproductionCooldownRemaining: 0,
       gut: 0,
-      gutCapacity: 0
+      gutCapacity: 0,
+      sex: 0,
+      carrying: null
     }
     const keys = Object.keys(snapshot)
     for (const forbidden of ['generation', 'genome', 'alive']) {
@@ -184,6 +193,7 @@ describe('render and view contracts', () => {
       'hazards',
       'obstacles',
       'resources',
+      'eggs',
       'organisms',
       'trails',
       'selection',

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { resolveBefore } from './support/life'
 import { resolveWorldConfig } from '@evo/config'
 import type { GenePath } from '@evo/contracts'
 import type { IntentBuffer, PerceptionBuffer } from '../src/buffers/types'
@@ -28,7 +29,7 @@ import { idsFrom, makeReproduction, organismFor, withGenes } from './support/org
  * was retired (docs/decisions/0015).
  */
 // These tests are about the original way of eating (touch food and take it whole); bites are tested in feeding/.
-const config = resolveWorldConfig({ feeding: { enabled: false }, predation: { enabled: false } })
+const config = resolveBefore({ feeding: { enabled: false }, predation: { enabled: false } })
 const MATURE = 200
 
 const mature = (id: number, overrides: Partial<OrganismState> = {}): OrganismState =>
@@ -302,7 +303,7 @@ describe('ReproductionSystem reads reproduction genes', () => {
   })
 
   describe('the child’s genome', () => {
-    const steady = resolveWorldConfig({ genetics: { mutationRateScale: 0, blendAlpha: 0 } })
+    const steady = resolveBefore({ genetics: { mutationRateScale: 0, blendAlpha: 0 } })
 
     it('gets a fresh id and names both parents’ genomes', () => {
       const organisms = pair({ 'physical.radius': 4 }, { 'physical.radius': 8 })

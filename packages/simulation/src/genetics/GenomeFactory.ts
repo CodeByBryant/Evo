@@ -78,7 +78,7 @@ export function genomeFromParts(parts: GenomeParts): Genome {
     ;(groups[group] as Record<string, number>)[name] = parts.vector[index] as number
   })
   const genome = {
-    version: 4,
+    version: 5,
     id: parts.id,
     parentIds: [...parts.parentIds],
     ...groups,

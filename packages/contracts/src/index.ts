@@ -100,6 +100,11 @@ export type {
   PredationConfig,
   PerceptionConfig,
   ReproductionConfig,
+  AgeingConfig,
+  ReproductionConfigOverrides,
+  SexesConfig,
+  EggsConfig,
+  MateChoiceConfig,
   HistoryConfig,
   ObservatoryConfig,
   WorldConfig,
@@ -109,6 +114,11 @@ export type {
 export type {
   OrganismBornEvent,
   OrganismDiedEvent,
+  EggLaidEvent,
+  EggHatchedEvent,
+  ClutchLostEvent,
+  EggEatenEvent,
+  EggGuardedEvent,
   ResourceSpawnedEvent,
   ResourceBittenEvent,
   OrganismBittenEvent,
@@ -126,6 +136,7 @@ export type {
   WorldEventType
 } from './events'
 export type {
+  EggSnapshot,
   OrganismSnapshot,
   PartSnapshot,
   ResourceSnapshot,
@@ -138,6 +149,7 @@ export { RENDER_LAYERS, DEFAULT_RENDER_LAYERS } from './render'
 export type {
   RenderOrganism,
   RenderResource,
+  RenderEgg,
   RenderHazard,
   RenderEffect,
   RenderSnapshot,

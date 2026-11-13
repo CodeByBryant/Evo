@@ -154,3 +154,7 @@ Per-system unit tests for the new/changed `ReproductionSystem`, `MovementSystem`
 ## Rollback plan
 
 Each PR is independently revertable. If reproduction's population dynamics prove unstable or undesirable in practice, `ReproductionSystem.update()` can be reverted to a no-op (as it was engineered to be a real, swappable implementation, not a special case baked into `World`) while keeping the life-stage and history infrastructure, which are useful independent of whether reproduction is active.
+
+## Update (ADR 0027): a life cycle
+
+Reproduction is no longer always an instant birth between any two ready creatures. With the life cycle on (the default) there are two sexes, a conceived clutch is carried and laid as an egg that hatches after a delay, a partner has to accept too, and death of old age is a chance that rises with age rather than a cutoff. [ADR 0027](0027-life-cycle.md) has the design, the switches that restore this ADR's behaviour exactly, and the measurements.

@@ -1,19 +1,30 @@
 {
-  "hashSchemaVersion": 12,
+  "hashSchemaVersion": 13,
   "engineVersion": "0.12.0",
   "entries": [
     {
       "name": "default-1k",
       "seed": 12345,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -27,24 +38,61 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 1000,
-      "expectedHash": "eadf6305a347265e8aa7f4afb083f3ce"
+      "expectedHash": "2518f4cfb14ced68e6905d0fbf5c5360"
     },
     {
       "name": "default-instant-eating-3k",
       "seed": 12345,
       "config": {
-        "predation": { "enabled": false },
-        "feeding": { "enabled": false },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "feeding": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -58,35 +106,93 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 3000,
-      "expectedHash": "8e3107ac3b5acf13046d9d9fd19d7856"
+      "expectedHash": "df7535a5e6e3404d4ace5f1d6fb11249"
     },
     {
       "name": "scenario-a-instant-eating-5k",
       "seed": 1,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 10 },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "feeding": { "enabled": false },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "organisms": {
+          "initialCount": 10
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "feeding": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -99,34 +205,86 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 5000,
-      "expectedHash": "acf58fc9d29150507753e86d54580b2b"
+      "expectedHash": "c5e10adfa845734ba8d506dd8e27e65e"
     },
     {
       "name": "scenario-a-foraging-5k",
       "seed": 1,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 10 },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "organisms": {
+          "initialCount": 10
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -139,22 +297,48 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 5000,
-      "expectedHash": "f2305c80747aaedfabfef60420fe3da3"
+      "expectedHash": "f7330c139d2662b27c2c0916a8f1ebb9"
     },
     {
       "name": "scenario-b-extinction-20k",
       "seed": 1,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 10 },
+        "predation": {
+          "enabled": false
+        },
+        "organisms": {
+          "initialCount": 10
+        },
         "resources": {
           "initialCount": 0,
           "spawnRate": 0,
           "maxCount": 200,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -169,44 +353,123 @@
           }
         },
         "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
         },
-        "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 }
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 20000,
-      "expectedHash": "4cde95edadc2f3d5663db05dd8c87ddd"
+      "expectedHash": "83ed1cf8c434965662b06c49c919a510"
     },
     {
       "name": "verbose-events-200",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
-        "history": { "eventDetail": "verbose", "maxEvents": 100000 },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "history": {
+          "eventDetail": "verbose",
+          "maxEvents": 100000
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -219,22 +482,48 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 200,
-      "expectedHash": "46ecf033718e3e123918325a95aa1a15"
+      "expectedHash": "4f20daef8d6a6132fabf5fbc27753ff7"
     },
     {
       "name": "zero-population-100",
       "seed": 3,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 0 },
+        "predation": {
+          "enabled": false
+        },
+        "organisms": {
+          "initialCount": 0
+        },
         "resources": {
           "initialCount": 0,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -249,33 +538,90 @@
           }
         },
         "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
         },
-        "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 }
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 100,
-      "expectedHash": "3af7b11317af28e131a25b599ae71c7e"
+      "expectedHash": "6afbda6341858bf801fbcc52f2f5044a"
     },
     {
       "name": "long-run-100k",
       "seed": 999,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -289,33 +635,88 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 100000,
-      "expectedHash": "43f483885de7b8f74ce88bde897ba99f"
+      "expectedHash": "25fcd60a9660b673b5242e540f452689"
     },
     {
       "name": "reflex-default-1k",
       "seed": 12345,
       "config": {
-        "predation": { "enabled": false },
-        "learning": { "controller": "reflex", "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "learning": {
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -328,34 +729,87 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 1000,
-      "expectedHash": "22c783ada5c90252b42556e3cbdb40b0"
+      "expectedHash": "70e734ea1d6d6c5f9dbb82dc9d3381ad"
     },
     {
       "name": "reflex-scenario-a-5k",
       "seed": 1,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 10 },
-        "learning": { "controller": "reflex", "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "organisms": {
+          "initialCount": 10
+        },
+        "learning": {
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -368,22 +822,48 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 5000,
-      "expectedHash": "dfafc319bb74ad50f439516f528b2352"
+      "expectedHash": "c809906d101da606e2411f05b68e71cc"
     },
     {
       "name": "reflex-scenario-b-20k",
       "seed": 1,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 10 },
+        "predation": {
+          "enabled": false
+        },
+        "organisms": {
+          "initialCount": 10
+        },
         "resources": {
           "initialCount": 0,
           "spawnRate": 0,
           "maxCount": 200,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -397,44 +877,122 @@
             "maxPlants": 40
           }
         },
-        "learning": { "controller": "reflex", "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "learning": {
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
         },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 }
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 20000,
-      "expectedHash": "eb4324f31f24da2362602b24470913b3"
+      "expectedHash": "08e9480136f7fbec4610657d72df4b3b"
     },
     {
       "name": "reflex-long-run-100k",
       "seed": 999,
       "config": {
-        "predation": { "enabled": false },
-        "learning": { "controller": "reflex", "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "learning": {
+          "controller": "reflex",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -447,34 +1005,87 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 100000,
-      "expectedHash": "da32da64f72ecac691d229b9b6c8b7c8"
+      "expectedHash": "e5b52b43fb3b01294481736235100d56"
     },
     {
       "name": "brain-hebbian-5k",
       "seed": 1,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 10 },
-        "learning": { "algorithm": "hebbian", "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "organisms": {
+          "initialCount": 10
+        },
+        "learning": {
+          "algorithm": "hebbian",
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -487,34 +1098,87 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 5000,
-      "expectedHash": "a9e5cf88eb8fbcc621740cb3b1add282"
+      "expectedHash": "b9228f30a0301521a9e89f62ba18885f"
     },
     {
       "name": "brain-learning-off-5k",
       "seed": 1,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 10 },
-        "learning": { "enabled": false, "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "organisms": {
+          "initialCount": 10
+        },
+        "learning": {
+          "enabled": false,
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -527,35 +1191,91 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 5000,
-      "expectedHash": "2d320cf6565e20b3eb48765efc01bc3f"
+      "expectedHash": "43a0a7447fb3fa12910fe6c92fd3dc5f"
     },
     {
       "name": "brain-random-prior-off-5k",
       "seed": 2,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 10 },
-        "genetics": { "brain": { "innatePrior": false } },
-        "ecology": {
-          "health": { "enabled": false },
-          "regions": { "enabled": false },
-          "seasons": { "enabled": false },
-          "hazards": { "enabled": false },
-          "resourceKinds": { "enabled": false },
-          "migration": { "enabled": false },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "learning": { "rewardWeights": { "damage": 0, "exploration": 0 } },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "organisms": {
+          "initialCount": 10
+        },
+        "genetics": {
+          "brain": {
+            "innatePrior": false
+          }
+        },
+        "ecology": {
+          "health": {
+            "enabled": false
+          },
+          "regions": {
+            "enabled": false
+          },
+          "seasons": {
+            "enabled": false
+          },
+          "hazards": {
+            "enabled": false
+          },
+          "resourceKinds": {
+            "enabled": false
+          },
+          "migration": {
+            "enabled": false
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "learning": {
+          "rewardWeights": {
+            "damage": 0,
+            "exploration": 0
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -568,23 +1288,54 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 5000,
-      "expectedHash": "b02651d87b5bea6e75f6ccb0e98ed29e"
+      "expectedHash": "07b7443249d4aafc6bc804c431e1d366"
     },
     {
       "name": "ecology-default-12k",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -598,24 +1349,61 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 12000,
-      "expectedHash": "0bffe13a256db88e31eb5bd7a3517446"
+      "expectedHash": "a948a19d1eced1bbce9116ee46ef3d82"
     },
     {
       "name": "ecology-reflex-8k",
       "seed": 3,
       "config": {
-        "predation": { "enabled": false },
-        "learning": { "controller": "reflex" },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "learning": {
+          "controller": "reflex"
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -629,29 +1417,74 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 8000,
-      "expectedHash": "f20979342112231e6fd7428fbb879c24"
+      "expectedHash": "9e32ca41118c61ebd6afbceea81e6828"
     },
     {
       "name": "ecology-lethal-hazards-3k",
       "seed": 5,
       "config": {
-        "predation": { "enabled": false },
-        "organisms": { "initialCount": 40 },
-        "ecology": {
-          "health": { "maxHealth": 8 },
-          "hazards": { "areaCount": 10, "areaRadius": 120, "areaDamage": 40 },
-          "obstacles": { "enabled": false }
+        "predation": {
+          "enabled": false
         },
-        "anatomy": { "startingBody": { "mode": "reference" } },
-        "environment": { "width": 500, "height": 500 },
+        "organisms": {
+          "initialCount": 40
+        },
+        "ecology": {
+          "health": {
+            "maxHealth": 8
+          },
+          "hazards": {
+            "areaCount": 10,
+            "areaRadius": 120,
+            "areaDamage": 40
+          },
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -664,16 +1497,38 @@
             "lifespan": 600,
             "maxPlants": 40
           }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 3000,
-      "expectedHash": "b138384267dc7b2694661738dc34ea30"
+      "expectedHash": "b479f3a30edefbb15e934cb5b284df84"
     },
     {
       "name": "anatomy-on-evolving-6k",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
+        "predation": {
+          "enabled": false
+        },
         "anatomy": {
           "enabled": true,
           "mutation": {
@@ -682,15 +1537,24 @@
             "continuousRate": 0.3,
             "visualRate": 0.3
           },
-          "startingBody": { "mode": "reference" }
+          "startingBody": {
+            "mode": "reference"
+          }
         },
-        "genetics": { "mutationRateScale": 3 },
-        "environment": { "width": 500, "height": 500 },
+        "genetics": {
+          "mutationRateScale": 3
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -704,16 +1568,42 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 6000,
-      "expectedHash": "2c06cf6f0fec093bd63e2f53614cc8f6"
+      "expectedHash": "0f330f3e60e0896a29356fe93c1460b0"
     },
     {
       "name": "anatomy-on-reflex-4k",
       "seed": 11,
       "config": {
-        "predation": { "enabled": false },
+        "predation": {
+          "enabled": false
+        },
         "anatomy": {
           "enabled": true,
           "mutation": {
@@ -722,16 +1612,27 @@
             "continuousRate": 0.3,
             "visualRate": 0.3
           },
-          "startingBody": { "mode": "reference" }
+          "startingBody": {
+            "mode": "reference"
+          }
         },
-        "genetics": { "mutationRateScale": 3 },
-        "learning": { "controller": "reflex" },
-        "environment": { "width": 500, "height": 500 },
+        "genetics": {
+          "mutationRateScale": 3
+        },
+        "learning": {
+          "controller": "reflex"
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -745,28 +1646,62 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 4000,
-      "expectedHash": "b2a40f52021592c05214ee92dc2d7c43"
+      "expectedHash": "32a847674a4593ba019bd04c35170da7"
     },
     {
       "name": "clusters-small-6k",
       "seed": 3,
       "config": {
-        "predation": { "enabled": false },
+        "predation": {
+          "enabled": false
+        },
         "environment": {
           "layout": "clusters",
-          "clusters": { "organismsPerSpecies": 4 },
+          "clusters": {
+            "organismsPerSpecies": 4
+          },
           "width": 500,
           "height": 500
         },
-        "anatomy": { "startingBody": { "mode": "reference" } },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -780,29 +1715,65 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 6000,
-      "expectedHash": "00f628899220817a0726ed3e54b9554e"
+      "expectedHash": "db606f9b6714ac485b096e8c3e75480a"
     },
     {
       "name": "clusters-small-reflex-4k",
       "seed": 8,
       "config": {
-        "predation": { "enabled": false },
+        "predation": {
+          "enabled": false
+        },
         "environment": {
           "layout": "clusters",
-          "clusters": { "organismsPerSpecies": 4 },
+          "clusters": {
+            "organismsPerSpecies": 4
+          },
           "width": 500,
           "height": 500
         },
-        "learning": { "controller": "reflex" },
-        "anatomy": { "startingBody": { "mode": "reference" } },
+        "learning": {
+          "controller": "reflex"
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "reference"
+          }
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -816,23 +1787,58 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 4000,
-      "expectedHash": "1f248f7fda10ae103e2724021a947397"
+      "expectedHash": "530838834a0807cb7bc9fe1bd16adb36"
     },
     {
       "name": "archetypes-default-1k",
       "seed": 12345,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -846,23 +1852,58 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 1000,
-      "expectedHash": "689478ff39ae8d3bf1282d88af5c2dca"
+      "expectedHash": "5d2202c1c69d47df376be70193ab845a"
     },
     {
       "name": "archetypes-ecology-12k",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -876,24 +1917,61 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 12000,
-      "expectedHash": "d2b9cd57ea4c081d5e2b2ded495618b5"
+      "expectedHash": "ebeac7f3b41ff95b3ba1fc84e18fcac2"
     },
     {
       "name": "archetypes-reflex-8k",
       "seed": 3,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "learning": { "controller": "reflex" },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "learning": {
+          "controller": "reflex"
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -907,18 +1985,46 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 8000,
-      "expectedHash": "c0542a948d9d04f6dd29bfb3a610feb8"
+      "expectedHash": "5a57bef443cd4fa2f106690ec6699751"
     },
     {
       "name": "archetypes-evolving-bodies-6k",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
+        "predation": {
+          "enabled": false
+        },
         "anatomy": {
-          "startingBody": { "groups": [] },
+          "startingBody": {
+            "groups": []
+          },
           "mutation": {
             "presenceRate": 0.1,
             "typeRate": 0.1,
@@ -926,13 +2032,20 @@
             "visualRate": 0.5
           }
         },
-        "genetics": { "mutationRateScale": 3 },
-        "environment": { "width": 500, "height": 500 },
+        "genetics": {
+          "mutationRateScale": 3
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -946,25 +2059,60 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 6000,
-      "expectedHash": "56597d64fe363d7f45b9a60d53eefde1"
+      "expectedHash": "4f1a73efcecf95330496516efc30df4b"
     },
     {
       "name": "archetype-forced-grazer-3k",
       "seed": 1,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": {
-          "startingBody": { "mode": "archetypes", "archetype": "grazer", "groups": [] }
+        "predation": {
+          "enabled": false
         },
-        "environment": { "width": 500, "height": 500 },
+        "anatomy": {
+          "startingBody": {
+            "mode": "archetypes",
+            "archetype": "grazer",
+            "groups": []
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -978,25 +2126,60 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 3000,
-      "expectedHash": "00ae0279a4869f17e1f3197687e03a0e"
+      "expectedHash": "d65e58c5d3b5b2d9984e3a163213d230"
     },
     {
       "name": "archetype-forced-fungus-scraper-3k",
       "seed": 2,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": {
-          "startingBody": { "mode": "archetypes", "archetype": "fungus-scraper", "groups": [] }
+        "predation": {
+          "enabled": false
         },
-        "environment": { "width": 500, "height": 500 },
+        "anatomy": {
+          "startingBody": {
+            "mode": "archetypes",
+            "archetype": "fungus-scraper",
+            "groups": []
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -1010,23 +2193,60 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 3000,
-      "expectedHash": "d1dc0ba286227c9a77ebaa546118d87c"
+      "expectedHash": "94ba369309c9e4f7a4d3ec1c3ba86c23"
     },
     {
       "name": "archetype-forced-tank-3k",
       "seed": 5,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "tank", "groups": [] } },
-        "environment": { "width": 500, "height": 500 },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "mode": "archetypes",
+            "archetype": "tank",
+            "groups": []
+          }
+        },
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
         "resources": {
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
-          "distribution": { "mode": "uniform" },
+          "distribution": {
+            "mode": "uniform"
+          },
           "plants": {
             "enabled": false,
             "nodes": 6,
@@ -1040,19 +2260,51 @@
             "maxPlants": 40
           }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 3000,
-      "expectedHash": "320cdf7945c99f4e7a292305e01288b0"
+      "expectedHash": "32af631715cdaf5133c9b234aaa300ed"
     },
     {
       "name": "noise-food-4k",
       "seed": 5,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
         "resources": {
-          "distribution": { "mode": "noise" },
+          "distribution": {
+            "mode": "noise"
+          },
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
@@ -1069,21 +2321,60 @@
             "maxPlants": 40
           }
         },
-        "environment": { "width": 500, "height": 500 },
-        "ecology": { "obstacles": { "enabled": false } }
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 4000,
-      "expectedHash": "36b550127d7f1be84248ea73fe810bc0"
+      "expectedHash": "cb0c7b08e8f9d0182e16746c5f0b679e"
     },
     {
       "name": "noise-reflex-3k",
       "seed": 9,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "learning": { "controller": "reflex" },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "learning": {
+          "controller": "reflex"
+        },
         "resources": {
-          "distribution": { "mode": "noise", "contrast": 0.6, "scale": 80 },
+          "distribution": {
+            "mode": "noise",
+            "contrast": 0.6,
+            "scale": 80
+          },
           "initialCount": 100,
           "maxCount": 200,
           "spawnRate": 2,
@@ -1100,18 +2391,51 @@
             "maxPlants": 40
           }
         },
-        "environment": { "width": 500, "height": 500 },
-        "ecology": { "obstacles": { "enabled": false } }
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 3000,
-      "expectedHash": "14ab13b351238507fed18b1e58fbee54"
+      "expectedHash": "590ea8ff33a5ec0e2dd4a83c47f4084b"
     },
     {
       "name": "plants-6k",
       "seed": 4,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
         "resources": {
           "spawnRate": 0.3,
           "plants": {
@@ -1128,24 +2452,63 @@
           },
           "initialCount": 100,
           "maxCount": 200,
-          "distribution": { "mode": "uniform" }
+          "distribution": {
+            "mode": "uniform"
+          }
         },
-        "environment": { "width": 500, "height": 500 },
-        "ecology": { "obstacles": { "enabled": false } }
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 6000,
-      "expectedHash": "93d65e057d0e0fbf4e2fab8e76ae652e"
+      "expectedHash": "6b1a4f76d2db861b62f0847c74eccdbd"
     },
     {
       "name": "plants-noise-reflex-5k",
       "seed": 6,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "learning": { "controller": "reflex" },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "learning": {
+          "controller": "reflex"
+        },
         "resources": {
           "spawnRate": 0.3,
-          "distribution": { "mode": "noise" },
+          "distribution": {
+            "mode": "noise"
+          },
           "plants": {
             "enabled": true,
             "nodes": 6,
@@ -1161,20 +2524,51 @@
           "initialCount": 100,
           "maxCount": 200
         },
-        "environment": { "width": 500, "height": 500 },
-        "ecology": { "obstacles": { "enabled": false } }
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 5000,
-      "expectedHash": "6bb542d77a8174ce71d3377a3dad40cf"
+      "expectedHash": "369f3dc4299d405a9648dbfa2cc60d12"
     },
     {
       "name": "plants-brain-evolving-8k",
       "seed": 12,
       "config": {
-        "predation": { "enabled": false },
+        "predation": {
+          "enabled": false
+        },
         "resources": {
           "spawnRate": 0.4,
-          "distribution": { "mode": "noise" },
+          "distribution": {
+            "mode": "noise"
+          },
           "plants": {
             "enabled": true,
             "nodes": 6,
@@ -1191,56 +2585,184 @@
           "maxCount": 200
         },
         "anatomy": {
-          "startingBody": { "groups": [] },
-          "mutation": { "presenceRate": 0.05, "typeRate": 0.05 }
+          "startingBody": {
+            "groups": []
+          },
+          "mutation": {
+            "presenceRate": 0.05,
+            "typeRate": 0.05
+          }
         },
-        "environment": { "width": 500, "height": 500 },
-        "ecology": { "obstacles": { "enabled": false } }
+        "environment": {
+          "width": 500,
+          "height": 500
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 8000,
-      "expectedHash": "68a92946ed3370eb549f0a458541a96a"
+      "expectedHash": "086130764ea50cada377ed85a6d8c303"
     },
     {
       "name": "food-default-1k",
       "seed": 12345,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "ecology": { "obstacles": { "enabled": false } }
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 1000,
-      "expectedHash": "31b76e0bfbf24213d61276d8cba0c26c"
+      "expectedHash": "7d6630e2622cb13620f755844ae07571"
     },
     {
       "name": "food-default-ecology-12k",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "ecology": { "obstacles": { "enabled": false } }
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 12000,
-      "expectedHash": "00cfbbfd4828b0d76d58b1415a608729"
+      "expectedHash": "91be0367534ff84d275200b96e175020"
     },
     {
       "name": "food-default-reflex-8k",
       "seed": 3,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "learning": { "controller": "reflex" },
-        "ecology": { "obstacles": { "enabled": false } }
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "learning": {
+          "controller": "reflex"
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 8000,
-      "expectedHash": "adcb66c66808ebeb11cac55fc81f3155"
+      "expectedHash": "8ca2517bd3ea2792496275776cc5b07f"
     },
     {
       "name": "food-default-evolving-bodies-6k",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
+        "predation": {
+          "enabled": false
+        },
         "anatomy": {
-          "startingBody": { "groups": [] },
+          "startingBody": {
+            "groups": []
+          },
           "mutation": {
             "presenceRate": 0.1,
             "typeRate": 0.1,
@@ -1248,66 +2770,209 @@
             "visualRate": 0.5
           }
         },
-        "genetics": { "mutationRateScale": 3 },
-        "ecology": { "obstacles": { "enabled": false } }
+        "genetics": {
+          "mutationRateScale": 3
+        },
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 6000,
-      "expectedHash": "fe69449e6c2892c9529a857b2b8e0243"
+      "expectedHash": "465fc2acb3e7d718f7c09840bbd2ad1e"
     },
     {
       "name": "food-lush-4k",
       "seed": 5,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
         "resources": {
           "spawnRate": 0.4,
           "maxCount": 640,
-          "plants": { "maxPlants": 80, "photosynthesis": 2 }
+          "plants": {
+            "maxPlants": 80,
+            "photosynthesis": 2
+          }
         },
-        "ecology": { "obstacles": { "enabled": false } }
+        "ecology": {
+          "obstacles": {
+            "enabled": false
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 4000,
-      "expectedHash": "1c08f874f067af38dfb56f0b75d97124"
+      "expectedHash": "86e51b0d232675fdb223bf03b4468b44"
     },
     {
       "name": "obstacles-default-1k",
       "seed": 12345,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } }
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 1000,
-      "expectedHash": "81738362d81609084a5376e18ea20c52"
+      "expectedHash": "88963b777e3146df110eb400abcff2fb"
     },
     {
       "name": "obstacles-ecology-12k",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } }
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 12000,
-      "expectedHash": "84950d17f6782508faadf4f4a40597ae"
+      "expectedHash": "14d5f168770ba317a57079192f096aec"
     },
     {
       "name": "obstacles-reflex-8k",
       "seed": 3,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
-        "learning": { "controller": "reflex" }
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
+        "learning": {
+          "controller": "reflex"
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 8000,
-      "expectedHash": "cb2b8dbe71778f9dd75314861ea9b641"
+      "expectedHash": "65e9584a52546bcb1ab6eecea5b8082c"
     },
     {
       "name": "obstacles-evolving-bodies-6k",
       "seed": 7,
       "config": {
-        "predation": { "enabled": false },
+        "predation": {
+          "enabled": false
+        },
         "anatomy": {
-          "startingBody": { "groups": [] },
+          "startingBody": {
+            "groups": []
+          },
           "mutation": {
             "presenceRate": 0.1,
             "typeRate": 0.1,
@@ -1315,46 +2980,163 @@
             "visualRate": 0.5
           }
         },
-        "genetics": { "mutationRateScale": 3 }
+        "genetics": {
+          "mutationRateScale": 3
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 6000,
-      "expectedHash": "ad858c84fc69bf2362341ca55a5ab5ca"
+      "expectedHash": "b9280cf509d498a0243c3c92af68d944"
     },
     {
       "name": "obstacles-lush-4k",
       "seed": 5,
       "config": {
-        "predation": { "enabled": false },
-        "anatomy": { "startingBody": { "groups": [] } },
+        "predation": {
+          "enabled": false
+        },
+        "anatomy": {
+          "startingBody": {
+            "groups": []
+          }
+        },
         "resources": {
           "spawnRate": 0.4,
           "maxCount": 640,
-          "plants": { "maxPlants": 80, "photosynthesis": 2 }
+          "plants": {
+            "maxPlants": 80,
+            "photosynthesis": 2
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 4000,
-      "expectedHash": "cd86aa4f8fa2dec7540afac4414bf30c"
+      "expectedHash": "3c52d9f3994e2fa03240bbb238171995"
     },
     {
       "name": "predation-default-1k",
       "seed": 12345,
-      "config": {},
+      "config": {
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
+      },
       "steps": 1000,
-      "expectedHash": "90d27853de3997d3a6dfca57f2552a2a"
+      "expectedHash": "a8e12a566e672251f9228be5eaaeb471"
     },
     {
       "name": "predation-ecology-12k",
       "seed": 7,
-      "config": {},
+      "config": {
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
+      },
       "steps": 12000,
-      "expectedHash": "bb5365f32f6cf4ad304b19661013b54c"
+      "expectedHash": "c659948d291cc9e6e570f92e65d6bfa7"
     },
     {
       "name": "predation-reflex-8k",
       "seed": 3,
-      "config": { "learning": { "controller": "reflex" } },
+      "config": {
+        "learning": {
+          "controller": "reflex"
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
+      },
       "steps": 8000,
-      "expectedHash": "ba847deb2c907ffb8c997675e16f2853"
+      "expectedHash": "d5f2160cd4b7b9a125f1f198bee22930"
     },
     {
       "name": "predation-evolving-bodies-6k",
@@ -1368,10 +3150,32 @@
             "visualRate": 0.5
           }
         },
-        "genetics": { "mutationRateScale": 3 }
+        "genetics": {
+          "mutationRateScale": 3
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 6000,
-      "expectedHash": "ff6ecdeb75b3cb03edb09189d52a284d"
+      "expectedHash": "6bd7d4128a6f51d44737e571ad855b85"
     },
     {
       "name": "predation-lush-4k",
@@ -1380,20 +3184,103 @@
         "resources": {
           "spawnRate": 0.4,
           "maxCount": 640,
-          "plants": { "maxPlants": 80, "photosynthesis": 2 }
+          "plants": {
+            "maxPlants": 80,
+            "photosynthesis": 2
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
         }
       },
       "steps": 4000,
-      "expectedHash": "7d816aed7cbf721448662cbb54803ec7"
+      "expectedHash": "4cb76e70b10405b78f2fe2c97afa9aa7"
     },
     {
       "name": "predation-hunters-only-3k",
       "seed": 4,
       "config": {
-        "anatomy": { "startingBody": { "mode": "archetypes", "archetype": "hunter", "groups": [] } }
+        "anatomy": {
+          "startingBody": {
+            "mode": "archetypes",
+            "archetype": "hunter",
+            "groups": []
+          }
+        },
+        "reproduction": {
+          "minEnergy": 75,
+          "cooldown": 45,
+          "searchRadius": 50,
+          "mateSenseRadius": 250,
+          "sexes": {
+            "enabled": false
+          },
+          "eggs": {
+            "enabled": false
+          },
+          "mateChoice": {
+            "enabled": false,
+            "choosiness": 0.3,
+            "preference": 0.3
+          }
+        },
+        "ageing": {
+          "enabled": false
+        }
       },
       "steps": 3000,
-      "expectedHash": "3c461f1ac3cd4bff8f63f0c36d06d467"
+      "expectedHash": "0d630b3c54e43bd9dd34dc2d8c4e66b6"
+    },
+    {
+      "name": "life-cycle-default-6k",
+      "seed": 12345,
+      "config": {},
+      "steps": 6000,
+      "expectedHash": "7c69e82c652e7cfb05c5e3f6b7ebf67b"
+    },
+    {
+      "name": "life-cycle-reflex-6k",
+      "seed": 7,
+      "config": {
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 6000,
+      "expectedHash": "7446d031818a1a7cfe8e98f13e40383e"
+    },
+    {
+      "name": "life-cycle-no-ageing-no-choice-6k",
+      "seed": 3,
+      "config": {
+        "ageing": {
+          "enabled": false
+        },
+        "reproduction": {
+          "mateChoice": {
+            "enabled": false
+          }
+        }
+      },
+      "steps": 6000,
+      "expectedHash": "a202844ea17489c6b579abaabc4debea"
     }
   ]
 }

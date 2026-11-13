@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createBefore } from './support/life'
 import { ConfigValidationError } from '@evo/config'
 import { ENGINE_VERSION, World } from '../src/index'
 import { withoutEcology } from './support/ecology'
@@ -206,9 +207,12 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     // step two): founders draw 64 more weights from the `genetics` stream, which shifts every later
     // mutation. Measured on this seed: 29 / 47 / 18 before, 28 / 46 / 18 now; the reflex controller
     // ignores the weights, so nothing but the mutation draws moved.
-    expect(snapshot.population.active).toBe(28)
-    expect(snapshot.metrics.organismsBorn).toBe(46)
-    expect(snapshot.metrics.deathsByStarvation).toBe(18)
+    // And once more when mate choice added two reproduction genes (ADR 0027): two more genes mutate
+    // at every birth, so the draws that follow shift. Measured: 28 / 46 / 18 before, 27 / 47 / 20 now
+    // (mate choice is off, so the new genes do nothing; only the draws moved).
+    expect(snapshot.population.active).toBe(27)
+    expect(snapshot.metrics.organismsBorn).toBe(47)
+    expect(snapshot.metrics.deathsByStarvation).toBe(20)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 
@@ -277,7 +281,7 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
 describe('scenario C: reproduction (roadmap testing scenario C)', () => {
   // 2 mature organisms, high energy, a small world (so they're always within searchRadius).
   it('two eligible organisms reproduce: a child is born and both parents pay the cost', () => {
-    const world = World.create({
+    const world = createBefore({
       seed: 42,
       config: {
         environment: { width: 100, height: 100 },

@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
+import { createBefore } from '../support/life'
 import { resolveWorldConfig } from '@evo/config'
 import { REGION_TYPES } from '@evo/contracts'
 import type { RegionType, WorldConfigOverrides, WorldEvent } from '@evo/contracts'
@@ -242,7 +243,7 @@ describe('seasons create measurable pressure', () => {
 
 describe('Scenario E: divergent populations make species', () => {
   it('genomes drift apart, species form from genetic distance, and every living member is within its species threshold', () => {
-    const world = World.create({
+    const world = createBefore({
       seed: 9,
       config: {
         genetics: { mutationRateScale: 3, mutationStrengthScale: 2 }

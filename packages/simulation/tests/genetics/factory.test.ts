@@ -16,7 +16,7 @@ describe('buildGeneSpecs', () => {
   it('produces one spec per gene, in the canonical order', () => {
     const { specs } = fixture()
     expect(specs.map((spec) => spec.path)).toEqual(GENE_DEFINITIONS.map((d) => d.path))
-    expect(specs).toHaveLength(18)
+    expect(specs).toHaveLength(20)
   })
 
   it('takes baselines from the config fields the genes replace', () => {
@@ -77,7 +77,7 @@ describe('founder genomes', () => {
     const f = fixture()
     const genome = founder(f, 0, 1)
     expect(genomeToVector(genome)).toEqual(f.specs.map((spec) => spec.baseline))
-    expect(genome.version).toBe(4)
+    expect(genome.version).toBe(5)
     expect(genome.parentIds).toEqual([])
   })
 

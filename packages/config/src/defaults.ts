@@ -92,12 +92,38 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     }
   },
   reproduction: {
-    minEnergy: 75,
+    // Measured with the life cycle on (ADR 0027): 16 seeds x 30,000 ticks, no extinct world, mean
+    // population 51, lowest 16 to 21. The life cycle needs creatures to breed a little sooner
+    // (minEnergy 75 to 65, cooldown 45 to 30) and to find a partner of the other sex from farther off
+    // (search 50 to 75, mating signal 250 to 350): with half the creatures the wrong sex the old values
+    // let 2 of 8 worlds go extinct.
+    minEnergy: 65,
     offspringInvestment: 12.5,
     overheadFraction: 0.6,
-    cooldown: 45,
-    searchRadius: 50,
-    mateSenseRadius: 250
+    cooldown: 30,
+    searchRadius: 75,
+    mateSenseRadius: 350,
+    // Two sexes, a carried clutch, an egg and a hatchling (ADR 0027).
+    sexes: { enabled: true },
+    eggs: {
+      enabled: true,
+      incubation: 10,
+      hatch: 20,
+      carryCost: 0.1,
+      guardRadius: 20,
+      guardCost: 0.05,
+      guardDamage: 5
+    },
+    // A partner has to accept too, and a creature has tastes (ADR 0027).
+    mateChoice: {
+      enabled: true,
+      choosiness: 0.8,
+      preference: 0.5,
+      threshold: 0.4,
+      searchCost: 0.2,
+      retryDelay: 2,
+      candidates: 4
+    }
   },
   history: { maxEvents: 10_000, eventDetail: 'essential', maxHistoricalOrganisms: 10_000 },
   // The evolution observatory (ADR 0024): derived indicators, sampled every 50 simulated seconds.
@@ -430,6 +456,16 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   perception: {
     organismsBlockSight: true,
     maxSightChecks: 6
+  },
+  // Ageing (ADR 0027): a creature declines past its senescence age and faces a chance of dying that
+  // rises with age instead of a cutoff; about a third of deaths are now of old age.
+  ageing: {
+    enabled: true,
+    metabolismRise: 0.3,
+    speedLoss: 0.2,
+    fertilityLoss: 0.3,
+    hazard: 0.02,
+    ceiling: 2
   }
 } satisfies WorldConfig)
 
@@ -462,6 +498,8 @@ export const DEFAULT_GENE_RANGES: Readonly<Record<GenePath, Readonly<GeneRange>>
   'reproduction.offspringInvestment': range(6, 25),
   'reproduction.cooldown': range(15, 120),
   'reproduction.searchRadius': range(25, 100),
+  'reproduction.choosiness': range(0, 1),
+  'reproduction.preference': range(0, 1),
   'learning.learningRate': range(0.001, 0.5, 0.1),
   'learning.discountFactor': range(0, 1),
   'learning.eligibilityTraceDecay': range(0, 1),

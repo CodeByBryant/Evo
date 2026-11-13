@@ -76,6 +76,24 @@ export interface OrganismSnapshot {
   readonly gut: number
   /** Gut capacity of this organism's body; zero when feeding is off. */
   readonly gutCapacity: number
+  /** `0` female, `1` male; always `0` with `reproduction.sexes` off (ADR 0027). */
+  readonly sex: 0 | 1
+  /** Seconds until the carried clutch is laid, or `null` when not carrying (ADR 0027). */
+  readonly carrying: number | null
+}
+
+/** An egg in the world (ADR 0027). */
+export interface EggSnapshot {
+  readonly id: EntityId
+  readonly position: Readonly<Vec2>
+  readonly motherId: EntityId
+  readonly fatherId: EntityId
+  /** Energy stored in the egg. */
+  readonly energy: number
+  /** Fraction of the way to hatching, in `[0, 1]`. */
+  readonly progress: number
+  /** Whether a living parent is within `guardRadius` of it right now. */
+  readonly guarded: boolean
 }
 
 /** A compact, retained record of an organism after it dies (docs/decisions/0005). */
@@ -137,6 +155,11 @@ export interface MetricsSnapshot {
   readonly energyWasted: number
   /** Total health lost to hazards and toxins. */
   readonly damageTaken: number
+  /** Eggs laid, hatched, eaten, and clutches lost with a carrying mother (ADR 0027). */
+  readonly eggsLaid: number
+  readonly eggsHatched: number
+  readonly eggsEaten: number
+  readonly clutchesLost: number
 }
 
 /** A read-only, deep-copied view of a world. Presentation layers consume this, never live state. */
@@ -151,5 +174,7 @@ export interface WorldSnapshot {
   readonly resources: readonly ResourceSnapshot[]
   /** Ascending id order. */
   readonly hazards: readonly HazardSnapshot[]
+  /** Ascending id order; empty unless `reproduction.eggs` is on (ADR 0027). */
+  readonly eggs: readonly EggSnapshot[]
   readonly metrics: MetricsSnapshot
 }

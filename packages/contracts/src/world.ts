@@ -292,6 +292,88 @@ export interface ReproductionConfig {
    * mating signal, longer than the sensor radius; brain controller only, ADR 0010).
    */
   mateSenseRadius: number
+  /** Two sexes: only a female and a male mate (ADR 0027). Off: any two ready creatures may. */
+  sexes: SexesConfig
+  /** Incubation, eggs and guarding (ADR 0027). Off: a child is born at conception, as before. */
+  eggs: EggsConfig
+  /** A partner has to accept too, and a creature has tastes (ADR 0027). Off: the nearest ready partner. */
+  mateChoice: MateChoiceConfig
+}
+
+/** Two sexes (ADR 0027). A newborn's sex is one draw from the `reproduction` stream; founders alternate. */
+export interface SexesConfig {
+  enabled: boolean
+}
+
+/**
+ * A pregnancy and an egg instead of an instant birth (ADR 0027). Needs `sexes.enabled`: the female
+ * carries the clutch, lays an egg, and the egg hatches into a creature after `hatch`.
+ */
+export interface EggsConfig {
+  enabled: boolean
+  /** Seconds a female carries the clutch before laying. */
+  incubation: number
+  /** Seconds an egg takes to hatch after it is laid. */
+  hatch: number
+  /** Energy per second a carrying female pays on top of her metabolism. */
+  carryCost: number
+  /** A living parent within this distance of its egg guards it (ADR 0027). */
+  guardRadius: number
+  /** Energy per second a guarding parent pays, per guarded egg. */
+  guardCost: number
+  /** Health a biter loses when a guarded egg is defended. */
+  guardDamage: number
+}
+
+/**
+ * Mate choice (ADR 0027). A creature looks at the nearest `candidates` ready partners and takes the
+ * first that both of them accept. A creature scores a candidate `(1 - preference) x condition +
+ * preference x difference`, where condition is the candidate's spare energy over what it needs to be
+ * ready, and difference is how far apart the genomes are against the species threshold; it accepts if
+ * the score reaches `choosiness x threshold`. Refusing costs `searchCost` energy and a `retryDelay` wait.
+ */
+export interface MateChoiceConfig {
+  enabled: boolean
+  /** The founders' `choosiness` gene. */
+  choosiness: number
+  /** The founders' `preference` gene. */
+  preference: number
+  /** The score a fully choosy creature (`choosiness` 1) asks for, in `(0, 1]`. */
+  threshold: number
+  /** Energy a creature pays each time it turns every candidate down. */
+  searchCost: number
+  /** Seconds it waits before looking again after turning them all down. */
+  retryDelay: number
+  /** How many of the nearest ready partners it looks at. */
+  candidates: number
+}
+
+/** A partial reproduction section merged onto the defaults. */
+export type ReproductionConfigOverrides = Partial<
+  Omit<ReproductionConfig, 'sexes' | 'eggs' | 'mateChoice'>
+> & {
+  sexes?: Partial<SexesConfig>
+  eggs?: Partial<EggsConfig>
+  mateChoice?: Partial<MateChoiceConfig>
+}
+
+/**
+ * Ageing (ADR 0027): once a creature is past its own `senescenceAge` it declines, and instead of a
+ * hard cutoff at `maxAge` it faces a chance of dying that rises with age. With `s` the share of the
+ * way from `senescenceAge` to `maxAge` (above 1 past `maxAge`), off means the old behaviour exactly.
+ */
+export interface AgeingConfig {
+  enabled: boolean
+  /** Metabolism rises by this much at `s = 1` (and is capped at `s = 2`): cost times `1 + metabolismRise * s`. */
+  metabolismRise: number
+  /** Share of top speed lost at `s = 1`, in `[0, 1)`. */
+  speedLoss: number
+  /** The energy needed to reproduce rises by this share at `s = 1`: an old creature breeds less. */
+  fertilityLoss: number
+  /** Chance per second of dying at `s = 1`; it rises in proportion to `s`. */
+  hazard: number
+  /** Death is certain at this multiple of `maxAge`, so nothing is immortal. */
+  ceiling: number
 }
 
 export interface HistoryConfig {
@@ -336,6 +418,7 @@ export interface WorldConfig {
   feeding: FeedingConfig
   predation: PredationConfig
   perception: PerceptionConfig
+  ageing: AgeingConfig
   observatory: ObservatoryConfig
 }
 
@@ -347,7 +430,7 @@ export interface WorldConfigOverrides {
   environment?: EnvironmentConfigOverrides
   organisms?: Partial<OrganismConfig>
   resources?: ResourceConfigOverrides
-  reproduction?: Partial<ReproductionConfig>
+  reproduction?: ReproductionConfigOverrides
   history?: Partial<HistoryConfig>
   observatory?: Partial<ObservatoryConfig>
   genetics?: GeneticsConfigOverrides
@@ -363,6 +446,7 @@ export interface WorldConfigOverrides {
     }
   }
   perception?: Partial<PerceptionConfig>
+  ageing?: Partial<AgeingConfig>
 }
 
 export interface WorldOptions {

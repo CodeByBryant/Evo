@@ -210,6 +210,21 @@ describe('components render', () => {
     expect(html).not.toContain('<svg')
   })
 
+  it('statistics shows the egg totals only once an egg has been laid (negative: not before)', () => {
+    const before = renderToStaticMarkup(<StatsPanel view={view()} />)
+    expect(before).not.toContain('Eggs laid')
+    const base = view()
+    const withEggs = view({
+      metrics: { ...base.metrics, eggsLaid: 40, eggsHatched: 30, eggsEaten: 6, clutchesLost: 2 }
+    })
+    const html = renderToStaticMarkup(<StatsPanel view={withEggs} />)
+    expect(html).toContain('Eggs laid')
+    expect(html).toContain('>40<')
+    expect(html).toContain('75%') // 30 of 40 hatched
+    expect(html).toContain('Eggs eaten')
+    expect(html).toContain('Clutches lost')
+  })
+
   it('death causes are rates per simulated minute over the recent window, with totals alongside', () => {
     const html = renderToStaticMarkup(<DeathCauses view={view()} />)
     // fixture: 12 starved, 4 aged, 2 damaged in the 120 s between the first and last sample

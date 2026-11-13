@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { resolveBefore, createBefore } from '../support/life'
 import { resolveWorldConfig } from '@evo/config'
 import type { WorldConfigOverrides } from '@evo/contracts'
 import { OrganismStore } from '../../src/entities/OrganismStore'
@@ -18,7 +19,7 @@ const base: WorldConfigOverrides = {
 }
 
 const make = (seed: number, overrides: WorldConfigOverrides = {}): World =>
-  World.create({
+  createBefore({
     seed,
     config: {
       ...base,
@@ -180,7 +181,7 @@ describe('reproductive isolation', () => {
     const mid = (spec: { min: number; max: number }): number => (spec.min + spec.max) / 2
 
     function setup(isolation: boolean, sameGenome: boolean) {
-      const cfg = resolveWorldConfig({
+      const cfg = resolveBefore({
         species: { threshold: 0.05, reproductiveIsolation: isolation }
       })
       const specs = buildGeneSpecs(cfg)

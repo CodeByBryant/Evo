@@ -1,9 +1,11 @@
-import type { DeathCause, EntityId } from '@evo/contracts'
+import type { AgeingConfig, DeathCause, EntityId } from '@evo/contracts'
 import type { LastBitten } from '../buffers/types'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import type { HistoryStore } from '../history/HistoryStore'
 import type { LineageStore } from '../lineage/LineageStore'
+import { senescenceOf } from '../organisms/ageing'
+import type { RandomSource } from '../random/RandomSource'
 import { NO_MIGRATION } from '../ecology/MigrationTracker'
 import type { MigrationRecorder } from '../ecology/MigrationTracker'
 import { NO_SPECIES } from '../species/SpeciesRegistry'
@@ -27,7 +29,13 @@ export class DeathSystem {
     /** Present only with `predation.enabled` (ADR 0023): who bit whom, and for how many ticks a bite counts. */
     private readonly predation?: { readonly lastBitten: LastBitten; readonly windowTicks: number },
     /** Called for each creature that dies, after it has been removed (carcasses are left from here). */
-    private readonly onDied?: (organism: OrganismState, cause: DeathCause, tick: number) => void
+    private readonly onDied?: (organism: OrganismState, cause: DeathCause, tick: number) => void,
+    /** Present only with `ageing.enabled` (ADR 0027): death of old age is a chance, not a cutoff. */
+    private readonly ageing?: {
+      readonly config: AgeingConfig
+      readonly timestep: number
+      readonly random: RandomSource
+    }
   ) {}
 
   update(tick: number): void {
@@ -43,8 +51,19 @@ export class DeathSystem {
         cause = 'starvation'
       } else if (organism.health <= 0) {
         cause = 'damage'
-      } else if (organism.age >= organism.genome.physical.maxAge) {
-        cause = 'age'
+      } else if (this.ageing === undefined) {
+        if (organism.age >= organism.genome.physical.maxAge) cause = 'age'
+      } else {
+        // Ageing (ADR 0027): no cutoff at `maxAge`; the chance of dying rises with how far past
+        // `senescenceAge` the creature is, one draw a tick for each old creature, and death is certain
+        // at `ceiling` times `maxAge`.
+        const { config, timestep, random } = this.ageing
+        const s = senescenceOf(organism.age, organism.genome.physical)
+        if (organism.age >= organism.genome.physical.maxAge * config.ceiling) {
+          cause = 'age'
+        } else if (s > 0 && random.float() < config.hazard * s * timestep) {
+          cause = 'age'
+        }
       }
       if (cause === null) continue
       // A creature that was bitten a moment ago and then starved or was worn down was killed by the

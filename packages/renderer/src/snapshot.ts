@@ -58,6 +58,9 @@ function organismOf(
  * Maps an engine snapshot to what the renderer draws (roadmap 7.2). Pure: it reads the snapshot and
  * returns new objects, so nothing the renderer does can reach the engine.
  */
+/** An egg is drawn about as large as a piece of food, in world units. */
+const EGG_DRAW_RADIUS = 2
+
 export function buildRenderSnapshot(world: WorldSnapshot, context: RenderContext): RenderSnapshot {
   return {
     tick: world.tick,
@@ -84,6 +87,15 @@ export function buildRenderSnapshot(world: WorldSnapshot, context: RenderContext
       ...(resource.slot === undefined
         ? {}
         : { parent: resource.parent ?? 0, slot: resource.slot, bud: resource.bud ?? null })
+    })),
+    // The eggs (ADR 0027): as wide as a piece of food, so no new size is invented.
+    eggs: world.eggs.map((egg) => ({
+      id: egg.id,
+      x: egg.position.x,
+      y: egg.position.y,
+      radius: EGG_DRAW_RADIUS,
+      progress: egg.progress,
+      guarded: egg.guarded
     })),
     hazards: world.hazards.map((hazard) => ({
       id: hazard.id,

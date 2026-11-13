@@ -30,6 +30,10 @@ export interface ReproductionGenes {
   readonly offspringInvestment: number
   readonly cooldown: number
   readonly searchRadius: number
+  /** How demanding it is of a mate, `[0, 1]` (ADR 0027): `0` accepts anyone, `1` only the best. Inert with mate choice off. */
+  readonly choosiness: number
+  /** What it prizes in a mate, `[0, 1]` (ADR 0027): `0` condition (spare energy), `1` genetic difference. Inert with mate choice off. */
+  readonly preference: number
 }
 
 /** Fixed brain dimensions shared by every organism in a world (topology does not evolve). */
@@ -64,10 +68,10 @@ export interface LearningGenes {
 /** Immutable. One per organism; a child's genome is built from both parents' genomes. */
 export interface Genome {
   /**
-   * 3 since the parts act (ADR 0015): speed, turning, sensing and movement cost left the scalar
+   * 5 since mate choice (ADR 0027) added two reproduction genes. 3 since the parts act (ADR 0015): speed, turning, sensing and movement cost left the scalar
    * genes and come from the body. 2 added the `body` section (ADR 0012).
    */
-  readonly version: 4
+  readonly version: 5
   readonly id: GenomeId
   /** Empty for founders; otherwise the two parents' genome ids, ascending. */
   readonly parentIds: readonly GenomeId[]
@@ -101,6 +105,8 @@ export type GenePath =
   | 'reproduction.offspringInvestment'
   | 'reproduction.cooldown'
   | 'reproduction.searchRadius'
+  | 'reproduction.choosiness'
+  | 'reproduction.preference'
   | 'learning.learningRate'
   | 'learning.discountFactor'
   | 'learning.eligibilityTraceDecay'
@@ -151,7 +157,10 @@ export const GENE_DEFINITIONS: readonly GeneDefinition[] = [
   { path: 'learning.explorationRate', kind: 'float' },
   { path: 'learning.riskTolerance', kind: 'float' },
   { path: 'learning.noveltyPreference', kind: 'float' },
-  { path: 'learning.persistence', kind: 'float' }
+  { path: 'learning.persistence', kind: 'float' },
+  // Mate choice (ADR 0027): appended, so every earlier gene keeps its place.
+  { path: 'reproduction.choosiness', kind: 'float' },
+  { path: 'reproduction.preference', kind: 'float' }
 ]
 
 /** Bounds and mutation parameters of one gene. */

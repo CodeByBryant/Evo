@@ -12,7 +12,9 @@ import { factorsOf, kindNamesOf } from '../organisms/bodyFactors'
 import { cos, sin } from '../math/trig'
 import { mouthsOf } from '../organisms/mouths'
 import { bodyRadiusOf, gutCapacityOf, maxEnergyOf } from '../organisms/traits'
+import { eggRadiusOf, guardsOf } from '../organisms/eggs'
 import { canBite, currentRadiusOf } from '../organisms/predation'
+import type { EggState, EggStore } from '../entities/EggStore'
 import { SIGHT_BLOCKER_MARGIN, segmentHitsCircle } from '../spatial/sight'
 import type { SpatialHash, SpatialHit } from '../spatial/SpatialHash'
 
@@ -31,6 +33,8 @@ export interface PredationSensing {
   readonly lastBitten: LastBitten
   /** Obstacles that block movement also stop a bite. */
   readonly obstacles: ObstacleField
+  /** The eggs a flesh-eating mouth may take, with `reproduction.eggs` on (ADR 0027). */
+  readonly eggs?: EggStore
 }
 
 /**
@@ -48,6 +52,7 @@ export interface PredationSensing {
  * dropped.
  */
 export class InteractionSystem {
+  private eggList: EggState[] = []
   private readonly emitVerbose: boolean
   private readonly kindsOn: boolean
   /** Query reach: the largest resource radius of any kind. */
@@ -98,6 +103,8 @@ export class InteractionSystem {
     const cosCone = cos(this.config.feeding.biteCone)
     this.damage?.clear()
     this.predation?.buffer.clear()
+    // The eggs lying about this tick (ADR 0027); one list for every biter, empty without eggs.
+    this.eggList = this.predation?.eggs === undefined ? [] : this.predation.eggs.values()
 
     for (const organism of this.organisms.values()) {
       organism.biteCooldown = Math.max(0, organism.biteCooldown - dt)
@@ -152,8 +159,38 @@ export class InteractionSystem {
               bodyRadius,
               cosCone
             })
-            if (prey !== null && (!hit || prey.distanceSquared < hit.distanceSquared)) {
-              this.bitePrey(organism, body.biteSize, body.biteRate, prey.item, flesh, room, tick)
+            // An egg lying in reach is a meal too, and is guarded by a parent beside it (ADR 0027).
+            const egg = this.eggFor(organism, organism.x + mx, organism.y + my, {
+              mx,
+              my,
+              reach,
+              bodyRadius,
+              cosCone
+            })
+            const eggNearer =
+              egg !== null && (prey === null || egg.distanceSquared < prey.distanceSquared)
+            const nearest = eggNearer ? (egg as { distanceSquared: number }) : prey
+            if (nearest !== null && (!hit || nearest.distanceSquared < hit.distanceSquared)) {
+              if (eggNearer) {
+                this.biteEgg(
+                  organism,
+                  body.biteRate,
+                  (egg as { item: EggState }).item,
+                  flesh,
+                  room,
+                  tick
+                )
+              } else {
+                this.bitePrey(
+                  organism,
+                  body.biteSize,
+                  body.biteRate,
+                  (prey as SpatialHit<OrganismState>).item,
+                  flesh,
+                  room,
+                  tick
+                )
+              }
               break
             }
           }
@@ -276,6 +313,121 @@ export class InteractionSystem {
         return true
       }
     )
+  }
+
+  /** The nearest egg this mouth could take: in reach and in the cone, not a parent's own, nothing solid between. */
+  private eggFor(
+    predator: OrganismState,
+    mouthX: number,
+    mouthY: number,
+    geometry: {
+      readonly mx: number
+      readonly my: number
+      readonly reach: number
+      readonly bodyRadius: number
+      readonly cosCone: number
+    }
+  ): { item: EggState; distanceSquared: number } | null {
+    if (this.eggList.length === 0) return null
+    const { obstacles, eggs } = this.predation as PredationSensing
+    const radius = eggRadiusOf(this.config)
+    const limit = geometry.reach + radius
+    let best: { item: EggState; distanceSquared: number } | null = null
+    for (const egg of this.eggList) {
+      if (egg.motherId === predator.id || egg.fatherId === predator.id) continue
+      if ((eggs as EggStore).get(egg.id) === undefined) continue
+      const dx = egg.x - mouthX
+      const dy = egg.y - mouthY
+      const distanceSquared = dx * dx + dy * dy
+      if (distanceSquared > limit * limit) continue
+      if (best !== null && distanceSquared >= best.distanceSquared) continue
+      const fx = egg.x - predator.x
+      const fy = egg.y - predator.y
+      const target = fx * fx + fy * fy
+      const mouthLength = geometry.mx * geometry.mx + geometry.my * geometry.my
+      if (target > 0 && mouthLength > 0) {
+        if (
+          fx * geometry.mx + fy * geometry.my <
+          geometry.cosCone * Math.sqrt(target * mouthLength)
+        ) {
+          continue
+        }
+      }
+      if (obstacles.maxMovementRadius > 0) {
+        const half = Math.sqrt(distanceSquared) / 2
+        const blocked = obstacles.some(
+          (mouthX + egg.x) / 2,
+          (mouthY + egg.y) / 2,
+          half + obstacles.maxMovementRadius,
+          (o) =>
+            o.blocksMovement && segmentHitsCircle(mouthX, mouthY, egg.x, egg.y, o.x, o.y, o.radius)
+        )
+        if (blocked) continue
+      }
+      best = { item: egg, distanceSquared }
+    }
+    return best
+  }
+
+  /**
+   * One bite at an egg (ADR 0027). With a parent beside it the bite is stopped: the egg is left
+   * alone and the biter takes `guardDamage`, counted as a bite by the guard. Otherwise the egg is
+   * eaten whole: it is gone and what the gut can hold of its energy, at the trophic yield and the
+   * mouth's flesh yield, goes in; the rest is lost.
+   */
+  private biteEgg(
+    predator: OrganismState,
+    biteRate: number,
+    egg: EggState,
+    flesh: number,
+    room: number,
+    tick: number
+  ): void {
+    const { eggs: eggConfig } = this.config.reproduction
+    const { predation, feeding } = this.config
+    const { buffer, lastBitten, eggs } = this.predation as PredationSensing
+    const guards = guardsOf(egg, this.organisms, eggConfig.guardRadius)
+    if (guards.length > 0) {
+      const guard = guards[0] as OrganismState
+      const damage = eggConfig.guardDamage * factorsOf(predator.genome, this.config).damageTaken
+      const entry = buffer.get(predator.id)
+      if (entry === undefined) {
+        buffer.set(predator.id, { damage, attackerId: guard.id, hardest: damage })
+      } else {
+        entry.damage += damage
+        if (damage > entry.hardest) {
+          entry.hardest = damage
+          entry.attackerId = guard.id
+        }
+      }
+      lastBitten.set(predator.id, { attackerId: guard.id, tick })
+      predator.biteCooldown = feeding.biteInterval / biteRate
+      this.events.record({
+        type: 'egg-guarded',
+        tick,
+        eggId: egg.id,
+        guardId: guard.id,
+        biterId: predator.id,
+        damage
+      })
+      return
+    }
+    const perEnergy = predation.trophicYield * flesh
+    const whole = egg.energy * perEnergy
+    // A gut with no real room for the meal is full, as for food.
+    if (room < MIN_BITE_FRACTION * whole) return
+    const intake = Math.min(whole, room)
+    predator.gut = Math.min(predator.gut + intake, room + predator.gut)
+    predator.biteCooldown = feeding.biteInterval / biteRate
+    ;(eggs as EggStore).remove(egg.id)
+    this.events.record({
+      type: 'egg-eaten',
+      tick,
+      eggId: egg.id,
+      predatorId: predator.id,
+      energyTaken: egg.energy,
+      intake
+    })
   }
 
   /**

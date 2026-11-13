@@ -12,6 +12,7 @@ import type {
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { HazardStore } from '../ecology/HazardStore'
 import type { ObstacleField } from '../ecology/ObstacleField'
+import type { EggState, EggStore } from '../entities/EggStore'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { ResourceState } from '../entities/ResourceStore'
 import { cos, sin } from '../math/trig'
@@ -20,7 +21,7 @@ import { bodyRadiusOf } from '../organisms/traits'
 import type { ReproductionReadiness } from '../organisms/reproductionReadiness'
 import { SIGHT_BLOCKER_MARGIN, segmentHitsCircle } from '../spatial/sight'
 import type { SpatialHash, SpatialHit } from '../spatial/SpatialHash'
-import { peerRole } from '../organisms/predation'
+import { bitesCreatures, peerRole } from '../organisms/predation'
 
 /** What `PerceptionSystem` needs to also find the nearest other organism (brain controller only). */
 export interface PeerSensing {
@@ -50,6 +51,8 @@ export interface PredationSensing {
   readonly organismIndex: SpatialHash<OrganismState>
   readonly prey: PreyBuffer
   readonly threat: ThreatBuffer
+  /** With `reproduction.eggs` on, an egg lying in sight is prey for a body that bites creatures (ADR 0027). */
+  readonly eggs?: EggStore
 }
 
 /**
@@ -174,6 +177,9 @@ export class PerceptionSystem {
     if (distanceSquared <= reach * reach) this.foodScratch.push({ item, distanceSquared })
   }
 
+  /** The eggs lying about this tick, for the prey search (ADR 0027). */
+  private eggList: EggState[] = []
+
   private readonly collectPeer = (item: OrganismState, distanceSquared: number): void => {
     if (item.id === this.cSelf) return
     const reach = this.reachFor(item.x - this.cX, item.y - this.cY, distanceSquared)
@@ -257,11 +263,31 @@ export class PerceptionSystem {
       if (role === 'prey') prey = seen
       else threat = seen
     }
+    // An egg is prey too, whatever is nearer (ADR 0027): a hunter sees the nearest meal it could take.
+    if (this.eggList.length > 0 && bitesCreatures(organism.genome, this.config)) {
+      for (const egg of this.eggList) {
+        if (egg.motherId === organism.id || egg.fatherId === organism.id) continue
+        const dx = egg.x - this.cX
+        const dy = egg.y - this.cY
+        const distanceSquared = dx * dx + dy * dy
+        if (prey !== null && distanceSquared >= prey.distanceSquared) continue
+        const reach = this.reachFor(dx, dy, distanceSquared)
+        if (distanceSquared > reach * reach) continue
+        if (this.blockers !== undefined && this.blocked(organism, egg.x, egg.y, null)) continue
+        prey = {
+          organismId: egg.id,
+          position: { x: egg.x, y: egg.y },
+          distanceSquared
+        }
+      }
+    }
     sensing.prey.set(organism.id, prey)
     sensing.threat.set(organism.id, threat)
   }
 
   update(tick = 0): void {
+    this.eggList =
+      this.predationSensing?.eggs === undefined ? [] : this.predationSensing.eggs.values()
     this.perceptionBuffer.clear()
     this.peers?.buffer.clear()
     this.hazardSensing?.buffer.clear()

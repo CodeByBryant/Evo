@@ -15,6 +15,17 @@ export interface WorldPreset {
  * `balanced` is the default world and the one the engine is tuned and gated on. The others change
  * one thing each, so what they do is easy to see in the interface.
  */
+/** The breeding of the worlds that predate the life cycle: one sex, an instant birth, no mate choice (ADR 0027). */
+const OLD_REPRODUCTION = {
+  minEnergy: 75,
+  cooldown: 45,
+  searchRadius: 50,
+  mateSenseRadius: 250,
+  sexes: { enabled: false },
+  eggs: { enabled: false },
+  mateChoice: { enabled: false }
+}
+
 export const PRESETS: readonly WorldPreset[] = [
   {
     name: 'balanced',
@@ -70,7 +81,10 @@ export const PRESETS: readonly WorldPreset[] = [
       // The cluster layout has no region map to place obstacles by; it has none (ADR 0022), and it
       // keeps its creatures to their food (ADR 0023).
       ecology: { obstacles: { enabled: false } },
-      predation: { enabled: false }
+      predation: { enabled: false },
+      // ...and one sex with an instant birth and a hard lifespan, as it was tuned (ADR 0027).
+      reproduction: { ...OLD_REPRODUCTION },
+      ageing: { enabled: false }
     }
   },
   {
@@ -110,7 +124,9 @@ export const PRESETS: readonly WorldPreset[] = [
       predation: { enabled: false },
       // ...and creatures see through each other, as they always did (ADR 0016 "Line of sight").
       perception: { organismsBlockSight: false },
-      reproduction: { minEnergy: 60, cooldown: 30 },
+      // ...with one sex, an instant birth and a hard lifespan (ADR 0027).
+      reproduction: { ...OLD_REPRODUCTION, minEnergy: 60, cooldown: 30 },
+      ageing: { enabled: false },
       organisms: { maxAge: 600, senescenceAge: 510 },
       ecology: {
         health: { enabled: false },
