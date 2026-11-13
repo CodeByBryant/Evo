@@ -149,3 +149,26 @@ Why, as far as I can tell: the founding hunters mostly survive the first 3,000 t
 ### Verification
 
 Tests with negatives (`carnivore.test.ts`): a jaw next to a plant leaves it untouched and its gut empty, and bites carrion; a mandible still bites the same plant; a jaw does not see a plant (directional and occluding search) but sees carrion, a mandible sees both; hunters take 0 plant energy over 4,000 ticks, and with the old yield of 1 they did (so the test can fail); config accepts a 0 yield for the jaw and rejects it for the mandible. **Goldens:** with the old jaw yield (1.0) and the old 20 percent group pinned, all 50 entries reproduce their hashes (the gates are inert for positive yields); the 14 entries that contain jaw bodies (8 that evolve bodies, 6 `predation-*`) were regenerated. **Re-pinned with a measurement:** the harsh-winter test claimed that births fall in winter; it failed for 5 of 6 seeds before this change (with the winter `reproductionScale` at 0.3 against 1, winter births were 129, 140, 159 and 115 against 113, 125, 119 and 91, not lower, because a lean winter is followed by births from the autumn surplus), so it now asserts the food supply, which is deterministic (winter 874 spawns, summer 1,505).
+
+## Step four: a mouth that breeds true, tried and not kept
+
+Step three left carnivory rare (a jaw lineage alive at 100,000 ticks in 1 of 8 worlds) and recommended making the hunter lineage breed true. This step built that and measured it. **It changed nothing, so it was not kept.**
+
+**The cause was real.** Crossover blends every float gene (BLX-alpha 0.25), and the mouth form is `floor(stat s2 x 5)` with the jaw at 0.8 or more. A jaw parent (0.9) with a grazer (0.1) gives a child stat spread over about [-0.1, 1.1], of which about 25 percent stay a jaw; with a mandible mate (0.5) about 33 percent. Mate choice ignores form (the nearest ready creature in `searchRadius`), so with a 10 percent hunter group a jaw's partner is a jaw about one time in ten.
+
+**The fix tried:** a body slot holding a mouth in either parent was inherited whole (all 14 genes) from one parent, chosen by the slot's first crossover draw. Every gene still consumed its one draw, so no stream shifted and no hash schema changed; with the switch off all 52 golden entries reproduced. A jaw bred with a non-jaw then kept the jaw about half the time instead of a quarter to a third.
+
+**Measured** (100,000 ticks, the owner's seed 3246115366 and seeds 1 to 7, shipped config, switch off against on):
+
+|                             | extinct | jaw alive at the end | jaws alive at the end | most jaws in any 10,000-tick sample |
+| --------------------------- | ------- | -------------------- | --------------------- | ----------------------------------- |
+| linked mouths off (control) | 0       | 1 of 8 (seed 5)      | 3                     | 3                                   |
+| linked mouths on            | 0       | 1 of 8 (seed 7)      | 2                     | 5                                   |
+
+Flesh stayed 0 to 12 percent of the energy taken in, plants about 93 percent. One world (seed 2) ended at 14 creatures with the switch on against 100 with it off, after a window with 97 predation deaths and no jaw left alive at the end: a boom and bust of the hunters, or just two chaotic worlds drifting apart; one seed does not say which.
+
+**Reading it.** Inheritance was not the bottleneck. A strict carnivore lives on the flesh and carrion that exist only when something dies, in a world that makes nearly all its energy as plants; adding the mouth's inheritance does not add energy. This is my leading explanation, not an isolated cause: what was ruled out is, in order, the jaw eating plants (step three), the meat yield, the bite energy, the group share and starting body (step three table), and now how the mouth is inherited.
+
+**Decision.** The mechanism was reverted (it is commit `9a7eab5` on the abandoned branch `feature/true-breeding-mouth` if it is ever wanted again). Carnivory stays a rare niche rather than being tuned further. What would change it is not another knob on the jaw but where meat comes from and how a hunter finds it: a stationary, concentrated, renewable animal food (eggs, which the step-three note called "eventually eggs"), and brains that can remember where prey and nests were (place memory). Both are the next projects, judged with the observatory (ADR 0024): plans that took hold, response diversity, brain drift and the intake shares.
+
+Assortative mating (preferring a partner with the same mouth form) was the next lever in the plan and was **not** built: a jaw lineage that cannot feed itself is not helped by finding mates more reliably.
