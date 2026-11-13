@@ -20,6 +20,10 @@ export class MetricsCollector {
   private energyConsumed = 0
   private energyWasted = 0
   private damageTaken = 0
+  private eggsLaid = 0
+  private eggsHatched = 0
+  private eggsEaten = 0
+  private clutchesLost = 0
   private extinctTick: number | null = null
 
   /** Folds one tick's events into the running counters. */
@@ -75,6 +79,21 @@ export class MetricsCollector {
         case 'organism-damaged':
           this.damageTaken += event.amount
           break
+        case 'egg-laid':
+          this.eggsLaid += 1
+          break
+        case 'egg-hatched':
+          this.eggsHatched += 1
+          break
+        case 'egg-eaten':
+          this.eggsEaten += 1
+          this.energyConsumed += event.intake
+          this.energyWasted += Math.max(0, event.energyTaken - event.intake)
+          break
+        case 'clutch-lost':
+          this.clutchesLost += 1
+          break
+        case 'egg-guarded':
         case 'organism-moved':
         case 'energy-changed':
         case 'season-changed':
@@ -116,7 +135,11 @@ export class MetricsCollector {
       reproductionFailures: this.reproductionFailures,
       energyConsumed: this.energyConsumed,
       energyWasted: this.energyWasted,
-      damageTaken: this.damageTaken
+      damageTaken: this.damageTaken,
+      eggsLaid: this.eggsLaid,
+      eggsHatched: this.eggsHatched,
+      eggsEaten: this.eggsEaten,
+      clutchesLost: this.clutchesLost
     }
   }
 }

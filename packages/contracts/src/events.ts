@@ -21,6 +21,51 @@ export interface OrganismBornEvent extends BaseEvent {
   readonly position: Readonly<Vec2>
 }
 
+/** A female laid an egg (ADR 0027). The clutch was conceived `incubation` seconds earlier. */
+export interface EggLaidEvent extends BaseEvent {
+  readonly type: 'egg-laid'
+  readonly eggId: EntityId
+  readonly motherId: EntityId
+  readonly fatherId: EntityId
+  readonly position: Readonly<Vec2>
+}
+
+/** An egg hatched; the new creature also gets an `organism-born` event (ADR 0027). */
+export interface EggHatchedEvent extends BaseEvent {
+  readonly type: 'egg-hatched'
+  readonly eggId: EntityId
+  readonly organismId: EntityId
+  readonly motherId: EntityId
+  readonly fatherId: EntityId
+}
+
+/** A carrying female died before she laid: the clutch and its energy are lost (ADR 0027). */
+export interface ClutchLostEvent extends BaseEvent {
+  readonly type: 'clutch-lost'
+  readonly motherId: EntityId
+  readonly fatherId: EntityId
+}
+
+/** A mouth took an egg (ADR 0027): the egg is gone and its energy went to the biter's gut. */
+export interface EggEatenEvent extends BaseEvent {
+  readonly type: 'egg-eaten'
+  readonly eggId: EntityId
+  readonly predatorId: EntityId
+  /** The egg's stored energy. */
+  readonly energyTaken: number
+  /** Energy that entered the gut. */
+  readonly intake: number
+}
+
+/** A parent defended its egg: the biter lost health and the egg was left alone (ADR 0027). */
+export interface EggGuardedEvent extends BaseEvent {
+  readonly type: 'egg-guarded'
+  readonly eggId: EntityId
+  readonly guardId: EntityId
+  readonly biterId: EntityId
+  readonly damage: number
+}
+
 export interface OrganismDiedEvent extends BaseEvent {
   readonly type: 'organism-died'
   readonly organismId: EntityId
@@ -155,6 +200,11 @@ export interface HazardExpiredEvent extends BaseEvent {
 export type WorldEvent =
   | OrganismBornEvent
   | OrganismDiedEvent
+  | EggLaidEvent
+  | EggHatchedEvent
+  | ClutchLostEvent
+  | EggEatenEvent
+  | EggGuardedEvent
   | ResourceSpawnedEvent
   | ResourceBittenEvent
   | OrganismBittenEvent

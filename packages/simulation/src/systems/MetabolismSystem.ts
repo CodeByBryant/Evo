@@ -58,7 +58,10 @@ export class MetabolismSystem {
         dt
       const previous = organism.energy
       const healing = this.regen?.get(organism.id) ?? 0
-      organism.energy = healing > 0 ? previous - cost - healing : previous - cost
+      // A female carrying a clutch pays to carry it (ADR 0027); never, with eggs off.
+      const total =
+        organism.pregnancy === null ? cost : cost + this.config.reproduction.eggs.carryCost * dt
+      organism.energy = healing > 0 ? previous - total - healing : previous - total
       organism.age = organism.age + dt
 
       if (this.emitVerbose) {

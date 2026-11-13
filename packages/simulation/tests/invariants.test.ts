@@ -30,7 +30,11 @@ const zeroMetrics: MetricsSnapshot = {
   reproductionFailures: 0,
   energyConsumed: 0,
   energyWasted: 0,
-  damageTaken: 0
+  damageTaken: 0,
+  eggsLaid: 0,
+  eggsHatched: 0,
+  eggsEaten: 0,
+  clutchesLost: 0
 }
 
 const organism = (id: number, overrides: Partial<OrganismState> = {}): OrganismState =>
@@ -64,6 +68,7 @@ const lineageFor = (organisms: readonly OrganismState[]): LineageStore => {
 const baseContext = (overrides: Partial<InvariantContext> = {}): InvariantContext => ({
   organisms: [],
   resources: [],
+  eggs: [],
   config: DEFAULT_WORLD_CONFIG,
   tick: 100,
   extinctionTick: null,

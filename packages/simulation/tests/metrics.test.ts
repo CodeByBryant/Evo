@@ -22,7 +22,11 @@ describe('MetricsCollector', () => {
       reproductionFailures: 0,
       energyConsumed: 0,
       energyWasted: 0,
-      damageTaken: 0
+      damageTaken: 0,
+      eggsLaid: 0,
+      eggsHatched: 0,
+      eggsEaten: 0,
+      clutchesLost: 0
     })
   })
 
@@ -95,7 +99,11 @@ describe('MetricsCollector', () => {
       reproductionFailures: 1,
       energyConsumed: 20,
       energyWasted: 10,
-      damageTaken: 0
+      damageTaken: 0,
+      eggsLaid: 0,
+      eggsHatched: 0,
+      eggsEaten: 0,
+      clutchesLost: 0
     })
   })
 
@@ -197,7 +205,11 @@ describe('MetricsCollector', () => {
       reproductionFailures: 0,
       energyConsumed: 0,
       energyWasted: 0,
-      damageTaken: 0
+      damageTaken: 0,
+      eggsLaid: 0,
+      eggsHatched: 0,
+      eggsEaten: 0,
+      clutchesLost: 0
     })
   })
 

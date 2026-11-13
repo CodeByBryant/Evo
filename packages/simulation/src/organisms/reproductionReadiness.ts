@@ -40,9 +40,13 @@ export class ReproductionReadiness {
     return Math.max(organism.genome.reproduction.minEnergy, this.costFor(organism, tick))
   }
 
-  /** Mature, off cooldown and holding at least the threshold: able to attempt (or to be a partner). */
+  /**
+   * Mature, off cooldown and holding at least the threshold: able to attempt (or to be a partner).
+   * A female carrying a clutch is not (ADR 0027).
+   */
   isReady(organism: OrganismState, tick: number): boolean {
     return (
+      organism.pregnancy === null &&
       lifeStageFor(organism.age, organism.genome.physical) !== 'juvenile' &&
       organism.reproductionCooldownRemaining <= 0 &&
       organism.energy >= this.thresholdFor(organism, tick)

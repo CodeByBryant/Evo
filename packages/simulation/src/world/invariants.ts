@@ -1,5 +1,6 @@
 import type { MetricsSnapshot, ValidationResult, WorldConfig } from '@evo/contracts'
 import type { HazardState } from '../ecology/HazardStore'
+import type { EggState } from '../entities/EggStore'
 import type { OrganismState } from '../entities/OrganismStore'
 import { FREE_SLOT, HUB_SLOT } from '../entities/ResourceStore'
 import type { ResourceState } from '../entities/ResourceStore'
@@ -14,6 +15,8 @@ import type { LineageQueries } from '../lineage/LineageStore'
 export interface InvariantContext {
   readonly organisms: readonly OrganismState[]
   readonly resources: readonly ResourceState[]
+  /** The eggs (ADR 0027), ascending id; empty with eggs off. */
+  readonly eggs: readonly EggState[]
   readonly config: WorldConfig
   readonly tick: number
   readonly extinctionTick: number | null
@@ -164,6 +167,7 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
   const {
     organisms,
     resources,
+    eggs,
     config,
     tick,
     extinctionTick,
@@ -184,6 +188,53 @@ export function checkInvariants(context: InvariantContext): ValidationResult {
 
   if (organisms.length > config.maxPopulation) {
     errors.push(`population (${organisms.length}) exceeds maxPopulation (${config.maxPopulation})`)
+  }
+
+  // The life cycle (ADR 0027): eggs and carried clutches are creatures-to-be and count against the cap.
+  const carrying = organisms.filter((organism) => organism.pregnancy !== null).length
+  if (organisms.length + eggs.length + carrying > config.maxPopulation) {
+    errors.push(
+      `population (${organisms.length}) with ${eggs.length} eggs and ${carrying} clutches exceeds maxPopulation (${config.maxPopulation})`
+    )
+  }
+  if (!config.reproduction.eggs.enabled && (eggs.length > 0 || carrying > 0)) {
+    errors.push('eggs or clutches exist with reproduction.eggs switched off')
+  }
+  let previousEggId = -1
+  for (const egg of eggs) {
+    if (egg.id <= previousEggId)
+      errors.push(`eggs are not in strictly ascending id order at egg ${egg.id}`)
+    previousEggId = egg.id
+    if (egg.id >= nextEntityId) errors.push(`egg ${egg.id} has an id beyond nextEntityId`)
+    for (const [field, value] of [
+      ['x', egg.x],
+      ['y', egg.y],
+      ['energy', egg.energy]
+    ] as const) {
+      if (!Number.isFinite(value)) errors.push(`egg ${egg.id}: ${field} is not finite (${value})`)
+    }
+    if (egg.energy < 0) errors.push(`egg ${egg.id}: energy is negative (${egg.energy})`)
+    if (egg.hatchTick <= egg.layTick || egg.layTick > tick) {
+      errors.push(
+        `egg ${egg.id}: lay tick ${egg.layTick} and hatch tick ${egg.hatchTick} are inconsistent at tick ${tick}`
+      )
+    }
+    if (egg.motherId >= nextEntityId || egg.fatherId >= nextEntityId) {
+      errors.push(`egg ${egg.id} names a parent beyond nextEntityId`)
+    }
+  }
+  for (const organism of organisms) {
+    if (organism.sex !== 0 && organism.sex !== 1) {
+      errors.push(`organism ${organism.id}: sex is ${organism.sex}`)
+    }
+    if (organism.pregnancy !== null) {
+      if (organism.sex !== 0) errors.push(`organism ${organism.id}: a male is carrying a clutch`)
+      if (organism.pregnancy.layTick <= tick - 1 && organism.pregnancy.layTick < tick) {
+        errors.push(
+          `organism ${organism.id}: clutch was due at ${organism.pregnancy.layTick} and is still carried at ${tick}`
+        )
+      }
+    }
   }
 
   let previousOrganismId = -1

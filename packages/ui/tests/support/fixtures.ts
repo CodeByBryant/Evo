@@ -35,7 +35,11 @@ export function view(overrides: Partial<ViewState> = {}): ViewState {
       reproductionFailures: 750,
       energyConsumed: 0,
       energyWasted: 0,
-      damageTaken: 0
+      damageTaken: 0,
+      eggsLaid: 0,
+      eggsHatched: 0,
+      eggsEaten: 0,
+      clutchesLost: 0
     },
     history: [
       {

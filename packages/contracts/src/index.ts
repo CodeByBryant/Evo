@@ -100,6 +100,9 @@ export type {
   PredationConfig,
   PerceptionConfig,
   ReproductionConfig,
+  ReproductionConfigOverrides,
+  SexesConfig,
+  EggsConfig,
   HistoryConfig,
   ObservatoryConfig,
   WorldConfig,
@@ -109,6 +112,11 @@ export type {
 export type {
   OrganismBornEvent,
   OrganismDiedEvent,
+  EggLaidEvent,
+  EggHatchedEvent,
+  ClutchLostEvent,
+  EggEatenEvent,
+  EggGuardedEvent,
   ResourceSpawnedEvent,
   ResourceBittenEvent,
   OrganismBittenEvent,
@@ -126,6 +134,7 @@ export type {
   WorldEventType
 } from './events'
 export type {
+  EggSnapshot,
   OrganismSnapshot,
   PartSnapshot,
   ResourceSnapshot,

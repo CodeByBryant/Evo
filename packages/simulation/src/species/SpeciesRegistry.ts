@@ -45,6 +45,11 @@ export interface SpeciesAssignment {
   genome: Genome
   /** The organism whose species the new species descends from if one is founded (the mother). */
   parentOrganismId: EntityId | null
+  /**
+   * The species the mother belonged to when the child was conceived (ADR 0027): an egg may hatch
+   * after she has died, so her species is carried here instead of looked up. Absent: looked up.
+   */
+  parentSpeciesId?: SpeciesId | null
   tick: number
   /**
    * Founders of the cluster layout name the species they belong to (docs/decisions/0014): the
@@ -153,9 +158,11 @@ export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
       species = nearest
     } else {
       const parentSpecies =
-        request.parentOrganismId === null
-          ? undefined
-          : this.speciesByOrganism.get(request.parentOrganismId)
+        request.parentSpeciesId !== undefined
+          ? (request.parentSpeciesId ?? undefined)
+          : request.parentOrganismId === null
+            ? undefined
+            : this.speciesByOrganism.get(request.parentOrganismId)
       species = {
         id: this.entries.length,
         representative: request.genome,

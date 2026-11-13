@@ -56,6 +56,8 @@ export function organismFor(
     gut: 0,
     biteCooldown: 0,
     brain: null,
+    sex: 0,
+    pregnancy: null,
     ...overrides
   }
 }

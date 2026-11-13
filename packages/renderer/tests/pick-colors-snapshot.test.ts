@@ -145,7 +145,9 @@ describe('buildRenderSnapshot', () => {
         lifeStage: 'juvenile',
         reproductionCooldownRemaining: 0,
         gut: 0,
-        gutCapacity: 0
+        gutCapacity: 0,
+        sex: 0,
+        carrying: null
       },
       {
         id: 2,
@@ -170,7 +172,9 @@ describe('buildRenderSnapshot', () => {
         lifeStage: 'mature',
         reproductionCooldownRemaining: 0,
         gut: 0,
-        gutCapacity: 0
+        gutCapacity: 0,
+        sex: 0,
+        carrying: null
       }
     ],
     resources: [
@@ -193,6 +197,7 @@ describe('buildRenderSnapshot', () => {
         expiresAtTick: 100
       }
     ],
+    eggs: [],
     metrics: {
       organismsBorn: 0,
       deathsByStarvation: 0,
@@ -207,7 +212,11 @@ describe('buildRenderSnapshot', () => {
       reproductionFailures: 0,
       energyConsumed: 0,
       energyWasted: 0,
-      damageTaken: 0
+      damageTaken: 0,
+      eggsLaid: 0,
+      eggsHatched: 0,
+      eggsEaten: 0,
+      clutchesLost: 0
     }
   }
 
@@ -346,11 +355,14 @@ describe('buildRenderSnapshot body data', () => {
             lifeStage: 'mature',
             reproductionCooldownRemaining: 0,
             gut: 0,
-            gutCapacity: 0
+            gutCapacity: 0,
+            sex: 0,
+            carrying: null
           }
         ],
         resources: [],
         hazards: [],
+        eggs: [],
         metrics: {} as never
       },
       { worldWidth: 500, worldHeight: 500, season: null, selectedId: null }
@@ -394,11 +406,14 @@ describe('speedRatio', () => {
             lifeStage: 'mature',
             reproductionCooldownRemaining: 0,
             gut: 0,
-            gutCapacity: 0
+            gutCapacity: 0,
+            sex: 0,
+            carrying: null
           }
         ],
         resources: [],
         hazards: [],
+        eggs: [],
         metrics: {} as never
       },
       {
@@ -456,11 +471,14 @@ describe('colorByHue', () => {
           lifeStage: 'mature' as const,
           reproductionCooldownRemaining: 0,
           gut: 0,
-          gutCapacity: 0
+          gutCapacity: 0,
+          sex: 0 as const,
+          carrying: null
         }
       ],
       resources: [],
       hazards: [],
+      eggs: [],
       metrics: {} as never
     }
     const context = { worldWidth: 1, worldHeight: 1, season: null, selectedId: null }

@@ -1,4 +1,5 @@
 import type { EntityId, Genome, WorldConfig } from '@evo/contracts'
+import { EggStore } from '../entities/EggStore'
 import type { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState, OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
@@ -54,7 +55,9 @@ export class ReproductionSystem {
     private readonly random: SeededRandom,
     private readonly events: EventLog,
     private readonly species: SpeciesTracker = NO_SPECIES,
-    ecology: EcologyModel | null = null
+    ecology: EcologyModel | null = null,
+    /** The eggs in the world; they count against `maxPopulation` with the clutches being carried (ADR 0027). */
+    private readonly eggs: EggStore = new EggStore()
   ) {
     this.unbounded = ecology !== null && ecology.clusters !== null
     this.readiness = new ReproductionReadiness(config, ecology)
@@ -97,12 +100,20 @@ export class ReproductionSystem {
     const { width, height } = this.config.environment
     const unbounded = this.unbounded
 
+    const { sexes, eggs: eggConfig } = this.config.reproduction
+    const sexed = sexes.enabled
+    const eggsOn = eggConfig.enabled
+
     const initiators = this.organisms.values()
+    // Eggs and carried clutches are creatures-to-be and count against the population cap (ADR 0027);
+    // with eggs off both are zero and the cap is exactly the old one.
+    let committed = eggsOn ? this.eggs.size : 0
     for (const organism of initiators) {
       organism.reproductionCooldownRemaining = Math.max(
         0,
         organism.reproductionCooldownRemaining - dt
       )
+      if (organism.pregnancy !== null) committed += 1
     }
 
     const pairedIds = new Set<EntityId>()
@@ -111,7 +122,7 @@ export class ReproductionSystem {
       if (!this.readiness.isReady(organism, tick)) continue
       if (pairedIds.has(organism.id)) continue
 
-      if (this.organisms.size >= this.config.maxPopulation) {
+      if (this.organisms.size + committed >= this.config.maxPopulation) {
         this.events.record({
           type: 'reproduction-attempted',
           tick,
@@ -129,6 +140,7 @@ export class ReproductionSystem {
         genome.reproduction.searchRadius,
         (item) =>
           item.id !== organism.id &&
+          (!sexed || item.sex !== organism.sex) &&
           this.sameSpecies(organism, item) &&
           !pairedIds.has(item.id) &&
           this.readiness.isReady(item, tick)
@@ -154,14 +166,47 @@ export class ReproductionSystem {
       organism.reproductionCooldownRemaining = genome.reproduction.cooldown
       partner.reproductionCooldownRemaining = partner.genome.reproduction.cooldown
 
-      const childId = this.ids.allocate()
-      const [mother, father] = organism.id < partner.id ? [organism, partner] : [partner, organism]
+      // With two sexes the female is the mother; otherwise the lower id is (as ever).
+      const [mother, father] = sexed
+        ? organism.sex === 0
+          ? [organism, partner]
+          : [partner, organism]
+        : organism.id < partner.id
+          ? [organism, partner]
+          : [partner, organism]
       const parentIds: EntityId[] = [mother.id, father.id]
       const childGenome = this.recombiner.combine(
         this.effectiveGenome(mother.genome, mother.brain),
         this.effectiveGenome(father.genome, father.brain),
         this.geneticsRandom
       )
+
+      if (eggsOn) {
+        // The child is conceived now (its genome is fixed) and carried until it is laid (ADR 0027).
+        const energy = Math.min(
+          genome.reproduction.offspringInvestment + partner.genome.reproduction.offspringInvestment,
+          maxEnergyOf(childGenome, this.config)
+        )
+        mother.pregnancy = {
+          genome: childGenome,
+          fatherId: father.id,
+          speciesId: this.species.speciesOf(mother.id) ?? null,
+          energy,
+          layTick: tick + Math.max(1, Math.ceil(eggConfig.incubation / dt))
+        }
+        committed += 1
+        this.events.record({
+          type: 'reproduction-attempted',
+          tick,
+          organismId: organism.id,
+          partnerId: partner.id,
+          childId: null,
+          succeeded: true,
+          failureReason: null
+        })
+        continue
+      }
+      const childId = this.ids.allocate()
 
       const midX = (organism.x + partner.x) / 2
       const midY = (organism.y + partner.y) / 2
@@ -172,6 +217,8 @@ export class ReproductionSystem {
       const x = unbounded ? offsetX : clamp(offsetX, 0, width)
       const y = unbounded ? offsetY : clamp(offsetY, 0, height)
       const heading = wrapAngle(this.random.float() * TWO_PI)
+      // One draw decides the child's sex (ADR 0027); none with a single sex, so the stream is as before.
+      const sex: 0 | 1 = sexed ? (this.random.float() < 0.5 ? 0 : 1) : 0
 
       const childEnergy = Math.min(
         genome.reproduction.offspringInvestment + partner.genome.reproduction.offspringInvestment,
@@ -197,7 +244,9 @@ export class ReproductionSystem {
         brain:
           this.config.learning.controller === 'brain'
             ? createBrainState(childGenome, this.layout, childEnergy)
-            : null
+            : null,
+        sex,
+        pregnancy: null
       }
       this.organisms.add(child)
       this.lineage.register({

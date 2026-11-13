@@ -292,6 +292,41 @@ export interface ReproductionConfig {
    * mating signal, longer than the sensor radius; brain controller only, ADR 0010).
    */
   mateSenseRadius: number
+  /** Two sexes: only a female and a male mate (ADR 0027). Off: any two ready creatures may. */
+  sexes: SexesConfig
+  /** Incubation, eggs and guarding (ADR 0027). Off: a child is born at conception, as before. */
+  eggs: EggsConfig
+}
+
+/** Two sexes (ADR 0027). A newborn's sex is one draw from the `reproduction` stream; founders alternate. */
+export interface SexesConfig {
+  enabled: boolean
+}
+
+/**
+ * A pregnancy and an egg instead of an instant birth (ADR 0027). Needs `sexes.enabled`: the female
+ * carries the clutch, lays an egg, and the egg hatches into a creature after `hatch`.
+ */
+export interface EggsConfig {
+  enabled: boolean
+  /** Seconds a female carries the clutch before laying. */
+  incubation: number
+  /** Seconds an egg takes to hatch after it is laid. */
+  hatch: number
+  /** Energy per second a carrying female pays on top of her metabolism. */
+  carryCost: number
+  /** A living parent within this distance of its egg guards it (ADR 0027). */
+  guardRadius: number
+  /** Energy per second a guarding parent pays, per guarded egg. */
+  guardCost: number
+  /** Health a biter loses when a guarded egg is defended. */
+  guardDamage: number
+}
+
+/** A partial reproduction section merged onto the defaults. */
+export type ReproductionConfigOverrides = Partial<Omit<ReproductionConfig, 'sexes' | 'eggs'>> & {
+  sexes?: Partial<SexesConfig>
+  eggs?: Partial<EggsConfig>
 }
 
 export interface HistoryConfig {
@@ -347,7 +382,7 @@ export interface WorldConfigOverrides {
   environment?: EnvironmentConfigOverrides
   organisms?: Partial<OrganismConfig>
   resources?: ResourceConfigOverrides
-  reproduction?: Partial<ReproductionConfig>
+  reproduction?: ReproductionConfigOverrides
   history?: Partial<HistoryConfig>
   observatory?: Partial<ObservatoryConfig>
   genetics?: GeneticsConfigOverrides

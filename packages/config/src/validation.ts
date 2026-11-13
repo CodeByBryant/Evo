@@ -85,13 +85,25 @@ const PLANT_KEYS = [
   'lifespan',
   'maxPlants'
 ]
+const SEXES_KEYS = ['enabled']
+const EGGS_KEYS = [
+  'enabled',
+  'incubation',
+  'hatch',
+  'carryCost',
+  'guardRadius',
+  'guardCost',
+  'guardDamage'
+]
 const REPRODUCTION_KEYS = [
   'minEnergy',
   'offspringInvestment',
   'overheadFraction',
   'cooldown',
   'searchRadius',
-  'mateSenseRadius'
+  'mateSenseRadius',
+  'sexes',
+  'eggs'
 ]
 const HISTORY_KEYS = ['maxEvents', 'eventDetail', 'maxHistoricalOrganisms']
 const OBSERVATORY_KEYS = ['enabled', 'sampleEvery', 'behaviourEvery', 'maxSamples']
@@ -356,6 +368,27 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       { positive: true },
       errors
     )
+    const sexes = checkSection(reproduction, 'sexes', SEXES_KEYS, errors, 'reproduction.sexes')
+    if (sexes && typeof sexes['enabled'] !== 'boolean') {
+      errors.push('reproduction.sexes.enabled must be a boolean')
+    }
+    const eggs = checkSection(reproduction, 'eggs', EGGS_KEYS, errors, 'reproduction.eggs')
+    if (eggs) {
+      if (typeof eggs['enabled'] !== 'boolean') {
+        errors.push('reproduction.eggs.enabled must be a boolean')
+      }
+      for (const key of ['incubation', 'hatch', 'guardRadius'] as const) {
+        checkNumber(eggs, key, `reproduction.eggs.${key}`, { positive: true }, errors)
+      }
+      for (const key of ['carryCost', 'guardCost', 'guardDamage'] as const) {
+        checkNumber(eggs, key, `reproduction.eggs.${key}`, { nonnegative: true }, errors)
+      }
+      if (eggs['enabled'] === true && sexes && sexes['enabled'] !== true) {
+        errors.push(
+          'reproduction.eggs.enabled requires reproduction.sexes.enabled (the female lays)'
+        )
+      }
+    }
 
     if (
       investment !== undefined &&
@@ -613,6 +646,18 @@ function mergeEnvironment(base: object, override: unknown): unknown {
   }
 }
 
+/** Merges the reproduction section: `sexes` and `eggs` merge field by field. */
+function mergeReproduction(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  return {
+    ...base,
+    ...override,
+    sexes: mergeSection(defaults['sexes'] as object, override['sexes']),
+    eggs: mergeSection(defaults['eggs'] as object, override['eggs'])
+  }
+}
+
 /** Merges a table of named sections, keeping unknown names so validation can report them. */
 function mergeNamed(base: Record<string, object>, override: Record<string, unknown>): unknown {
   const result: Record<string, unknown> = { ...base }
@@ -645,7 +690,7 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     environment: mergeEnvironment(base.environment, given['environment']),
     organisms: mergeSection(base.organisms, given['organisms']),
     resources: mergeResources(base.resources, given['resources']),
-    reproduction: mergeSection(base.reproduction, given['reproduction']),
+    reproduction: mergeReproduction(base.reproduction, given['reproduction']),
     history: mergeSection(base.history, given['history']),
     observatory: mergeSection(base.observatory, given['observatory']),
     genetics: mergeGenetics(base.genetics, given['genetics']),

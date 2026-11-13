@@ -97,7 +97,18 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     overheadFraction: 0.6,
     cooldown: 45,
     searchRadius: 50,
-    mateSenseRadius: 250
+    mateSenseRadius: 250,
+    // Off here; the life cycle (ADR 0027) is switched on in the measured commit.
+    sexes: { enabled: false },
+    eggs: {
+      enabled: false,
+      incubation: 10,
+      hatch: 20,
+      carryCost: 0.1,
+      guardRadius: 20,
+      guardCost: 0.05,
+      guardDamage: 5
+    }
   },
   history: { maxEvents: 10_000, eventDetail: 'essential', maxHistoricalOrganisms: 10_000 },
   // The evolution observatory (ADR 0024): derived indicators, sampled every 50 simulated seconds.

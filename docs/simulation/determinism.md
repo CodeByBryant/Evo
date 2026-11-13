@@ -207,6 +207,10 @@ Introduced with renewable plants (ADR 0021). Each resource's record gains four v
 
 Introduced with the prey and threat senses (ADR 0023, step two). The metrics section gains two counters, appended after the two remainders of section 12: `deathsByPredation` (u32) and `predationBites` (u32), both zero for ever without predation. The brain gets eight more inputs (`OBSERVATION_SIZE` 48) so every genome carries 514 weights instead of 450 (the hash covers weights as they are), and because founders draw one normal per weight from the `genetics` stream, **every founder's brain draws shift**: every golden entry regenerated (44 of 44 changed, in the commit that caused it). The header carries the new version. A byte-identical switch-off proof is therefore impossible (the brains differ); what was shown instead is that the new inputs are zero without predation, that the reflex controller is untouched (scenario A moved only through the mutation draws that follow the founders' extra ones, 29 / 47 / 18 to 28 / 46 / 18), and that the vectors below were recomputed with the independent Python hasher, which reproduced the version 11 values first.
 
+#### Version 13 (current, the life cycle)
+
+Introduced with sexes, incubation and eggs (ADR 0027). Everything in version 12 is unchanged and a tail is appended after its predation counters: the four egg counters `eggsLaid`, `eggsHatched`, `eggsEaten`, `clutchesLost` (u32 each); then for every organism in ascending id order its `sex` (u8, `0` female, `1` male) and a boolean for a carried clutch followed, when carrying, by the clutch (the child's genome written exactly as an organism's is: ids, gene vector, brain, body genes; then the father's id u32, a boolean and u32 for the mother's species at conception, the egg's energy f64 and the lay tick f64); then the egg count (u32) and each egg in ascending id order (id u32, x f64, y f64, mother id u32, father id u32, species boolean and u32, energy f64, lay tick f64, hatch tick f64, then its genome). With sexes and eggs off the tail is four zero counters, a `0` and a `false` per organism and an egg count of zero, and the state before the tail is bit for bit the version 12 state. The header carries the new version, so every golden entry's hash moves (regenerated in the commit that caused it); the proof that nothing else moved is the equivalence harness: nine scenarios (field, instant eating, noise food, clusters, one cluster, lush, no predation, no ecology, the reflex controller) with founder brains equal to the prior and mutation frozen gave normalized snapshots, events and records **identical** to the previous commit through births and deaths with the life cycle off. The header and sample vectors below were recomputed with the independent Python hasher.
+
 `WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
 ## 8. State identity versus the event log
@@ -248,9 +252,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(12)`                                           | `d49b1e0b9a8a18f330c42958c075e1a5` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `fa1c4aa87cacbdd6959a759e55fd84da` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `fa1c4aa87cacbdd6959a759e55fd84da` |
+| header only: `"EVOH"`, `writeUint32(13)`                                           | `587210918be484b597a2acfc1f3e30d3` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `a92127630cc9776a9793f49801069c1f` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `a92127630cc9776a9793f49801069c1f` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 
