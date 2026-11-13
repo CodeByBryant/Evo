@@ -83,7 +83,8 @@ export function checkPredation(root: PlainObject, errors: string[]): void {
     )
     if (yields) {
       for (const form of MOUTH_FORMS) {
-        checkNumber(yields, form, `predation.carcass.yields.${form}`, { positive: true }, errors)
+        // Zero is allowed: a form that cannot digest meat takes nothing from a carcass (ADR 0026).
+        checkNumber(yields, form, `predation.carcass.yields.${form}`, { nonnegative: true }, errors)
       }
     }
   }

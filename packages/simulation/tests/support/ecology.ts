@@ -1,6 +1,19 @@
 import type { EcologyConfigOverrides, WorldConfigOverrides } from '@evo/contracts'
 import { FREE_FOOD } from './food'
 
+/**
+ * Mouth yields for food kinds a test makes up (ADR 0026: every form has to say what it yields for every
+ * kind a world grows): every form takes them whole (1), except the jaw, which eats no plant.
+ */
+export function eats(names: readonly string[]): NonNullable<WorldConfigOverrides['anatomy']> {
+  const forms = ['sprout', 'proboscis', 'mandible', 'radula', 'jaw'] as const
+  return {
+    mouthForms: Object.fromEntries(
+      forms.map((form) => [form, Object.fromEntries(names.map((n) => [n, form === 'jaw' ? 0 : 1]))])
+    ) as never
+  }
+}
+
 const OFF = {
   health: { enabled: false },
   regions: { enabled: false },
@@ -30,8 +43,20 @@ export function withoutEcology(config: WorldConfigOverrides = {}): WorldConfigOv
     migration: { ...OFF.migration, ...given.migration },
     obstacles: { ...OFF.obstacles, ...given.obstacles }
   }
+  // Kinds a test makes up have to be edible by the forms it uses; the defaults already list their own.
+  const custom = (given.resourceKinds?.kinds ?? [])
+    .map((k) => k.name)
+    .filter((n) => !['grass', 'fruit', 'fungus', 'nectar'].includes(n))
+  const anatomy =
+    custom.length === 0
+      ? config.anatomy
+      : {
+          ...(config.anatomy ?? {}),
+          mouthForms: { ...eats(custom).mouthForms, ...(config.anatomy?.mouthForms ?? {}) }
+        }
   return {
     ...config,
+    ...(anatomy === undefined ? {} : { anatomy }),
     // The Phase 5 food: free food at two a second on a 500 x 500 field (the spawn rate was lowered
     // when mate seeking arrived, ADR 0010; patches, plants and the bigger field came in ADR 0021).
     environment: { ...FREE_FOOD.environment, ...(config.environment ?? {}) },

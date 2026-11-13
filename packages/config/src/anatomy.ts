@@ -246,6 +246,20 @@ const STARTING_GROUP_KEYS = ['archetype', 'share']
 const STARTING_BODY_MODES = ['reference', 'archetypes']
 const OUTLINE_KEYS = ['count', 'radii', 'angles']
 
+/** The names of the food kinds when kinds are on, else none. */
+function enabledKindNames(root: PlainObject): string[] {
+  const ecology = root['ecology']
+  const section = isObject(ecology) ? ecology['resourceKinds'] : undefined
+  if (!isObject(section) || section['enabled'] !== true || !Array.isArray(section['kinds'])) {
+    return []
+  }
+  const names: string[] = []
+  for (const kind of section['kinds'] as unknown[]) {
+    if (isObject(kind) && typeof kind['name'] === 'string') names.push(kind['name'])
+  }
+  return names
+}
+
 function checkRange(
   section: PlainObject,
   key: string,
@@ -358,6 +372,19 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
           if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
             errors.push(`anatomy.mouthForms.${form}.${kind} must be a number, zero or more`)
           }
+        }
+      }
+    }
+    // With food kinds on, every form must say what it yields for every kind: an unlisted kind used
+    // to be edible by everyone (a yield of 1), which hard diets turn into a trap (ADR 0026). The
+    // carcass kind is added later, from `predation.carcass.yields`, so it is not listed here.
+    for (const name of enabledKindNames(root)) {
+      for (const form of MOUTH_FORMS) {
+        const kinds = forms[form]
+        if (isObject(kinds) && kinds[name] === undefined) {
+          errors.push(
+            `anatomy.mouthForms.${form} has no yield for the food kind "${name}" (list it, with 0 if the form cannot eat it)`
+          )
         }
       }
     }

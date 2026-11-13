@@ -66,7 +66,17 @@ describe('ecology config', () => {
         toxicity: 0,
         regions: []
       }
-      const config = resolveWorldConfig({ ecology: { resourceKinds: { kinds: [kind] } } })
+      // every mouth form has to say what it yields for the new kind (ADR 0026)
+      const mouthForms = Object.fromEntries(
+        ['sprout', 'proboscis', 'mandible', 'radula', 'jaw'].map((f) => [
+          f,
+          { moss: f === 'jaw' ? 0 : 1 }
+        ])
+      )
+      const config = resolveWorldConfig({
+        ecology: { resourceKinds: { kinds: [kind] } },
+        anatomy: { mouthForms }
+      })
       expect(config.ecology.resourceKinds.kinds).toEqual([kind])
     })
 

@@ -17,7 +17,7 @@ import { DigestionSystem } from '../../src/systems/DigestionSystem'
 import { InteractionSystem } from '../../src/systems/InteractionSystem'
 import { MovementSystem } from '../../src/systems/MovementSystem'
 import { organismFor } from '../support/organism'
-import { withoutEcology } from '../support/ecology'
+import { eats, withoutEcology } from '../support/ecology'
 
 /**
  * Bites (ADR 0017): a working mouth, food in front of it within reach, the intent to interact and a
@@ -270,6 +270,7 @@ describe('food has health: it takes several bites', () => {
     const cfg = resolveWorldConfig({
       learning: { controller: 'reflex' },
       feeding: FEEDING,
+      anatomy: eats(['tough']),
       ecology: {
         resourceKinds: {
           enabled: true,
@@ -387,11 +388,48 @@ describe('the mouth', () => {
   })
 })
 
+describe('a body with two mouths', () => {
+  it('takes the yield of the mouth that bites, not the blend over both (ADR 0026)', () => {
+    const cfg = resolveWorldConfig(
+      withoutEcology({
+        learning: { controller: 'reflex' },
+        feeding: FEEDING,
+        ecology: { resourceKinds: DEFAULT_WORLD_CONFIG.ecology.resourceKinds }
+      })
+    )
+    const sproutMouth = (p: FounderPart): FounderPart =>
+      p.type === 'mouth' ? { ...p, stats: [0.5, 0.5, 0.05, 0.5, 0.5, 0.5] } : p
+    const intake = (extra: boolean): number => {
+      const parts = founderOf(cfg).map(sproutMouth)
+      const mouth = parts.find((p) => p.type === 'mouth')!
+      // a jaw beside the sprout: it bites nothing off a plant, but used to drag the blended yield down
+      if (extra)
+        parts.push({ ...mouth, angle: mouth.angle + 3, stats: [0.5, 0.5, 0.95, 0.5, 0.5, 0.5] })
+      const s = scene(
+        cfg,
+        (m) => [food(9, m.x + 1, m.y, 30, 0)],
+        {},
+        undefined,
+        new EcologyModel(cfg, null),
+        parts
+      )
+      s.interact()
+      return s.organism.gut
+    }
+    expect(intake(false)).toBeCloseTo(12 * 1.3, 12)
+    // A second mouth doubles the body's bite size (it sums over mouths), so the chunk is 24; what it
+    // takes in is the sprout's 1.3 of it, not the blend over both mouths (0.65).
+    expect(intake(true)).toBeCloseTo(24 * 1.3, 12)
+    expect(intake(true)).not.toBeCloseTo(24 * 0.65, 6)
+  })
+})
+
 describe('toxins', () => {
   it('a whole toxic item adds up to its old damage, split over its bites', () => {
     const cfg = resolveWorldConfig({
       learning: { controller: 'reflex' },
       feeding: FEEDING,
+      anatomy: eats(['toxic']),
       ecology: {
         resourceKinds: {
           enabled: true,
