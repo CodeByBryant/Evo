@@ -50,6 +50,7 @@ import { EggStore } from '../entities/EggStore'
 import { IdGenerator } from '../entities/IdGenerator'
 import type { OrganismState } from '../entities/OrganismStore'
 import { OrganismStore } from '../entities/OrganismStore'
+import { guardsOf } from '../organisms/eggs'
 import { lifeStageFor } from '../organisms/lifeStage'
 import { ReproductionReadiness } from '../organisms/reproductionReadiness'
 import {
@@ -344,7 +345,12 @@ export class World {
       this.sightBlockers(),
       // Prey and threats (ADR 0023): only with predation on; the buffers stay empty otherwise.
       this.config.predation.enabled
-        ? { organismIndex: this.organismIndex, prey: this.preyBuffer, threat: this.threatBuffer }
+        ? {
+            organismIndex: this.organismIndex,
+            prey: this.preyBuffer,
+            threat: this.threatBuffer,
+            ...(this.config.reproduction.eggs.enabled ? { eggs: this.eggStore } : {})
+          }
         : undefined
     )
     this.decisionSystem = new DecisionSystem(
@@ -368,7 +374,8 @@ export class World {
       this.hazardBuffer,
       this.mateBuffer,
       this.preyBuffer,
-      this.threatBuffer
+      this.threatBuffer,
+      this.config.reproduction.eggs.enabled ? this.eggStore : undefined
     )
     this.movementSystem = new MovementSystem(
       this.config,
@@ -398,7 +405,8 @@ export class World {
             organismIndex: this.organismIndex,
             buffer: this.predationBuffer,
             lastBitten: this.lastBitten,
-            obstacles: this.obstacleField
+            obstacles: this.obstacleField,
+            ...(this.config.reproduction.eggs.enabled ? { eggs: this.eggStore } : {})
           }
         : undefined
     )
@@ -1020,7 +1028,7 @@ export class World {
       fatherId: egg.fatherId,
       energy: egg.energy,
       progress: Math.min(1, Math.max(0, (tick - egg.layTick) / (egg.hatchTick - egg.layTick))),
-      guarded: false
+      guarded: guardsOf(egg, this.organisms, this.config.reproduction.eggs.guardRadius).length > 0
     }))
   }
 

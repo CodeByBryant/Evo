@@ -9,6 +9,7 @@ import type { BrainLayout } from '../learning/BrainLayout'
 import { createBrainState } from '../learning/BrainState'
 import type { LineageStore } from '../lineage/LineageStore'
 import { TWO_PI, wrapAngle } from '../math/scalar'
+import { guardsOf } from '../organisms/eggs'
 import { maxHealthOf } from '../organisms/traits'
 import type { SeededRandom } from '../random/SeededRandom'
 import type { SpeciesTracker } from '../species/SpeciesRegistry'
@@ -71,6 +72,15 @@ export class EggSystem {
         fatherId: pregnancy.fatherId,
         position: { x: mother.x, y: mother.y }
       })
+    }
+
+    // Guarding costs energy: every parent beside an egg pays `guardCost` a second for it (ADR 0027).
+    const { guardRadius, guardCost } = this.config.reproduction.eggs
+    if (guardCost > 0) {
+      const toll = guardCost * this.config.timestep
+      for (const egg of this.eggs.values()) {
+        for (const guard of guardsOf(egg, this.organisms, guardRadius)) guard.energy -= toll
+      }
     }
 
     // Hatch every egg that is ready, in ascending egg id.
