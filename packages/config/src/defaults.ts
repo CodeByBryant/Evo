@@ -106,6 +106,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     mutationRateScale: 1,
     mutationStrengthScale: 1,
     blendAlpha: 0.25,
+    linkedMouths: false,
     brain: {
       hiddenSize: 8,
       memorySize: 4,

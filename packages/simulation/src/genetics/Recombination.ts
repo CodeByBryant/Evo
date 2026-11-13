@@ -10,6 +10,8 @@ import {
 } from './GenomeFactory'
 import { mutateVector, mutateWeights } from './Mutation'
 import type { MutationScales } from './Mutation'
+import { linkedMouthGroups } from './SlotLinkage'
+import type { LinkedGroup } from './SlotLinkage'
 
 /** Builds a child genome from two parents (roadmap 4.4). */
 export interface RecombinationStrategy {
@@ -24,20 +26,35 @@ export interface RecombinationStrategy {
  *   parents' difference, then bounded. Identical parents give an identical child;
  * - circular: the same blend along the shortest arc, wrapped.
  *
- * Each gene consumes exactly one uniform draw.
+ * Each gene consumes exactly one uniform draw. Genes in a `linked` group (a slot inherited whole,
+ * ADR 0023 step four) still consume theirs, but every gene of the group is copied from the parent
+ * chosen by the draw of the group's first gene, so the stream and the draw order are unchanged.
  */
 export function crossoverVector(
   mother: readonly number[],
   father: readonly number[],
   specs: readonly GeneSpec[],
   random: RandomSource,
-  alpha: number
+  alpha: number,
+  linked: readonly LinkedGroup[] = []
 ): number[] {
   const out: number[] = []
+  let group: LinkedGroup | undefined
+  let groupPicksMother = false
   specs.forEach((spec, index) => {
     const a = mother[index] as number
     const b = father[index] as number
     const u = random.float()
+    const entering = linked.find((g) => g.start === index)
+    if (entering !== undefined) {
+      group = entering
+      groupPicksMother = u < 0.5
+    }
+    if (group !== undefined && index < group.start + group.length) {
+      const copied = groupPicksMother ? a : b
+      out.push(spec.kind === 'bool' ? copied : boundGene(spec, out, copied))
+      return
+    }
     let candidate: number
     switch (spec.kind) {
       case 'int':
@@ -153,7 +170,8 @@ export class GenomeRecombiner implements RecombinationStrategy {
         father.body.genes,
         this.body.specs,
         this.body.random,
-        this.genetics.blendAlpha
+        this.genetics.blendAlpha,
+        this.genetics.linkedMouths ? linkedMouthGroups(mother.body.genes, father.body.genes) : []
       )
       body = mutateVector(crossedBody, this.body.specs, this.body.random, scales)
     }

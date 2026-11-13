@@ -8,6 +8,7 @@ const GENETICS_KEYS = [
   'mutationRateScale',
   'mutationStrengthScale',
   'blendAlpha',
+  'linkedMouths',
   'brain',
   'learning',
   'learningInheritance',
@@ -243,6 +244,10 @@ export function checkGenetics(root: PlainObject, errors: string[]): void {
     errors
   )
   checkNumber(genetics, 'blendAlpha', 'genetics.blendAlpha', { nonnegative: true }, errors)
+  if (genetics['linkedMouths'] === undefined) errors.push('genetics.linkedMouths is required')
+  else if (typeof genetics['linkedMouths'] !== 'boolean') {
+    errors.push('genetics.linkedMouths must be a boolean')
+  }
 
   const brain = checkSection(genetics, 'brain', BRAIN_KEYS, errors, 'genetics.brain')
   if (brain) {
