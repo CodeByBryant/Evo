@@ -296,6 +296,8 @@ export interface ReproductionConfig {
   sexes: SexesConfig
   /** Incubation, eggs and guarding (ADR 0027). Off: a child is born at conception, as before. */
   eggs: EggsConfig
+  /** A partner has to accept too, and a creature has tastes (ADR 0027). Off: the nearest ready partner. */
+  mateChoice: MateChoiceConfig
 }
 
 /** Two sexes (ADR 0027). A newborn's sex is one draw from the `reproduction` stream; founders alternate. */
@@ -323,10 +325,36 @@ export interface EggsConfig {
   guardDamage: number
 }
 
+/**
+ * Mate choice (ADR 0027). A creature looks at the nearest `candidates` ready partners and takes the
+ * first that both of them accept. A creature scores a candidate `(1 - preference) x condition +
+ * preference x difference`, where condition is the candidate's spare energy over what it needs to be
+ * ready, and difference is how far apart the genomes are against the species threshold; it accepts if
+ * the score reaches `choosiness x threshold`. Refusing costs `searchCost` energy and a `retryDelay` wait.
+ */
+export interface MateChoiceConfig {
+  enabled: boolean
+  /** The founders' `choosiness` gene. */
+  choosiness: number
+  /** The founders' `preference` gene. */
+  preference: number
+  /** The score a fully choosy creature (`choosiness` 1) asks for, in `(0, 1]`. */
+  threshold: number
+  /** Energy a creature pays each time it turns every candidate down. */
+  searchCost: number
+  /** Seconds it waits before looking again after turning them all down. */
+  retryDelay: number
+  /** How many of the nearest ready partners it looks at. */
+  candidates: number
+}
+
 /** A partial reproduction section merged onto the defaults. */
-export type ReproductionConfigOverrides = Partial<Omit<ReproductionConfig, 'sexes' | 'eggs'>> & {
+export type ReproductionConfigOverrides = Partial<
+  Omit<ReproductionConfig, 'sexes' | 'eggs' | 'mateChoice'>
+> & {
   sexes?: Partial<SexesConfig>
   eggs?: Partial<EggsConfig>
+  mateChoice?: Partial<MateChoiceConfig>
 }
 
 /**

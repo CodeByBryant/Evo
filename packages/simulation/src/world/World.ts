@@ -79,6 +79,7 @@ import { kindNamesOf, massScaleOf } from '../organisms/bodyFactors'
 import { planClusterFounders } from '../genetics/ClusterFounders'
 import type { FounderPlan } from '../genetics/ClusterFounders'
 import { createFounderGenome, genomeToVector } from '../genetics/GenomeFactory'
+import { genomeDistance, weightedDistance } from '../genetics/GeneticDistance'
 import { GenomeRecombiner } from '../genetics/Recombination'
 import { HistoryStore } from '../history/HistoryStore'
 import { LineageStore } from '../lineage/LineageStore'
@@ -444,7 +445,23 @@ export class World {
       this.events,
       this.speciesRegistry,
       this.ecology,
-      this.eggStore
+      this.eggStore,
+      this.config.reproduction.mateChoice.enabled
+        ? (a, b) =>
+            Math.min(
+              1,
+              weightedDistance(
+                genomeDistance(
+                  a,
+                  b,
+                  this.geneSpecs,
+                  this.config.genetics.brain.initialWeightStd,
+                  this.bodySpecs
+                ),
+                this.config.species.distanceWeights
+              ) / Math.max(this.config.species.threshold, 1e-9)
+            )
+        : undefined
     )
     this.eggSystem = this.config.reproduction.eggs.enabled
       ? new EggSystem(

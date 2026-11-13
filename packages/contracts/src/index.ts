@@ -104,6 +104,7 @@ export type {
   ReproductionConfigOverrides,
   SexesConfig,
   EggsConfig,
+  MateChoiceConfig,
   HistoryConfig,
   ObservatoryConfig,
   WorldConfig,

@@ -57,7 +57,12 @@ export class ReproductionSystem {
     private readonly species: SpeciesTracker = NO_SPECIES,
     ecology: EcologyModel | null = null,
     /** The eggs in the world; they count against `maxPopulation` with the clutches being carried (ADR 0027). */
-    private readonly eggs: EggStore = new EggStore()
+    private readonly eggs: EggStore = new EggStore(),
+    /**
+     * How different two genomes are, `0` (alike) to `1` (as far apart as two species), for mate choice
+     * (ADR 0027); without it difference counts for nothing.
+     */
+    private readonly mateDistance?: (a: Genome, b: Genome) => number
   ) {
     this.unbounded = ecology !== null && ecology.clusters !== null
     this.readiness = new ReproductionReadiness(config, ecology)
@@ -89,6 +94,28 @@ export class ReproductionSystem {
     })
   }
 
+  /** Candidates looked at by one creature, reused between attempts. */
+  private readonly candidates: { item: OrganismState; distanceSquared: number }[] = []
+
+  /**
+   * Whether `chooser` accepts `candidate` as a mate (ADR 0027): the candidate's score, `(1 - preference)`
+   * of its condition (spare energy over what it needs to be ready) plus `preference` of how different
+   * it is, has to reach `choosiness x threshold`. A creature with `choosiness` 0 accepts anyone.
+   */
+  private accepts(chooser: OrganismState, candidate: OrganismState, tick: number): boolean {
+    const genes = chooser.genome.reproduction
+    if (genes.choosiness <= 0) return true
+    const needed = this.readiness.thresholdFor(candidate, tick)
+    const room = maxEnergyOf(candidate.genome, this.config) - needed
+    const condition = room > 0 ? clamp((candidate.energy - needed) / room, 0, 1) : 1
+    const difference =
+      genes.preference > 0 && this.mateDistance !== undefined
+        ? this.mateDistance(chooser.genome, candidate.genome)
+        : 0
+    const score = (1 - genes.preference) * condition + genes.preference * difference
+    return score >= genes.choosiness * this.config.reproduction.mateChoice.threshold
+  }
+
   /** With `species.reproductiveIsolation`, only members of one species mate. */
   private sameSpecies(a: OrganismState, b: OrganismState): boolean {
     if (!this.config.species.enabled || !this.config.species.reproductiveIsolation) return true
@@ -102,6 +129,8 @@ export class ReproductionSystem {
 
     const { sexes, eggs: eggConfig } = this.config.reproduction
     const sexed = sexes.enabled
+    const choice = this.config.reproduction.mateChoice
+    const choosing = sexed && choice.enabled
     const eggsOn = eggConfig.enabled
 
     const initiators = this.organisms.values()
@@ -135,17 +164,48 @@ export class ReproductionSystem {
         continue
       }
 
-      const partnerHit = this.organismIndex.nearestWhere(
-        { x: organism.x, y: organism.y },
-        genome.reproduction.searchRadius,
-        (item) =>
-          item.id !== organism.id &&
-          (!sexed || item.sex !== organism.sex) &&
-          this.sameSpecies(organism, item) &&
-          !pairedIds.has(item.id) &&
-          this.readiness.isReady(item, tick)
-      )
-      if (!partnerHit) {
+      const eligible = (item: OrganismState): boolean =>
+        item.id !== organism.id &&
+        (!sexed || item.sex !== organism.sex) &&
+        this.sameSpecies(organism, item) &&
+        !pairedIds.has(item.id) &&
+        this.readiness.isReady(item, tick)
+      const here = { x: organism.x, y: organism.y }
+      let partner: OrganismState | undefined
+      let turnedDown = false
+      if (choosing) {
+        // Mate choice (ADR 0027): look at the nearest few ready partners and take the first that
+        // both sides accept; turning them all down costs energy and a wait.
+        const found = this.candidates
+        found.length = 0
+        this.organismIndex.scan(here, genome.reproduction.searchRadius, (item, distanceSquared) => {
+          if (eligible(item)) found.push({ item, distanceSquared })
+        })
+        found.sort((a, b) => a.distanceSquared - b.distanceSquared || a.item.id - b.item.id)
+        const looked = Math.min(found.length, choice.candidates)
+        for (let k = 0; k < looked; k++) {
+          const candidate = (found[k] as { item: OrganismState }).item
+          if (this.accepts(organism, candidate, tick) && this.accepts(candidate, organism, tick)) {
+            partner = candidate
+            break
+          }
+        }
+        turnedDown = partner === undefined && found.length > 0
+      } else {
+        partner = this.organismIndex.nearestWhere(
+          here,
+          genome.reproduction.searchRadius,
+          eligible
+        )?.item
+      }
+      if (partner === undefined) {
+        if (turnedDown) {
+          organism.energy -= choice.searchCost
+          organism.reproductionCooldownRemaining = Math.max(
+            organism.reproductionCooldownRemaining,
+            choice.retryDelay
+          )
+        }
         this.events.record({
           type: 'reproduction-attempted',
           tick,
@@ -153,12 +213,11 @@ export class ReproductionSystem {
           partnerId: null,
           childId: null,
           succeeded: false,
-          failureReason: 'no-partner'
+          failureReason: turnedDown ? 'rejected' : 'no-partner'
         })
         continue
       }
 
-      const partner = partnerHit.item
       pairedIds.add(organism.id)
       pairedIds.add(partner.id)
       organism.energy -= this.readiness.costFor(organism, tick)

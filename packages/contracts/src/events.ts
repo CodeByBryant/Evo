@@ -148,7 +148,7 @@ export interface EnergyChangedEvent extends BaseEvent {
  * organism that's simply immature never generates one of these, the same way an organism that
  * finds no food never generates a failed `resource-consumed` (docs/decisions/0005).
  */
-export type ReproductionFailureReason = 'no-partner' | 'population-cap'
+export type ReproductionFailureReason = 'no-partner' | 'population-cap' | 'rejected'
 
 /** Essential tier: not gated by `history.eventDetail`. Emitted starting in Phase 3. */
 export interface ReproductionAttemptedEvent extends BaseEvent {

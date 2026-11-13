@@ -108,6 +108,16 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       guardRadius: 20,
       guardCost: 0.05,
       guardDamage: 5
+    },
+    // Off here; the founders' two genes sit at a mild taste (ADR 0027).
+    mateChoice: {
+      enabled: false,
+      choosiness: 0.3,
+      preference: 0.3,
+      threshold: 0.5,
+      searchCost: 0.5,
+      retryDelay: 2,
+      candidates: 4
     }
   },
   history: { maxEvents: 10_000, eventDetail: 'essential', maxHistoricalOrganisms: 10_000 },
@@ -482,6 +492,8 @@ export const DEFAULT_GENE_RANGES: Readonly<Record<GenePath, Readonly<GeneRange>>
   'reproduction.offspringInvestment': range(6, 25),
   'reproduction.cooldown': range(15, 120),
   'reproduction.searchRadius': range(25, 100),
+  'reproduction.choosiness': range(0, 1),
+  'reproduction.preference': range(0, 1),
   'learning.learningRate': range(0.001, 0.5, 0.1),
   'learning.discountFactor': range(0, 1),
   'learning.eligibilityTraceDecay': range(0, 1),

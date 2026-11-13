@@ -20,7 +20,8 @@ describe('Phase 5 exit criteria', () => {
   })
 
   it('organisms receive observations', () => {
-    for (const organism of alive) {
+    // A creature born in the very last tick has not decided yet, so it has not seen anything.
+    for (const organism of alive.filter((o) => o.age > 0)) {
       const brain = world.brainOf(organism.id)!
       expect(brain.observation).toHaveLength(OBSERVATION_SIZE)
       expect(brain.observation.every((value) => Number.isFinite(value))).toBe(true)

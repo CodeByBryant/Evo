@@ -75,6 +75,8 @@ export function geneBaselines(config: WorldConfig): Record<GenePath, number> {
     'reproduction.offspringInvestment': reproduction.offspringInvestment,
     'reproduction.cooldown': reproduction.cooldown,
     'reproduction.searchRadius': reproduction.searchRadius,
+    'reproduction.choosiness': reproduction.mateChoice.choosiness,
+    'reproduction.preference': reproduction.mateChoice.preference,
     'learning.learningRate': genetics.learning.learningRate,
     'learning.discountFactor': genetics.learning.discountFactor,
     'learning.eligibilityTraceDecay': genetics.learning.eligibilityTraceDecay,
@@ -213,6 +215,9 @@ function baselineValues(root: PlainObject): Partial<Record<GenePath, number>> {
   set('reproduction.offspringInvestment', numberAt(reproduction, 'offspringInvestment'))
   set('reproduction.cooldown', numberAt(reproduction, 'cooldown'))
   set('reproduction.searchRadius', numberAt(reproduction, 'searchRadius'))
+  const choice = isObject(reproduction) ? reproduction['mateChoice'] : undefined
+  set('reproduction.choosiness', numberAt(choice, 'choosiness'))
+  set('reproduction.preference', numberAt(choice, 'preference'))
   set('learning.learningRate', numberAt(learning, 'learningRate'))
   set('learning.discountFactor', numberAt(learning, 'discountFactor'))
   set('learning.eligibilityTraceDecay', numberAt(learning, 'eligibilityTraceDecay'))

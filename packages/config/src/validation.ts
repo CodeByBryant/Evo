@@ -97,6 +97,15 @@ const EGGS_KEYS = [
   'guardCost',
   'guardDamage'
 ]
+const MATE_CHOICE_KEYS = [
+  'enabled',
+  'choosiness',
+  'preference',
+  'threshold',
+  'searchCost',
+  'retryDelay',
+  'candidates'
+]
 const REPRODUCTION_KEYS = [
   'minEnergy',
   'offspringInvestment',
@@ -105,7 +114,8 @@ const REPRODUCTION_KEYS = [
   'searchRadius',
   'mateSenseRadius',
   'sexes',
-  'eggs'
+  'eggs',
+  'mateChoice'
 ]
 const HISTORY_KEYS = ['maxEvents', 'eventDetail', 'maxHistoricalOrganisms']
 const OBSERVATORY_KEYS = ['enabled', 'sampleEvery', 'behaviourEvery', 'maxSamples']
@@ -392,6 +402,59 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       }
     }
 
+    const choice = checkSection(
+      reproduction,
+      'mateChoice',
+      MATE_CHOICE_KEYS,
+      errors,
+      'reproduction.mateChoice'
+    )
+    if (choice) {
+      if (typeof choice['enabled'] !== 'boolean') {
+        errors.push('reproduction.mateChoice.enabled must be a boolean')
+      }
+      for (const key of ['choosiness', 'preference'] as const) {
+        const value = checkNumber(choice, key, `reproduction.mateChoice.${key}`, {}, errors)
+        if (value !== undefined && (value < 0 || value > 1)) {
+          errors.push(`reproduction.mateChoice.${key} must be from 0 to 1`)
+        }
+      }
+      const threshold = checkNumber(
+        choice,
+        'threshold',
+        'reproduction.mateChoice.threshold',
+        {},
+        errors
+      )
+      if (threshold !== undefined && (threshold <= 0 || threshold > 1)) {
+        errors.push('reproduction.mateChoice.threshold must be greater than 0 and at most 1')
+      }
+      checkNumber(
+        choice,
+        'searchCost',
+        'reproduction.mateChoice.searchCost',
+        { nonnegative: true },
+        errors
+      )
+      checkNumber(
+        choice,
+        'retryDelay',
+        'reproduction.mateChoice.retryDelay',
+        { nonnegative: true },
+        errors
+      )
+      checkNumber(
+        choice,
+        'candidates',
+        'reproduction.mateChoice.candidates',
+        { integer: true, positive: true },
+        errors
+      )
+      if (choice['enabled'] === true && sexes && sexes['enabled'] !== true) {
+        errors.push('reproduction.mateChoice.enabled requires reproduction.sexes.enabled')
+      }
+    }
+
     if (
       investment !== undefined &&
       overhead !== undefined &&
@@ -657,7 +720,8 @@ function mergeReproduction(base: object, override: unknown): unknown {
     ...base,
     ...override,
     sexes: mergeSection(defaults['sexes'] as object, override['sexes']),
-    eggs: mergeSection(defaults['eggs'] as object, override['eggs'])
+    eggs: mergeSection(defaults['eggs'] as object, override['eggs']),
+    mateChoice: mergeSection(defaults['mateChoice'] as object, override['mateChoice'])
   }
 }
 
