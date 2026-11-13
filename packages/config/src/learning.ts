@@ -13,10 +13,8 @@ const LEARNING_KEYS = [
   'weightLimit',
   'baselineRate',
   'valueRateScale',
-  'foodHorizon',
-  'placeMemory'
+  'foodHorizon'
 ]
-const PLACE_MEMORY_KEYS = ['enabled', 'horizon', 'range', 'arriveRadius', 'arriveWindow']
 const REWARD_WEIGHT_KEYS = ['feeding', 'reproduction', 'energyCost', 'damage', 'exploration']
 const REGION_KEYS = ['x', 'y', 'width', 'height']
 
@@ -56,22 +54,6 @@ export function checkLearning(root: PlainObject, errors: string[]): void {
   }
   checkNumber(learning, 'valueRateScale', 'learning.valueRateScale', { positive: true }, errors)
   checkNumber(learning, 'foodHorizon', 'learning.foodHorizon', { positive: true }, errors)
-  const place = checkSection(
-    learning,
-    'placeMemory',
-    PLACE_MEMORY_KEYS,
-    errors,
-    'learning.placeMemory'
-  )
-  if (place) {
-    if (place['enabled'] === undefined) errors.push('learning.placeMemory.enabled is required')
-    else if (typeof place['enabled'] !== 'boolean') {
-      errors.push('learning.placeMemory.enabled must be a boolean')
-    }
-    for (const key of ['horizon', 'range', 'arriveRadius', 'arriveWindow']) {
-      checkNumber(place, key, `learning.placeMemory.${key}`, { positive: true }, errors)
-    }
-  }
 }
 
 /**

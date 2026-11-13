@@ -58,11 +58,11 @@ describe('buildGeneSpecs', () => {
 })
 
 describe('brain layout', () => {
-  it('splits the weights into eight blocks that add up to the default 546', () => {
+  it('splits the weights into eight blocks that add up to the default 514', () => {
     const { config } = fixture()
     const lengths = brainBlockLengths(architectureOf(config.genetics.brain))
-    expect(lengths).toEqual([416, 32, 8, 32, 4, 40, 5, 9])
-    expect(brainWeightCount(architectureOf(config.genetics.brain))).toBe(546)
+    expect(lengths).toEqual([384, 32, 8, 32, 4, 40, 5, 9])
+    expect(brainWeightCount(architectureOf(config.genetics.brain))).toBe(514)
   })
 
   it('follows a custom architecture', () => {
@@ -93,7 +93,7 @@ describe('founder genomes', () => {
     const f = fixture()
     const a = founder(f, 0, 1)
     const b = founder(f, 1, 2)
-    expect(a.brain.weights).toHaveLength(546)
+    expect(a.brain.weights).toHaveLength(514)
     expect(a.brain.weights).not.toEqual(b.brain.weights)
     expect(founder(f, 0, 1).brain.weights).toEqual(a.brain.weights)
   })
@@ -103,7 +103,7 @@ describe('founder genomes', () => {
     const used = geneticsStream(5)
     createFounderGenome(0, f.specs, f.config.genetics.brain, used)
     const reference = geneticsStream(5)
-    for (let i = 0; i < 546; i++) reference.normal(0, 1)
+    for (let i = 0; i < 514; i++) reference.normal(0, 1)
     expect(sameState(used, reference)).toBe(true)
   })
 

@@ -5,7 +5,7 @@ import type { EntityId } from './entity'
  * the network shape can never disagree with what the observation builder produces
  * (docs/learning/brain.md).
  */
-export const OBSERVATION_SIZE = 52
+export const OBSERVATION_SIZE = 48
 
 /** Number of values in an `Action`; the brain's output size is derived from this constant. */
 export const ACTION_SIZE = 5
@@ -67,11 +67,7 @@ export const OBSERVATION_LABELS: readonly string[] = [
   'threatPresent',
   'threatBearingCos',
   'threatBearingSin',
-  'threatProximity',
-  'recallPresent',
-  'recallBearingCos',
-  'recallBearingSin',
-  'recallProximity'
+  'threatProximity'
 ]
 
 export const ACTION_LABELS: readonly string[] = ['thrust', 'turn', 'strafe', 'interact', 'explore']
@@ -120,24 +116,6 @@ export interface LearningConfig {
   valueRateScale: number
   /** Seconds that map to 1 in the `timeSinceFood` observation. */
   foodHorizon: number
-  /** The remembered feeding site, the `recall` input group (ADR 0025). */
-  placeMemory: PlaceMemoryConfig
-}
-
-/**
- * Where a creature last fed, as an input (ADR 0025). One site per creature: the place of its last
- * bite of food. Off, the four inputs are zero and the network keeps its size.
- */
-export interface PlaceMemoryConfig {
-  enabled: boolean
-  /** Seconds a remembered site stays fresh: the input fades from 1 to 0 over this long, then it is forgotten. */
-  horizon: number
-  /** World units: the site's proximity input is 1 at the site and 0 this far away. */
-  range: number
-  /** World units: a creature this close to its site that finds no food there forgets it. */
-  arriveRadius: number
-  /** Seconds without a bite, at the site, after which the site is forgotten. */
-  arriveWindow: number
 }
 
 /** A partial learning configuration; `rewardWeights` merges field by field. */
@@ -150,7 +128,6 @@ export interface LearningConfigOverrides {
   baselineRate?: number
   valueRateScale?: number
   foodHorizon?: number
-  placeMemory?: Partial<PlaceMemoryConfig>
 }
 
 /** Lifetime counters kept on every brain (docs/learning/brain.md, "Telemetry"). */

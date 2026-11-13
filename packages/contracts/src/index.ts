@@ -36,7 +36,6 @@ export type {
   LearningAlgorithmName,
   RewardWeights,
   LearningConfig,
-  PlaceMemoryConfig,
   LearningConfigOverrides,
   BrainTelemetry,
   BrainSnapshot

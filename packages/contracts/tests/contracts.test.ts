@@ -168,7 +168,7 @@ describe('learning contracts', () => {
   it('fixes the observation and action sizes and labels them one to one', async () => {
     const { ACTION_LABELS, ACTION_SIZE, OBSERVATION_LABELS, OBSERVATION_SIZE } =
       await import('../src/index')
-    expect(OBSERVATION_SIZE).toBe(52)
+    expect(OBSERVATION_SIZE).toBe(48)
     expect(ACTION_SIZE).toBe(5)
     expect(OBSERVATION_LABELS).toHaveLength(OBSERVATION_SIZE)
     expect(ACTION_LABELS).toEqual(['thrust', 'turn', 'strafe', 'interact', 'explore'])

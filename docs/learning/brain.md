@@ -6,7 +6,7 @@ Design rationale is in [ADR 0007](../decisions/0007-learning-and-the-brain.md). 
 
 Each tick, for each organism, in ascending id:
 
-1. **Observe**: build a 52-number `Observation` from the organism's body and what perception found.
+1. **Observe**: build a 40-number `Observation` from the organism's body and what perception found.
 2. **Learn** from the previous tick: using the reward stored last tick, nudge the learnable weights.
 3. **Decide**: run the network, add exploration noise, produce a 5-number `Action`.
 4. The action is translated to an intent; movement, interaction, metabolism, reproduction and death run as usual.
@@ -16,45 +16,42 @@ Memory is the network's own recurrence, not an input. `learning.controller: 'ref
 
 ## Observation
 
-`OBSERVATION_SIZE = 52` (23 until Phase 6, which appended ten values; Phase 7 appended four more, the cluster layout three, predation eight and the place memory four, see below). The order is part of the contract (`OBSERVATION_LABELS` in `@evo/contracts`); changing it is a hash-schema change and a golden regeneration. "Body frame" means rotated by the organism's heading.
+`OBSERVATION_SIZE = 48` (23 until Phase 6, which appended ten values; Phase 7 appended four more, the cluster layout three and predation eight, see below). The order is part of the contract (`OBSERVATION_LABELS` in `@evo/contracts`); changing it is a hash-schema change and a golden regeneration. "Body frame" means rotated by the organism's heading.
 
-| #     | Label                      | Value                                                                                                                                           | Range    |
-| ----- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| 0     | `energy`                   | energy / effective `maxEnergy`                                                                                                                  | [0, 1]   |
-| 1     | `age`                      | age / own `maxAge` gene                                                                                                                         | [0, 1]   |
-| 2     | `forwardVelocity`          | velocity along the heading / own top speed (the baseline times the body's thrust factor)                                                        | [-1, 1]  |
-| 3     | `lateralVelocity`          | velocity across the heading / own top speed (the baseline times the body's thrust factor)                                                       | [-1, 1]  |
-| 4-5   | `positionX`, `positionY`   | position / world width, height                                                                                                                  | [0, 1]   |
-| 6-7   | `headingCos`, `headingSin` | heading as a unit vector                                                                                                                        | [-1, 1]  |
-| 8     | `foodPresent`              | 1 when a resource is within the organism's sensor range, else 0                                                                                 | {0, 1}   |
-| 9-10  | `foodBearingCos/Sin`       | direction to the nearest resource, body frame (0 when absent)                                                                                   | [-1, 1]  |
-| 11    | `foodProximity`            | `1 - distance / sensor range` (0 when absent)                                                                                                   | [0, 1]   |
-| 12-15 | `peer*`                    | the same four values for the nearest **other organism** within the organism's sensor range                                                      | as above |
-| 16    | `timeSinceFood`            | seconds since this organism last ate / `learning.foodHorizon`, clamped                                                                          | [0, 1]   |
-| 17    | `previousReward`           | last tick's total reward, clamped                                                                                                               | [-1, 1]  |
-| 18-22 | `previousAction*`          | the five action values chosen last tick                                                                                                         | [-1, 1]  |
-| 23    | `ownHealth`                | health / maximum health (1 when health is off)                                                                                                  | [0, 1]   |
-| 24    | `hazardPresent`            | 1 when a hazard's edge is within the sensor range                                                                                               | {0, 1}   |
-| 25-26 | `hazardBearingCos/Sin`     | direction to the centre of the nearest hazard (by edge), body frame                                                                             | [-1, 1]  |
-| 27    | `hazardProximity`          | 1 inside the hazard, falling to 0 at the sensor range from its edge                                                                             | [0, 1]   |
-| 28    | `foodKind`                 | the perceived food's kind index / (kinds - 1); 0 when none or one kind                                                                          | [0, 1]   |
-| 29-30 | `seasonCos`, `seasonSin`   | the year phase as a unit vector (0, 0 when seasons are off)                                                                                     | [-1, 1]  |
-| 31    | `regionTemperature`        | region plus season temperature (0 when both are off)                                                                                            | [-1, 1]  |
-| 32    | `regionMovementScale`      | region times season movement multiplier (1 when both are off)                                                                                   | (0, 1]   |
-| 33    | `matePresent`              | 1 when this organism is ready and a ready partner is within `mateSenseRadius`                                                                   | {0, 1}   |
-| 34-35 | `mateBearingCos/Sin`       | direction to the nearest eligible partner, body frame (0 when absent)                                                                           | [-1, 1]  |
-| 36    | `mateProximity`            | `1 - distance / sensor range`, clamped (0 beyond the sensor radius)                                                                             | [0, 1]   |
-| 37    | `homePresent`              | cluster layout: 0 inside 0.7 of the cluster's radius, rising to 1 at 1.1; always 0 in the field                                                 | [0, 1]   |
-| 38-39 | `homeBearingCos/Sin`       | direction to the nearest cluster's centre, body frame (0 inside the core and in the field)                                                      | [-1, 1]  |
-| 40    | `preyPresent`              | predation only: 1 when a creature this one could bite is in sight, else 0                                                                       | {0, 1}   |
-| 41-42 | `preyBearingCos/Sin`       | direction to the nearest such creature, body frame (0 when absent)                                                                              | [-1, 1]  |
-| 43    | `preyProximity`            | `1 - distance / sensor range` (0 when absent)                                                                                                   | [0, 1]   |
-| 44    | `threatPresent`            | predation only: 1 when a creature that could bite this one is in sight, else 0                                                                  | {0, 1}   |
-| 45-46 | `threatBearingCos/Sin`     | direction to the nearest such creature, body frame (0 when absent)                                                                              | [-1, 1]  |
-| 47    | `threatProximity`          | `1 - distance / sensor range` (0 when absent)                                                                                                   | [0, 1]   |
-| 48    | `recallPresent`            | place memory (ADR 0025): how fresh the memory of where it last fed is, 1 just fed, fading to 0 over `learning.placeMemory.horizon`; 0 with none | [0, 1]   |
-| 49-50 | `recallBearingCos/Sin`     | direction to the place it last fed, body frame (0 when it remembers none)                                                                       | [-1, 1]  |
-| 51    | `recallProximity`          | `1 - distance / placeMemory.range` (0 when none or beyond the range)                                                                            | [0, 1]   |
+| #     | Label                      | Value                                                                                           | Range    |
+| ----- | -------------------------- | ----------------------------------------------------------------------------------------------- | -------- |
+| 0     | `energy`                   | energy / effective `maxEnergy`                                                                  | [0, 1]   |
+| 1     | `age`                      | age / own `maxAge` gene                                                                         | [0, 1]   |
+| 2     | `forwardVelocity`          | velocity along the heading / own top speed (the baseline times the body's thrust factor)        | [-1, 1]  |
+| 3     | `lateralVelocity`          | velocity across the heading / own top speed (the baseline times the body's thrust factor)       | [-1, 1]  |
+| 4-5   | `positionX`, `positionY`   | position / world width, height                                                                  | [0, 1]   |
+| 6-7   | `headingCos`, `headingSin` | heading as a unit vector                                                                        | [-1, 1]  |
+| 8     | `foodPresent`              | 1 when a resource is within the organism's sensor range, else 0                                 | {0, 1}   |
+| 9-10  | `foodBearingCos/Sin`       | direction to the nearest resource, body frame (0 when absent)                                   | [-1, 1]  |
+| 11    | `foodProximity`            | `1 - distance / sensor range` (0 when absent)                                                   | [0, 1]   |
+| 12-15 | `peer*`                    | the same four values for the nearest **other organism** within the organism's sensor range      | as above |
+| 16    | `timeSinceFood`            | seconds since this organism last ate / `learning.foodHorizon`, clamped                          | [0, 1]   |
+| 17    | `previousReward`           | last tick's total reward, clamped                                                               | [-1, 1]  |
+| 18-22 | `previousAction*`          | the five action values chosen last tick                                                         | [-1, 1]  |
+| 23    | `ownHealth`                | health / maximum health (1 when health is off)                                                  | [0, 1]   |
+| 24    | `hazardPresent`            | 1 when a hazard's edge is within the sensor range                                               | {0, 1}   |
+| 25-26 | `hazardBearingCos/Sin`     | direction to the centre of the nearest hazard (by edge), body frame                             | [-1, 1]  |
+| 27    | `hazardProximity`          | 1 inside the hazard, falling to 0 at the sensor range from its edge                             | [0, 1]   |
+| 28    | `foodKind`                 | the perceived food's kind index / (kinds - 1); 0 when none or one kind                          | [0, 1]   |
+| 29-30 | `seasonCos`, `seasonSin`   | the year phase as a unit vector (0, 0 when seasons are off)                                     | [-1, 1]  |
+| 31    | `regionTemperature`        | region plus season temperature (0 when both are off)                                            | [-1, 1]  |
+| 32    | `regionMovementScale`      | region times season movement multiplier (1 when both are off)                                   | (0, 1]   |
+| 33    | `matePresent`              | 1 when this organism is ready and a ready partner is within `mateSenseRadius`                   | {0, 1}   |
+| 34-35 | `mateBearingCos/Sin`       | direction to the nearest eligible partner, body frame (0 when absent)                           | [-1, 1]  |
+| 36    | `mateProximity`            | `1 - distance / sensor range`, clamped (0 beyond the sensor radius)                             | [0, 1]   |
+| 37    | `homePresent`              | cluster layout: 0 inside 0.7 of the cluster's radius, rising to 1 at 1.1; always 0 in the field | [0, 1]   |
+| 38-39 | `homeBearingCos/Sin`       | direction to the nearest cluster's centre, body frame (0 inside the core and in the field)      | [-1, 1]  |
+| 40    | `preyPresent`              | predation only: 1 when a creature this one could bite is in sight, else 0                       | {0, 1}   |
+| 41-42 | `preyBearingCos/Sin`       | direction to the nearest such creature, body frame (0 when absent)                              | [-1, 1]  |
+| 43    | `preyProximity`            | `1 - distance / sensor range` (0 when absent)                                                   | [0, 1]   |
+| 44    | `threatPresent`            | predation only: 1 when a creature that could bite this one is in sight, else 0                  | {0, 1}   |
+| 45-46 | `threatBearingCos/Sin`     | direction to the nearest such creature, body frame (0 when absent)                              | [-1, 1]  |
+| 47    | `threatProximity`          | `1 - distance / sensor range` (0 when absent)                                                   | [0, 1]   |
 
 Slots 23-32 were **appended** in Phase 6 (ADR 0009) so no existing slot moved and the innate prior, which addresses slots by number, is unchanged. With a feature off its slots carry their neutral value (health 1, movement 1, the rest 0), a constant the network can use as a bias. The hazard and the food kind are found by `PerceptionSystem` in brain mode only. Ties in "nearest" follow the engine-wide rule `(distance squared, id)`. The peer is found only in brain mode, so the reflex controller costs nothing extra.
 
@@ -64,13 +61,9 @@ Slots 37-39 were appended with the cluster layout's way-home sense (ADR 0015): h
 
 Slots 40-47 were appended with predation (ADR 0023, step two): the nearest creature this one **could bite** (a body with a jaw, a creature no bigger than `predation.maxPreyRatio` times it, not a parent or child: the same rule the bite uses) and the nearest that **could bite it** (the same rule the other way round; a hunter that could bite back and is at least as big counts as prey, not as a threat). They are found in the peer search by the same eyes and cover as any peer, so a rock or reeds between the two hide the other, and are **all zero** unless `predation.enabled` is on, and for a creature that has nobody to hunt or fear. The innate prior wires them (see below): the same steering units turn toward prey and away from a threat (the flee term is stronger than the food term) and presence units run.
 
-### Where it last fed (place memory, ADR 0025)
-
-The four `recall` inputs are not recurrent memory (the memory slots of the network are a separate, unused-by-the-prior thing, see "Network"); they are a **remembered place**. A creature carries one site, the world position of its last bite of real food (carcasses do not count, a bite with no intake does not count), and a bite elsewhere replaces it. The input is zero with no site. The site fades over `learning.placeMemory.horizon` seconds (200 by default) and is forgotten when the creature has stood within `arriveRadius` of it for `arriveWindow` seconds without a bite (the food is gone). `learning.placeMemory.enabled: false` zeroes the four inputs and keeps the network's size, which is the control for "does the information help". The innate prior steers gently toward the remembered site (weight 1, against 5 for food and 3 for a mate) and keeps the creature moving, only when nothing else pulls it; the reflex controller does not use it. The site is hashed (`recallX`, `recallY`, `recallTick`, `recallStay`).
-
 ## Network
 
-Sizes: input `I = 52`, hidden `H` (default 8), memory `M` (default 4), output `O = 5`. `softsign(x) = x / (1 + |x|)`: bounded in (-1, 1), smooth, and needs only `+`, `/`, `abs` (the determinism policy bans platform `exp` and `tanh`).
+Sizes: input `I = 48`, hidden `H` (default 8), memory `M` (default 4), output `O = 5`. `softsign(x) = x / (1 + |x|)`: bounded in (-1, 1), smooth, and needs only `+`, `/`, `abs` (the determinism policy bans platform `exp` and `tanh`).
 
 ```text
 h      = softsign(W_ih x + W_mh m + b_h)       // hidden, from observation and previous memory
@@ -96,7 +89,7 @@ The genome's flat `weights` vector is eight consecutive blocks. Block 8 is new i
 | 7   | `outputBias`     | O              | 5              | **yes** (actor)                   |
 | 8   | `hiddenToValue`  | H, then 1 bias | 9              | **yes** (critic; Hebbian ignores) |
 
-Default total: **546** weights (514 before the place-memory inputs, 450 before the prey and threat inputs, 426 before the way-home inputs, 394 in Phase 6, 314 in Phase 5, 249 in Phase 4). Because the hidden layer and memory are fixed during a life, `h` depends only on genome weights, the observation and memory; learning changes only how `h` is read out.
+Default total: **514** weights (450 before the prey and threat inputs, 426 before the way-home inputs, 394 in Phase 6, 314 in Phase 5, 249 in Phase 4). Because the hidden layer and memory are fixed during a life, `h` depends only on genome weights, the observation and memory; learning changes only how `h` is read out.
 
 ## Action
 

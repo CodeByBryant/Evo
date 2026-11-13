@@ -39,27 +39,6 @@ describe('responseVector', () => {
     expect(Math.abs(turn(0))).toBeLessThan(0.1)
   })
 
-  it('the hand-wired prior walks toward a remembered feeding site when nothing is in sight, and only then (ADR 0025)', () => {
-    const r = responseVector(prior, layout)
-    const turn = (situation: number) => r[situation * 3 + 1] as number
-    const thrust = (situation: number) => r[situation * 3] as number
-    // situation 8: a remembered site ahead and to the left; 9: behind it
-    expect(turn(8)).toBeGreaterThan(0.05)
-    expect(thrust(8)).toBeGreaterThan(thrust(0) + 0.05)
-    expect(Math.abs(turn(0))).toBeLessThan(0.1) // negative: with no memory it does not turn
-    // zeroing the recall inputs changes only the two recall situations
-    const base = responseVector(prior, layout)
-    const blind = prior.slice()
-    for (let h = 0; h < architecture.hiddenSize; h++) {
-      for (let i = 48; i < 52; i++)
-        blind[layout.inputToHidden.offset + h * architecture.inputSize + i] = 0
-    }
-    const changed = responseVector(blind, layout)
-      .map((v, i) => (v === base[i] ? -1 : Math.floor(i / 3)))
-      .filter((s) => s >= 0)
-    expect(new Set(changed)).toEqual(new Set([8, 9]))
-  })
-
   it('changes when the weights are changed in the part of the brain the situation uses, and not otherwise (negative)', () => {
     const base = responseVector(prior, layout)
     // zero the prey inputs: only the prey situation should change

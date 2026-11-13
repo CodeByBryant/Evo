@@ -2,7 +2,7 @@ import { ACTION_SIZE } from '@evo/contracts'
 import { forwardHidden, readOutput } from '../learning/Brain'
 import type { BrainLayout } from '../learning/BrainLayout'
 import { buildObservation } from '../learning/ObservationBuilder'
-import type { ObservationInput, RecallSighting, Sighting } from '../learning/ObservationBuilder'
+import type { ObservationInput, Sighting } from '../learning/ObservationBuilder'
 import { effectiveTypes, meanPairwise } from './stats'
 
 /**
@@ -35,14 +35,6 @@ const BASE: ObservationInput = {
 }
 
 const at = (dx: number, dy: number): Sighting => ({ dx, dy, distanceSquared: dx * dx + dy * dy })
-/** A remembered feeding site (ADR 0025), fresh, in the default range. */
-const remembered = (dx: number, dy: number): RecallSighting => ({
-  dx,
-  dy,
-  distanceSquared: dx * dx + dy * dy,
-  freshness: 1,
-  range: 300
-})
 
 /** The situations, each described by what is different from "nothing in sight". */
 export const RESPONSE_BATTERY: readonly ObservationInput[] = [
@@ -53,10 +45,7 @@ export const RESPONSE_BATTERY: readonly ObservationInput[] = [
   { ...BASE, prey: at(35, 10) },
   { ...BASE, threat: at(25, -12) },
   { ...BASE, food: at(30, 18), threat: at(-20, 5) },
-  { ...BASE, peer: at(30, 0) },
-  // Nothing in sight, but it remembers where it last fed: ahead and to the left, and behind it (ADR 0025).
-  { ...BASE, recall: remembered(90, 70) },
-  { ...BASE, recall: remembered(-90, 10) }
+  { ...BASE, peer: at(30, 0) }
 ]
 
 /** The action values read for each situation: thrust, turn and interact. */

@@ -13,8 +13,7 @@ export const BRAIN_INPUT_GROUPS = [
   'mate',
   'home',
   'prey',
-  'threat',
-  'recall'
+  'threat'
 ] as const
 export type BrainInputGroup = (typeof BRAIN_INPUT_GROUPS)[number]
 

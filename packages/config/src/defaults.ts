@@ -134,9 +134,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     weightLimit: 4,
     baselineRate: 0.01,
     valueRateScale: 1,
-    foodHorizon: 30,
-    // Where it last fed (ADR 0025): fades over 200 s, felt from 300 units, forgotten after 3 s at the site with no food.
-    placeMemory: { enabled: true, horizon: 200, range: 300, arriveRadius: 12, arriveWindow: 3 }
+    foodHorizon: 30
   },
   species: {
     enabled: true,

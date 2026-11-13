@@ -18,14 +18,12 @@ import type { BrainLayout } from '../learning/BrainLayout'
 import { createLearner } from '../learning/LearningAlgorithm'
 import type { LearningAlgorithm, LearningParams } from '../learning/LearningAlgorithm'
 import { buildObservation } from '../learning/ObservationBuilder'
-import type { HazardSighting, RecallSighting, Sighting } from '../learning/ObservationBuilder'
+import type { HazardSighting, Sighting } from '../learning/ObservationBuilder'
 import { VISITED_GRID } from '../learning/BrainState'
-import type { BrainState } from '../learning/BrainState'
 import { TWO_PI } from '../math/scalar'
 import { atan2, cos, sin } from '../math/trig'
 import { computeReward } from '../learning/RewardModel'
 import { lifeStageFor } from '../organisms/lifeStage'
-import { CARRION_KIND } from '../world/predationConfig'
 import { factorsOf } from '../organisms/bodyFactors'
 import { maxEnergyOf, maxHealthOf, reproductionCostOf, sensorRadiusOf } from '../organisms/traits'
 import type { SeededRandom } from '../random/SeededRandom'
@@ -57,8 +55,6 @@ export class BrainSystem {
   private readonly layout: BrainLayout
   private readonly learner: LearningAlgorithm
   private readonly params: LearningParams
-  /** The carrion kind's index, or -1: a carcass is not a place to come back to (ADR 0025). */
-  private readonly carrionKind: number
 
   constructor(
     private readonly config: WorldConfig,
@@ -82,34 +78,6 @@ export class BrainSystem {
       baselineRate: config.learning.baselineRate,
       valueRateScale: config.learning.valueRateScale
     }
-    this.carrionKind = config.ecology.resourceKinds.kinds.findIndex((k) => k.name === CARRION_KIND)
-  }
-
-  /**
-   * The remembered feeding site as an input (ADR 0025), or null: nothing remembered, the sense
-   * switched off, the memory older than the horizon, or the creature has stood at the site for
-   * `arriveWindow` seconds without a bite (the food is gone). Forgetting writes the brain state.
-   */
-  private recallOf(
-    organism: OrganismState,
-    brain: BrainState,
-    tick: number
-  ): RecallSighting | null {
-    const memory = this.config.learning.placeMemory
-    if (!memory.enabled || brain.recallTick < 0) return null
-    const dt = this.config.timestep
-    const age = (tick - brain.recallTick) * dt
-    const dx = brain.recallX - organism.x
-    const dy = brain.recallY - organism.y
-    const distanceSquared = dx * dx + dy * dy
-    if (distanceSquared <= memory.arriveRadius * memory.arriveRadius) brain.recallStay += dt
-    else brain.recallStay = 0
-    if (age >= memory.horizon || brain.recallStay > memory.arriveWindow) {
-      brain.recallTick = -1
-      brain.recallStay = 0
-      return null
-    }
-    return { dx, dy, distanceSquared, freshness: 1 - age / memory.horizon, range: memory.range }
   }
 
   /** The effective capacity and top speed, scaled down while juvenile. */
@@ -238,7 +206,6 @@ export class BrainSystem {
       if (brain.decisions === 0) brain.visited[this.cellOf(organism)] = 1
 
       const home = this.homeOf(organism)
-      const recall = this.recallOf(organism, brain, tick)
       const observation = buildObservation({
         energy: capacity > 0 ? organism.energy / capacity : 0,
         age: organism.age / genome.physical.maxAge,
@@ -257,7 +224,6 @@ export class BrainSystem {
         mate: sight(mate),
         prey: sight(prey),
         threat: sight(threat),
-        recall,
         timeSinceFood: brain.timeSinceFood / foodHorizon,
         previousReward: brain.reward.total,
         previousAction: brain.prevAction,
@@ -304,13 +270,9 @@ export class BrainSystem {
     const damaged = new Map<EntityId, number>()
     const gained = new Map<EntityId, number>()
     const reproduced = new Set<EntityId>()
-    const fedAt = new Map<EntityId, { x: number; y: number }>()
     for (const event of this.events.eventsThisTick()) {
       if (event.type === 'resource-bitten') {
         gained.set(event.organismId, (gained.get(event.organismId) ?? 0) + event.intake)
-        // The place of a bite of real food is where it will come back to (not a carcass, which goes).
-        if (event.intake > 0 && event.kind !== this.carrionKind)
-          fedAt.set(event.organismId, event.position)
       } else if (event.type === 'organism-bitten') {
         // A predator's meal is a meal: its gut intake counts like a bite of food (ADR 0023).
         gained.set(event.predatorId, (gained.get(event.predatorId) ?? 0) + event.intake)
@@ -366,13 +328,6 @@ export class BrainSystem {
       brain.reward.total = reward.total
       brain.rewardTotal += reward.total
       brain.timeSinceFood = energyGained > 0 ? 0 : brain.timeSinceFood + dt
-      const fed = fedAt.get(organism.id)
-      if (fed !== undefined && this.config.learning.placeMemory.enabled) {
-        brain.recallX = fed.x
-        brain.recallY = fed.y
-        brain.recallTick = tick
-        brain.recallStay = 0
-      }
     }
   }
 }
