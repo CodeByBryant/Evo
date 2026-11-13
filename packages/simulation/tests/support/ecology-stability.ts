@@ -26,6 +26,11 @@ import { World } from '../../src/index'
  * means are 43.0-81.5, minimum 16, maximum 123, and no world went extinct. Only the ceiling
  * moved: 110 became 140 (it was 87 and 85 before bites and plants), still a seventh of
  * `maxPopulation`; means and the floor of 15 are as they were.
+ *
+ * Carcasses for the jaw alone (ADR 0026, the owner's decision) take the carrion energy away from the
+ * herbivores that were eating it (5 percent of all intake): over these 12 seeds (5-8 and 33-40, same
+ * sampling) means are 37.7-77.2, minimum 10 (seed 6; the next lowest is 17), maximum 118, and no world
+ * went extinct. The floor moved from 15 to 8; means and the ceiling hold.
  */
 export function describeStability(seeds: readonly number[]): void {
   describe('the default ecology keeps held-out worlds alive', () => {
@@ -42,7 +47,7 @@ export function describeStability(seeds: readonly number[]): void {
         expect(world.isExtinct).toBe(false)
         expect(mean).toBeGreaterThan(25)
         expect(mean).toBeLessThan(90)
-        expect(Math.min(...samples)).toBeGreaterThanOrEqual(15)
+        expect(Math.min(...samples)).toBeGreaterThanOrEqual(8)
         expect(Math.max(...samples)).toBeLessThanOrEqual(140)
         expect(world.validate()).toEqual({ ok: true, errors: [] })
         // the ecology was actually in play
