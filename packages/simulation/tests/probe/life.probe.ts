@@ -17,7 +17,9 @@ import { World } from '../../src/index'
  */
 const NAME = process.env.LIFE_NAME ?? 'on'
 const OFF = process.env.LIFE_OFF === '1'
-const EXTRA = JSON.parse(process.env.LIFE_CONFIG ?? '{}') as Record<string, any>
+const EXTRA = JSON.parse(process.env.LIFE_CONFIG ?? '{}') as {
+  reproduction?: { eggs?: object } & Record<string, unknown>
+} & Record<string, unknown>
 const SEEDS = (process.env.LIFE_SEEDS ?? '1,2,3,4,5,6,7,8').split(',').map(Number)
 const TICKS = Number(process.env.LIFE_TICKS ?? 30_000)
 const SAMPLE = 2_500
@@ -33,9 +35,6 @@ describe('life-cycle probe', () => {
     let hatched = 0
     let eaten = 0
     let lost = 0
-    let guarded = 0
-    let eggEnergy = 0
-    let consumed = 0
     let females = 0
     let creatures = 0
     let jawEnd = 0
@@ -57,7 +56,7 @@ describe('life-cycle probe', () => {
         : {
             ...(EXTRA['reproduction'] ?? {}),
             sexes: { enabled: true },
-            eggs: { enabled: true, ...((EXTRA['reproduction'] ?? {}).eggs ?? {}) }
+            eggs: { enabled: true, ...(EXTRA.reproduction?.eggs ?? {}) }
           }
       const world = World.create({ seed, config: { ...EXTRA, reproduction } as never })
       let sum = 0
@@ -99,7 +98,6 @@ describe('life-cycle probe', () => {
       hatched += m.eggsHatched
       eaten += m.eggsEaten
       lost += m.clutchesLost
-      consumed += m.energyConsumed
       females += end.organisms.filter((o) => o.sex === 0).length
       creatures += end.organisms.length
       let jaws = 0
@@ -117,8 +115,6 @@ describe('life-cycle probe', () => {
       if (jaws > 0) seedsWithJaw++
       perSeed.push(`${seed}:${world.isExtinct ? 'X' : Math.round(sum / samples)}/${jaws}j`)
     }
-    void guarded
-    void eggEnergy
     const n = SEEDS.length
     const line = [
       NAME,
@@ -143,7 +139,6 @@ describe('life-cycle probe', () => {
       `tps=${((1000 * ticks) / ms).toFixed(0)}`,
       perSeed.join(' ')
     ].join(' ')
-    void consumed
     const dir = join(tmpdir(), 'evo-probe')
     mkdirSync(dir, { recursive: true })
     appendFileSync(join(dir, `life-${NAME}.txt`), line + '\n')
