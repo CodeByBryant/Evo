@@ -1220,7 +1220,8 @@ export class World {
     // Schema v12 tail: the predation counters (docs/decisions/0023).
     hasher.writeUint32(metrics.deathsByPredation).writeUint32(metrics.predationBites)
     // Schema v13 tail: the life cycle (docs/decisions/0027): the egg counters, each creature's sex
-    // and carried clutch, and the eggs. All zero or empty with sexes and eggs off.
+    // and carried clutch, and the eggs. All zero or empty with sexes and eggs off. The species an egg
+    // will hatch into is not hashed: species are a derived view and never part of the state.
     hasher
       .writeUint32(metrics.eggsLaid)
       .writeUint32(metrics.eggsHatched)
@@ -1234,8 +1235,6 @@ export class World {
         writeGenome(hasher, pregnancy.genome)
         hasher
           .writeUint32(pregnancy.fatherId)
-          .writeBoolean(pregnancy.speciesId !== null)
-          .writeUint32(pregnancy.speciesId ?? 0)
           .writeFloat64(pregnancy.energy)
           .writeFloat64(pregnancy.layTick)
       }
@@ -1249,8 +1248,6 @@ export class World {
         .writeFloat64(egg.y)
         .writeUint32(egg.motherId)
         .writeUint32(egg.fatherId)
-        .writeBoolean(egg.speciesId !== null)
-        .writeUint32(egg.speciesId ?? 0)
         .writeFloat64(egg.energy)
         .writeFloat64(egg.layTick)
         .writeFloat64(egg.hatchTick)

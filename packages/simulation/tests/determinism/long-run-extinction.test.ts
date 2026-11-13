@@ -69,6 +69,8 @@ describe('extinction over a long run', () => {
         // scarce world is a knife edge, measured over seeds 1 to 12 at 60,000 ticks: 7 go extinct (at
         // 14,130, 16,430, 19,582, 20,110, 23,431, 31,664 and 47,640) and 5 do not. The test is about
         // extinction, so it uses seed 6, which goes extinct at 19,582 with 28 successful births.
+        // It moved once more (ADR 0027): mate choice added two genes, so every later mutation draw
+        // shifts. Seed 6 still goes extinct, now at 27,182.
         learning: { controller: 'reflex' },
         // Phase 3's way of eating: with bites (ADR 0017) nothing is wasted and this world no longer dies out.
         feeding: { enabled: false },
@@ -79,13 +81,13 @@ describe('extinction over a long run', () => {
 
     world.run(60_000)
     expect(world.isExtinct).toBe(true)
-    expect(world.snapshot().population.extinctionTick).toBe(19_582)
+    expect(world.snapshot().population.extinctionTick).toBe(27_182)
     expect(world.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
 
     world.run(40_000)
 
     expect(world.snapshot().population.active).toBe(0)
-    expect(world.snapshot().population.extinctionTick).toBe(19_582)
+    expect(world.snapshot().population.extinctionTick).toBe(27_182)
     expect(world.snapshot().organisms).toEqual([])
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })

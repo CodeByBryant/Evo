@@ -3253,7 +3253,7 @@
       "seed": 12345,
       "config": {},
       "steps": 6000,
-      "expectedHash": "1b49fb1c4c55a8cbfa834a4367c207a9"
+      "expectedHash": "7c69e82c652e7cfb05c5e3f6b7ebf67b"
     },
     {
       "name": "life-cycle-reflex-6k",
@@ -3264,7 +3264,7 @@
         }
       },
       "steps": 6000,
-      "expectedHash": "e41f3a38512b87e386ea53df37c4ce61"
+      "expectedHash": "7446d031818a1a7cfe8e98f13e40383e"
     },
     {
       "name": "life-cycle-no-ageing-no-choice-6k",
@@ -3280,7 +3280,7 @@
         }
       },
       "steps": 6000,
-      "expectedHash": "4a8c105ba7fd1df44ec92d9dcbbbe59d"
+      "expectedHash": "a202844ea17489c6b579abaabc4debea"
     }
   ]
 }
