@@ -329,6 +329,25 @@ export type ReproductionConfigOverrides = Partial<Omit<ReproductionConfig, 'sexe
   eggs?: Partial<EggsConfig>
 }
 
+/**
+ * Ageing (ADR 0027): once a creature is past its own `senescenceAge` it declines, and instead of a
+ * hard cutoff at `maxAge` it faces a chance of dying that rises with age. With `s` the share of the
+ * way from `senescenceAge` to `maxAge` (above 1 past `maxAge`), off means the old behaviour exactly.
+ */
+export interface AgeingConfig {
+  enabled: boolean
+  /** Metabolism rises by this much at `s = 1` (and is capped at `s = 2`): cost times `1 + metabolismRise * s`. */
+  metabolismRise: number
+  /** Share of top speed lost at `s = 1`, in `[0, 1)`. */
+  speedLoss: number
+  /** The energy needed to reproduce rises by this share at `s = 1`: an old creature breeds less. */
+  fertilityLoss: number
+  /** Chance per second of dying at `s = 1`; it rises in proportion to `s`. */
+  hazard: number
+  /** Death is certain at this multiple of `maxAge`, so nothing is immortal. */
+  ceiling: number
+}
+
 export interface HistoryConfig {
   /** Events retained in the bounded event log; older events are dropped. `0` retains none. */
   maxEvents: number
@@ -371,6 +390,7 @@ export interface WorldConfig {
   feeding: FeedingConfig
   predation: PredationConfig
   perception: PerceptionConfig
+  ageing: AgeingConfig
   observatory: ObservatoryConfig
 }
 
@@ -398,6 +418,7 @@ export interface WorldConfigOverrides {
     }
   }
   perception?: Partial<PerceptionConfig>
+  ageing?: Partial<AgeingConfig>
 }
 
 export interface WorldOptions {

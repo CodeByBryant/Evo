@@ -4,6 +4,7 @@ import type { EcologyModel } from '../ecology/EcologyModel'
 import type { OrganismStore } from '../entities/OrganismStore'
 import type { EventLog } from '../events/EventLog'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { ageingCostFactor } from '../organisms/ageing'
 import { factorsOf } from '../organisms/bodyFactors'
 import { basalCostOf, learningCostOf, outlineDragFactor, sensorCostOf } from '../organisms/traits'
 
@@ -55,6 +56,8 @@ export class MetabolismSystem {
                 body.temperatureTolerance
               ))) *
         scale *
+        // An old creature burns more (ADR 0027); exactly 1 with ageing off or before senescence.
+        ageingCostFactor(this.config.ageing, organism.age, genome.physical) *
         dt
       const previous = organism.energy
       const healing = this.regen?.get(organism.id) ?? 0

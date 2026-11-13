@@ -100,6 +100,7 @@ export type {
   PredationConfig,
   PerceptionConfig,
   ReproductionConfig,
+  AgeingConfig,
   ReproductionConfigOverrides,
   SexesConfig,
   EggsConfig,
@@ -147,6 +148,7 @@ export { RENDER_LAYERS, DEFAULT_RENDER_LAYERS } from './render'
 export type {
   RenderOrganism,
   RenderResource,
+  RenderEgg,
   RenderHazard,
   RenderEffect,
   RenderSnapshot,

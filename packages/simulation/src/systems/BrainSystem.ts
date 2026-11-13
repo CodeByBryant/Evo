@@ -25,6 +25,7 @@ import { TWO_PI } from '../math/scalar'
 import { atan2, cos, sin } from '../math/trig'
 import { computeReward } from '../learning/RewardModel'
 import { lifeStageFor } from '../organisms/lifeStage'
+import { ageingSpeedFactor } from '../organisms/ageing'
 import { factorsOf } from '../organisms/bodyFactors'
 import { maxEnergyOf, maxHealthOf, reproductionCostOf, sensorRadiusOf } from '../organisms/traits'
 import type { SeededRandom } from '../random/SeededRandom'
@@ -94,7 +95,8 @@ export class BrainSystem {
       maxSpeed:
         this.config.organisms.maxSpeed *
         (juvenile ? juvenileSpeedScale : 1) *
-        factorsOf(organism.genome, this.config).speed
+        factorsOf(organism.genome, this.config).speed *
+        ageingSpeedFactor(this.config.ageing, organism.age, organism.genome.physical)
     }
   }
 

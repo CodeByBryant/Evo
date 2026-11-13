@@ -487,7 +487,14 @@ export class World {
             fatherId: organism.pregnancy.fatherId
           })
         }
-      }
+      },
+      this.config.ageing.enabled
+        ? {
+            config: this.config.ageing,
+            timestep: this.config.timestep,
+            random: this.randomStreams.get('world')
+          }
+        : undefined
     )
 
     this.events.beginTick()
@@ -1063,7 +1070,7 @@ export class World {
         maxEnergy: maxEnergyOf(organism.genome, this.config),
         health: organism.health,
         maxHealth: maxHealthOf(organism.genome, this.config),
-        lifeStage: lifeStageFor(organism.age, this.config.organisms),
+        lifeStage: lifeStageFor(organism.age, organism.genome.physical),
         reproductionCooldownRemaining: organism.reproductionCooldownRemaining,
         gut: organism.gut,
         gutCapacity: this.config.feeding.enabled ? gutCapacityOf(organism.genome, this.config) : 0,

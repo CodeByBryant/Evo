@@ -1,6 +1,7 @@
 import type { WorldConfig } from '@evo/contracts'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { OrganismState } from '../entities/OrganismStore'
+import { ageingFertilityFactor } from './ageing'
 import { lifeStageFor } from './lifeStage'
 import { reproductionCostOf, reproductionThresholdOf } from './traits'
 
@@ -36,8 +37,11 @@ export class ReproductionReadiness {
    * never less than the cost it would pay here.
    */
   thresholdFor(organism: OrganismState, tick: number): number {
-    if (!this.terrainScales) return reproductionThresholdOf(organism.genome, this.config)
-    return Math.max(organism.genome.reproduction.minEnergy, this.costFor(organism, tick))
+    const base = this.terrainScales
+      ? Math.max(organism.genome.reproduction.minEnergy, this.costFor(organism, tick))
+      : reproductionThresholdOf(organism.genome, this.config)
+    // An old creature needs more energy to breed (ADR 0027); exactly 1 with ageing off.
+    return base * ageingFertilityFactor(this.config.ageing, organism.age, organism.genome.physical)
   }
 
   /**

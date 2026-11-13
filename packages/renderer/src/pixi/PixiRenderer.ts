@@ -123,6 +123,8 @@ export class PixiRenderer implements Renderer {
   private obstacleG = new Graphics()
   /** One flat line from each plant's hub to each of its nodes, and the buds growing back. */
   private stemG = new Graphics()
+  /** The eggs (ADR 0027): flat shapes redrawn each scene. */
+  private eggG = new Graphics()
   private trailG = new Graphics()
   private selectionG = new Graphics()
   private resources: PoolHost = { container: new Container(), pool: [] }
@@ -191,6 +193,7 @@ export class PixiRenderer implements Renderer {
       this.obstacleG,
       this.stemG,
       this.resources.container,
+      this.eggG,
       this.bodies.container,
       this.trailG,
       this.selectionG
@@ -336,6 +339,7 @@ export class PixiRenderer implements Renderer {
     this.hazardG.visible = layers.hazards
     this.obstacleG.visible = layers.obstacles
     this.resources.container.visible = layers.resources
+    this.eggG.visible = layers.eggs
     this.bodies.container.visible = layers.organisms
     this.motionOn = layers.motion
     this.trailG.visible = layers.trails
@@ -739,6 +743,7 @@ export class PixiRenderer implements Renderer {
 
     this.drawHazards(frame)
     this.drawStems(frame)
+    this.drawEggs(frame)
     this.drawTrails(frame)
     this.drawSelection(frame)
 
@@ -755,6 +760,37 @@ export class PixiRenderer implements Renderer {
         `tick ${frame.tick}  organisms ${frame.organisms.length}  food ${frame.resources.length}`,
         `zoom ${zoom.toFixed(2)}  scene ${this.lastMs.toFixed(1)} ms  frames ${this.frameCount}`
       ].join('\n')
+    }
+  }
+
+  /**
+   * Eggs (ADR 0027): a pale flat disc with a thin edge, a darker core that grows as it nears
+   * hatching, and a thin ring around one a parent is guarding. Never smaller than 1.6 px on screen.
+   */
+  private drawEggs(frame: RenderSnapshot): void {
+    this.eggG.clear()
+    if (frame.eggs.length === 0) return
+    const zoom = this.camera.state.zoom
+    for (const egg of frame.eggs) {
+      const radius = Math.max(egg.radius, 1.6 / zoom)
+      this.eggG.circle(egg.x, egg.y, radius).fill({ color: 0xece3c8, alpha: 0.95 })
+      this.eggG
+        .circle(egg.x, egg.y, Math.max(radius * 0.8 * egg.progress, 0.3 / zoom))
+        .fill({ color: 0xc9a35a, alpha: 0.9 })
+      this.eggG.circle(egg.x, egg.y, radius).stroke({
+        width: 1,
+        color: 0x8a7a55,
+        alpha: 0.9,
+        pixelLine: true
+      })
+      if (egg.guarded) {
+        this.eggG.circle(egg.x, egg.y, radius * 2.2).stroke({
+          width: 1,
+          color: 0xe0b34a,
+          alpha: 0.7,
+          pixelLine: true
+        })
+      }
     }
   }
 

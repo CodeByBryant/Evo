@@ -16,6 +16,7 @@ import { checkEcology } from './ecology'
 import { checkSpecies } from './species'
 import { checkAnatomy } from './anatomy'
 import { checkFeeding } from './feeding'
+import { checkAgeing } from './ageing'
 import { checkPerception } from './perception'
 import { checkPredation } from './predation'
 import { checkClusters } from './clusters'
@@ -37,6 +38,7 @@ const ROOT_KEYS = [
   'feeding',
   'predation',
   'perception',
+  'ageing',
   'observatory'
 ]
 const ENVIRONMENT_KEYS = ['width', 'height', 'layout', 'clusters']
@@ -446,6 +448,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
   checkFeeding(value, errors)
   checkPredation(value, errors)
   checkPerception(value, errors)
+  checkAgeing(value, errors)
 
   return { ok: errors.length === 0, errors }
 }
@@ -700,7 +703,8 @@ export function resolveWorldConfig(overrides?: WorldConfigOverrides): WorldConfi
     anatomy: mergeAnatomy(base.anatomy, given['anatomy']),
     feeding: mergeSection(base.feeding, given['feeding']),
     predation: mergePredation(base.predation, given['predation']),
-    perception: mergeSection(base.perception, given['perception'])
+    perception: mergeSection(base.perception, given['perception']),
+    ageing: mergeSection(base.ageing, given['ageing'])
   }
   const result = validateWorldConfig(merged)
   if (!result.ok) throw new ConfigValidationError(result.errors)

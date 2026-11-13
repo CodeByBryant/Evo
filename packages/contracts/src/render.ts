@@ -57,6 +57,18 @@ export interface RenderResource {
   readonly bud?: { readonly x: number; readonly y: number; readonly progress: number } | null
 }
 
+/** An egg lying in the world (ADR 0027): a small flat shape that fills as it nears hatching. */
+export interface RenderEgg {
+  readonly id: EntityId
+  readonly x: number
+  readonly y: number
+  readonly radius: number
+  /** Fraction of the way to hatching, in `[0, 1]`. */
+  readonly progress: number
+  /** Whether a living parent is beside it. */
+  readonly guarded: boolean
+}
+
 export interface RenderHazard {
   readonly id: number
   readonly kind: HazardKind
@@ -82,6 +94,7 @@ export interface RenderSnapshot {
   readonly season: Season | null
   readonly organisms: readonly RenderOrganism[]
   readonly resources: readonly RenderResource[]
+  readonly eggs: readonly RenderEgg[]
   readonly hazards: readonly RenderHazard[]
   readonly effects: readonly RenderEffect[]
   readonly selectedEntityId: EntityId | null
@@ -94,6 +107,7 @@ export const RENDER_LAYERS = [
   'hazards',
   'obstacles',
   'resources',
+  'eggs',
   'organisms',
   'trails',
   'selection',
@@ -109,6 +123,7 @@ export const DEFAULT_RENDER_LAYERS: RenderLayers = {
   hazards: true,
   obstacles: true,
   resources: true,
+  eggs: true,
   organisms: true,
   trails: false,
   selection: true,

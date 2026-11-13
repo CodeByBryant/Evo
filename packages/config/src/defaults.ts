@@ -441,6 +441,15 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
   perception: {
     organismsBlockSight: true,
     maxSightChecks: 6
+  },
+  // Ageing (ADR 0027): off here; switched on in the measured commit.
+  ageing: {
+    enabled: false,
+    metabolismRise: 0.5,
+    speedLoss: 0.3,
+    fertilityLoss: 0.5,
+    hazard: 0.04,
+    ceiling: 2
   }
 } satisfies WorldConfig)
 
