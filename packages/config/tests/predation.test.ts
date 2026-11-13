@@ -90,9 +90,13 @@ describe('predation config', () => {
     expect(errorsFor((p) => ((p['carcass'] as Loose)['energyFraction'] = 0 as never))).toContain(
       'predation.carcass.energyFraction must be greater than zero and at most one'
     )
+    // zero is allowed (a form that cannot digest meat, ADR 0026); a negative is not
     expect(
-      errorsFor((p) => (((p['carcass'] as Loose)['yields'] as Loose)['jaw'] = 0 as never))
-    ).toContain('predation.carcass.yields.jaw must be greater than zero')
+      errorsFor((p) => (((p['carcass'] as Loose)['yields'] as Loose)['sprout'] = 0 as never))
+    ).toEqual([])
+    expect(
+      errorsFor((p) => (((p['carcass'] as Loose)['yields'] as Loose)['jaw'] = -1 as never))
+    ).toContain('predation.carcass.yields.jaw must be nonnegative')
     expect(errorsFor((p) => ((p['carcass'] as Loose)['maxCount'] = 1.5 as never))).toContain(
       'predation.carcass.maxCount must be an integer'
     )

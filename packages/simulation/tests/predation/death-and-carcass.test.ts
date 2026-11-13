@@ -224,14 +224,12 @@ describe('carcasses', () => {
     expect(withCarrion(noKinds)).toBe(noKinds)
   })
 
-  it('makes a mandible eat a carcass well and a sprout hardly at all (the form decides)', () => {
+  it('makes a mandible get no carcass yield while jaws keep a positive yield', () => {
     const cfg = full()
     const kind = cfg.ecology.resourceKinds.kinds.length - 1
     const founder = organismFor(cfg, 1)
-    expect(factorsOf(founder.genome, cfg).dietEfficiency[kind]).toBeCloseTo(
-      cfg.predation.carcass.yields.mandible,
-      9
-    )
+    expect(factorsOf(founder.genome, cfg).dietEfficiency[kind]).toBeCloseTo(0, 9)
+    expect(cfg.predation.carcass.yields.jaw).toBeGreaterThan(0)
   })
 
   function carcasses(extra: WorldConfigOverrides = {}) {

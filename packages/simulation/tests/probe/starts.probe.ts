@@ -33,12 +33,15 @@ describe('starting bodies probe', () => {
     it(
       `measures ${name}`,
       () => {
+        // The override's own anatomy (a mouth-form table, say) is kept: only the start is forced.
+        const given = (OVERRIDES['anatomy'] ?? {}) as Record<string, unknown>
         const config = {
           ...OVERRIDES,
-          anatomy:
-            name === 'reference'
-              ? { startingBody: { mode: 'reference' } }
-              : { startingBody: { mode: 'archetypes', archetype: name } }
+          anatomy: {
+            ...given,
+            startingBody:
+              name === 'reference' ? { mode: 'reference' } : { mode: 'archetypes', archetype: name }
+          }
         }
         let extinct = 0
         let meanSum = 0

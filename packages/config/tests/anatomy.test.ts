@@ -217,6 +217,29 @@ describe('feeding config (ADR 0017)', () => {
   })
 })
 
+describe('mouth forms must say what they yield for every food kind (ADR 0026)', () => {
+  it('a kind a form does not list is an error with food kinds on, and fine with them off', () => {
+    const error = errorsFor(
+      (c) => delete (c.anatomy.mouthForms.sprout as Record<string, number>)['fungus']
+    ).join('\n')
+    expect(error).toContain('anatomy.mouthForms.sprout has no yield for the food kind "fungus"')
+    // a new food kind has to be listed for every form
+    const added = errorsFor((c) => {
+      c.ecology.resourceKinds.kinds.push({ ...c.ecology.resourceKinds.kinds[0]!, name: 'moss' })
+    }).join('\n')
+    expect(added).toContain('has no yield for the food kind "moss"')
+    // negative: with kinds off nothing needs listing
+    expect(
+      errorsFor((c) => {
+        c.ecology.resourceKinds.enabled = false
+        delete (c.anatomy.mouthForms.sprout as Record<string, number>)['fungus']
+      })
+    ).toEqual([])
+    // and the defaults list every kind for every form
+    expect(errorsFor(() => undefined)).toEqual([])
+  })
+})
+
 describe('mouth forms (ADR 0017)', () => {
   it('the mandible is exactly 1 on every kind so the founder is the neutral reference', () => {
     for (const value of Object.values(DEFAULT_WORLD_CONFIG.anatomy.mouthForms.mandible)) {

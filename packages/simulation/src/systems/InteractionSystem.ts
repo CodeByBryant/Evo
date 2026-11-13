@@ -116,7 +116,8 @@ export class InteractionSystem {
       const c = cos(heading)
       const s = sin(heading)
 
-      for (const mouth of mouthsOf(organism.genome, this.config)) {
+      const mouths = mouthsOf(organism.genome, this.config)
+      for (const mouth of mouths) {
         // The mouth in the world: the body-frame point turned by the heading.
         const mx = (mouth.x * c - mouth.y * s) * bodyRadius
         const my = (mouth.x * s + mouth.y * c) * bodyRadius
@@ -161,7 +162,13 @@ export class InteractionSystem {
 
         const resource = hit.item
         const kind = this.kindOf(resource.kind)
-        const yieldPerChunk = body.dietEfficiency[resource.kind] ?? 1
+        // What it takes in is what the mouth that bites yields, not the body's blend over all its mouths
+        // (a sprout beside a jaw bites grass at the sprout's yield, ADR 0026). A body with one mouth keeps
+        // the exact value it always had.
+        const yieldPerChunk =
+          mouths.length === 1
+            ? (body.dietEfficiency[resource.kind] ?? 1)
+            : (this.formYields[mouth.form][resource.kind] ?? 1)
         // A plant's hub is tougher than its nodes (ADR 0021); free food and nodes are the kind's own.
         const hardness =
           resource.slot === HUB_SLOT
