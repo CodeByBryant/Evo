@@ -23,7 +23,10 @@ export function inputGroupOf(index: number): InputGroup {
   if (index < 37) return 'mate'
   if (index < 40) return 'home'
   if (index < 44) return 'prey'
-  return 'threat'
+  if (index < 48) return 'threat'
+  // A slot added to the observation must be placed in a group here; it used to fall through to
+  // 'threat' and be counted silently (found while planning ADR 0025).
+  throw new RangeError(`observation slot ${index} belongs to no input group`)
 }
 
 /**
