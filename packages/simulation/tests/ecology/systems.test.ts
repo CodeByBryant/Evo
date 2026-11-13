@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { resolveBefore } from '../support/life'
-import { resolveWorldConfig } from '@evo/config'
 import { OBSERVATION_LABELS, OBSERVATION_SIZE } from '@evo/contracts'
 import type { RegionType, WorldConfig, WorldConfigOverrides } from '@evo/contracts'
 import type { DamageBuffer, HazardBuffer, IntentBuffer, RegenBuffer } from '../../src/buffers/types'

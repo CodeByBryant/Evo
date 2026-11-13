@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { createBefore } from './support/life'
-import { World } from '../src/index'
 import { genomeToVector } from '../src/genetics/GenomeFactory'
 import { withoutEcology } from './support/ecology'
 import { ALL_ROUND, REFERENCE_START } from './support/bodies'
