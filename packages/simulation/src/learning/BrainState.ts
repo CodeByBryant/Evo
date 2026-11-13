@@ -41,6 +41,15 @@ export interface BrainState {
   decisions: number
   /** Coarse world cells (8 x 8) this organism has entered; the novelty reward fires on first entry. */
   visited: Uint8Array
+  /**
+   * Where this organism last took in food (ADR 0025), in world units, and the tick it did; the tick
+   * is -1 when it remembers no site. Hashed: it steers later decisions.
+   */
+  recallX: number
+  recallY: number
+  recallTick: number
+  /** Seconds it has stood at the remembered site without a bite; the site is forgotten after a few. */
+  recallStay: number
   /** Lifetime telemetry. */
   rewardTotal: number
   updates: number
@@ -69,6 +78,10 @@ export function createBrainState(genome: Genome, layout: BrainLayout, energy: nu
     energyAtDecision: energy,
     decisions: 0,
     visited: new Uint8Array(VISITED_CELLS),
+    recallX: 0,
+    recallY: 0,
+    recallTick: -1,
+    recallStay: 0,
     rewardTotal: 0,
     updates: 0,
     weightChange: 0,
@@ -108,6 +121,11 @@ export function writeBrainState(hasher: StateHasher, brain: BrainState | null): 
     .writeUint32(brain.updates)
     .writeFloat64(brain.weightChange)
   for (const cell of brain.visited) hasher.writeUint8(cell)
+  hasher
+    .writeFloat64(brain.recallX)
+    .writeFloat64(brain.recallY)
+    .writeFloat64(brain.recallTick)
+    .writeFloat64(brain.recallStay)
 }
 
 /** Names every non-finite value in a brain state; empty when the state is sound. */
@@ -144,7 +162,11 @@ export function brainStateProblems(brain: BrainState, layout: BrainLayout): stri
     brain.timeSinceFood,
     brain.energyAtDecision,
     brain.rewardTotal,
-    brain.weightChange
+    brain.weightChange,
+    brain.recallX,
+    brain.recallY,
+    brain.recallTick,
+    brain.recallStay
   ])
   return problems
 }

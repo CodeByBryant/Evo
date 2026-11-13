@@ -256,12 +256,12 @@ describe('in a world', () => {
       })
     })
 
-  it('every creature sees 48 numbers, and the prey and threat slots are zero with predation off', () => {
+  it('every creature sees 52 numbers, and the prey and threat slots are zero with predation off', () => {
     const world = worldWith(false)
     world.run(200)
     const id = world.snapshot().organisms[0]!.id
     const inputs = world.brainOf(id)?.observation
-    expect(inputs).toHaveLength(48)
+    expect(inputs).toHaveLength(52)
     expect(inputs?.slice(40, 48)).toEqual([0, 0, 0, 0, 0, 0, 0, 0])
   })
 

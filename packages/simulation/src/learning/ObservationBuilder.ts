@@ -49,12 +49,27 @@ export interface ObservationInput {
   readonly prey?: Sighting | null
   /** The nearest creature that could bite this one that it can see (predation only; default none). */
   readonly threat?: Sighting | null
+  /**
+   * Where it last fed (ADR 0025): the world-space vector to the remembered site, how fresh the
+   * memory is in `[0, 1]`, and the distance at which proximity reaches zero. Default none.
+   */
+  readonly recall?: RecallSighting | null
   /** The way back to the cluster's centre (cluster layout only; omitted in the field). */
   readonly home?: {
     readonly present: number
     readonly bearingCos: number
     readonly bearingSin: number
   }
+}
+
+/** A remembered feeding site: the vector to it, how fresh the memory is, and the range of the sense. */
+export interface RecallSighting {
+  readonly dx: number
+  readonly dy: number
+  readonly distanceSquared: number
+  /** `1` just fed there, fading to `0` as the memory ages. */
+  readonly freshness: number
+  readonly range: number
 }
 
 /** A hazard sensed: the vector to its centre and its radius. */
@@ -88,6 +103,27 @@ function writeSighting(
   )
 }
 
+function writeRecall(
+  out: number[],
+  recall: RecallSighting | null,
+  cosHeading: number,
+  sinHeading: number
+): void {
+  if (recall === null) {
+    out.push(0, 0, 0, 0)
+    return
+  }
+  const distance = Math.sqrt(recall.distanceSquared)
+  const bodyX = recall.dx * cosHeading + recall.dy * sinHeading
+  const bodyY = -recall.dx * sinHeading + recall.dy * cosHeading
+  out.push(
+    clamp(recall.freshness, 0, 1),
+    distance > 0 ? bodyX / distance : 1,
+    distance > 0 ? bodyY / distance : 0,
+    clamp(1 - distance / recall.range, 0, 1)
+  )
+}
+
 function writeHazard(
   out: number[],
   hazard: HazardSighting | null,
@@ -113,7 +149,7 @@ function writeHazard(
 }
 
 /**
- * Builds the 48-number observation in the fixed order of `OBSERVATION_LABELS`
+ * Builds the 52-number observation in the fixed order of `OBSERVATION_LABELS`
  * (docs/learning/brain.md). Pure; every value is bounded to `[-1, 1]`.
  */
 export function buildObservation(input: ObservationInput): Observation {
@@ -156,6 +192,8 @@ export function buildObservation(input: ObservationInput): Observation {
   // What it could eat and what could eat it (ADR 0023): zeros unless predation is on.
   writeSighting(out, input.prey ?? null, cosHeading, sinHeading, input.sensorRadius)
   writeSighting(out, input.threat ?? null, cosHeading, sinHeading, input.sensorRadius)
+  // Where it last fed (ADR 0025): zeros with no memory or with the sense switched off.
+  writeRecall(out, input.recall ?? null, cosHeading, sinHeading)
   if (out.length !== OBSERVATION_SIZE) {
     throw new Error(`observation has ${out.length} values, expected ${OBSERVATION_SIZE}`)
   }

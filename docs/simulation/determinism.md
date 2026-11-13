@@ -203,9 +203,13 @@ Introduced with bites, food health and the gut (ADR 0017). Each organism's recor
 
 Introduced with renewable plants (ADR 0021). Each resource's record gains four values after `kind`: `parent` (u32, the hub's id; only a node's slot says it is meaningful, since ids start at 0), `slot` (u8: `0` hub, `1` to `6` node, `255` free food), `bornTick` (u32, a hub's age) and `sproutProgress` (f64, the energy already moved into the node that is growing back). All four are `0, 255, 0, 0` for free food and for every world without plants. Nothing else changes: the food pattern of `resources.distribution` is a pure function of the seed, the position and time, so it is neither drawn from a stream nor hashed. Behaviour equivalence with the previous commit with `plants.enabled: false` was shown by comparing normalized snapshots (six per scenario, all fields of every organism and resource), 8 of 8 scenarios identical, not by hash.
 
-#### Version 12 (current, predation senses)
+#### Version 12 (predation senses; superseded by version 13)
 
 Introduced with the prey and threat senses (ADR 0023, step two). The metrics section gains two counters, appended after the two remainders of section 12: `deathsByPredation` (u32) and `predationBites` (u32), both zero for ever without predation. The brain gets eight more inputs (`OBSERVATION_SIZE` 48) so every genome carries 514 weights instead of 450 (the hash covers weights as they are), and because founders draw one normal per weight from the `genetics` stream, **every founder's brain draws shift**: every golden entry regenerated (44 of 44 changed, in the commit that caused it). The header carries the new version. A byte-identical switch-off proof is therefore impossible (the brains differ); what was shown instead is that the new inputs are zero without predation, that the reflex controller is untouched (scenario A moved only through the mutation draws that follow the founders' extra ones, 29 / 47 / 18 to 28 / 46 / 18), and that the vectors below were recomputed with the independent Python hasher, which reproduced the version 11 values first.
+
+#### Version 13 (current, place memory)
+
+Introduced with the place memory (ADR 0025). Each organism's brain state gains three values after the novelty grid, in this order: `recallX` (`writeFloat64`), `recallY` (`writeFloat64`) and `recallTick` (`writeFloat64`, `-1` for no remembered site), then `recallStay` (`writeFloat64`, seconds spent at the site without a bite). All four are `0, 0, -1, 0` for ever when `learning.placeMemory.enabled` is false or a creature never feeds. The brain gets four more inputs (`OBSERVATION_SIZE` 52), so every genome carries 546 weights instead of 514, and founders draw 32 more normals. Equivalence: with the sense switched off, founder brains equal to the innate prior (`initialWeightStd` at its smallest), and mutation and learned inheritance frozen, eight scenarios (field, noise food, instant eating, no ecology, no predation, lush, the reflex controller, and a one-cluster layout) give normalized snapshots, events and records identical to version 12 over 2,500 to 4,000 ticks, births included. A layout with several clusters differs only through the shifted `genetics` stream (founders of different species differ, so the blend of their children depends on the draws). The independent Python hasher reproduces the version 12 vectors and gives the version 13 ones in section 10.
 
 `WorldConfig` is **not** part of the hash; golden tests pin their config explicitly. Fields for later phases are appended as new sections or new fields with a version bump.
 
@@ -248,9 +252,9 @@ These are computed from the spec above with a reference script and must be repro
 | Input                                                                              | `stateHash`-style output           |
 | ---------------------------------------------------------------------------------- | ---------------------------------- |
 | no bytes                                                                           | `027ae52ecfc796215593990d4b41437c` |
-| header only: `"EVOH"`, `writeUint32(12)`                                           | `d49b1e0b9a8a18f330c42958c075e1a5` |
-| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `fa1c4aa87cacbdd6959a759e55fd84da` |
-| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `fa1c4aa87cacbdd6959a759e55fd84da` |
+| header only: `"EVOH"`, `writeUint32(13)`                                           | `587210918be484b597a2acfc1f3e30d3` |
+| header, `writeUint32(7)`, `writeFloat64(-0)`, `writeFloat64(0.5)`, `writeUint8(1)` | `a92127630cc9776a9793f49801069c1f` |
+| same as above with `writeFloat64(+0)` instead of `-0` (proves canonicalization)    | `a92127630cc9776a9793f49801069c1f` |
 
 **`normal()`** (depends on the engine's `ln`; values are exact binary64 results, shown in shortest round-trip form):
 

@@ -383,7 +383,7 @@ describe('SimulationHost: selection and the inspector', () => {
     expect(inspector?.id).toBe(id)
     expect(inspector?.overview.maxEnergy).toBeGreaterThan(0)
     expect(inspector?.genome.some((g) => g.group === 'physical' && g.name === 'radius')).toBe(true)
-    expect(inspector?.brain?.inputs).toHaveLength(48)
+    expect(inspector?.brain?.inputs).toHaveLength(52)
     expect(inspector?.brain?.outputs).toHaveLength(5)
     expect(inspector?.environment.regionType).not.toBeNull()
     expect(inspector?.lineage.speciesAncestry).toBeInstanceOf(Array)

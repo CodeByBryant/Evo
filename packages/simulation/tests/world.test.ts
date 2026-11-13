@@ -206,9 +206,13 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
     // step two): founders draw 64 more weights from the `genetics` stream, which shifts every later
     // mutation. Measured on this seed: 29 / 47 / 18 before, 28 / 46 / 18 now; the reflex controller
     // ignores the weights, so nothing but the mutation draws moved.
-    expect(snapshot.population.active).toBe(28)
-    expect(snapshot.metrics.organismsBorn).toBe(46)
-    expect(snapshot.metrics.deathsByStarvation).toBe(18)
+    // And once more when the brain gained a place-memory group (observation 48 to 52, ADR 0025):
+    // founders draw 32 more weights, which shifts every later genetics draw again. Measured on this
+    // seed: 28 / 46 / 18 before, 27 / 43 / 16 now; the reflex controller ignores the weights, so again
+    // only the mutation draws moved.
+    expect(snapshot.population.active).toBe(27)
+    expect(snapshot.metrics.organismsBorn).toBe(43)
+    expect(snapshot.metrics.deathsByStarvation).toBe(16)
     expect(snapshot.metrics.deathsByAge).toBe(0)
     expect(snapshot.population.extinctionTick).toBeNull()
 

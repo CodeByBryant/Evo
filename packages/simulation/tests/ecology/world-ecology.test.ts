@@ -35,7 +35,7 @@ describe('a world with every ecology feature on', () => {
         expect(Number.isFinite(organism.health)).toBe(true)
       }
       const brain = snapshot.organisms[0] ? world.brainOf(snapshot.organisms[0].id) : undefined
-      if (brain) expect(brain.observation).toHaveLength(48)
+      if (brain) expect(brain.observation).toHaveLength(52)
     }
     expect(world.validate()).toEqual({ ok: true, errors: [] })
   })

@@ -460,7 +460,8 @@ function mergeLearning(base: object, override: unknown): unknown {
   return {
     ...base,
     ...override,
-    rewardWeights: mergeSection(defaults['rewardWeights'] as object, override['rewardWeights'])
+    rewardWeights: mergeSection(defaults['rewardWeights'] as object, override['rewardWeights']),
+    placeMemory: mergeSection(defaults['placeMemory'] as object, override['placeMemory'])
   }
 }
 

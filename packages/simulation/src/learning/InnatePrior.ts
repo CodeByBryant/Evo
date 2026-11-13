@@ -35,6 +35,16 @@ const THREAT_BEARING_SIN = 46
 const FLEE_STEER = 5
 const FLEE_THRUST = 20
 
+// Where it last fed (ADR 0025): steer back toward the remembered site and keep moving. Gentler than
+// every other term (food is 5, mates 3), and the slots are zero when it remembers nothing, so a
+// creature with food or a partner in view is led by those, and one with nothing in view walks home to
+// where it last ate.
+const RECALL_PRESENT = 48
+const RECALL_BEARING_COS = 49
+const RECALL_BEARING_SIN = 50
+const RECALL_STEER = 1
+const RECALL_THRUST = 20
+
 // Output indices.
 const THRUST = 0
 const TURN = 1
@@ -49,7 +59,8 @@ const INTERACT = 3
  *   saturate toward the side the food is on, and lean left when it is directly behind. Each
  *   drives `turn` with weight 3.
  * - Three presence units compute `softsign(20 present)` and each drives `thrust` with weight 3.
- * - Mates, the way home, prey (hunt) and threats (flee) steer the same units; see below.
+ * - Mates, the way home, prey (hunt), threats (flee) and the place it last fed steer the same units;
+ *   see below.
  * - `thrust` has bias 1 (half speed with nothing in sight, as the reflex wanderer); `interact`
  *   has bias 2, so the organism always tries to eat; `strafe` and `explore` start neutral.
  *
@@ -109,6 +120,14 @@ export function innatePriorWeights(architecture: BrainArchitecture): number[] {
     input(steering, THREAT_BEARING_COS, FLEE_STEER * 0.05)
   }
   input(3, THREAT_PRESENT, FLEE_THRUST)
+  // Recall (ADR 0025): the same steering units turn toward the place it last fed, gently, and the
+  // third presence unit keeps it moving while it remembers one.
+  for (const steering of [0, 1]) {
+    input(steering, RECALL_BEARING_SIN, RECALL_STEER)
+    input(steering, RECALL_PRESENT, RECALL_STEER * 0.05)
+    input(steering, RECALL_BEARING_COS, -RECALL_STEER * 0.05)
+  }
+  input(4, RECALL_PRESENT, RECALL_THRUST)
 
   const output = (out: number, hidden: number, value: number): void => {
     weights[layout.hiddenToOutput.offset + out * hiddenSize + hidden] = value

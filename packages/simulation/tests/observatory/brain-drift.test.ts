@@ -19,8 +19,12 @@ const layout = brainLayoutOf(architecture)
 const prior = innatePriorWeights(architecture)
 
 describe('input groups', () => {
+  it('refuses a slot that belongs to no group instead of calling it a threat', () => {
+    expect(() => inputGroupOf(OBSERVATION_SIZE)).toThrow(RangeError)
+  })
+
   it('place every observation slot in a group, in step with the labels', () => {
-    expect(OBSERVATION_SIZE).toBe(48)
+    expect(OBSERVATION_SIZE).toBe(52)
     for (let i = 0; i < OBSERVATION_SIZE; i++) {
       expect(INPUT_GROUPS).toContain(inputGroupOf(i))
     }
@@ -35,6 +39,7 @@ describe('input groups', () => {
       if (name.startsWith('home')) expect(group).toBe('home')
       if (name.startsWith('prey')) expect(group).toBe('prey')
       if (name.startsWith('threat')) expect(group).toBe('threat')
+      if (name.startsWith('recall')) expect(group).toBe('recall')
       if (name.startsWith('season')) expect(group).toBe('season')
       if (name.startsWith('previousAction') || name === 'energy') expect(group).toBe('self')
     }

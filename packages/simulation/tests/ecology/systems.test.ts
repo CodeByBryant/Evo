@@ -864,8 +864,8 @@ describe('the brain inputs and reward terms', () => {
     previousAction: [0, 0, 0, 0, 0]
   }
 
-  it('has forty-eight labelled slots in the documented order', () => {
-    expect(OBSERVATION_SIZE).toBe(48)
+  it('has fifty-two labelled slots in the documented order', () => {
+    expect(OBSERVATION_SIZE).toBe(52)
     expect(OBSERVATION_LABELS.slice(23, 33)).toEqual([
       'ownHealth',
       'hazardPresent',
@@ -893,15 +893,19 @@ describe('the brain inputs and reward terms', () => {
       'threatPresent',
       'threatBearingCos',
       'threatBearingSin',
-      'threatProximity'
+      'threatProximity',
+      'recallPresent',
+      'recallBearingCos',
+      'recallBearingSin',
+      'recallProximity'
     ])
   })
 
   it('appends neutral values by default and leaves the first 23 slots untouched', () => {
     const plain = buildObservation(base)
-    expect(plain).toHaveLength(48)
+    expect(plain).toHaveLength(52)
     expect(plain.slice(23, 33)).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0, 1])
-    expect(plain.slice(33)).toEqual(new Array(15).fill(0))
+    expect(plain.slice(33)).toEqual(new Array(19).fill(0))
     const rich = buildObservation({
       ...base,
       health: 0.4,
