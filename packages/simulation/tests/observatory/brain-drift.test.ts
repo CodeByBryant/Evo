@@ -19,6 +19,11 @@ const layout = brainLayoutOf(architecture)
 const prior = innatePriorWeights(architecture)
 
 describe('input groups', () => {
+  it('refuses a slot that belongs to no group instead of calling it a threat (negative)', () => {
+    expect(() => inputGroupOf(OBSERVATION_SIZE)).toThrow(RangeError)
+    expect(inputGroupOf(OBSERVATION_SIZE - 1)).toBe('threat')
+  })
+
   it('place every observation slot in a group, in step with the labels', () => {
     expect(OBSERVATION_SIZE).toBe(48)
     for (let i = 0; i < OBSERVATION_SIZE; i++) {

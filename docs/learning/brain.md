@@ -6,7 +6,7 @@ Design rationale is in [ADR 0007](../decisions/0007-learning-and-the-brain.md). 
 
 Each tick, for each organism, in ascending id:
 
-1. **Observe**: build a 40-number `Observation` from the organism's body and what perception found.
+1. **Observe**: build a 48-number `Observation` from the organism's body and what perception found.
 2. **Learn** from the previous tick: using the reward stored last tick, nudge the learnable weights.
 3. **Decide**: run the network, add exploration noise, produce a 5-number `Action`.
 4. The action is translated to an intent; movement, interaction, metabolism, reproduction and death run as usual.
