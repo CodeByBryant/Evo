@@ -152,3 +152,7 @@ Pure-function unit tests mirror the roadmap's genetics list: mutation stays boun
 ## Rollback plan
 
 Each PR is independently revertable. The behavior-preserving PR (organisms carry genomes) can ship and stay even if inheritance is later disabled: setting `mutationRateScale` to `0` makes children blends of their parents without drift, and reverting only the "heritable genomes" PR restores genome-carrying organisms that copy a parent's genome.
+
+## Update (ADR 0027): two more genes
+
+Mate choice added two reproduction genes, `choosiness` and `preference`, appended to the gene table (genome version 5). See [ADR 0027](0027-life-cycle.md).

@@ -30,7 +30,39 @@ With sexes, eggs, mate choice and ageing off, nine scenarios (field, instant eat
 
 ## Measured
 
-RESULTS
+Probe: `tests/probe/life.probe.ts` (default world; 30,000 ticks unless said; every number is a mean over the seeds listed).
+
+**The first flip failed, and the cause was breeding, not the eggs.** With the life cycle on at the old breeding numbers, 2 of 8 worlds went extinct and the mean population fell from 55 (control, life cycle off, 4 seeds) to 24. 98 to 99 percent of eggs hatched, so the mechanism worked; half the creatures were the wrong sex and a pair is rarer. One lever at a time, on seeds 1, 3, 5, 7: search radius 50 to 75 alone (1 of 4 extinct, mean 29), mating signal 250 to 350 alone (2 of 4, mean 23), cooldown 45 to 30 alone (0 of 4, mean 41, lowest 7), all three (0 of 4, mean 51, lowest 19). On the other four seeds all three gave 53, lowest 17.
+
+**Then the other two parts, same method.** Ageing at hazard 0.04 plus mate choice cost a world (1 of 8 extinct); a lighter ageing (hazard 0.02, metabolism +30 percent, speed -20 percent, fertility cost +30 percent) did not. Mate choice at the first tastes (choosiness 0.3) turned nobody down (0.0 percent of attempts): it was a switch that did nothing, so the founders' tastes are 0.8 and 0.5, which turns down 12 to 28 percent of the attempts that found a partner. On the fragile seeds (3, 5, 6, 7, 8) lowering `minEnergy` from 75 to 65 was the best lever (mean 49, lowest 21, against 42 and lowest 5), while shorter incubation (5 s and 10 s) and still wider search radii did not help (one world died with the wider radii).
+
+**The shipped default** (breeding: `minEnergy` 65, `cooldown` 30, search radius 75, mating signal 350; ageing light; mate choice 0.8 and 0.5 with threshold 0.4 and search cost 0.2):
+
+| 16 seeds x 30,000 ticks                    | result           | stated bar          |
+| ------------------------------------------ | ---------------- | ------------------- |
+| extinct worlds                             | 0                | none                |
+| mean population (per 4 seeds)              | 48 to 53         | 35 to 70            |
+| lowest population                          | 16 to 21         | at least 10         |
+| starved share of deaths                    | 60 to 64 percent | 35 to 70 percent    |
+| old age share of deaths                    | about 35 percent | (was about 0)       |
+| eggs that hatched                          | 98 to 99 percent | at least 70 percent |
+| worlds with a jaw lineage alive at the end | 7 of 16          | reported            |
+
+| 8 seeds x 100,000 ticks (including 3246115366) | result                                                                                                       |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| extinct worlds                                 | 0                                                                                                            |
+| mean population                                | 55 (lowest 19 to 25)                                                                                         |
+| starved share of deaths                        | 61 to 70 percent; old age 28 to 31 percent                                                                   |
+| eggs laid and hatched per world                | about 3,300 laid; 92 to 99 percent hatched                                                                   |
+| clutches lost with a mother                    | 94 to 124 per world                                                                                          |
+| eggs eaten per world                           | 7, 11, 67 and 263 (by pair of seeds); seed 1 about 500                                                       |
+| jaw lineage alive at 100,000                   | **4 of 8 worlds** (seed 1: 40 of 41 creatures; seed 5: 13; seeds 2 and 6: 1 each); it was 1 or 2 of 8 before |
+| tastes at the end                              | choosiness 0.73 to 0.88, preference 0.50 to 0.55                                                             |
+| ticks per second                               | 450 to 510 with four runs in parallel; the control was 509                                                   |
+
+**What it says about carnivory, said plainly.** Eggs are a second, stationary meat source, and jaw lineages persist in twice as many worlds (4 of 8, from 1 or 2). They do so in the way this ADR's author did not want: in seed 1 the jaws fed on eggs (about 500 eaten) and are **40 of the 41 creatures at 100,000 ticks, a jaw monoculture**; the owner's earlier bar (jaws never above 40 percent of a population) is broken in that world and held in the other seven. This is reported, not required for the feature, and it is a pointer to the next lever (a jaw that also grazes, which the owner already named: multiple mouths).
+
+**Gates.** Every default-world statistical gate was run (all 17 determinism files and the unit suites) and two Phase 3 pins moved only because mate choice added two genes and so shifted every later mutation draw: the extinction tick of the scarce world (seed 6, 19,582 to 27,182) and the population band of seed 1 (back half 25 to 46 to 55 to 89; seeds 2 to 6 stay at 25 to 48), re-pinned with those measurements. All 50 older golden entries now say what they were measured with (one sex, an instant birth, the old breeding numbers, ageing off) and reproduce their old hashes exactly; three new entries pin the new default.
 
 ## Limits, said plainly
 

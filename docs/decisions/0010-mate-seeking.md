@@ -73,3 +73,7 @@ The naive-steering experiment, the ready-gated sensor-range experiment, the rang
 - Causal ablation in a real world: under the brain controller, a 250 signal produces clearly more births than a signal of 1; under the reflex controller the signal changes nothing (identical state hash).
 - Removing the "only if I am ready" gate from perception fails the suite (checked by hand during development).
 - The equivalence harness (previous commit versus this one, reflex controller, mutation off, same food supply, 20 scenarios, snapshots every 250 ticks, the full event list and the historical records) gave identical digests in all 20: reflex dynamics are untouched; only genome contents, and therefore every golden hash, changed.
+
+## Update (ADR 0027)
+
+With two sexes the mating signal only points to a ready creature of the other sex, and its range in the default world is 350 (the life cycle needed a longer reach: [ADR 0027](0027-life-cycle.md)).
