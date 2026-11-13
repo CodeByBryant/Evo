@@ -420,6 +420,8 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       maxCount: 40,
       radius: 4,
       hardness: 1,
+      // Meat is the jaw's alone (ADR 0026, the owner's decision): every other mouth form yields exactly 0, so
+      // it neither bites a carcass nor sees one. It used to be eaten by everyone (jaws got 5 percent of it).
       yields: { sprout: 0, proboscis: 0, mandible: 0, radula: 0, jaw: 1.2 }
     }
   },
