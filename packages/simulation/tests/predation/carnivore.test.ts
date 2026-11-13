@@ -105,6 +105,14 @@ describe('what a mouth bites', () => {
     expect(events.eventsThisTick().some((e) => e.type === 'resource-bitten')).toBe(true)
   })
 
+  it("a mandible does not bite carrion: a carcass is the jaw's alone (ADR 0026)", () => {
+    const cfg = config()
+    const { organism, food, events } = eat(false, carrionOf(cfg))
+    expect(food.remaining).toBe(30)
+    expect(organism.gut).toBe(0)
+    expect(events.eventsThisTick().some((e) => e.type === 'resource-bitten')).toBe(false)
+  })
+
   it('a mandible still bites the same plant (negative: only the jaw changed)', () => {
     const { organism, food } = eat(false, GRASS)
     expect(food.remaining).toBeLessThan(30)
@@ -138,13 +146,13 @@ describe('what a creature sees as food', () => {
   }
 
   it.each([false, true])(
-    'a jaw does not see a plant but sees carrion; a mandible sees both (occluding search: %s)',
+    'a jaw sees carrion and not a plant; a mandible sees a plant and not carrion (occluding search: %s)',
     (occluding) => {
       const carrion = carrionOf(config())
       expect(see(true, GRASS, occluding)).toBeNull()
       expect(see(true, carrion, occluding)).toBe(7)
       expect(see(false, GRASS, occluding)).toBe(7)
-      expect(see(false, carrion, occluding)).toBe(7)
+      expect(see(false, carrion, occluding)).toBeNull()
     }
   )
 })

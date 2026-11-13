@@ -420,7 +420,9 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       maxCount: 40,
       radius: 4,
       hardness: 1,
-      yields: { sprout: 0.1, proboscis: 0.2, mandible: 0.8, radula: 0.6, jaw: 1.2 }
+      // Meat is the jaw's alone (ADR 0026, the owner's decision): every other mouth form yields exactly 0, so
+      // it neither bites a carcass nor sees one. It used to be eaten by everyone (jaws got 5 percent of it).
+      yields: { sprout: 0, proboscis: 0, mandible: 0, radula: 0, jaw: 1.2 }
     }
   },
   // Another creature's body hides what is behind it (ADR 0016 "Line of sight"); a creature checks

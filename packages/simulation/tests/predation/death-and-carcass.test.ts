@@ -224,14 +224,19 @@ describe('carcasses', () => {
     expect(withCarrion(noKinds)).toBe(noKinds)
   })
 
-  it('makes a mandible eat a carcass well and a sprout hardly at all (the form decides)', () => {
+  it("makes a carcass the jaw's alone: every other form yields exactly 0 (ADR 0026)", () => {
     const cfg = full()
     const kind = cfg.ecology.resourceKinds.kinds.length - 1
+    for (const form of ['sprout', 'proboscis', 'mandible', 'radula'] as const) {
+      expect(cfg.anatomy.mouthForms[form][CARRION_KIND]).toBe(0)
+    }
+    expect(cfg.anatomy.mouthForms.jaw[CARRION_KIND]).toBeGreaterThan(0)
+    // the founder is a mandible: it digests nothing from a carcass
     const founder = organismFor(cfg, 1)
-    expect(factorsOf(founder.genome, cfg).dietEfficiency[kind]).toBeCloseTo(
-      cfg.predation.carcass.yields.mandible,
-      9
-    )
+    expect(factorsOf(founder.genome, cfg).dietEfficiency[kind]).toBe(0)
+    // negative: the old table (a mandible at 0.8) is still expressible and gives the old yield
+    const old = full({ predation: { carcass: { yields: { mandible: 0.8 } } } })
+    expect(factorsOf(founder.genome, old).dietEfficiency[kind]).toBeCloseTo(0.8, 9)
   })
 
   function carcasses(extra: WorldConfigOverrides = {}) {
