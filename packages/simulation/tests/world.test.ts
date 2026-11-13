@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createBefore } from './support/life'
 import { ConfigValidationError } from '@evo/config'
 import { ENGINE_VERSION, World } from '../src/index'
 import { withoutEcology } from './support/ecology'
@@ -280,7 +281,7 @@ describe('scenario B: extinction (roadmap testing scenario B)', () => {
 describe('scenario C: reproduction (roadmap testing scenario C)', () => {
   // 2 mature organisms, high energy, a small world (so they're always within searchRadius).
   it('two eligible organisms reproduce: a child is born and both parents pay the cost', () => {
-    const world = World.create({
+    const world = createBefore({
       seed: 42,
       config: {
         environment: { width: 100, height: 100 },

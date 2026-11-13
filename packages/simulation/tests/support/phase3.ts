@@ -1,5 +1,6 @@
 import type { WorldConfigOverrides } from '@evo/contracts'
 import { FREE_FOOD } from './food'
+import { BEFORE_LIFE } from './life'
 
 /**
  * The world's economy as it was before the population tuning (docs/decisions/0018): the 600 s
@@ -12,7 +13,8 @@ export const PHASE3_ECONOMY: WorldConfigOverrides = {
   ...FREE_FOOD,
   anatomy: { startingBody: { mode: 'reference' } },
   organisms: { maxAge: 600, senescenceAge: 510 },
-  reproduction: { minEnergy: 60, cooldown: 30 },
+  reproduction: { ...BEFORE_LIFE.reproduction, minEnergy: 60, cooldown: 30 },
+  ageing: { enabled: false },
   genetics: {
     genes: {
       'physical.senescenceAge': { min: 255, max: 560 },

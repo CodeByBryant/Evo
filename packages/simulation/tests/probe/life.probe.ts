@@ -39,6 +39,12 @@ describe('life-cycle probe', () => {
     let females = 0
     let creatures = 0
     let jawEnd = 0
+    let ageDeaths = 0
+    let choosinessSum = 0
+    let preferenceSum = 0
+    let rejectedAttempts = 0
+    let attemptsAll = 0
+    let successesAll = 0
     let seedsWithJaw = 0
     let guardedSamples = 0
     let eggSamples = 0
@@ -58,7 +64,16 @@ describe('life-cycle probe', () => {
       let samples = 0
       const started = performance.now()
       for (let tick = 0; tick < TICKS; tick += SAMPLE) {
-        world.run(SAMPLE)
+        for (let k = 0; k < SAMPLE; k++) {
+          world.step()
+          for (const e of world.events.eventsThisTick()) {
+            if (e.type === 'reproduction-attempted') {
+              attemptsAll++
+              if (e.succeeded) successesAll++
+              if (e.failureReason === 'rejected') rejectedAttempts++
+            }
+          }
+        }
         const snapshot = world.snapshot()
         sum += snapshot.organisms.length
         samples++
@@ -73,6 +88,12 @@ describe('life-cycle probe', () => {
       if (world.isExtinct) extinct++
       popSum += sum / samples
       starved += m.deathsByStarvation
+      ageDeaths += m.deathsByAge
+      for (const o of end.organisms) {
+        const g = world.genomeOf(o.id)?.reproduction
+        choosinessSum += g?.choosiness ?? 0
+        preferenceSum += g?.preference ?? 0
+      }
       deaths += m.deathsByStarvation + m.deathsByAge + m.deathsByDamage + m.deathsByPredation
       laid += m.eggsLaid
       hatched += m.eggsHatched
@@ -114,6 +135,10 @@ describe('life-cycle probe', () => {
       `guarded%=${((100 * guardedSamples) / Math.max(1, eggSamples)).toFixed(0)}`,
       `eggsNow=${(eggSamples / (n * (TICKS / SAMPLE))).toFixed(1)}`,
       `females%=${((100 * females) / Math.max(1, creatures)).toFixed(0)}`,
+      `ageDeaths=${((100 * ageDeaths) / Math.max(1, deaths)).toFixed(0)}%`,
+      `taste=${(choosinessSum / Math.max(1, creatures)).toFixed(2)}/${(preferenceSum / Math.max(1, creatures)).toFixed(2)}`,
+      `rejected%=${((100 * rejectedAttempts) / Math.max(1, attemptsAll)).toFixed(1)}`,
+      `rejectedOfFound%=${((100 * rejectedAttempts) / Math.max(1, rejectedAttempts + successesAll)).toFixed(0)}`,
       `jawEnd=${(jawEnd / n).toFixed(1)}(${seedsWithJaw}/${n})`,
       `tps=${((1000 * ticks) / ms).toFixed(0)}`,
       perSeed.join(' ')

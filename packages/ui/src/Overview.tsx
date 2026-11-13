@@ -112,6 +112,26 @@ export function StatsPanel({ view }: { view: ViewState }): React.JSX.Element {
           <dt>Food eaten</dt>
           <dd>{formatCount(metrics.resourcesConsumed)}</dd>
         </div>
+        {metrics.eggsLaid > 0 && (
+          <>
+            <div>
+              <dt>Eggs laid</dt>
+              <dd>{formatCount(metrics.eggsLaid)}</dd>
+            </div>
+            <div>
+              <dt>Eggs hatched</dt>
+              <dd>{percent(metrics.eggsHatched, metrics.eggsLaid)}</dd>
+            </div>
+            <div>
+              <dt>Eggs eaten</dt>
+              <dd>{formatCount(metrics.eggsEaten)}</dd>
+            </div>
+            <div>
+              <dt>Clutches lost</dt>
+              <dd>{formatCount(metrics.clutchesLost)}</dd>
+            </div>
+          </>
+        )}
       </dl>
     </Section>
   )

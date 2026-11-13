@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { resolveBefore } from '../support/life'
 import { resolveWorldConfig } from '@evo/config'
 import { OBSERVATION_LABELS, OBSERVATION_SIZE } from '@evo/contracts'
 import type { RegionType, WorldConfig, WorldConfigOverrides } from '@evo/contracts'
@@ -40,7 +41,7 @@ const stream = (seed: number, name: Parameters<typeof deriveStreamWords>[1]): Se
 
 /** A reflex-controller world config with some ecology features switched on. */
 const config = (ecology: EcologyOverrides = {}, extra: WorldConfigOverrides = {}): WorldConfig =>
-  resolveWorldConfig(
+  resolveBefore(
     withoutEcology({
       ...ALL_ROUND,
       ...extra,

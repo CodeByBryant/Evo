@@ -193,6 +193,7 @@ describe('render and view contracts', () => {
       'hazards',
       'obstacles',
       'resources',
+      'eggs',
       'organisms',
       'trails',
       'selection',

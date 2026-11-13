@@ -6,6 +6,7 @@ import { OrganismStore } from '../../src/entities/OrganismStore'
 import { MetabolismSystem } from '../../src/systems/MetabolismSystem'
 import { World } from '../../src/index'
 import { organismFor } from '../support/organism'
+import { BEFORE_LIFE } from '../support/life'
 
 /** The life cycle (ADR 0027): two sexes, a carried clutch, an egg, a hatchling. */
 const LIFE: WorldConfigOverrides = {
@@ -45,9 +46,9 @@ const ofType = <T extends WorldEvent['type']>(
 
 describe('configuration', () => {
   it('eggs need two sexes (the female lays)', () => {
-    expect(() => resolveWorldConfig({ reproduction: { eggs: { enabled: true } } })).toThrow(
-      /requires reproduction.sexes.enabled/
-    )
+    expect(() =>
+      resolveWorldConfig({ reproduction: { sexes: { enabled: false }, eggs: { enabled: true } } })
+    ).toThrow(/requires reproduction.sexes.enabled/)
     expect(() => resolveWorldConfig(LIFE)).not.toThrow()
   })
 
@@ -67,17 +68,16 @@ describe('configuration', () => {
     expect(() => resolveWorldConfig({ reproduction: { eggs: { nest: true } } as never })).toThrow()
   })
 
-  it('is off by default: the default world has one sex and no eggs', () => {
+  it('is on by default: the measured life cycle (ADR 0027)', () => {
     const config = resolveWorldConfig()
-    // The measured defaults are switched on in the last commit of the life-cycle work; until then off.
-    expect(config.reproduction.sexes.enabled).toBe(false)
-    expect(config.reproduction.eggs.enabled).toBe(false)
+    expect(config.reproduction.sexes.enabled).toBe(true)
+    expect(config.reproduction.eggs.enabled).toBe(true)
   })
 })
 
 describe('switched off', () => {
   it('has no eggs, no clutches and every creature is sex 0', () => {
-    const { world, events } = run({}, 3, 1500)
+    const { world, events } = run(BEFORE_LIFE, 3, 1500)
     expect(ofType(events, 'egg-laid')).toHaveLength(0)
     expect(ofType(events, 'clutch-lost')).toHaveLength(0)
     const snapshot = world.snapshot()
@@ -110,14 +110,18 @@ describe('two sexes', () => {
   })
 
   it('negative: with one sex, same-sex pairs do occur (every creature is sex 0)', () => {
-    const { events, sexes } = run({}, 1, 3000)
+    const { events, sexes } = run(BEFORE_LIFE, 1, 3000)
     const births = ofType(events, 'organism-born').filter((e) => e.parentIds.length === 2)
     expect(births.length).toBeGreaterThan(3)
     expect([...sexes.values()].every((s) => s === 0)).toBe(true)
   })
 
   it('an instant birth with two sexes draws the newborn sex about evenly', () => {
-    const { events, sexes } = run({ reproduction: { sexes: { enabled: true } } }, 2, 6000)
+    const { events, sexes } = run(
+      { reproduction: { sexes: { enabled: true }, eggs: { enabled: false } } },
+      2,
+      6000
+    )
     const born = ofType(events, 'organism-born').filter((e) => e.parentIds.length === 2)
     expect(born.length).toBeGreaterThan(25)
     const females = born.filter((e) => sexes.get(e.organismId) === 0).length
@@ -245,9 +249,19 @@ describe('the hash covers the life cycle', () => {
       world.run(1500)
       return world.stateHash()
     }
-    const off = hash({})
-    const sexes = hash({ reproduction: { sexes: { enabled: true } } })
-    const eggs = hash(LIFE)
+    const off = hash(BEFORE_LIFE)
+    const sexes = hash({
+      ...BEFORE_LIFE,
+      reproduction: { ...BEFORE_LIFE.reproduction, sexes: { enabled: true } }
+    })
+    const eggs = hash({
+      ...BEFORE_LIFE,
+      reproduction: {
+        ...BEFORE_LIFE.reproduction,
+        sexes: { enabled: true },
+        eggs: { enabled: true }
+      }
+    })
     expect(new Set([off, sexes, eggs]).size).toBe(3)
   })
 })

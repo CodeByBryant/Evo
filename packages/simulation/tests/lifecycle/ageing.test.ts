@@ -87,7 +87,7 @@ describe('the decline', () => {
     }
     const maxAge = organismFor(resolveWorldConfig(), 1).genome.physical.maxAge
     const youngCost = energyLoss(true, 120)
-    expect(energyLoss(true, maxAge)).toBeGreaterThan(youngCost * 1.3)
+    expect(energyLoss(true, maxAge)).toBeGreaterThan(youngCost * 1.25)
     // Negative: with ageing off an old creature costs what a prime one does.
     expect(energyLoss(false, maxAge)).toBeCloseTo(energyLoss(false, 120), 12)
   })
@@ -99,7 +99,7 @@ describe('the decline', () => {
     const prime = organismFor(config, 1, { age: genes.maturityAge + 1 })
     const old = organismFor(config, 2, { age: genes.maxAge })
     expect(readiness.thresholdFor(old, 0)).toBeGreaterThan(readiness.thresholdFor(prime, 0))
-    const off = new ReproductionReadiness(resolveWorldConfig(), null)
+    const off = new ReproductionReadiness(resolveWorldConfig({ ageing: { enabled: false } }), null)
     expect(off.thresholdFor(old, 0)).toBe(off.thresholdFor(prime, 0))
   })
 })
@@ -206,8 +206,8 @@ describe('in a world', () => {
 })
 
 describe('configuration', () => {
-  it('is off by default', () => {
-    expect(resolveWorldConfig().ageing.enabled).toBe(false)
+  it('is on by default: the measured ageing (ADR 0027)', () => {
+    expect(resolveWorldConfig().ageing.enabled).toBe(true)
   })
 
   it('rejects bad values and unknown keys', () => {

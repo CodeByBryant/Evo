@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { resolveBefore } from './support/life'
 import { resolveWorldConfig } from '@evo/config'
 import type { WorldConfigOverrides } from '@evo/contracts'
 import { ACTION_SIZE, OBSERVATION_SIZE } from '@evo/contracts'
@@ -407,7 +408,7 @@ describe('learningCost', () => {
 
 describe('children and learning inheritance', () => {
   function birth(mode: 'baldwinian' | 'partial' | 'lamarckian', fraction = 0.5) {
-    const config = resolveWorldConfig({
+    const config = resolveBefore({
       ...BRAIN,
       genetics: {
         mutationRateScale: 0,

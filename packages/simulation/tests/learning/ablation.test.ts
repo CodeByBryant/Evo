@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createBefore } from '../support/life'
 import type {
   LearningAlgorithmName,
   LearningInheritanceMode,
@@ -29,7 +30,7 @@ function configFor(
 }
 
 function run(config: WorldConfigOverrides, seed = 5): World {
-  const world = World.create({ seed, config, validateEveryTicks: 500 })
+  const world = createBefore({ seed, config, validateEveryTicks: 500 })
   world.run(TICKS)
   return world
 }
@@ -82,7 +83,7 @@ describe('ablation matrix', () => {
     // compared with its parents' learned weights: weight by weight, how far is it from the
     // nearer parent's learned value?
     const firstChildDistance = (mode: LearningInheritanceMode): number => {
-      const world = World.create({
+      const world = createBefore({
         seed: 11,
         config: {
           ...configFor('actorCritic', mode),

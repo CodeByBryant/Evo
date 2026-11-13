@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { resolveBefore } from './support/life'
 import { resolveWorldConfig } from '@evo/config'
 import type { PerceptionBuffer, IntentBuffer } from '../src/buffers/types'
 import { IdGenerator } from '../src/entities/IdGenerator'
@@ -579,7 +580,7 @@ describe('MetabolismSystem', () => {
 
 describe('ReproductionSystem', () => {
   it('records a failed attempt with no-partner when no eligible partner is in range', () => {
-    const config = resolveWorldConfig()
+    const config = resolveBefore()
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { age: 100, energy: 100 }))
     const index = makeOrganismIndex()
@@ -605,7 +606,7 @@ describe('ReproductionSystem', () => {
   })
 
   it('pairs two eligible organisms: both pay the investment plus overhead, both get the cooldown, a child is born', () => {
-    const config = resolveWorldConfig()
+    const config = resolveBefore()
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { x: 10, y: 10, age: 100, energy: 100 }))
     organisms.add(organism(config, 2, { x: 11, y: 10, age: 100, energy: 100 }))
@@ -637,7 +638,7 @@ describe('ReproductionSystem', () => {
   })
 
   it('never pairs the same organism twice in one tick', () => {
-    const config = resolveWorldConfig({ reproduction: { searchRadius: 100 } })
+    const config = resolveBefore({ reproduction: { searchRadius: 100 } })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { x: 0, y: 0, age: 100, energy: 100 }))
     organisms.add(organism(config, 2, { x: 1, y: 0, age: 100, energy: 100 }))
@@ -657,7 +658,7 @@ describe('ReproductionSystem', () => {
   })
 
   it('does not let a juvenile initiate or be chosen as a partner', () => {
-    const config = resolveWorldConfig()
+    const config = resolveBefore()
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { x: 0, y: 0, age: 1, energy: 100 }))
     organisms.add(organism(config, 2, { x: 1, y: 0, age: 100, energy: 100 }))
@@ -679,7 +680,7 @@ describe('ReproductionSystem', () => {
   })
 
   it('gates on a positive cooldown, silently, and decrements cooldowns by deltaTime each tick', () => {
-    const config = resolveWorldConfig({ timestep: 2 })
+    const config = resolveBefore({ timestep: 2 })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { age: 100, energy: 100, reproductionCooldownRemaining: 5 }))
     const index = makeOrganismIndex()
@@ -694,7 +695,7 @@ describe('ReproductionSystem', () => {
   })
 
   it('floors the decremented cooldown at zero rather than going negative', () => {
-    const config = resolveWorldConfig({ timestep: 2 })
+    const config = resolveBefore({ timestep: 2 })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { age: 100, energy: 100, reproductionCooldownRemaining: 1 }))
     const index = makeOrganismIndex()
@@ -708,7 +709,7 @@ describe('ReproductionSystem', () => {
   })
 
   it('rejects an attempt at the population cap without spending energy or a partner search', () => {
-    const config = resolveWorldConfig({ maxPopulation: 2, organisms: { initialCount: 2 } })
+    const config = resolveBefore({ maxPopulation: 2, organisms: { initialCount: 2 } })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { x: 0, y: 0, age: 100, energy: 100 }))
     organisms.add(organism(config, 2, { x: 1, y: 0, age: 100, energy: 100 }))
@@ -744,7 +745,7 @@ describe('ReproductionSystem', () => {
   })
 
   it('gates silently on energy below minEnergy', () => {
-    const config = resolveWorldConfig({ reproduction: { minEnergy: 60 } })
+    const config = resolveBefore({ reproduction: { minEnergy: 60 } })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { age: 100, energy: 59 }))
     const index = makeOrganismIndex()
@@ -760,7 +761,7 @@ describe('ReproductionSystem', () => {
 
 describe('DeathSystem', () => {
   it('removes an organism that starved and records the cause', () => {
-    const config = resolveWorldConfig()
+    const config = resolveBefore()
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { energy: 0, x: 3, y: 4 }))
     organisms.add(organism(config, 2, { energy: 50 }))
@@ -784,7 +785,7 @@ describe('DeathSystem', () => {
   })
 
   it('removes an organism that reached maxAge and records the cause', () => {
-    const config = resolveWorldConfig({
+    const config = resolveBefore({
       organisms: { maturityAge: 1, senescenceAge: 5, maxAge: 10 }
     })
     const organisms = new OrganismStore()
@@ -800,7 +801,7 @@ describe('DeathSystem', () => {
   })
 
   it('leaves healthy organisms alone', () => {
-    const config = resolveWorldConfig({ organisms: { maxAge: 1000 } })
+    const config = resolveBefore({ organisms: { maxAge: 1000 } })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { energy: 1, age: 1 }))
     const events = new EventLog(10)
@@ -810,7 +811,7 @@ describe('DeathSystem', () => {
   })
 
   it('processes every organism even while removing some (ascending id order)', () => {
-    const config = resolveWorldConfig({ organisms: { maxAge: 1000 } })
+    const config = resolveBefore({ organisms: { maxAge: 1000 } })
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { energy: 0 }))
     organisms.add(organism(config, 2, { energy: 50 }))
@@ -822,7 +823,7 @@ describe('DeathSystem', () => {
   })
 
   it('appends a historical record with the parent ids, birth tick, and death cause', () => {
-    const config = resolveWorldConfig()
+    const config = resolveBefore()
     const organisms = new OrganismStore()
     organisms.add(organism(config, 1, { energy: 0, parentIds: [7, 9], birthTick: 3 }))
     const events = new EventLog(10)

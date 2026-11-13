@@ -121,6 +121,11 @@ export class ObservatoryRecorder {
           this.ledger.recordIntake(event.predatorId, 'flesh', event.intake)
           this.ledger.recordBite(event.predatorId)
           break
+        case 'egg-eaten':
+          // An egg is meat (ADR 0027): its energy counts as flesh for the creature that ate it.
+          this.ledger.recordIntake(event.predatorId, 'flesh', event.intake)
+          this.ledger.recordBite(event.predatorId)
+          break
         default:
           break
       }

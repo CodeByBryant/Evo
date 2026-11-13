@@ -20,7 +20,11 @@ import { organismFor, withGenes } from '../support/organism'
 
 const CHOICE: WorldConfigOverrides = {
   learning: { controller: 'reflex' },
-  reproduction: { sexes: { enabled: true }, mateChoice: { enabled: true } }
+  reproduction: {
+    sexes: { enabled: true },
+    eggs: { enabled: false },
+    mateChoice: { enabled: true }
+  }
 }
 
 interface Pair {
@@ -262,8 +266,8 @@ describe('the genes', () => {
     const world = World.create({ seed: 2, config: CHOICE })
     expect(world.snapshot().organisms.length).toBeGreaterThan(0)
     const founder = organismFor(resolveWorldConfig(CHOICE), 1).genome.reproduction
-    expect(founder.choosiness).toBeCloseTo(0.3, 12)
-    expect(founder.preference).toBeCloseTo(0.3, 12)
+    expect(founder.choosiness).toBeCloseTo(0.8, 12)
+    expect(founder.preference).toBeCloseTo(0.5, 12)
     world.run(3000)
     // The world validates itself every tick when asked: ranges are part of what is checked.
     expect(world.validate().ok).toBe(true)
@@ -271,11 +275,17 @@ describe('the genes', () => {
 })
 
 describe('configuration', () => {
-  it('is off by default, and needs two sexes', () => {
-    expect(resolveWorldConfig().reproduction.mateChoice.enabled).toBe(false)
-    expect(() => resolveWorldConfig({ reproduction: { mateChoice: { enabled: true } } })).toThrow(
-      /requires reproduction.sexes.enabled/
-    )
+  it('is on by default (measured, ADR 0027), and needs two sexes', () => {
+    expect(resolveWorldConfig().reproduction.mateChoice.enabled).toBe(true)
+    expect(() =>
+      resolveWorldConfig({
+        reproduction: {
+          sexes: { enabled: false },
+          eggs: { enabled: false },
+          mateChoice: { enabled: true }
+        }
+      })
+    ).toThrow(/requires reproduction.sexes.enabled/)
   })
 
   it('rejects out-of-range tastes, costs and counts, and unknown keys', () => {
