@@ -43,37 +43,53 @@ const manyChunks = (): NonNullable<typeof small> => {
   return small
 }
 
+// Time budget. These two tests had no explicit budget, so they ran under the global 180 s
+// `testTimeout`. On Ubuntu CI (shard 2, five files in parallel) the first took 156.5 s and the second
+// 78.4 s: 87 percent of the budget for the first. A run on a runner about 40 percent slower (the
+// ecology-stability files beside it went from 243 s to 342 s and 229 s to 320 s) needed about 219 s and
+// timed out on PR #142, after the same code had passed. What they assert (the same hash) is unchanged;
+// 420 s is 2.7 times the nominal time of the slowest.
+const BUDGET = 420_000
+
 describe('40,000-tick chunking', () => {
-  it('running in two uneven chunks matches a single run of the same total, at scale', () => {
-    const chunked = World.create({ seed: 7, config: CONFIG })
-    chunked.run(14_965)
-    chunked.run(25_035)
-    const direct = single()
+  it(
+    'running in two uneven chunks matches a single run of the same total, at scale',
+    () => {
+      const chunked = World.create({ seed: 7, config: CONFIG })
+      chunked.run(14_965)
+      chunked.run(25_035)
+      const direct = single()
 
-    // Reproduction allocates ids and draws from the 'reproduction' stream mid-run; this config
-    // reproduces heavily by 40,000 ticks, so a mismatched chunk boundary around a birth would
-    // show up here as a hash divergence, not just a tick-count coincidence.
-    expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
-    expect(chunked.clock.tick).toBe(direct.clock.tick)
-    expect(chunked.stateHash()).toBe(direct.stateHash())
-    expect(chunked.snapshot()).toEqual(direct.snapshot())
+      // Reproduction allocates ids and draws from the 'reproduction' stream mid-run; this config
+      // reproduces heavily by 40,000 ticks, so a mismatched chunk boundary around a birth would
+      // show up here as a hash divergence, not just a tick-count coincidence.
+      expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
+      expect(chunked.clock.tick).toBe(direct.clock.tick)
+      expect(chunked.stateHash()).toBe(direct.stateHash())
+      expect(chunked.snapshot()).toEqual(direct.snapshot())
 
-    // The lineage store is not hashed, so chunking must be shown not to disturb it directly.
-    expect(chunked.lineage.size).toBe(direct.lineage.size)
-    expect(chunked.lineage.size).toBeGreaterThan(chunked.config.organisms.initialCount)
-    expect(chunked.lineage.founders()).toEqual(direct.lineage.founders())
-    const last = chunked.lineage.size - 1
-    expect(chunked.lineage.record(last)).toEqual(direct.lineage.record(last))
-    expect(chunked.lineage.ancestorsOf(last)).toEqual(direct.lineage.ancestorsOf(last))
-    expect(chunked.historicalOrganisms()).toEqual(direct.historicalOrganisms())
-  })
+      // The lineage store is not hashed, so chunking must be shown not to disturb it directly.
+      expect(chunked.lineage.size).toBe(direct.lineage.size)
+      expect(chunked.lineage.size).toBeGreaterThan(chunked.config.organisms.initialCount)
+      expect(chunked.lineage.founders()).toEqual(direct.lineage.founders())
+      const last = chunked.lineage.size - 1
+      expect(chunked.lineage.record(last)).toEqual(direct.lineage.record(last))
+      expect(chunked.lineage.ancestorsOf(last)).toEqual(direct.lineage.ancestorsOf(last))
+      expect(chunked.historicalOrganisms()).toEqual(direct.historicalOrganisms())
+    },
+    BUDGET
+  )
 
-  it('running in many small chunks still matches a single run of the same total', () => {
-    const { world: chunked } = manyChunks()
-    const direct = single()
-    expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
-    expect(chunked.stateHash()).toBe(direct.stateHash())
-  })
+  it(
+    'running in many small chunks still matches a single run of the same total',
+    () => {
+      const { world: chunked } = manyChunks()
+      const direct = single()
+      expect(chunked.snapshot().metrics.reproductionSuccesses).toBeGreaterThan(0)
+      expect(chunked.stateHash()).toBe(direct.stateHash())
+    },
+    BUDGET
+  )
 
   it('stepping one tick at a time matches run() for the same total', () => {
     const { hashAtStepped, successesAtStepped } = manyChunks()
