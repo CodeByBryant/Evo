@@ -138,13 +138,13 @@ describe('what a creature sees as food', () => {
   }
 
   it.each([false, true])(
-    'a jaw does not see a plant but sees carrion; a mandible sees both (occluding search: %s)',
+    'a jaw sees carrion while a mandible sees plants but not carrion (occluding search: %s)',
     (occluding) => {
       const carrion = carrionOf(config())
       expect(see(true, GRASS, occluding)).toBeNull()
       expect(see(true, carrion, occluding)).toBe(7)
       expect(see(false, GRASS, occluding)).toBe(7)
-      expect(see(false, carrion, occluding)).toBe(7)
+      expect(see(false, carrion, occluding)).toBeNull()
     }
   )
 })
