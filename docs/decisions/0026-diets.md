@@ -1,6 +1,6 @@
 # ADR 0026: Diets, what a mouth can eat, three fixes and what hard diets did
 
-Status: accepted. Follows [ADR 0017](0017-feeding.md) (mouth forms and the yield matrix), [ADR 0023](0023-predation.md) (carcasses, the jaw) and [ADR 0025](0025-place-memory.md) (the third null result in a row).
+Status: accepted. **Update, same day:** the owner decided carcasses are the jaw's alone (comment on PR #143), so that one change is shipped with its measured cost (below); hard plant diets are not. Follows [ADR 0017](0017-feeding.md) (mouth forms and the yield matrix), [ADR 0023](0023-predation.md) (carcasses, the jaw) and [ADR 0025](0025-place-memory.md) (the third null result in a row).
 
 ## The owner's observation
 
@@ -52,7 +52,9 @@ The criteria stated before the runs (jaw alive in at least 4 of 8 at 100,000 tic
 
 ## Decision
 
-Keep the three fixes. Do not change the diet table. Carcasses stay edible by every form with their present yields until the owner decides whether the realism of jaw-only carrion is worth a population about 11 percent lower and a predator boom in some worlds (a one-line config change: `predation.carcass.yields` to 0 for the four non-jaw forms, measured above).
+Keep the three fixes. **Carcasses are the jaw's alone** (the owner's call, made after seeing the numbers above): `predation.carcass.yields` is 0 for sprout, proboscis, mandible and radula and 1.2 for the jaw, so only a jaw bites a carcass or sees one as food. It is exactly the "carrion for the jaw only" variant measured above, so those numbers are the shipped behaviour: population about 11 percent lower (56.8 to 50.3 over 16 seeds x 30,000 ticks), the carrion share of intake 5.3 to 0.7 percent (the carcasses mostly rot), and a predator boom in some worlds (one of eight at 100,000 ticks: 21 of 29 creatures jaws); a jaw alive at the end in 2 of 8 worlds rather than 1 of 8, which is inside the noise. No plant diet table is shipped: hard plant diets raised extinction in every variant tried and nothing helped the jaw. The owner's other point, that predators need a second food source, is the next project (eggs and nests).
+
+**Goldens:** 4 more entries move (the predation worlds `predation-ecology-12k`, `-reflex-8k`, `-evolving-bodies-6k`, `-lush-4k`), regenerated in the commit that causes it; the rest do not touch a carcass.
 
 ## Limits
 

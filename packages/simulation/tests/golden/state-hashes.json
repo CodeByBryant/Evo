@@ -1347,14 +1347,14 @@
       "seed": 7,
       "config": {},
       "steps": 12000,
-      "expectedHash": "82a71ca77694b5cebe72b80fa1779218"
+      "expectedHash": "bb5365f32f6cf4ad304b19661013b54c"
     },
     {
       "name": "predation-reflex-8k",
       "seed": 3,
       "config": { "learning": { "controller": "reflex" } },
       "steps": 8000,
-      "expectedHash": "77f609256b658658dc66011fadae2aba"
+      "expectedHash": "ba847deb2c907ffb8c997675e16f2853"
     },
     {
       "name": "predation-evolving-bodies-6k",
@@ -1371,7 +1371,7 @@
         "genetics": { "mutationRateScale": 3 }
       },
       "steps": 6000,
-      "expectedHash": "24b72f1bbbc816e9aa563ecfcb0ee4ab"
+      "expectedHash": "ff6ecdeb75b3cb03edb09189d52a284d"
     },
     {
       "name": "predation-lush-4k",
@@ -1384,7 +1384,7 @@
         }
       },
       "steps": 4000,
-      "expectedHash": "551cf78d35dcb3cf05c3be08232ced5d"
+      "expectedHash": "7d816aed7cbf721448662cbb54803ec7"
     },
     {
       "name": "predation-hunters-only-3k",
