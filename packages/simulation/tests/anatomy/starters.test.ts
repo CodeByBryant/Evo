@@ -16,6 +16,8 @@ const { anatomy } = config
 const specs = buildBodySpecs(anatomy)
 const reference = founderCapabilitiesOf(config)
 const kindNames = config.ecology.resourceKinds.kinds.map((k) => k.name)
+/** The grazer and the starters that are the grazer with a jaw (ADR 0023, 0028). */
+const GRAZER_KIN = ['grazer', 'hunter', 'omnivore-sprout', 'omnivore-mandible']
 const vectorOf = (s: (typeof anatomy.starters)[number]): number[] =>
   bodyVectorOf({ parts: s.parts, look: s.look, outline: s.outline })
 
@@ -85,11 +87,12 @@ describe('the default starting bodies', () => {
         const weight = config.species.distanceWeights.body
         for (const other of anatomy.starters) {
           if (other.name === starter.name) continue
-          // the hunter is the grazer with a jaw (ADR 0023): the same plan but for one mouth stat, so
-          // that pair is told apart by what the mouth does, which the founder-groups tests cover
+          // the hunter is the grazer with a jaw (ADR 0023) and the omnivores are the grazer with a
+          // second mouth (ADR 0028): the same plan but for a mouth or two, so those are told apart by
+          // what the mouths do, which the founder-groups tests cover
           if (
             new Set([starter.name, other.name]).size === 2 &&
-            [starter.name, other.name].every((n) => n === 'grazer' || n === 'hunter')
+            [starter.name, other.name].every((n) => GRAZER_KIN.includes(n))
           )
             continue
           // the weighted plan distance of one part gained or lost is about 0.03: two or more parts apart
@@ -125,7 +128,7 @@ describe('the default starting bodies', () => {
   it('the starters differ from each other in looks too (a first screen you can tell apart)', () => {
     const looks = anatomy.starters.map((s) => `${s.look.pattern}/${s.look.accentHue}`)
     expect(new Set(looks).size).toBe(anatomy.starters.length)
-    // the hunter keeps the grazer's hull (it is the grazer with a jaw), so hulls are compared
+    // the hunter and the omnivores keep the grazer's hull (the grazer with a jaw), so hulls are compared
     // among the starters a world can draw
     const drawn = anatomy.starters.filter((s) => s.pool !== false)
     const outlines = drawn.map((s) => s.outline.radii.slice(0, 8).join(','))

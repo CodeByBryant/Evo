@@ -299,7 +299,7 @@ describe('starting bodies (ADR 0020)', () => {
     }
   }
 
-  it('ship five drawn starters and the group-only hunter, default to drawing one, and that is valid', () => {
+  it('ship five drawn starters and the group-only hunter and omnivores, default to drawing one, and that is valid', () => {
     const { anatomy } = DEFAULT_WORLD_CONFIG
     expect(anatomy.startingBody).toEqual({
       mode: 'archetypes',
@@ -312,10 +312,16 @@ describe('starting bodies (ADR 0020)', () => {
       'fungus-scraper',
       'scout',
       'tank',
-      'hunter'
+      'hunter',
+      'omnivore-sprout',
+      'omnivore-mandible'
     ])
-    // Only the hunter is kept out of the base draw (ADR 0023).
-    expect(anatomy.starters.filter((s) => s.pool === false).map((s) => s.name)).toEqual(['hunter'])
+    // Only the hunter and the omnivores are kept out of the base draw (ADR 0023, 0028).
+    expect(anatomy.starters.filter((s) => s.pool === false).map((s) => s.name)).toEqual([
+      'hunter',
+      'omnivore-sprout',
+      'omnivore-mandible'
+    ])
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
   })
 
