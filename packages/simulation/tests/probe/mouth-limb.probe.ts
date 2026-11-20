@@ -2,6 +2,7 @@ import { describe, it } from 'vitest'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { resolveWorldConfig } from '@evo/config'
 import { mouthFormOf } from '@evo/contracts'
 import { World } from '../../src/index'
 
@@ -20,13 +21,17 @@ import { World } from '../../src/index'
  * - from events: intake (plant, carrion, flesh, egg), matings per 1,000 creature-ticks and lifespan, by class.
  *
  * A measurement, not a test. Environment: `LIMB_NAME`, `LIMB_SEEDS` (default 4120846439),
- * `LIMB_TICKS` (default 220000), `LIMB_CONFIG` (JSON overrides). Appends to
+ * `LIMB_TICKS` (default 220000), `LIMB_CONFIG` (JSON overrides), `LIMB_TAILER` (a share of founders, at
+ * most 0.5, that start as the grazer with its mouth hung on a flagellum's tip: a direct test of whether
+ * a tail mouth wins, whatever the config), `LIMB_QUIET` (one summary line per arm). Appends to
  * `<tmpdir>/evo-probe/mouth-limb-<name>.txt`.
  */
 const NAME = process.env.LIMB_NAME ?? 'default'
 const EXTRA = JSON.parse(process.env.LIMB_CONFIG ?? '{}') as Record<string, unknown>
 const SEEDS = (process.env.LIMB_SEEDS ?? '4120846439').split(',').map(Number)
 const TICKS = Number(process.env.LIMB_TICKS ?? 220_000)
+const TAILER = Number(process.env.LIMB_TAILER ?? 0)
+const QUIET = process.env.LIMB_QUIET !== undefined
 const SAMPLE = 5_000
 const ALIVE_EVERY = 500
 
@@ -50,8 +55,11 @@ const f2 = (x: number): string => x.toFixed(2)
 describe('mouth limb probe', () => {
   it(`measures ${NAME}`, () => {
     const lines: string[] = []
+    const shares = new Map<number, number[]>() // limb share of the living at each sample, by tick
+    const finals: string[] = []
+    const config = withTailer(EXTRA)
     for (const seed of SEEDS) {
-      const world = World.create({ seed, config: EXTRA as never })
+      const world = World.create({ seed, config: config as never })
       const dt = world.config.timestep
       const carrionKind = world.config.ecology.resourceKinds.kinds.length - 1
       const flesh = world.config.predation.fleshYield
@@ -170,6 +178,10 @@ describe('mouth limb probe', () => {
             }
             const tails = bodies.filter((b) => b.tail).length
             const omni = bodies.filter((b) => b.omni).length
+            const list = shares.get(tick) ?? []
+            list.push(count.limb / Math.max(1, bodies.length))
+            shares.set(tick, list)
+            if (tick === TICKS) finals.push(`${seed}:${count.limb}/${bodies.length}`)
             const omniLimb = bodies.filter((b) => b.omni && b.cls === 'limb').length
             const depth = bodies.reduce((a, b) => a + b.depth, 0) / Math.max(1, bodies.length)
             series.push(
@@ -188,15 +200,58 @@ describe('mouth limb probe', () => {
       }
       lines.push(
         `${NAME} seed=${seed} ticks=${TICKS} extinct=${world.isExtinct}`,
-        ...series.map((s) => `  ${s}`),
+        ...(QUIET ? [] : series.map((s) => `  ${s}`)),
         `  matings per 1000 creature-ticks: body=${rate('body')} limb=${rate('limb')}`,
         `  mean lifespan s: body=${life('body')} limb=${life('limb')}`,
         `  total intake: body=${eat('body')} limb=${eat('limb')}`
       )
     }
+    const checkpoints = [...shares.keys()].sort((a, b) => a - b)
+    lines.push(
+      `${NAME} limb-mouth share of the living, mean over ${SEEDS.length} seeds: ` +
+        checkpoints
+          .map((t) => {
+            const v = shares.get(t) ?? []
+            return `${t / 1000}k ${Math.round((100 * v.reduce((a, b) => a + b, 0)) / Math.max(1, v.length))}%`
+          })
+          .join(' ') +
+        `  | at the end per seed (limb/living): ${finals.join(' ')}`
+    )
     const dir = join(tmpdir(), 'evo-probe')
     mkdirSync(dir, { recursive: true })
     appendFileSync(join(dir, `mouth-limb-${NAME}.txt`), lines.join('\n') + '\n')
     console.log(lines.join('\n'))
   }, 7_200_000)
 })
+
+/** The config, plus (with `LIMB_TAILER`) a founder group that is the grazer with its mouth on a tail's tip. */
+function withTailer(extra: Record<string, unknown>): Record<string, unknown> {
+  if (TAILER <= 0) return extra
+  const anatomy = resolveWorldConfig({}).anatomy
+  const grazer = anatomy.starters.find((st) => st.name === 'grazer')
+  if (grazer === undefined) throw new Error('no grazer starter')
+  const tailer = {
+    ...grazer,
+    name: 'tailer',
+    description: 'The grazer with its mouth hung on the tip of a flagellum.',
+    pool: false,
+    // The mouth (slot 5) hangs from the first flagellum (slot 0, so parent 1), at its tip.
+    parts: grazer.parts.map((p) =>
+      p.type === 'mouth' ? { ...p, parent: 1, offset: 1, orientation: 0 } : { ...p }
+    )
+  }
+  const given = (extra['anatomy'] ?? {}) as Record<string, unknown>
+  return {
+    ...extra,
+    anatomy: {
+      ...given,
+      starters: [...anatomy.starters, tailer],
+      startingBody: {
+        groups: [
+          { archetype: 'hunter', share: 0.1 },
+          { archetype: 'tailer', share: TAILER }
+        ]
+      }
+    }
+  }
+}
