@@ -66,6 +66,7 @@ describe('omnivore probe', () => {
     let seedsJawEnd = 0
     let extinct = 0
     let popSum = 0
+    let lowest = Infinity
 
     for (const seed of SEEDS) {
       const world = World.create({ seed, config: EXTRA as never })
@@ -170,6 +171,7 @@ describe('omnivore probe', () => {
           if (tick % ALIVE_EVERY === 0) for (const k of CLASSES) alive[k] += counts[k] * ALIVE_EVERY
           if (tick % SAMPLE === 0) {
             popAcc += living.length
+            lowest = Math.min(lowest, living.length)
             samples++
             const acc = prevalence.get(tick) ?? zero()
             for (const k of CLASSES) acc[k] += counts[k]
@@ -224,8 +226,11 @@ describe('omnivore probe', () => {
       .sort((a, b) => b[1] - a[1])
       .map(([p, c]) => `${p}:${c}`)
       .join(',')
+    const allDeaths = CLASSES.flatMap((k) => CAUSES.map((c) => deaths[k][c] ?? 0))
+    const starvedDeaths = sum(CLASSES.map((k) => deaths[k].starvation ?? 0))
+    const starvedShare = Math.round((100 * starvedDeaths) / Math.max(1, sum(allDeaths)))
     const lines = [
-      `${NAME} seeds=${n} ticks=${TICKS} extinct=${extinct} pop=${f1(popSum / n)}`,
+      `${NAME} seeds=${n} ticks=${TICKS} extinct=${extinct} pop=${f1(popSum / n)} lowest=${lowest} starved=${starvedShare}%`,
       `  prevalence(mean living, plant/jaw/omni): ${series.join(' | ')}`,
       `  born: ${CLASSES.map((k) => `${k}=${born[k]}`).join(' ')}  firstOmniTick: ${firstOmni.map((t) => t ?? '-').join(',')}`,
       `  omni origin (parent classes): ${origins || '-'}  omni body plans: ${topPlans || '-'}`,
