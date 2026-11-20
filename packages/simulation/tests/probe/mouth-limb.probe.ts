@@ -23,7 +23,8 @@ import { World } from '../../src/index'
  * A measurement, not a test. Environment: `LIMB_NAME`, `LIMB_SEEDS` (default 4120846439),
  * `LIMB_TICKS` (default 220000), `LIMB_CONFIG` (JSON overrides), `LIMB_TAILER` (a share of founders, at
  * most 0.5, that start as the grazer with its mouth hung on a flagellum's tip: a direct test of whether
- * a tail mouth wins, whatever the config), `LIMB_QUIET` (one summary line per arm). Appends to
+ * a tail mouth wins, whatever the config; `LIMB_SHAPE` `front` (default: a long tail at the nose, the
+ * mouth on its tip) or `rear`), `LIMB_QUIET` (one summary line per arm). Appends to
  * `<tmpdir>/evo-probe/mouth-limb-<name>.txt`.
  */
 const NAME = process.env.LIMB_NAME ?? 'default'
@@ -32,6 +33,7 @@ const SEEDS = (process.env.LIMB_SEEDS ?? '4120846439').split(',').map(Number)
 const TICKS = Number(process.env.LIMB_TICKS ?? 220_000)
 const TAILER = Number(process.env.LIMB_TAILER ?? 0)
 const QUIET = process.env.LIMB_QUIET !== undefined
+const SHAPE = process.env.LIMB_SHAPE ?? 'front'
 const SAMPLE = 5_000
 const ALIVE_EVERY = 500
 
@@ -230,15 +232,37 @@ function withTailer(extra: Record<string, unknown>): Record<string, unknown> {
   const anatomy = resolveWorldConfig({}).anatomy
   const grazer = anatomy.starters.find((st) => st.name === 'grazer')
   if (grazer === undefined) throw new Error('no grazer starter')
+  const mouth = grazer.parts.find((p) => p.type === 'mouth')
+  if (mouth === undefined) throw new Error('the grazer has no mouth')
+  const rest = grazer.parts.filter((p) => p.type !== 'mouth').map((p) => ({ ...p }))
+  // `rear`: the mouth hangs from the grazer's first flagellum (slot 0, so parent 1), which points
+  // backwards. `front`: a long flagellum is added at the nose and the mouth hangs from its tip, ahead
+  // of the body (the shape evolution found); the carrier comes before the mouth, as a parent must.
+  const parts =
+    SHAPE === 'rear'
+      ? grazer.parts.map((p) =>
+          p.type === 'mouth' ? { ...p, parent: 1, offset: 1, orientation: 0 } : { ...p }
+        )
+      : [
+          ...rest,
+          {
+            type: 'flagellum' as const,
+            parent: 0,
+            size: 0.5,
+            angle: 0,
+            offset: 1,
+            orientation: 0,
+            integrity: 1,
+            stats: [1, 0.5, 0.5, 0.5, 0.5, 0.5]
+          },
+          { ...mouth, parent: rest.length + 1, offset: 1, orientation: 0 }
+        ]
   const tailer = {
     ...grazer,
     name: 'tailer',
     description: 'The grazer with its mouth hung on the tip of a flagellum.',
     pool: false,
-    // The mouth (slot 5) hangs from the first flagellum (slot 0, so parent 1), at its tip.
-    parts: grazer.parts.map((p) =>
-      p.type === 'mouth' ? { ...p, parent: 1, offset: 1, orientation: 0 } : { ...p }
-    )
+    parts
   }
   const given = (extra['anatomy'] ?? {}) as Record<string, unknown>
   return {
