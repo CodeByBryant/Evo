@@ -149,4 +149,60 @@ const HUNTER: StartingBody = {
   pool: false
 }
 
-export const DEFAULT_STARTERS: StartingBody[] = [...POOL_STARTERS, HUNTER]
+/**
+ * The omnivore hunters (ADR 0028): the grazer's body with a **second mouth, a jaw**, on the other side
+ * of the first mouth from the eye, so it grazes with the one and bites creatures with the other. Measured
+ * (ADR 0028), omnivores already evolve and out-breed and out-live both specialists, but only about 1
+ * percent of births are one; a jaw-only founder cannot eat plants and dies when prey is scarce, so more of
+ * them at the start made worlds worse. These start a world as a founder group the same way `hunter` does
+ * (never as the base body, so no seed's base body or draw moves). `omnivore-sprout` keeps the grazer's
+ * own sprout mouth (grass and fruit); `omnivore-mandible` turns it into the generalist mandible, the
+ * plant mouth that won at 100,000 ticks.
+ */
+function omnivoreOf(
+  name: string,
+  description: string,
+  plantMouthForm: number,
+  accentHue: number
+): StartingBody {
+  return {
+    name,
+    description,
+    parts: [
+      ...GRAZER.parts.map((p) =>
+        p.type === 'mouth'
+          ? { ...p, stats: [p.stats[0] ?? 0.5, p.stats[1] ?? 0.5, plantMouthForm, 0.5, 0.5, 0.5] }
+          : { ...p, stats: [...p.stats] }
+      ),
+      // The jaw: mouth stat 2 at 0.9 (form `floor(stat x 5)` is 4), on the rim opposite the eye.
+      part('mouth', 0.5, 5.9332, 1, 0, 0, [0.5, 0.65, 0.9, 0.5, 0.5, 0.5])
+    ],
+    look: { pattern: 2, accentHue },
+    outline: {
+      count: GRAZER.outline.count,
+      radii: [...GRAZER.outline.radii],
+      angles: [...GRAZER.outline.angles]
+    },
+    pool: false
+  }
+}
+
+const OMNIVORE_SPROUT = omnivoreOf(
+  'omnivore-sprout',
+  'The grazer with a hinged jaw beside its sprout mouth: grazes grass and fruit and bites creatures too. Starts as a small group among the founders.',
+  0.1,
+  0.08
+)
+const OMNIVORE_MANDIBLE = omnivoreOf(
+  'omnivore-mandible',
+  'The grazer with a mandible for any plant and a hinged jaw for creatures: eats everything. Starts as a small group among the founders.',
+  0.5,
+  0.14
+)
+
+export const DEFAULT_STARTERS: StartingBody[] = [
+  ...POOL_STARTERS,
+  HUNTER,
+  OMNIVORE_SPROUT,
+  OMNIVORE_MANDIBLE
+]
