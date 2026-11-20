@@ -15,8 +15,18 @@ const CELL_LIMIT = 33_554_432
 
 /** One number per cell, unique over the allowed range (below 2^52, so exact in a double). */
 function cellKey(cx: number, cy: number): number {
+  // Near the origin (every real world) the key is a small negative integer, which V8 keeps as an
+  // immediate and hashes far faster than a heap number; the wide key is never negative, so the two
+  // ranges cannot collide.
+  if (cx >= -SMALL_LIMIT && cx < SMALL_LIMIT && cy >= -SMALL_LIMIT && cy < SMALL_LIMIT) {
+    return -1 - ((cx + SMALL_LIMIT) * SMALL_SPAN + (cy + SMALL_LIMIT))
+  }
   return (cx + CELL_LIMIT) * 67_108_864 + (cy + CELL_LIMIT)
 }
+
+/** Cells in [-SMALL_LIMIT, SMALL_LIMIT) each way get the immediate key (2^15 each way, below 2^30 in all). */
+const SMALL_LIMIT = 16_384
+const SMALL_SPAN = 2 * SMALL_LIMIT
 
 /**
  * A uniform-grid spatial index. Buckets are keyed by cell coordinate (one number per cell) in an internal `Map`, but

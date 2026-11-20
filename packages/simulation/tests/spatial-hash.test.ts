@@ -201,4 +201,37 @@ describe('SpatialHash scan and nearestWhere', () => {
     expect(() => index.rebuild([point(1, 1e12, 0)])).toThrow(RangeError)
     expect(() => index.rebuild([point(1, Number.NaN, 0)])).toThrow(RangeError)
   })
+
+  it('keeps cells apart where the compact key range ends, and far out (the key changes form there)', () => {
+    const size = 10
+    const edge = 16_384 * size // the first cell that no longer has the compact key
+    const index = new SpatialHash<Point>(size, (p) => p)
+    const spots = [
+      point(1, edge - 5, 5), // last compact cell in x
+      point(2, edge + 5, 5), // first wide cell in x
+      point(3, -edge - 5, 5), // first wide cell below
+      point(4, -edge + 5, 5), // first compact cell
+      point(5, 5, edge + 5),
+      point(6, -5, -edge - 5),
+      point(7, 5_000_000, 5_000_000),
+      point(8, -5_000_000, 5_000_000)
+    ]
+    index.rebuild(spots)
+    for (const p of spots) {
+      expect(index.queryRadius({ x: p.x, y: p.y }, 0.5).map((h) => h.item.id)).toEqual([p.id])
+    }
+    // A wide query across the boundary finds exactly what a brute-force scan finds.
+    const centre = { x: edge, y: 5 }
+    const near = spots
+      .filter((p) => (p.x - centre.x) ** 2 + (p.y - centre.y) ** 2 <= 20 * 20)
+      .map((p) => p.id)
+      .sort()
+    expect(
+      index
+        .queryRadius(centre, 20)
+        .map((h) => h.item.id)
+        .sort()
+    ).toEqual(near)
+    expect(near).toEqual([1, 2])
+  })
 })
