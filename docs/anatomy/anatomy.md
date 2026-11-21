@@ -150,6 +150,12 @@ An eye sees a cone about its axis (its `orientation` placed on the outline), not
 - **The founder's eye is a 135 degree forward cone** (field of view 2.356 radians, looking straight ahead): it reaches about 1.63 times the sensor radius, and the sector covers the same area as the old full circle, so a stationary creature sees as much ground as before but only the ground it faces. A body whose eyes are all all-round, or that has no eye, is `omni` and takes the plain circle path (the test helper `ALL_ROUND` is the founder as it was). Evolution can widen or narrow the cone; two narrow eyes on opposite sides cover both ends and the sides stay blind.
 - A creature sees through the nearest-first rule inside its cones: the nearest visible food, the nearest visible peer, the nearest visible hazard edge.
 
+## Limbs and stacking (ADR 0029)
+
+A part with a part parent sits along the parent's axis, so a mouth hung on a flagellum sits at the tail's tip, 2 to 5 body radii out, and bites from there. On seed 4120846439 that plan went from one creature to every creature between 155,000 and 220,000 ticks (limb bodies bred 23 percent more). Three switches in `anatomy.effects`, all **off** (none met the bar, ADR 0029): `maxMouthOffset` clamps the bite point (it did not stop the takeover on its own), `carrierParentsOnly` lets only an eyestalk, skeleton or join carry a part (it removes the exploit everywhere but cost one world in eight), `limbUpkeep` prices the lever arm (unreliable). With `maxMouthOffset` on, a tail mouth is still drawn at the tip.
+
+Stacking copies of one part is linear for stomach, intestine, mouth, lipid, mender, membrane, gyro and sniffer, and saturates for eye range, armor, toxin tolerance and the pheromone signal. In the world the copies are rare (30,000 ticks: stomach 2 or more in 6 percent of bodies) and bodies with more copies have no measured edge over bodies with one and the same part count, so nothing diminishes.
+
 ## What the renderer and inspector are given
 
 Each drawn part (`PartSnapshot`) carries its `slot`, its `parent` (the index of the part it hangs from in the same array, always smaller than its own index, or `-1` for the body), its `sight` (a working eye's half-angle and reach in world units, else `null`) and the geometry it had before. The inspector's `InspectorPart` adds the parent slot, the tip, the integrity, the part's mass and upkeep (`partCostOf`: the parts plus the bare body add up to the body's mass, and the parts' upkeep to its upkeep) and the part's stats in real units from `PART_STATS`.

@@ -124,6 +124,8 @@ describe('mouth limb probe', () => {
 
       for (let tick = 1; tick <= TICKS; tick++) {
         world.step()
+        // An extinct world steps at full speed doing nothing: stop (ADR 0029, docs/development.md).
+        if (world.isExtinct) break
         for (const e of world.events.eventsThisTick()) {
           switch (e.type) {
             case 'organism-born':
