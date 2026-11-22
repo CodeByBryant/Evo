@@ -78,6 +78,12 @@ export class EnvironmentSystem {
   /** Living organisms per cluster, read once a tick (`update`), so every spawn sees the same counts. */
   private living: readonly number[] = []
 
+  /** Puts the two carried remainders back to saved values (`World.restoreState`). */
+  restoreRemainders(spawn: number, storm: number): void {
+    this.spawnAccumulator = spawn
+    this.stormAccumulator = storm
+  }
+
   /** The carried fractional resource spawn; hashed, since it decides future spawns. */
   get spawnRemainder(): number {
     return this.spawnAccumulator

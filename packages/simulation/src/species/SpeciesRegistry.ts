@@ -59,6 +59,23 @@ export interface SpeciesAssignment {
   founderGroup?: number
 }
 
+/** A species registry as plain data (`SpeciesRegistry.exportState`). */
+export interface SpeciesState {
+  readonly entries: Array<{
+    id: SpeciesId
+    representative: Genome
+    ancestorSpeciesId: SpeciesId | null
+    memberCount: number
+    populationHistory: PopulationSample[]
+    createdAtTick: number
+    lastSeenTick: number
+    extinctAtTick: number | null
+  }>
+  readonly activeIds: SpeciesId[]
+  readonly speciesByOrganism: Array<[EntityId, SpeciesId]>
+  readonly speciesByGroup: Array<[number, SpeciesId]>
+}
+
 interface Entry {
   readonly id: SpeciesId
   readonly representative: Genome
@@ -107,6 +124,39 @@ export class SpeciesRegistry implements SpeciesQueries, SpeciesTracker {
     private readonly initialWeightStd: number,
     private readonly bodySpecs?: readonly GeneSpec[]
   ) {}
+
+  /** The whole registry as plain data (`World.saveState`); the representative genomes are shared with the creatures that carry them. */
+  exportState(): SpeciesState {
+    return {
+      entries: this.entries.map((entry) => ({
+        id: entry.id,
+        representative: entry.representative,
+        ancestorSpeciesId: entry.ancestorSpeciesId,
+        memberCount: entry.memberCount,
+        populationHistory: entry.populationHistory.map((sample) => ({ ...sample })),
+        createdAtTick: entry.createdAtTick,
+        lastSeenTick: entry.lastSeenTick,
+        extinctAtTick: entry.extinctAtTick
+      })),
+      activeIds: [...this.activeIds],
+      speciesByOrganism: Array.from(this.speciesByOrganism.entries()),
+      speciesByGroup: Array.from(this.speciesByGroup.entries())
+    }
+  }
+
+  /** Replaces everything with a saved state (`World.restoreState`). */
+  restoreState(state: SpeciesState): void {
+    this.entries.length = 0
+    for (const entry of state.entries) this.entries.push({ ...entry })
+    this.activeIds.length = 0
+    this.activeIds.push(...state.activeIds)
+    this.speciesByOrganism.clear()
+    for (const [organismId, speciesId] of state.speciesByOrganism) {
+      this.speciesByOrganism.set(organismId, speciesId)
+    }
+    this.speciesByGroup.clear()
+    for (const [group, speciesId] of state.speciesByGroup) this.speciesByGroup.set(group, speciesId)
+  }
 
   get size(): number {
     return this.entries.length

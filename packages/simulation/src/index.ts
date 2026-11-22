@@ -3,6 +3,7 @@ export const ENGINE_VERSION = '0.2.0'
 
 export { World } from './world/World'
 export type { WorldCreateOptions } from './world/World'
+export type { WorldState } from './world/WorldState'
 
 export { PI, TWO_PI, HALF_PI, clamp, lerp, wrapAngle } from './math/scalar'
 export { MAX_TRIG_ARGUMENT, sin, cos, atan2, ln } from './math/trig'

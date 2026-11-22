@@ -32,6 +32,17 @@ interface Entry {
   readonly createdAtTick: number
 }
 
+/** A lineage store as plain data (`LineageStore.exportState`). */
+export interface LineageState {
+  readonly entries: Array<{
+    genomeId: GenomeId
+    parentGenomeIds: GenomeId[]
+    organismIds: EntityId[]
+    createdAtTick: number
+  }>
+  readonly living: Array<[EntityId, GenomeId]>
+}
+
 export interface LineageRegistration {
   genomeId: GenomeId
   /** Empty for a founder; otherwise already-registered genomes. */
@@ -90,6 +101,49 @@ export class LineageStore implements LineageQueries {
     }
     this.livingOrganisms.set(organismId, genomeId)
     this.livingGenomes.set(genomeId, (this.livingGenomes.get(genomeId) ?? 0) + 1)
+  }
+
+  /**
+   * The whole store as plain data, in registration order (`World.saveState`): a restored world needs
+   * it because registering a child checks that its parents are registered.
+   */
+  exportState(): LineageState {
+    return {
+      entries: Array.from(this.entries.values(), (entry) => ({
+        genomeId: entry.genomeId,
+        parentGenomeIds: [...entry.parentGenomeIds],
+        organismIds: [...entry.organismIds],
+        createdAtTick: entry.createdAtTick
+      })),
+      living: Array.from(this.livingOrganisms.entries())
+    }
+  }
+
+  /** Replaces everything with a saved state (`World.restoreState`). */
+  restoreState(state: LineageState): void {
+    this.entries.clear()
+    this.childrenOf.clear()
+    this.founderIds.length = 0
+    this.livingOrganisms.clear()
+    this.livingGenomes.clear()
+    for (const saved of state.entries) {
+      this.entries.set(saved.genomeId, {
+        genomeId: saved.genomeId,
+        parentGenomeIds: [...saved.parentGenomeIds],
+        organismIds: [...saved.organismIds],
+        createdAtTick: saved.createdAtTick
+      })
+      if (saved.parentGenomeIds.length === 0) this.founderIds.push(saved.genomeId)
+      for (const parentId of saved.parentGenomeIds) {
+        const children = this.childrenOf.get(parentId)
+        if (children) children.push(saved.genomeId)
+        else this.childrenOf.set(parentId, [saved.genomeId])
+      }
+    }
+    for (const [organismId, genomeId] of state.living) {
+      this.livingOrganisms.set(organismId, genomeId)
+      this.livingGenomes.set(genomeId, (this.livingGenomes.get(genomeId) ?? 0) + 1)
+    }
   }
 
   /** Marks an organism dead. Its genome's record stays; unknown or already-dead ids are ignored. */

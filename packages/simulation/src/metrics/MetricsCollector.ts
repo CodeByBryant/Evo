@@ -116,6 +116,29 @@ export class MetricsCollector {
     }
   }
 
+  /** Puts the counters back to a saved snapshot (`World.restoreState`). */
+  restore(snapshot: MetricsSnapshot, extinctionTick: number | null): void {
+    this.organismsBorn = snapshot.organismsBorn
+    this.deathsByStarvation = snapshot.deathsByStarvation
+    this.deathsByAge = snapshot.deathsByAge
+    this.deathsByDamage = snapshot.deathsByDamage
+    this.deathsByPredation = snapshot.deathsByPredation
+    this.predationBites = snapshot.predationBites
+    this.resourcesSpawned = snapshot.resourcesSpawned
+    this.resourcesConsumed = snapshot.resourcesConsumed
+    this.reproductionAttempts = snapshot.reproductionAttempts
+    this.reproductionSuccesses = snapshot.reproductionSuccesses
+    this.reproductionFailures = snapshot.reproductionFailures
+    this.energyConsumed = snapshot.energyConsumed
+    this.energyWasted = snapshot.energyWasted
+    this.damageTaken = snapshot.damageTaken
+    this.eggsLaid = snapshot.eggsLaid
+    this.eggsHatched = snapshot.eggsHatched
+    this.eggsEaten = snapshot.eggsEaten
+    this.clutchesLost = snapshot.clutchesLost
+    this.extinctTick = extinctionTick
+  }
+
   get extinctionTick(): number | null {
     return this.extinctTick
   }

@@ -28,6 +28,16 @@ export class Carcasses {
     this.lifeTicks = lifespan > 0 ? Math.ceil(lifespan / config.timestep) : 0
   }
 
+  /** The running count (counted by `update`, added to by `drop`); saved with a world (`World.saveState`). */
+  get tracked(): number {
+    return this.count
+  }
+
+  /** Puts the running count back to a saved value (`World.restoreState`). */
+  restoreTracked(count: number): void {
+    this.count = count
+  }
+
   /** Leaves a carcass for `organism`, which has just died. */
   drop(organism: OrganismState, tick: number): void {
     const settings = this.config.predation.carcass

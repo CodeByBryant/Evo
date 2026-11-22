@@ -59,6 +59,11 @@ export class EventLog {
     return this.tickBuffer
   }
 
+  /** Puts the emitted count back to a saved value (`World.restoreState`); the retained history stays as it is. */
+  restoreEmitted(count: number): void {
+    this.totalEmitted = count
+  }
+
   /** Every event this log has emitted, hashed as part of simulation state. */
   get emittedCount(): number {
     return this.totalEmitted

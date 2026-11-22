@@ -20,6 +20,14 @@ export class IdGenerator {
     return id
   }
 
+  /** Puts the counter back to a saved value (`World.restoreState`); ids already handed out are never reused. */
+  restore(next: EntityId): void {
+    if (!Number.isSafeInteger(next) || next < 0 || next > MAX_ENTITY_ID + 1) {
+      throw new RangeError('the id counter must be a nonnegative integer within the uint32 range')
+    }
+    this.next = next
+  }
+
   /** The id that will be returned by the next `allocate()` call. Hashed as `nextEntityId`. */
   get nextId(): EntityId {
     return this.next
