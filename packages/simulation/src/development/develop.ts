@@ -1,5 +1,6 @@
 import {
   BODY_SLOT_COUNT,
+  CARRIER_PART_TYPES,
   PART_DEFINITIONS,
   PART_EXTENT_STAT,
   PART_STATS,
@@ -135,7 +136,14 @@ export function developAnatomy(
     // A parent is a lower slot that developed; anything else attaches to the body.
     const parentGene = Math.round(body[slotGeneIndex(slot, 'parent')] as number)
     const parentDraft = parentGene >= 1 ? draftOfSlot.get(parentGene - 1) : undefined
-    const parent = parentDraft === undefined ? undefined : (drafts[parentDraft] as Draft)
+    const named = parentDraft === undefined ? undefined : (drafts[parentDraft] as Draft)
+    // With `carrierParentsOnly` (ADR 0029) only a carrier can hold a part; anything else attaches to the body.
+    const parent =
+      named !== undefined &&
+      config.effects.carrierParentsOnly === 1 &&
+      !CARRIER_PART_TYPES.includes(named.part.type)
+        ? undefined
+        : named
 
     let x: number
     let y: number

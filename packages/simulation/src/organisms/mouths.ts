@@ -27,11 +27,20 @@ export function mouthsOf(genome: Genome, config: WorldConfig): readonly MouthPoi
   const anatomy = developAnatomy(genes, config.anatomy)
   const unit = anatomy.outline.areaRadius
   const mouths: MouthPoint[] = []
+  const cap = config.anatomy.effects.maxMouthOffset
   for (const part of anatomy.parts) {
     if (part.type === 'mouth' && part.functional) {
+      let x = part.x / unit
+      let y = part.y / unit
+      // A mouth hung on a tail sits far out; the bite is taken no farther than the cap (ADR 0029).
+      const distance = Math.sqrt(x * x + y * y)
+      if (cap > 0 && distance > cap) {
+        x = (x / distance) * cap
+        y = (y / distance) * cap
+      }
       mouths.push({
-        x: part.x / unit,
-        y: part.y / unit,
+        x,
+        y,
         form: mouthFormOf(part.stats[2] as number)
       })
     }

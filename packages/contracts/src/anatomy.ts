@@ -243,6 +243,13 @@ export const PART_EXTENT_STAT: Readonly<Partial<Record<PartType, string>>> = {
   join: 'length'
 }
 
+/**
+ * The part types that may carry other parts (ADR 0029): an eyestalk lifts what sits on it, a skeleton
+ * frames it, a join connects it. A tail (flagellum, cilia) is a motor, not a mount, so when
+ * `effects.carrierParentsOnly` is on a part hung on one attaches to the body instead.
+ */
+export const CARRIER_PART_TYPES: readonly PartType[] = ['eyestalk', 'skeleton', 'join']
+
 /** Genes that only change how a body is painted (no effect on fitness). */
 export const VISUAL_FIELDS = ['pattern', 'accentHue'] as const
 export type VisualField = (typeof VISUAL_FIELDS)[number]
@@ -550,6 +557,20 @@ export interface PartEffectsConfig {
    * trade and 1 is the square-root law (a 90 degree cone reaches about 2.6 times as far).
    */
   readonly visionNarrowing: number
+  /**
+   * The farthest a mouth bites from the body's centre, in body radii (ADR 0029). A mouth hung on a
+   * tail sits at the tail's tip, several radii out, and would bite from there for free; the bite
+   * point is clamped to this distance, keeping its direction. 0 is off (the old behaviour); a mouth
+   * on the body (about 1 radius) is never moved by a cap of 1 or more.
+   */
+  readonly maxMouthOffset: number
+  /** 1: only a carrier part (`CARRIER_PART_TYPES`) can be a parent; a part hung on any other attaches to the body. 0 is off. */
+  readonly carrierParentsOnly: number
+  /**
+   * Extra upkeep, per second per unit of size, for each body radius a part hung on another part sits
+   * from the centre (ADR 0029): a long lever arm is priced. 0 is off; parts on the body pay nothing.
+   */
+  readonly limbUpkeep: number
 }
 
 /** Balance numbers for one part type, per unit of `size`. */
