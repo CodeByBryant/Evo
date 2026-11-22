@@ -65,7 +65,11 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     pheromoneSignal: 0.5,
     pheromoneCap: 2,
     skeletonBudget: 1,
-    visionNarrowing: 1
+    visionNarrowing: 1,
+    // Off here; the limb levers of ADR 0029.
+    maxMouthOffset: 0,
+    carrierParentsOnly: 0,
+    limbUpkeep: 0
   },
   // Every stat sits at the middle (0.5, a multiplier of 1) and every part has full integrity, so
   // the founder is the reference all capabilities are measured against. Surface parts sit on the
@@ -227,7 +231,10 @@ const EFFECT_KEYS = [
   'pheromoneSignal',
   'pheromoneCap',
   'skeletonBudget',
-  'visionNarrowing'
+  'visionNarrowing',
+  'maxMouthOffset',
+  'carrierParentsOnly',
+  'limbUpkeep'
 ]
 const FOUNDER_PART_KEYS = [
   'type',
@@ -345,6 +352,14 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
     const narrowing = effects['visionNarrowing']
     if (typeof narrowing === 'number' && narrowing > 1) {
       errors.push('anatomy.effects.visionNarrowing must be at most 1')
+    }
+    const offset = effects['maxMouthOffset']
+    if (typeof offset === 'number' && offset !== 0 && offset < 1) {
+      errors.push('anatomy.effects.maxMouthOffset must be 0 (off) or at least 1 body radius')
+    }
+    const carriers = effects['carrierParentsOnly']
+    if (typeof carriers === 'number' && carriers !== 0 && carriers !== 1) {
+      errors.push('anatomy.effects.carrierParentsOnly must be 0 or 1')
     }
   }
 

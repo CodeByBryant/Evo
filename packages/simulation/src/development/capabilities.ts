@@ -173,6 +173,11 @@ export function capabilitiesOf(
     const cost = partCostOf(part, config)
     mass += cost.mass
     upkeep += cost.upkeep
+    // A part hung on another part pays for its lever arm (ADR 0029); parts on the body pay nothing.
+    if (effects.limbUpkeep > 0 && part.parent >= 0) {
+      const out = Math.sqrt(part.x * part.x + part.y * part.y) / anatomy.outline.areaRadius
+      if (out > 1) upkeep += effects.limbUpkeep * part.size * (out - 1)
+    }
     const p = power(part, config)
     if (p === 0) continue
     switch (part.type) {
