@@ -21,6 +21,13 @@ export class HazardStore {
   private readonly byId = new Map<number, HazardState>()
   private nextHazardId = 0
 
+  /** Replaces the hazards and the id counter with saved ones (`World.restoreState`). */
+  restore(hazards: readonly HazardState[], nextId: number): void {
+    this.byId.clear()
+    for (const hazard of hazards) this.byId.set(hazard.id, hazard)
+    this.nextHazardId = nextId
+  }
+
   /** The id the next hazard will receive. */
   get nextId(): number {
     return this.nextHazardId

@@ -44,6 +44,16 @@ export class EggStore {
     return this.byId.delete(id)
   }
 
+  /**
+   * Replaces everything held with `eggs` (ids strictly ascending, as `add` requires): how a saved
+   * state is put back (`World.restoreState`).
+   */
+  replaceAll(eggs: readonly EggState[]): void {
+    this.byId.clear()
+    this.maxId = null
+    for (const item of eggs) this.add(item)
+  }
+
   get size(): number {
     return this.byId.size
   }

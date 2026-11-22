@@ -85,6 +85,16 @@ export class OrganismStore {
     return this.byId.delete(id)
   }
 
+  /**
+   * Replaces everything held with `organisms` (ids strictly ascending, as `add` requires): how a saved
+   * state is put back (`World.restoreState`).
+   */
+  replaceAll(organisms: readonly OrganismState[]): void {
+    this.byId.clear()
+    this.maxId = null
+    for (const item of organisms) this.add(item)
+  }
+
   get size(): number {
     return this.byId.size
   }

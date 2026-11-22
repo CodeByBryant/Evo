@@ -96,7 +96,10 @@ import { ObservatoryRecorder } from '../observatory/ObservatoryRecorder'
 import { RandomStreams, STREAM_NAMES } from '../random/streams'
 import { SpeciesRegistry } from '../species/SpeciesRegistry'
 import type { SpeciesQueries } from '../species/SpeciesRegistry'
-import { StateHasher } from '../serialization/hash'
+import { cloneData } from '../serialization/cloneData'
+import { HASH_SCHEMA_VERSION, StateHasher } from '../serialization/hash'
+import { WORLD_STATE_FORMAT } from './WorldState'
+import type { WorldState } from './WorldState'
 import { SpatialHash } from '../spatial/SpatialHash'
 import { BrainSystem } from '../systems/BrainSystem'
 import { DeathSystem } from '../systems/DeathSystem'
@@ -1111,6 +1114,107 @@ export class World {
    */
   historicalOrganisms(): HistoricalOrganismRecord[] {
     return this.historyStore.list()
+  }
+
+  /**
+   * Everything that decides this world's future, as plain data deep-copied from the live state (see
+   * `WorldState`): the checkpoint a probe forks arms from. Never mutates anything, and running the
+   * world afterwards does not change the returned state.
+   */
+  saveState(): WorldState {
+    const state: WorldState = {
+      format: WORLD_STATE_FORMAT,
+      hashSchema: HASH_SCHEMA_VERSION,
+      seed: this.seed,
+      tick: this.clockImpl.tick,
+      nextId: this.ids.nextId,
+      genomeNextId: this.genomeIds.nextId,
+      streams: this.randomStreams.getStates(),
+      organisms: this.organisms.values(),
+      resources: this.resources.values(),
+      eggs: this.eggStore.values(),
+      hazards: this.hazardStore.values(),
+      hazardNextId: this.hazardStore.nextId,
+      metrics: this.metricsCollector.snapshot(),
+      extinctionTick: this.metricsCollector.extinctionTick,
+      eventsEmitted: this.events.emittedCount,
+      spawnRemainder: this.environmentSystem.spawnRemainder,
+      stormRemainder: this.environmentSystem.stormRemainder,
+      lastBitten: Array.from(this.lastBitten.entries()),
+      carcassCount: this.carcasses === null ? null : this.carcasses.tracked,
+      lineage: this.lineageStore.exportState(),
+      species: this.speciesRegistry.exportState()
+    }
+    // One copy keeps shared objects shared (an egg's genome is its parent's) and cuts every link to the
+    // live world.
+    return cloneData(state)
+  }
+
+  /**
+   * Puts a saved state into this world, which must have the same seed (and so the same terrain,
+   * food pattern and obstacles) and the same hash schema; its configuration may differ, which is how a
+   * probe gives each arm its own setting from a shared checkpoint. The state is copied, so one saved
+   * state can seed any number of worlds. The history of the dead and the observatory series are
+   * not restored (see `WorldState`).
+   */
+  restoreState(saved: WorldState): void {
+    if (saved.format !== WORLD_STATE_FORMAT) {
+      throw new RangeError(`unknown world state format ${String(saved.format)}`)
+    }
+    if (saved.hashSchema !== HASH_SCHEMA_VERSION) {
+      throw new RangeError(
+        `the state was saved under hash schema ${saved.hashSchema}, this engine is ${HASH_SCHEMA_VERSION}`
+      )
+    }
+    if (saved.seed !== this.seed) {
+      throw new RangeError(`the state is of seed ${saved.seed}, this world is seed ${this.seed}`)
+    }
+    const required: Array<keyof WorldState> = [
+      'tick',
+      'nextId',
+      'genomeNextId',
+      'streams',
+      'organisms',
+      'resources',
+      'eggs',
+      'hazards',
+      'hazardNextId',
+      'metrics',
+      'extinctionTick',
+      'eventsEmitted',
+      'spawnRemainder',
+      'stormRemainder',
+      'lastBitten',
+      'carcassCount',
+      'lineage',
+      'species'
+    ]
+    for (const key of required) {
+      if (saved[key] === undefined) throw new RangeError(`the state has no "${key}"`)
+    }
+    const state = cloneData(saved)
+    this.clockImpl.restore(state.tick)
+    this.ids.restore(state.nextId)
+    this.genomeIds.restore(state.genomeNextId)
+    this.randomStreams.setStates(state.streams)
+    this.organisms.replaceAll(state.organisms)
+    this.resources.replaceAll(state.resources)
+    this.eggStore.replaceAll(state.eggs)
+    this.hazardStore.restore(state.hazards, state.hazardNextId)
+    this.metricsCollector.restore(state.metrics, state.extinctionTick)
+    this.events.restoreEmitted(state.eventsEmitted)
+    this.environmentSystem.restoreRemainders(state.spawnRemainder, state.stormRemainder)
+    this.lastBitten.clear()
+    for (const [victim, bite] of state.lastBitten) this.lastBitten.set(victim, bite)
+    if (this.carcasses !== null && state.carcassCount !== null) {
+      this.carcasses.restoreTracked(state.carcassCount)
+    }
+    this.lineageStore.restoreState(state.lineage)
+    this.speciesRegistry.restoreState(state.species)
+    // The per-tick buffers are rebuilt by the stages that use them, and the spatial indices are
+    // rebuilt at the start of every step; nothing else is carried between ticks.
+    this.resourceIndex.rebuild(this.resources.values())
+    this.organismIndex.rebuild(this.organisms.values())
   }
 
   /**

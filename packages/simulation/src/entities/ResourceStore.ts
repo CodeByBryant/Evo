@@ -85,6 +85,16 @@ export class ResourceStore {
     for (const resource of this.byId.values()) visit(resource)
   }
 
+  /**
+   * Replaces everything held with `resources` (ids strictly ascending, as `add` requires): how a saved
+   * state is put back (`World.restoreState`).
+   */
+  replaceAll(resources: readonly ResourceState[]): void {
+    this.byId.clear()
+    this.maxId = null
+    for (const item of resources) this.add(item)
+  }
+
   get size(): number {
     return this.byId.size
   }

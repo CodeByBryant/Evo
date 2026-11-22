@@ -217,6 +217,16 @@ Introduced with sexes, incubation and eggs (ADR 0027). Everything in version 12 
 
 `stateHash()` identifies **simulation state**, not the contents of the (bounded) event log. `eventsEmitted`, a monotonic counter, is hashed so divergent event production is still caught, without making log retention or dropped-event counts part of simulation identity.
 
+## 8.1 Saving and restoring a world state
+
+`World.saveState()` returns a `WorldState` (`world/WorldState.ts`): the plain data of everything that decides the world's future, deep-copied (`serialization/cloneData.ts`, which refuses anything that is not plain data, so nothing stays linked to the live world). `World.restoreState(state)` puts it into a **freshly created world of the same seed** (checked, as are the hash schema and the state format); that world's configuration may differ, which is how an experiment gives each arm its own setting from one checkpoint.
+
+What a state carries is what the state hash covers (clock, id counters, the random streams, creatures with their genomes, brains and carried clutches, resources, eggs, hazards, the counters and the two spawn remainders) plus four pieces of unhashed state that later hashed state or the invariants depend on: the recent bites that label a death as predation, the carcass count, the lineage store (a newborn's parents must be registered) and the species registry. **Not carried:** the history of the dead, the observatory series and the event log's past; they restart empty in the receiving world. It is a probe and fork tool, not a user save format (there is no migration story yet; the format number is bumped when a field changes).
+
+The proof is `tests/world/save-restore.test.ts`: for the default world (eggs, sexes, ageing, mate choice, predation, carcasses), the classic preset, the reflex controller, the cluster world and lush with obstacles, a world restored from a state goes on tick for tick with the original (events and state hash), its species and lineage continue, it passes the engine invariants every tick, and saving, restoring or changing the saved object never changes another world. A new unhashed field that matters shows up there as a divergence (it did twice while this was written: the lineage store and the species registry).
+
+**Forking arms is exact only while no body the lever could touch exists.** An arm restored from a checkpoint taken before the first such body equals the world that had the lever from tick 0 (tested for the limb levers of ADR 0029); after it, it is a different experiment ("the lever applied from tick T"). `tests/support/fork.ts` runs a control to the first such body and returns the last checkpoint before it.
+
 ## 9. Golden hashes
 
 Golden files live in `packages/simulation/tests/golden/` and record `{ hashSchemaVersion, engineVersion, entries }`, where each entry pins a seed, a config, a tick count, and the expected hash. A test first compares the golden's `hashSchemaVersion` with the current constant, so a layout change yields an explicit "bump the version and regenerate" message instead of an opaque hash mismatch. Regenerating goldens is a deliberate act in its own commit with the reason in the PR (the PR template's **Changes determinism** box).
