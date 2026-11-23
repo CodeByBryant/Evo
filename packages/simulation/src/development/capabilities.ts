@@ -1,4 +1,11 @@
-import { PART_STATS, mouthFormOf, scavengerFromOf, statMultiplier, statValue } from '@evo/contracts'
+import {
+  CARRIER_PART_TYPES,
+  PART_STATS,
+  mouthFormOf,
+  scavengerFromOf,
+  statMultiplier,
+  statValue
+} from '@evo/contracts'
 import type {
   Anatomy,
   AnatomyConfig,
@@ -40,6 +47,31 @@ function mult(part: AnatomyPart, key: string): number {
  */
 function power(part: AnatomyPart, config: AnatomyConfig): number {
   return part.functional ? config.parts[part.type].strength * part.size * part.integrity : 0
+}
+
+/**
+ * The share of its power each part delivers under `limbEfficiency` (ADR 0030): `efficiency` once for
+ * every parent on its chain that is not a carrier (a tail carries nothing well; an eyestalk, a skeleton
+ * and a join exist to carry). A part on the body has 1. Parents come first in slot order, so one pass
+ * fills the table; products, not powers, so no `**`.
+ */
+function limbScalesOf(parts: readonly AnatomyPart[], efficiency: number): Map<number, number> {
+  const scale = new Map<number, number>()
+  const typeOf = new Map<number, PartType>()
+  for (const part of parts) {
+    typeOf.set(part.slot, part.type)
+    const parentType = part.parent >= 0 ? typeOf.get(part.parent) : undefined
+    if (parentType === undefined) {
+      scale.set(part.slot, 1)
+      continue
+    }
+    const parentScale = scale.get(part.parent) ?? 1
+    scale.set(
+      part.slot,
+      CARRIER_PART_TYPES.includes(parentType) ? parentScale : parentScale * efficiency
+    )
+  }
+  return scale
 }
 
 /**
@@ -168,6 +200,9 @@ export function capabilitiesOf(
   let mouthPower = 0
   let signal = 0
   const dietSum = new Array<number>(Math.max(1, kindCount)).fill(0)
+  // With `limbEfficiency` below 1 a part hung on a non-carrier delivers less (ADR 0030).
+  const limbScale =
+    effects.limbEfficiency < 1 ? limbScalesOf(anatomy.parts, effects.limbEfficiency) : null
 
   for (const part of anatomy.parts) {
     const cost = partCostOf(part, config)
@@ -178,7 +213,7 @@ export function capabilitiesOf(
       const out = Math.sqrt(part.x * part.x + part.y * part.y) / anatomy.outline.areaRadius
       if (out > 1) upkeep += effects.limbUpkeep * part.size * (out - 1)
     }
-    const p = power(part, config)
+    const p = power(part, config) * (limbScale === null ? 1 : (limbScale.get(part.slot) ?? 1))
     if (p === 0) continue
     switch (part.type) {
       case 'flagellum':

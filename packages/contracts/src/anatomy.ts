@@ -601,6 +601,13 @@ export interface PartEffectsConfig {
    * from the centre (ADR 0029): a long lever arm is priced. 0 is off; parts on the body pay nothing.
    */
   readonly limbUpkeep: number
+  /**
+   * What a part hung on another part delivers, as a share of what it would on the body, in `(0, 1]`
+   * (ADR 0030). Each parent on its chain that is not a carrier (`CARRIER_PART_TYPES`) cuts its power
+   * by this much, so a mouth on a tail delivers this share of its bite and digestion and a mouth on a
+   * tail on a tail delivers its square; mass and upkeep stay full. 1 is off (the old behaviour).
+   */
+  readonly limbEfficiency: number
 }
 
 /** Balance numbers for one part type, per unit of `size`. */
