@@ -69,3 +69,5 @@ By the bar stated before the numbers (the exploit gone **and** no extinct world,
 - The tail mouth is plausibly a real adaptation to a food-scarce world (carriers-only killed the one world where it had been the survivor). Whether a tail mouth is a quirk or a feature is a design call.
 - The bite point is clamped but the picture is not: with `maxMouthOffset` on, a tail mouth is drawn at the tip and bites nearer the body.
 - Probes: 220,000 ticks is about 8 minutes of one core; see `docs/development.md` for budgets.
+
+**Update:** [ADR 0030](0030-limb-efficiency.md) tried the owner's idea of making attached parts much less efficient (`limbEfficiency`): 0.25 stops the takeover on all four seeds and loses no world, and is now the default.
