@@ -69,7 +69,9 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     // Off here; the limb levers of ADR 0029.
     maxMouthOffset: 0,
     carrierParentsOnly: 0,
-    limbUpkeep: 0
+    limbUpkeep: 0,
+    // Off here; ADR 0030.
+    limbEfficiency: 1
   },
   // Every stat sits at the middle (0.5, a multiplier of 1) and every part has full integrity, so
   // the founder is the reference all capabilities are measured against. Surface parts sit on the
@@ -234,7 +236,8 @@ const EFFECT_KEYS = [
   'visionNarrowing',
   'maxMouthOffset',
   'carrierParentsOnly',
-  'limbUpkeep'
+  'limbUpkeep',
+  'limbEfficiency'
 ]
 const FOUNDER_PART_KEYS = [
   'type',
@@ -356,6 +359,10 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
     const offset = effects['maxMouthOffset']
     if (typeof offset === 'number' && offset !== 0 && offset < 1) {
       errors.push('anatomy.effects.maxMouthOffset must be 0 (off) or at least 1 body radius')
+    }
+    const efficiency = effects['limbEfficiency']
+    if (typeof efficiency === 'number' && !(efficiency > 0 && efficiency <= 1)) {
+      errors.push('anatomy.effects.limbEfficiency must be above 0 and at most 1')
     }
     const carriers = effects['carrierParentsOnly']
     if (typeof carriers === 'number' && carriers !== 0 && carriers !== 1) {
