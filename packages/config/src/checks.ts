@@ -3,6 +3,17 @@ export type PlainObject = Record<string, unknown>
 export const isObject = (value: unknown): value is PlainObject =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+export function checkBoolean(
+  section: PlainObject,
+  key: string,
+  path: string,
+  errors: string[]
+): void {
+  const value = section[key]
+  if (value === undefined) errors.push(`${path} is required`)
+  else if (typeof value !== 'boolean') errors.push(`${path} must be a boolean`)
+}
+
 export interface NumberRule {
   integer?: boolean
   /** Value must be strictly greater than zero. */

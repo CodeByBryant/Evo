@@ -280,6 +280,8 @@ describe('mouth forms (ADR 0017)', () => {
     for (const form of ['sprout', 'proboscis', 'mandible', 'radula'] as const) {
       for (const value of Object.values(forms[form])) expect(value).toBeGreaterThan(0)
     }
+    // the scavenger (ADR 0031) takes no plant either: carrion is its one food
+    for (const value of Object.values(forms.scavenger)) expect(value).toBe(0)
     // and the mandible is still exactly 1 (the founder's neutral generalist)
     expect(errorsFor((c) => (c.anatomy.mouthForms.mandible.grass = 0)).join('\n')).toContain(
       'mandible'
@@ -314,13 +316,15 @@ describe('starting bodies (ADR 0020)', () => {
       'tank',
       'hunter',
       'omnivore-sprout',
-      'omnivore-mandible'
+      'omnivore-mandible',
+      'scavenger'
     ])
-    // Only the hunter and the omnivores are kept out of the base draw (ADR 0023, 0028).
+    // Only the hunter, the omnivores and the scavenger are kept out of the base draw (ADR 0023, 0028, 0031).
     expect(anatomy.starters.filter((s) => s.pool === false).map((s) => s.name)).toEqual([
       'hunter',
       'omnivore-sprout',
-      'omnivore-mandible'
+      'omnivore-mandible',
+      'scavenger'
     ])
     expect(validateWorldConfig(DEFAULT_WORLD_CONFIG)).toEqual({ ok: true, errors: [] })
   })

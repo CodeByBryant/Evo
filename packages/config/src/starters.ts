@@ -200,9 +200,34 @@ const OMNIVORE_MANDIBLE = omnivoreOf(
   0.14
 )
 
+/**
+ * The scavenger (ADR 0031): the grazer's body with a **scavenger mouth** (mouth stat 2 at 0.98, the band
+ * `anatomy.scavenger.from` and above), which takes carrion and nothing else: no plant, no creature, no egg.
+ * It starts a world only as a founder group, like the hunters (`pool: false`), and only does anything with
+ * `anatomy.scavenger.enabled`: with the switch off, 0.98 reads as a jaw.
+ */
+const SCAVENGER: StartingBody = {
+  name: 'scavenger',
+  description:
+    'The grazer with a broad scooping mouth that eats only carrion: it lives off what others leave. Starts as a small group among the founders.',
+  parts: GRAZER.parts.map((p) =>
+    p.type === 'mouth'
+      ? { ...p, stats: [p.stats[0] ?? 0.5, p.stats[1] ?? 0.5, 0.98, 0.5, 0.5, 0.5] }
+      : { ...p, stats: [...p.stats] }
+  ),
+  look: { pattern: 3, accentHue: 0.7 },
+  outline: {
+    count: GRAZER.outline.count,
+    radii: [...GRAZER.outline.radii],
+    angles: [...GRAZER.outline.angles]
+  },
+  pool: false
+}
+
 export const DEFAULT_STARTERS: StartingBody[] = [
   ...POOL_STARTERS,
   HUNTER,
   OMNIVORE_SPROUT,
-  OMNIVORE_MANDIBLE
+  OMNIVORE_MANDIBLE,
+  SCAVENGER
 ]

@@ -6,11 +6,14 @@ import type { AnatomyPart } from '@evo/contracts'
  * parts, the form of its mouth, and how many functional parts it has (binned, so one extra part of a
  * kind already carried is not a new plan). Colour, size and placement never count, as for species.
  */
-export function bodySignature(parts: readonly AnatomyPart[]): string {
+export function bodySignature(
+  parts: readonly AnatomyPart[],
+  scavengerFrom: number = Infinity
+): string {
   const working = parts.filter((part) => part.functional)
   const types = working.map((part) => part.type).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
   const mouth = working.find((part) => part.type === 'mouth')
-  const form = mouth === undefined ? 'none' : mouthFormOf(mouth.stats[2] ?? 0.5)
+  const form = mouth === undefined ? 'none' : mouthFormOf(mouth.stats[2] ?? 0.5, scavengerFrom)
   const bin = working.length <= 4 ? 'small' : working.length <= 8 ? 'medium' : 'large'
   return `${types.join(',')}|${form}|${bin}`
 }

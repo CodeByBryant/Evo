@@ -16,8 +16,10 @@ const { anatomy } = config
 const specs = buildBodySpecs(anatomy)
 const reference = founderCapabilitiesOf(config)
 const kindNames = config.ecology.resourceKinds.kinds.map((k) => k.name)
-/** The grazer and the starters that are the grazer with a jaw (ADR 0023, 0028). */
-const GRAZER_KIN = ['grazer', 'hunter', 'omnivore-sprout', 'omnivore-mandible']
+/** The grazer and the starters that are the grazer with another mouth (ADR 0023, 0028, 0031). */
+const GRAZER_KIN = ['grazer', 'hunter', 'omnivore-sprout', 'omnivore-mandible', 'scavenger']
+/** The starters whose mouth takes no plant: the jaw's, and the scavenger's (which reads as a jaw while its switch is off). */
+const NO_PLANTS = ['hunter', 'scavenger']
 const vectorOf = (s: (typeof anatomy.starters)[number]): number[] =>
   bodyVectorOf({ parts: s.parts, look: s.look, outline: s.outline })
 
@@ -60,7 +62,7 @@ describe('the default starting bodies', () => {
         }
         expect(caps.mass).toBeGreaterThan(0)
         // every kind of food is digestible, except plants to the jaw: the hunter is a carnivore (ADR 0023)
-        const eatsPlants = starter.name !== 'hunter'
+        const eatsPlants = !NO_PLANTS.includes(starter.name)
         expect(
           Object.values(factors.dietEfficiency).every((v) => (eatsPlants ? v > 0 : v >= 0))
         ).toBe(true)
@@ -110,16 +112,16 @@ describe('the default starting bodies', () => {
       it('lives in a world: a forced world starts as it and does not die out in 1,500 ticks', () => {
         // A world of nothing but hunters has no prey and no plants they can eat: the hunter lives
         // among others (the founder group), which the world tests below cover (ADR 0023).
-        const groups = starter.name === 'hunter' ? { groups: [] } : {}
+        const groups = NO_PLANTS.includes(starter.name) ? { groups: [] } : {}
         const world = World.create({
           seed: 3,
           config: {
             anatomy: { startingBody: { mode: 'archetypes', archetype: starter.name, ...groups } },
-            ...(starter.name === 'hunter' ? { predation: { enabled: false } } : {})
+            ...(NO_PLANTS.includes(starter.name) ? { predation: { enabled: false } } : {})
           }
         })
         expect(world.startingBodyName).toBe(starter.name)
-        world.run(starter.name === 'hunter' ? 200 : 1500)
+        world.run(NO_PLANTS.includes(starter.name) ? 200 : 1500)
         expect(world.isExtinct).toBe(false)
       })
     })

@@ -11,7 +11,8 @@ import { mouthsOf } from '../../src/organisms/mouths'
  * and the actors of events can be classified later (a body never changes in a life):
  *
  * - `plant`: no mouth with a flesh yield; `jaw`: a flesh mouth and no mouth that takes any plant;
- *   `omni`: a flesh mouth and at least one mouth that takes plants; `none`: no working mouth.
+ *   `omni`: a flesh mouth and at least one mouth that takes plants; `scav`: working mouths that take
+ *   neither plants nor flesh (the scavenger form, ADR 0031: carrion only); `none`: no working mouth.
  *
  * Per arm it reports prevalence over time, where omnivore children come from (the parents'
  * classes), fitness by class (lifespan, matings per 1,000 creature-ticks, deaths by cause), what
@@ -27,13 +28,13 @@ const TICKS = Number(process.env.OMNI_TICKS ?? 30_000)
 const SAMPLE = 2_500
 const ALIVE_EVERY = 500
 
-type Class = 'plant' | 'jaw' | 'omni' | 'none'
-const CLASSES: Class[] = ['plant', 'jaw', 'omni', 'none']
+type Class = 'plant' | 'jaw' | 'omni' | 'scav' | 'none'
+const CLASSES: Class[] = ['plant', 'jaw', 'omni', 'scav', 'none']
 const EATS = ['plant', 'carrion', 'flesh', 'egg'] as const
 type Eats = (typeof EATS)[number]
 const CAUSES = ['starvation', 'age', 'damage', 'predation'] as const
 
-const zero = (): Record<Class, number> => ({ plant: 0, jaw: 0, omni: 0, none: 0 })
+const zero = (): Record<Class, number> => ({ plant: 0, jaw: 0, omni: 0, scav: 0, none: 0 })
 const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0)
 
 describe('omnivore probe', () => {
@@ -45,6 +46,7 @@ describe('omnivore probe', () => {
       plant: {},
       jaw: {},
       omni: {},
+      scav: {},
       none: {}
     }
     const lifeSum = zero()
@@ -53,6 +55,7 @@ describe('omnivore probe', () => {
       plant: { plant: 0, carrion: 0, flesh: 0, egg: 0 },
       jaw: { plant: 0, carrion: 0, flesh: 0, egg: 0 },
       omni: { plant: 0, carrion: 0, flesh: 0, egg: 0 },
+      scav: { plant: 0, carrion: 0, flesh: 0, egg: 0 },
       none: { plant: 0, carrion: 0, flesh: 0, egg: 0 }
     }
     const born = zero()
@@ -89,7 +92,15 @@ describe('omnivore probe', () => {
         const fleshy = mouths.some((m) => flesh[m.form] > 0)
         const leafy = mouths.some((m) => plantYield(m.form))
         const cls: Class =
-          mouths.length === 0 ? 'none' : fleshy ? (leafy ? 'omni' : 'jaw') : 'plant'
+          mouths.length === 0
+            ? 'none'
+            : fleshy
+              ? leafy
+                ? 'omni'
+                : 'jaw'
+              : leafy
+                ? 'plant'
+                : 'scav'
         cache.set(id, {
           cls,
           plan: mouths
@@ -182,7 +193,7 @@ describe('omnivore probe', () => {
               if (counts.omni + counts.jaw > 0) seedsJawEnd++
               const bearers = counts.omni + counts.jaw
               endShare.push(
-                `s${seed}:${counts.plant}p/${counts.jaw}j/${counts.omni}o` +
+                `s${seed}:${counts.plant}p/${counts.jaw}j/${counts.omni}o/${counts.scav}s` +
                   (bearers > 0 ? `(${Math.round((100 * counts.omni) / bearers)}%omni)` : '')
               )
             }
@@ -215,7 +226,7 @@ describe('omnivore probe', () => {
       .sort((a, b) => a - b)
       .map((t) => {
         const p = prevalence.get(t) as Record<Class, number>
-        return `${t / 1000}k ${f1(p.plant / n)}p/${f1(p.jaw / n)}j/${f1(p.omni / n)}o omniWorlds=${omniAlive.get(t)}/${n}`
+        return `${t / 1000}k ${f1(p.plant / n)}p/${f1(p.jaw / n)}j/${f1(p.omni / n)}o/${f1(p.scav / n)}s omniWorlds=${omniAlive.get(t)}/${n}`
       })
     const topPlans = [...plans.entries()]
       .sort((a, b) => b[1] - a[1])

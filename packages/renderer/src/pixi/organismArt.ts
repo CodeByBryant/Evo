@@ -162,7 +162,7 @@ function drawBack(g: Graphics, o: RenderOrganism, p: BodyPalette, time: number):
 
 /**
  * A mouth, drawn by its form so the diet is readable at a glance (ADR 0017): a sprout's leafy tuft,
- * a proboscis' thin tube, a mandible's pincers, a radula's toothed scraper and a jaw's hinged V.
+ * a proboscis' thin tube, a mandible's pincers, a radula's toothed scraper, a jaw's hinged V and a scavenger's broad scooping cup.
  * It sits on the rim and points along the part's axis; `open` in `[0.3, 1]` animates it.
  */
 function drawMouth(
@@ -240,6 +240,28 @@ function drawMouth(
       for (const k of [-0.7, 0, 0.7]) {
         line(at(s * 0.5, k * s), at(s * (1.2 + 0.4 * open), k * s), s * 0.2, DARK, 0.9)
       }
+      break
+    }
+    case 5: {
+      // scavenger (ADR 0031): a broad scooping beak, a shallow cup that gapes toward its food
+      const gape = s * (0.7 + 0.8 * open)
+      for (const side of [-1, 1]) {
+        g.poly(
+          [
+            ...at(0, side * s * 0.4),
+            ...at(s * 1.3, side * gape),
+            ...at(s * 2.1, side * gape * 0.5)
+          ],
+          false
+        ).stroke({
+          width: Math.max(0.3, s * 0.5),
+          color: p.tail,
+          alpha: 0.92 * alpha,
+          cap: 'round',
+          join: 'round'
+        })
+      }
+      line(at(s * 0.9, -gape * 0.8), at(s * 0.9, gape * 0.8), s * 0.22, DARK, 0.7)
       break
     }
     default: {

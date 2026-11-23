@@ -1,4 +1,4 @@
-import { mouthFormOf } from '@evo/contracts'
+import { mouthFormOf, scavengerFromOf } from '@evo/contracts'
 import type { Genome, MouthForm, WorldConfig } from '@evo/contracts'
 import { developAnatomy } from '../development/develop'
 
@@ -41,7 +41,7 @@ export function mouthsOf(genome: Genome, config: WorldConfig): readonly MouthPoi
       mouths.push({
         x,
         y,
-        form: mouthFormOf(part.stats[2] as number)
+        form: mouthFormOf(part.stats[2] as number, scavengerFromOf(config.anatomy))
       })
     }
   }

@@ -1,4 +1,4 @@
-import { MOUTH_FORMS, mouthFormOf } from '@evo/contracts'
+import { MOUTH_FORMS, mouthFormOf, scavengerFromOf } from '@evo/contracts'
 import type { Genome, PartSnapshot, WorldConfig } from '@evo/contracts'
 import { outlineDragOf, outlineOf, outlineScaleOf } from '../development/outline'
 import { developAnatomy } from '../development/develop'
@@ -151,7 +151,12 @@ export function drawnPartsOf(genome: Genome, config: WorldConfig): readonly Part
       orientation: part.axis,
       functional: part.functional,
       length: Math.sqrt(dx * dx + dy * dy) * factor,
-      form: part.type === 'mouth' ? MOUTH_FORMS.indexOf(mouthFormOf(part.stats[2] as number)) : 0
+      form:
+        part.type === 'mouth'
+          ? MOUTH_FORMS.indexOf(
+              mouthFormOf(part.stats[2] as number, scavengerFromOf(config.anatomy))
+            )
+          : 0
     }
   })
   drawnParts.set(genome.body.genes, { radius, parts })

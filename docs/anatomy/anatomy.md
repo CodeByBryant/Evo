@@ -25,24 +25,24 @@ The first ten are the original parts; the last six (eyestalk, gyro, lipid, phero
 
 A body has 12 slots; each is empty or holds one part. The types are in the order of the `type` gene. Besides `size`, every part carries up to six per-type **stats** (ADR 0016):
 
-| Type        | Stats (in gene order)                                                                                            |
-| ----------- | ---------------------------------------------------------------------------------------------------------------- |
-| `flagellum` | length, thickness, force, efficiency                                                                             |
-| `cilia`     | length, density, rate                                                                                            |
-| `eye`       | range, resolution, field of view (a cone about the eye's axis; narrower reaches further, see Directional vision) |
-| `sniffer`   | range, sensitivity, selectivity (which food kind)                                                                |
-| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw; the jaw is meat only), bite rate                    |
-| `intestine` | length, absorption, filter                                                                                       |
-| `stomach`   | capacity, throughput                                                                                             |
-| `armor`     | thickness, coverage, hardness                                                                                    |
-| `membrane`  | insulation, thickness                                                                                            |
-| `mender`    | rate, efficiency                                                                                                 |
-| `eyestalk`  | length, stiffness                                                                                                |
-| `gyro`      | stability                                                                                                        |
-| `lipid`     | reserve                                                                                                          |
-| `pheromone` | potency                                                                                                          |
-| `skeleton`  | rigidity, length                                                                                                 |
-| `join`      | length, flexibility                                                                                              |
+| Type        | Stats (in gene order)                                                                                                                                                           |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flagellum` | length, thickness, force, efficiency                                                                                                                                            |
+| `cilia`     | length, density, rate                                                                                                                                                           |
+| `eye`       | range, resolution, field of view (a cone about the eye's axis; narrower reaches further, see Directional vision)                                                                |
+| `sniffer`   | range, sensitivity, selectivity (which food kind)                                                                                                                               |
+| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw; the jaw is meat only; with `anatomy.scavenger` on, a sixth, the scavenger, eats carrion only, ADR 0031), bite rate |
+| `intestine` | length, absorption, filter                                                                                                                                                      |
+| `stomach`   | capacity, throughput                                                                                                                                                            |
+| `armor`     | thickness, coverage, hardness                                                                                                                                                   |
+| `membrane`  | insulation, thickness                                                                                                                                                           |
+| `mender`    | rate, efficiency                                                                                                                                                                |
+| `eyestalk`  | length, stiffness                                                                                                                                                               |
+| `gyro`      | stability                                                                                                                                                                       |
+| `lipid`     | reserve                                                                                                                                                                         |
+| `pheromone` | potency                                                                                                                                                                         |
+| `skeleton`  | rigidity, length                                                                                                                                                                |
+| `join`      | length, flexibility                                                                                                                                                             |
 
 | Type        | Feeds                      | Needs       | Provides    | Default mass / upkeep / strength |
 | ----------- | -------------------------- | ----------- | ----------- | -------------------------------- |

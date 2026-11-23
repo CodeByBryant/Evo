@@ -212,7 +212,7 @@ describe('carcasses', () => {
     const names = cfg.ecology.resourceKinds.kinds.map((k) => k.name)
     expect(names.at(-1)).toBe(CARRION_KIND)
     expect(cfg.ecology.resourceKinds.kinds.at(-1)?.spawnWeight).toBe(0)
-    for (const form of ['sprout', 'proboscis', 'mandible', 'radula', 'jaw'] as const) {
+    for (const form of ['sprout', 'proboscis', 'mandible', 'radula', 'jaw', 'scavenger'] as const) {
       expect(cfg.anatomy.mouthForms[form][CARRION_KIND]).toBe(cfg.predation.carcass.yields[form])
     }
     // Predation off, carcasses off, or kinds off: the very same object (negatives).
