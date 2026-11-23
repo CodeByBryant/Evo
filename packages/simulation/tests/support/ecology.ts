@@ -3,13 +3,16 @@ import { FREE_FOOD } from './food'
 
 /**
  * Mouth yields for food kinds a test makes up (ADR 0026: every form has to say what it yields for every
- * kind a world grows): every form takes them whole (1), except the jaw, which eats no plant.
+ * kind a world grows): every form takes them whole (1), except the jaw and the scavenger, which eat no plant.
  */
 export function eats(names: readonly string[]): NonNullable<WorldConfigOverrides['anatomy']> {
-  const forms = ['sprout', 'proboscis', 'mandible', 'radula', 'jaw'] as const
+  const forms = ['sprout', 'proboscis', 'mandible', 'radula', 'jaw', 'scavenger'] as const
   return {
     mouthForms: Object.fromEntries(
-      forms.map((form) => [form, Object.fromEntries(names.map((n) => [n, form === 'jaw' ? 0 : 1]))])
+      forms.map((form) => [
+        form,
+        Object.fromEntries(names.map((n) => [n, form === 'jaw' || form === 'scavenger' ? 0 : 1]))
+      ])
     ) as never
   }
 }

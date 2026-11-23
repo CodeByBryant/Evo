@@ -223,15 +223,45 @@ export const SURFACE_PARTS: Readonly<Record<PartType, boolean>> = {
 /**
  * The mouth forms, ordered along a diet axis so that gene noise moves between neighbours: a grazer's
  * sprout, a nectar-sipping proboscis, the generalist mandible (the founder's), a fungus-scraping
- * radula and a carnivore's jaw. A mouth's `form` stat picks one by `floor(gene * 5)`.
+ * radula and a carnivore's jaw; then the scavenger (ADR 0031), appended so every older form keeps its
+ * index. A mouth's `form` stat picks one of the first five by `floor(gene * 5)`; the scavenger is a
+ * narrow band at the very top of the jaw's, and only when `anatomy.scavenger.enabled`.
  */
-export const MOUTH_FORMS = ['sprout', 'proboscis', 'mandible', 'radula', 'jaw'] as const
+export const MOUTH_FORMS = [
+  'sprout',
+  'proboscis',
+  'mandible',
+  'radula',
+  'jaw',
+  'scavenger'
+] as const
 export type MouthForm = (typeof MOUTH_FORMS)[number]
 
-/** The form a `form` gene selects. */
-export function mouthFormOf(gene: number): MouthForm {
-  const index = Math.min(MOUTH_FORMS.length - 1, Math.max(0, Math.floor(gene * MOUTH_FORMS.length)))
+/** How many of `MOUTH_FORMS` share the 0 to 1 range evenly (all but the scavenger). */
+const EVEN_FORMS = 5
+
+/**
+ * The form a `form` gene selects. A gene at or above `scavengerFrom` is a scavenger; the default
+ * (infinity, which `scavengerFromOf` gives while the switch is off) keeps the five even bands exactly
+ * as they were: 0.97 is a jaw until the scavenger is on.
+ */
+export function mouthFormOf(gene: number, scavengerFrom: number = Infinity): MouthForm {
+  if (gene >= scavengerFrom) return 'scavenger'
+  const index = Math.min(EVEN_FORMS - 1, Math.max(0, Math.floor(gene * EVEN_FORMS)))
   return MOUTH_FORMS[index] as MouthForm
+}
+
+/** The `scavengerFrom` to pass `mouthFormOf` for a configuration: its band start when on, infinity when off. */
+export function scavengerFromOf(anatomy: { readonly scavenger: ScavengerConfig }): number {
+  return anatomy.scavenger.enabled ? anatomy.scavenger.from : Infinity
+}
+
+/** The scavenger mouth (ADR 0031): a carrion-only specialist, switched off until measured. */
+export interface ScavengerConfig {
+  /** Off: the form never occurs (a gene in its band is a jaw, as before). */
+  enabled: boolean
+  /** The gene value from which a mouth is a scavenger, in `(0.8, 1]` (the jaw's band starts at 0.8). */
+  from: number
 }
 
 /** The stat that gives a part a length along its axis, in body radii (children attach along it); parts without one have none. */
@@ -721,6 +751,8 @@ export interface AnatomyConfig {
    * counts as 1). The mandible is the generalist and must be 1 everywhere so the founder is exactly neutral.
    */
   mouthForms: Record<MouthForm, Record<string, number>>
+  /** The scavenger mouth (ADR 0031). */
+  scavenger: ScavengerConfig
 }
 
 /** Overrides merge field by field; `parts` merges per type, and `founder` and `starters` are replaced whole. */
@@ -739,6 +771,7 @@ export interface AnatomyConfigOverrides {
   startingBody?: Partial<StartingBodyConfig>
   outlineDrag?: number
   mouthForms?: { [F in MouthForm]?: Record<string, number> }
+  scavenger?: Partial<ScavengerConfig>
 }
 
 /** What `World.anatomyOf` hands out: the developed body, its raw capabilities, and them relative to the founder. */

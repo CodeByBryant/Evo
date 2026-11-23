@@ -2,6 +2,7 @@ import {
   CARRIER_PART_TYPES,
   PART_STATS,
   mouthFormOf,
+  scavengerFromOf,
   statMultiplier,
   statValue
 } from '@evo/contracts'
@@ -275,7 +276,8 @@ export function capabilitiesOf(
         biteSize += p * mult(part, 'gape')
         biteRate += p * mult(part, 'rate')
         mouthPower += p
-        const yields = config.mouthForms[mouthFormOf(part.stats[2] as number)]
+        const yields =
+          config.mouthForms[mouthFormOf(part.stats[2] as number, scavengerFromOf(config))]
         for (let kind = 0; kind < dietSum.length; kind++) {
           const name = kindNames[kind]
           dietSum[kind] =

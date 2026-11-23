@@ -31,7 +31,7 @@ export interface PartSnapshot {
   readonly functional: boolean
   /** How far the part reaches along its axis, in world units (zero for a part with no length): a stalk, a join, a skeleton. */
   readonly length: number
-  /** Which form of its type it is: a mouth's index in `MOUTH_FORMS` (sprout 0 to jaw 4); 0 for every other type. */
+  /** Which form of its type it is: a mouth's index in `MOUTH_FORMS` (sprout 0 to scavenger 5); 0 for every other type. */
   readonly form: number
 }
 

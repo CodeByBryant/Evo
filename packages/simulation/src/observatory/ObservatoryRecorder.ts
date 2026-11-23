@@ -1,4 +1,4 @@
-import { BODY_SLOT_COUNT, BRAIN_INPUT_GROUPS, PART_TYPES } from '@evo/contracts'
+import { BODY_SLOT_COUNT, BRAIN_INPUT_GROUPS, PART_TYPES, scavengerFromOf } from '@evo/contracts'
 import type {
   BrainInputGroup,
   EntityId,
@@ -171,7 +171,7 @@ export class ObservatoryRecorder {
 
     for (const o of living) {
       const anatomy = developAnatomy(o.genome.body.genes, config.anatomy)
-      const key = bodySignature(anatomy.parts)
+      const key = bodySignature(anatomy.parts, scavengerFromOf(config.anatomy))
       signatures.set(key, (signatures.get(key) ?? 0) + 1)
       bodies.push(o.genome.body.genes)
       const c = bodyComplexity(anatomy.parts)

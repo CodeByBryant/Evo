@@ -25,24 +25,24 @@ The first ten are the original parts; the last six (eyestalk, gyro, lipid, phero
 
 A body has 12 slots; each is empty or holds one part. The types are in the order of the `type` gene. Besides `size`, every part carries up to six per-type **stats** (ADR 0016):
 
-| Type        | Stats (in gene order)                                                                                            |
-| ----------- | ---------------------------------------------------------------------------------------------------------------- |
-| `flagellum` | length, thickness, force, efficiency                                                                             |
-| `cilia`     | length, density, rate                                                                                            |
-| `eye`       | range, resolution, field of view (a cone about the eye's axis; narrower reaches further, see Directional vision) |
-| `sniffer`   | range, sensitivity, selectivity (which food kind)                                                                |
-| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw; the jaw is meat only), bite rate                    |
-| `intestine` | length, absorption, filter                                                                                       |
-| `stomach`   | capacity, throughput                                                                                             |
-| `armor`     | thickness, coverage, hardness                                                                                    |
-| `membrane`  | insulation, thickness                                                                                            |
-| `mender`    | rate, efficiency                                                                                                 |
-| `eyestalk`  | length, stiffness                                                                                                |
-| `gyro`      | stability                                                                                                        |
-| `lipid`     | reserve                                                                                                          |
-| `pheromone` | potency                                                                                                          |
-| `skeleton`  | rigidity, length                                                                                                 |
-| `join`      | length, flexibility                                                                                              |
+| Type        | Stats (in gene order)                                                                                                                                                           |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flagellum` | length, thickness, force, efficiency                                                                                                                                            |
+| `cilia`     | length, density, rate                                                                                                                                                           |
+| `eye`       | range, resolution, field of view (a cone about the eye's axis; narrower reaches further, see Directional vision)                                                                |
+| `sniffer`   | range, sensitivity, selectivity (which food kind)                                                                                                                               |
+| `mouth`     | reach, gape, form (sprout, proboscis, mandible, radula, jaw; the jaw is meat only; with `anatomy.scavenger` on, a sixth, the scavenger, eats carrion only, ADR 0031), bite rate |
+| `intestine` | length, absorption, filter                                                                                                                                                      |
+| `stomach`   | capacity, throughput                                                                                                                                                            |
+| `armor`     | thickness, coverage, hardness                                                                                                                                                   |
+| `membrane`  | insulation, thickness                                                                                                                                                           |
+| `mender`    | rate, efficiency                                                                                                                                                                |
+| `eyestalk`  | length, stiffness                                                                                                                                                               |
+| `gyro`      | stability                                                                                                                                                                       |
+| `lipid`     | reserve                                                                                                                                                                         |
+| `pheromone` | potency                                                                                                                                                                         |
+| `skeleton`  | rigidity, length                                                                                                                                                                |
+| `join`      | length, flexibility                                                                                                                                                             |
 
 | Type        | Feeds                      | Needs       | Provides    | Default mass / upkeep / strength |
 | ----------- | -------------------------- | ----------- | ----------- | -------------------------------- |
@@ -149,6 +149,10 @@ An eye sees a cone about its axis (its `orientation` placed on the outline), not
 - **Range for angle.** A cone narrower than all-round reaches further: `1 + effects.visionNarrowing * (sqrt(6.28 / fov) - 1)` times the sense range, so a 90 degree eye reaches about twice as far. `visionNarrowing` runs from 0 (no trade) to 1.
 - **The founder's eye is a 135 degree forward cone** (field of view 2.356 radians, looking straight ahead): it reaches about 1.63 times the sensor radius, and the sector covers the same area as the old full circle, so a stationary creature sees as much ground as before but only the ground it faces. A body whose eyes are all all-round, or that has no eye, is `omni` and takes the plain circle path (the test helper `ALL_ROUND` is the founder as it was). Evolution can widen or narrow the cone; two narrow eyes on opposite sides cover both ends and the sides stay blind.
 - A creature sees through the nearest-first rule inside its cones: the nearest visible food, the nearest visible peer, the nearest visible hazard edge.
+
+## The scavenger mouth (ADR 0031, off)
+
+A sixth mouth form, the scavenger, is built and switched off (`anatomy.scavenger.enabled`): a narrow band (mouth stat 0.95 and up) at the top of the jaw's, eating carrion at 1.6 and nothing else (no plant, creature or egg). Measured, it cannot live: a founder group of 2, 4 or 8 of 20 left a scavenger lineage alive at 30,000 ticks in 0 of 16 worlds each (4 and 8 founders lost 1 and 4 worlds), a ceiling arm with every carrion lever at its limit kept 0 of 8, and by emergence in the default world there were 5 births and 0 of 8 worlds with one alive at 100,000 ticks. Carrion is what dying bodies leave and most die starved and empty, so the niche is thin by construction. [ADR 0031](../decisions/0031-scavenger-mouth.md) has the table and what could make it viable.
 
 ## Limbs and stacking (ADR 0029)
 

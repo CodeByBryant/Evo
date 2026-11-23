@@ -695,6 +695,7 @@ function mergeAnatomy(base: object, override: unknown): unknown {
       ? mergeNamed(defaults['parts'] as Record<string, object>, parts)
       : mergeSection(defaults['parts'] as object, parts),
     effects: mergeSection(defaults['effects'] as object, override['effects']),
+    scavenger: mergeSection(defaults['scavenger'] as object, override['scavenger']),
     mouthForms: isObject(override['mouthForms'])
       ? mergeNamed(defaults['mouthForms'] as Record<string, object>, override['mouthForms'])
       : mergeSection(defaults['mouthForms'] as object, override['mouthForms'])

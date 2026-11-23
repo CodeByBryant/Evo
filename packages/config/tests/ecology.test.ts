@@ -68,9 +68,9 @@ describe('ecology config', () => {
       }
       // every mouth form has to say what it yields for the new kind (ADR 0026)
       const mouthForms = Object.fromEntries(
-        ['sprout', 'proboscis', 'mandible', 'radula', 'jaw'].map((f) => [
+        ['sprout', 'proboscis', 'mandible', 'radula', 'jaw', 'scavenger'].map((f) => [
           f,
-          { moss: f === 'jaw' ? 0 : 1 }
+          { moss: f === 'jaw' || f === 'scavenger' ? 0 : 1 }
         ])
       )
       const config = resolveWorldConfig({

@@ -8,7 +8,7 @@ import {
   PART_TYPES
 } from '@evo/contracts'
 import type { AnatomyConfig } from '@evo/contracts'
-import { checkChoice, checkNumber, checkSection, isObject } from './checks'
+import { checkBoolean, checkChoice, checkNumber, checkSection, isObject } from './checks'
 import { DEFAULT_STARTERS } from './starters'
 import type { PlainObject } from './checks'
 
@@ -195,8 +195,12 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     proboscis: { grass: 0.6, fruit: 1.15, fungus: 0.7, nectar: 1.5 },
     mandible: { grass: 1, fruit: 1, fungus: 1, nectar: 1 },
     radula: { grass: 0.9, fruit: 0.8, fungus: 1.4, nectar: 0.5 },
-    jaw: { grass: 0, fruit: 0, fungus: 0, nectar: 0 }
-  }
+    jaw: { grass: 0, fruit: 0, fungus: 0, nectar: 0 },
+    // The scavenger takes nothing from a plant (ADR 0031); its carrion yield is in `predation.carcass.yields`.
+    scavenger: { grass: 0, fruit: 0, fungus: 0, nectar: 0 }
+  },
+  // Off until measured: with it off a mouth gene in the scavenger's band is a jaw, as before (ADR 0031).
+  scavenger: { enabled: false, from: 0.95 }
 }
 
 const ANATOMY_KEYS = [
@@ -213,7 +217,8 @@ const ANATOMY_KEYS = [
   'starters',
   'startingBody',
   'outlineDrag',
-  'mouthForms'
+  'mouthForms',
+  'scavenger'
 ]
 const MUTATION_KEYS = [
   'presenceRate',
@@ -380,6 +385,20 @@ export function checkAnatomy(root: PlainObject, errors: string[]): void {
 
   checkNumber(anatomy, 'outlineDrag', 'anatomy.outlineDrag', { nonnegative: true }, errors)
 
+  const scavenger = checkSection(
+    anatomy,
+    'scavenger',
+    ['enabled', 'from'],
+    errors,
+    'anatomy.scavenger'
+  )
+  if (scavenger) {
+    checkBoolean(scavenger, 'enabled', 'anatomy.scavenger.enabled', errors)
+    const from = scavenger['from']
+    if (typeof from !== 'number' || !Number.isFinite(from) || !(from > 0.8 && from <= 1)) {
+      errors.push('anatomy.scavenger.from must be above 0.8 (the jaw starts there) and at most 1')
+    }
+  }
   const forms = checkSection(anatomy, 'mouthForms', [...MOUTH_FORMS], errors, 'anatomy.mouthForms')
   if (forms) {
     for (const form of MOUTH_FORMS) {

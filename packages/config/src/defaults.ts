@@ -436,7 +436,7 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
     biteEnergy: 12,
     trophicYield: 0.6,
     maxPreyRatio: 1.5,
-    fleshYield: { sprout: 0, proboscis: 0, mandible: 0, radula: 0, jaw: 1 },
+    fleshYield: { sprout: 0, proboscis: 0, mandible: 0, radula: 0, jaw: 1, scavenger: 0 },
     attackWindow: 3,
     carcass: {
       enabled: true,
@@ -448,7 +448,8 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       hardness: 1,
       // Meat is the jaw's alone (ADR 0026, the owner's decision): every other mouth form yields exactly 0, so
       // it neither bites a carcass nor sees one. It used to be eaten by everyone (jaws got 5 percent of it).
-      yields: { sprout: 0, proboscis: 0, mandible: 0, radula: 0, jaw: 1.2 }
+      // The scavenger (ADR 0031, off by default) digests carrion better than the jaw, which also hunts.
+      yields: { sprout: 0, proboscis: 0, mandible: 0, radula: 0, jaw: 1.2, scavenger: 1.6 }
     }
   },
   // Another creature's body hides what is behind it (ADR 0016 "Line of sight"); a creature checks
