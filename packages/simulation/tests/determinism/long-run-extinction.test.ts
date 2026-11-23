@@ -52,8 +52,10 @@ describe('extinction over a long run', () => {
         // 15 to 27 creatures are alive through 100,000 ticks with lipid stores, intestines and
         // pheromone glands among their parts. This test is about extinction, so it keeps the world
         // that goes extinct, and the old mutation reproduces that world's extinction (tick 10,231 for seed 5 before step two).
+        // A part hung on a tail delivers full power, as when this tick was measured (ADR 0030).
         anatomy: {
           ...ALL_ROUND.anatomy,
+          effects: { limbEfficiency: 1 },
           mutation: { openTypes: false, presenceRate: 0.004, typeRate: 0.004 }
         },
         organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 15 },

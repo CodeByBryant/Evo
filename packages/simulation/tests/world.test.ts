@@ -177,6 +177,8 @@ describe('scenario A: stable foraging (roadmap testing scenario A)', () => {
       config: withoutEcology({
         ...PHASE3_ECONOMY,
         ...ALL_ROUND,
+        // A part hung on a tail delivers full power, as when these numbers were measured (ADR 0030).
+        anatomy: { ...ALL_ROUND.anatomy, effects: { limbEfficiency: 1 } },
         organisms: { ...PHASE3_ECONOMY.organisms, initialCount: 10 },
         learning: { controller: 'reflex' },
         feeding: { enabled: false },

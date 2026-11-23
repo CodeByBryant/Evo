@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { resolveWorldConfig } from '@evo/config'
+import { CARRIER_PART_TYPES } from '@evo/contracts'
 import type { AnatomyConfig, FounderPart, PartType } from '@evo/contracts'
 import { capabilitiesOf } from '../../src/development/capabilities'
 import { developAnatomy } from '../../src/development/develop'
@@ -105,24 +106,33 @@ describe('limbEfficiency', () => {
     )
   })
 
-  it('1 is the old behaviour for every body of a living world (property)', () => {
-    const world = World.create({ seed: 4 })
+  it('a body with no part hung on a tail is unchanged at any value (property over a living world)', () => {
+    const world = World.create({ seed: 4, config: { anatomy: { effects: { limbEfficiency: 1 } } } })
     world.run(3000)
-    const explicit = configWith(1)
-    const plain = resolveWorldConfig({ anatomy: { structuralBudget: 40 } }).anatomy
+    const one = configWith(1)
+    const quarter = configWith(0.25)
+    let checked = 0
     for (const o of world.snapshot().organisms) {
       const view = world.anatomyOf(o.id)
       if (view === undefined) continue
-      expect(capabilitiesOf(view.anatomy, explicit, 1, 4, [])).toEqual(
-        capabilitiesOf(view.anatomy, plain, 1, 4, [])
+      const typeOf = new Map(view.anatomy.parts.map((p) => [p.slot, p.type]))
+      const hung = view.anatomy.parts.some((p) => {
+        const parent = p.parent >= 0 ? typeOf.get(p.parent) : undefined
+        return parent !== undefined && !CARRIER_PART_TYPES.includes(parent)
+      })
+      if (hung) continue
+      checked++
+      expect(capabilitiesOf(view.anatomy, quarter, 1, 4, [])).toEqual(
+        capabilitiesOf(view.anatomy, one, 1, 4, [])
       )
     }
+    expect(checked).toBeGreaterThan(10)
   })
 })
 
 describe('limbEfficiency configuration', () => {
-  it('defaults to 1 and accepts anything above 0 up to 1; rejects the rest (negatives)', () => {
-    expect(resolveWorldConfig({}).anatomy.effects.limbEfficiency).toBe(1)
+  it('defaults to a quarter and accepts anything above 0 up to 1; rejects the rest (negatives)', () => {
+    expect(resolveWorldConfig({}).anatomy.effects.limbEfficiency).toBe(0.25)
     const set = (v: number) => () =>
       resolveWorldConfig({ anatomy: { effects: { limbEfficiency: v } } } as never)
     expect(set(0.5)).not.toThrow()
@@ -148,7 +158,7 @@ describe('a world with limbEfficiency 0.5', () => {
   })
 
   it('is the world without it while no body hangs a part on a tail (negative: founders have none)', () => {
-    const plain = World.create({ seed: 4 })
+    const plain = World.create({ seed: 4, config: { anatomy: { effects: { limbEfficiency: 1 } } } })
     const cut = World.create({ seed: 4, config })
     plain.run(300)
     cut.run(300)

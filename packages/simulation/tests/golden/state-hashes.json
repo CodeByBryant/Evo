@@ -12,6 +12,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -80,6 +83,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -180,6 +186,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -272,6 +281,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -384,6 +396,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -457,6 +472,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -569,6 +587,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -609,6 +630,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -704,6 +728,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -797,6 +824,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -910,6 +940,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -980,6 +1013,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1073,6 +1109,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1166,6 +1205,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1263,6 +1305,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1323,6 +1368,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1391,6 +1439,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1472,6 +1523,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1539,6 +1593,9 @@
           },
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "genetics": {
@@ -1614,6 +1671,9 @@
           },
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "genetics": {
@@ -1693,6 +1753,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "resources": {
@@ -1765,6 +1828,9 @@
         "anatomy": {
           "startingBody": {
             "mode": "reference"
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "resources": {
@@ -1826,6 +1892,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1891,6 +1960,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -1956,6 +2028,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "learning": {
@@ -2030,6 +2105,9 @@
             "typeRate": 0.1,
             "continuousRate": 0.3,
             "visualRate": 0.5
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "genetics": {
@@ -2100,6 +2178,9 @@
             "mode": "archetypes",
             "archetype": "grazer",
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -2167,6 +2248,9 @@
             "mode": "archetypes",
             "archetype": "fungus-scraper",
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -2234,6 +2318,9 @@
             "mode": "archetypes",
             "archetype": "tank",
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -2299,6 +2386,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "resources": {
@@ -2364,6 +2454,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "learning": {
@@ -2434,6 +2527,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "resources": {
@@ -2499,6 +2595,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "learning": {
@@ -2591,6 +2690,9 @@
           "mutation": {
             "presenceRate": 0.05,
             "typeRate": 0.05
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "environment": {
@@ -2636,6 +2738,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "ecology": {
@@ -2677,6 +2782,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "ecology": {
@@ -2718,6 +2826,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "learning": {
@@ -2768,6 +2879,9 @@
             "typeRate": 0.1,
             "continuousRate": 0.3,
             "visualRate": 0.5
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "genetics": {
@@ -2812,6 +2926,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "resources": {
@@ -2861,6 +2978,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "reproduction": {
@@ -2897,6 +3017,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "reproduction": {
@@ -2933,6 +3056,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "learning": {
@@ -2978,6 +3104,9 @@
             "typeRate": 0.1,
             "continuousRate": 0.3,
             "visualRate": 0.5
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "genetics": {
@@ -3017,6 +3146,9 @@
         "anatomy": {
           "startingBody": {
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "resources": {
@@ -3074,6 +3206,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "anatomy": {
+          "effects": {
+            "limbEfficiency": 1
+          }
         }
       },
       "steps": 1000,
@@ -3102,6 +3239,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "anatomy": {
+          "effects": {
+            "limbEfficiency": 1
+          }
         }
       },
       "steps": 12000,
@@ -3133,6 +3275,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "anatomy": {
+          "effects": {
+            "limbEfficiency": 1
+          }
         }
       },
       "steps": 8000,
@@ -3148,6 +3295,9 @@
             "typeRate": 0.1,
             "continuousRate": 0.3,
             "visualRate": 0.5
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "genetics": {
@@ -3208,6 +3358,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "anatomy": {
+          "effects": {
+            "limbEfficiency": 1
+          }
         }
       },
       "steps": 4000,
@@ -3222,6 +3377,9 @@
             "mode": "archetypes",
             "archetype": "hunter",
             "groups": []
+          },
+          "effects": {
+            "limbEfficiency": 1
           }
         },
         "reproduction": {
@@ -3251,7 +3409,13 @@
     {
       "name": "life-cycle-default-6k",
       "seed": 12345,
-      "config": {},
+      "config": {
+        "anatomy": {
+          "effects": {
+            "limbEfficiency": 1
+          }
+        }
+      },
       "steps": 6000,
       "expectedHash": "7c69e82c652e7cfb05c5e3f6b7ebf67b"
     },
@@ -3261,6 +3425,11 @@
       "config": {
         "learning": {
           "controller": "reflex"
+        },
+        "anatomy": {
+          "effects": {
+            "limbEfficiency": 1
+          }
         }
       },
       "steps": 6000,
@@ -3277,10 +3446,1750 @@
           "mateChoice": {
             "enabled": false
           }
+        },
+        "anatomy": {
+          "effects": {
+            "limbEfficiency": 1
+          }
         }
       },
       "steps": 6000,
       "expectedHash": "a202844ea17489c6b579abaabc4debea"
+    },
+    {
+      "name": "limb-default-6k",
+      "seed": 12345,
+      "config": {},
+      "steps": 6000,
+      "expectedHash": "7c69e82c652e7cfb05c5e3f6b7ebf67b"
+    },
+    {
+      "name": "limb-tailers-quarter-4k",
+      "seed": 3,
+      "config": {
+        "anatomy": {
+          "starters": [
+            {
+              "name": "grazer",
+              "description": "A sprout mouth and a roomy stomach: built for grass and fruit, the commonest food.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.1, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 1,
+                "accentHue": 0.3
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "nectar-sipper",
+              "description": "A long proboscis and a nose tuned to nectar: finds scarce, rich food by smell, with no side thrusters.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 1.0129,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.2703,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.23,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.7, 0.5, 0.3, 0.6, 0.5, 0.5]
+                },
+                {
+                  "type": "sniffer",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 0.9,
+                  "offset": 1,
+                  "orientation": 5.23,
+                  "integrity": 1,
+                  "stats": [0.6, 0.6, 0.875, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.4, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 2,
+                "accentHue": 0.85
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.98, 0.78, 0.66, 0.8, 0.8, 0.66, 0.78, 0.98, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8,
+                  0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "fungus-scraper",
+              "description": "A rasping radula and a filtering intestine: eats the toxic fungus the others avoid.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.728,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.5552,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.5526,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.7, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "intestine",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 2.5133,
+                  "offset": 0.4,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.6, 0.6, 0.85, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 3,
+                "accentHue": 0.6
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.86, 0.9, 0.86, 0.82, 0.82, 0.86, 0.9, 0.86, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8,
+                  0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "scout",
+              "description": "An eye on a stalk with a narrow, far-reaching view and three long tails: fast and sharp-sighted, with little in reserve.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.9637,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.55, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3195,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.55, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 3.1416,
+                  "offset": 0.8,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.55, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eyestalk",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 0.5,
+                  "offset": 1,
+                  "orientation": 5.1516,
+                  "integrity": 1,
+                  "stats": [0.7, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 4,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.7, 0.6, 0.15, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 2.1991,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.4, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 0,
+                "accentHue": 0.05
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  1, 0.74, 0.62, 0.72, 0.72, 0.62, 0.74, 1, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "tank",
+              "description": "Armour plating and a fat reserve behind two strong tails: slow, tough, and hard to starve or hurt.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.7854,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.75, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.4978,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.75, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "armor",
+                  "parent": 0,
+                  "size": 0.8,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.6, 0.6, 0.6, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "lipid",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.1416,
+                  "offset": 0.3,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.6, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4978,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.45, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 2.6704,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 1,
+                "accentHue": 0.55
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.92, 0.92, 0.9, 0.9, 0.9, 0.9, 0.92, 0.92, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "hunter",
+              "description": "The grazer with a hinged jaw: bites creatures as well as plants, and runs at smaller ones. Starts as a small group among the founders.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.9, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 2,
+                "accentHue": 0.98
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              },
+              "pool": false
+            },
+            {
+              "name": "omnivore-sprout",
+              "description": "The grazer with a hinged jaw beside its sprout mouth: grazes grass and fruit and bites creatures too. Starts as a small group among the founders.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.1, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 5.9332,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.9, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 2,
+                "accentHue": 0.08
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              },
+              "pool": false
+            },
+            {
+              "name": "omnivore-mandible",
+              "description": "The grazer with a mandible for any plant and a hinged jaw for creatures: eats everything. Starts as a small group among the founders.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 5.9332,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.9, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 2,
+                "accentHue": 0.14
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              },
+              "pool": false
+            },
+            {
+              "name": "tailer",
+              "description": "The grazer with its mouth on the tip of a flagellum at its nose.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [1, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 7,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.1, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 1,
+                "accentHue": 0.3
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              },
+              "pool": false
+            }
+          ],
+          "startingBody": {
+            "groups": [
+              {
+                "archetype": "hunter",
+                "share": 0.1
+              },
+              {
+                "archetype": "tailer",
+                "share": 0.4
+              }
+            ]
+          },
+          "effects": {
+            "limbEfficiency": 0.25
+          }
+        }
+      },
+      "steps": 4000,
+      "expectedHash": "ec79ee4fb0777ff28b274334c5e7f6d8"
+    },
+    {
+      "name": "limb-tailers-full-4k",
+      "seed": 3,
+      "config": {
+        "anatomy": {
+          "starters": [
+            {
+              "name": "grazer",
+              "description": "A sprout mouth and a roomy stomach: built for grass and fruit, the commonest food.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.1, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 1,
+                "accentHue": 0.3
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "nectar-sipper",
+              "description": "A long proboscis and a nose tuned to nectar: finds scarce, rich food by smell, with no side thrusters.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 1.0129,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.2703,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.23,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.7, 0.5, 0.3, 0.6, 0.5, 0.5]
+                },
+                {
+                  "type": "sniffer",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 0.9,
+                  "offset": 1,
+                  "orientation": 5.23,
+                  "integrity": 1,
+                  "stats": [0.6, 0.6, 0.875, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.4, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 2,
+                "accentHue": 0.85
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.98, 0.78, 0.66, 0.8, 0.8, 0.66, 0.78, 0.98, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8,
+                  0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "fungus-scraper",
+              "description": "A rasping radula and a filtering intestine: eats the toxic fungus the others avoid.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.728,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.5552,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.5526,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.7, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "intestine",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 2.5133,
+                  "offset": 0.4,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.6, 0.6, 0.85, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 3,
+                "accentHue": 0.6
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.86, 0.9, 0.86, 0.82, 0.82, 0.86, 0.9, 0.86, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8,
+                  0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "scout",
+              "description": "An eye on a stalk with a narrow, far-reaching view and three long tails: fast and sharp-sighted, with little in reserve.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.9637,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.55, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3195,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.55, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 3.1416,
+                  "offset": 0.8,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.55, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eyestalk",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 0.5,
+                  "offset": 1,
+                  "orientation": 5.1516,
+                  "integrity": 1,
+                  "stats": [0.7, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 4,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.7, 0.6, 0.15, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 2.1991,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.4, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 0,
+                "accentHue": 0.05
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  1, 0.74, 0.62, 0.72, 0.72, 0.62, 0.74, 1, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "tank",
+              "description": "Armour plating and a fat reserve behind two strong tails: slow, tough, and hard to starve or hurt.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.7854,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.75, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.4978,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.75, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "armor",
+                  "parent": 0,
+                  "size": 0.8,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.6, 0.6, 0.6, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "lipid",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.1416,
+                  "offset": 0.3,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.6, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4978,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.45, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 2.6704,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 1,
+                "accentHue": 0.55
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.92, 0.92, 0.9, 0.9, 0.9, 0.9, 0.92, 0.92, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              }
+            },
+            {
+              "name": "hunter",
+              "description": "The grazer with a hinged jaw: bites creatures as well as plants, and runs at smaller ones. Starts as a small group among the founders.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.9, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 2,
+                "accentHue": 0.98
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              },
+              "pool": false
+            },
+            {
+              "name": "omnivore-sprout",
+              "description": "The grazer with a hinged jaw beside its sprout mouth: grazes grass and fruit and bites creatures too. Starts as a small group among the founders.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.1, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 5.9332,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.9, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 2,
+                "accentHue": 0.08
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              },
+              "pool": false
+            },
+            {
+              "name": "omnivore-mandible",
+              "description": "The grazer with a mandible for any plant and a hinged jaw for creatures: eats everything. Starts as a small group among the founders.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 5.9332,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.9, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 2,
+                "accentHue": 0.14
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              },
+              "pool": false
+            },
+            {
+              "name": "tailer",
+              "description": "The grazer with its mouth on the tip of a flagellum at its nose.",
+              "parts": [
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 2.6,
+                  "offset": 0.8,
+                  "orientation": 0.8999,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.6,
+                  "angle": 3.6832,
+                  "offset": 0.8,
+                  "orientation": 5.3833,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 1.5708,
+                  "offset": 1,
+                  "orientation": 6.1576,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "cilia",
+                  "parent": 0,
+                  "size": 0.4,
+                  "angle": 4.7124,
+                  "offset": 1,
+                  "orientation": 0.1256,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "eye",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0.5,
+                  "offset": 0.8,
+                  "orientation": 5.4147,
+                  "integrity": 1,
+                  "stats": [0.5, 0.5, 0.3211, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "stomach",
+                  "parent": 0,
+                  "size": 0.7,
+                  "angle": 3.1416,
+                  "offset": 0.2,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.75, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "flagellum",
+                  "parent": 0,
+                  "size": 0.5,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [1, 0.5, 0.5, 0.5, 0.5, 0.5]
+                },
+                {
+                  "type": "mouth",
+                  "parent": 7,
+                  "size": 0.6,
+                  "angle": 0,
+                  "offset": 1,
+                  "orientation": 0,
+                  "integrity": 1,
+                  "stats": [0.5, 0.65, 0.1, 0.5, 0.5, 0.5]
+                }
+              ],
+              "look": {
+                "pattern": 1,
+                "accentHue": 0.3
+              },
+              "outline": {
+                "count": 8,
+                "radii": [
+                  0.9, 0.84, 0.8, 0.88, 0.88, 0.8, 0.84, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8
+                ],
+                "angles": [
+                  0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+                ]
+              },
+              "pool": false
+            }
+          ],
+          "startingBody": {
+            "groups": [
+              {
+                "archetype": "hunter",
+                "share": 0.1
+              },
+              {
+                "archetype": "tailer",
+                "share": 0.4
+              }
+            ]
+          },
+          "effects": {
+            "limbEfficiency": 1
+          }
+        }
+      },
+      "steps": 4000,
+      "expectedHash": "723fb3c3e557567a8ee17a19a20036ed"
     }
   ]
 }

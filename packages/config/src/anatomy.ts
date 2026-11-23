@@ -70,8 +70,8 @@ export const DEFAULT_ANATOMY: AnatomyConfig = {
     maxMouthOffset: 0,
     carrierParentsOnly: 0,
     limbUpkeep: 0,
-    // Off here; ADR 0030.
-    limbEfficiency: 1
+    // A part hung on a tail delivers a quarter of its power per tail (ADR 0030); 1 is off.
+    limbEfficiency: 0.25
   },
   // Every stat sits at the middle (0.5, a multiplier of 1) and every part has full integrity, so
   // the founder is the reference all capabilities are measured against. Surface parts sit on the
