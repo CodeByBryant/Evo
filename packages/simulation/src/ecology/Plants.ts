@@ -19,6 +19,21 @@ export function ringPhase(hubId: number): number {
 }
 
 /**
+ * A number in `[0, 1)` from a hash of `a`, `b` and `salt`: draw-free randomness for where a seed lands
+ * and what a germinating seed becomes (ADR 0032), the same arithmetic as `ringPhase`.
+ */
+export function unitHash(a: number, b: number, salt: number): number {
+  let h =
+    Math.imul(a | 0, 0x9e3779b1) ^ Math.imul(b | 0, 0x85ebca6b) ^ Math.imul(salt | 0, 0xc2b2ae35)
+  h ^= h >>> 16
+  h = Math.imul(h, 0x7feb352d)
+  h ^= h >>> 15
+  h = Math.imul(h, 0x846ca68b)
+  h ^= h >>> 16
+  return (h >>> 0) / 4294967296
+}
+
+/**
  * Where node `slot` (1 to `MAX_NODES`) of the hub at `(x, y)` sits: `distance` from the hub, the
  * slots spread evenly round the ring starting at the hub's phase, clamped into the world.
  */

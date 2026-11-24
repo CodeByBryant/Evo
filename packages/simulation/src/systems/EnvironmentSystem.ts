@@ -2,7 +2,9 @@ import type { WorldConfig } from '@evo/contracts'
 import type { IdGenerator } from '../entities/IdGenerator'
 import { HUB_SLOT, isNode } from '../entities/ResourceStore'
 import type { ResourceState, ResourceStore } from '../entities/ResourceStore'
-import { missingSlot, nodePosition } from '../ecology/Plants'
+import { cos, sin } from '../math/trig'
+import { missingSlot, nodePosition, ringPhase, unitHash } from '../ecology/Plants'
+import { SEED_KIND } from '../world/seedConfig'
 import type { EcologyModel } from '../ecology/EcologyModel'
 import type { ClusterLayout } from '../ecology/ClusterLayout'
 import type { FoodField } from '../ecology/FoodField'
@@ -56,7 +58,29 @@ export class EnvironmentSystem {
     private readonly foodField: FoodField | null = null,
     /** The static obstacles (ADR 0022): food and plants are never placed inside one that blocks movement. */
     private readonly obstacles: ObstacleField | null = null
-  ) {}
+  ) {
+    // Seeds (ADR 0032) exist when `withSeeds` appended their kind to this world's kinds.
+    this.seedKind = config.ecology.resourceKinds.enabled
+      ? config.ecology.resourceKinds.kinds.findIndex((k) => k.name === SEED_KIND)
+      : -1
+  }
+
+  /** The index of the `seed` kind, or `-1` when this world has no seeds. */
+  private readonly seedKind: number
+  /** Seeds on the field, counted once a tick by the plant pass and kept up to date within it. */
+  private seedCount = 0
+  /** Running totals, for probes (not saved, not hashed): seeds dropped, germinated, and rotted. */
+  private seedTotals = { dropped: 0, germinated: 0, rotted: 0 }
+
+  /** Seeds dropped, germinated and rotted so far, and seeds on the field now (a probe's view; not part of the state). */
+  get seedStats(): { dropped: number; germinated: number; rotted: number; alive: number } {
+    return { ...this.seedTotals, alive: this.seedCount }
+  }
+
+  /** Items that count toward `resources.maxCount`: everything but seeds, which have their own cap. */
+  private get itemCount(): number {
+    return this.resources.size - this.seedCount
+  }
 
   /**
    * Whether a site for an item of `kind` is inside, or too close to, an obstacle that blocks
@@ -324,6 +348,7 @@ export class EnvironmentSystem {
   /** Scratch for the plant pass: the hubs, and which node slots each has. */
   private readonly hubs: ResourceState[] = []
   private readonly present = new Map<number, number>()
+  private readonly seedList: ResourceState[] = []
 
   /**
    * One tick of plant life (ADR 0021), draw-free: each hub gains photosynthesis up to its capacity,
@@ -337,14 +362,20 @@ export class EnvironmentSystem {
     const dt = this.config.timestep
     const hubs = this.hubs
     const present = this.present
+    const seedList = this.seedList
     hubs.length = 0
+    seedList.length = 0
     present.clear()
+    const seedKind = this.seedKind
     this.resources.forEach((resource) => {
       if (resource.slot === HUB_SLOT) {
         hubs.push(resource)
         present.set(resource.id, 0)
+      } else if (resource.kind === seedKind) {
+        seedList.push(resource)
       }
     })
+    this.seedCount = seedList.length
     this.resources.forEach((resource) => {
       if (!isNode(resource)) return
       const mask = present.get(resource.parent as number)
@@ -370,6 +401,8 @@ export class EnvironmentSystem {
       const slot = missingSlot(present.get(hub.id) as number, plants.nodes)
       if (slot === 0) {
         hub.sproutProgress = 0
+        // A full plant with every node grown wastes what it gains: it drops a seed instead (ADR 0032).
+        if (seedKind >= 0 && hub.remaining >= capacity - 1e-9) this.dropSeed(hub, born, tick)
         continue
       }
       // The hub keeps a reserve so growing nodes never starves the plant itself.
@@ -380,7 +413,7 @@ export class EnvironmentSystem {
       const nodeEnergy = plants.nodeEnergyScale * kindEnergy
       let progress = (hub.sproutProgress ?? 0) + moved
       if (progress >= nodeEnergy - 1e-9) {
-        if (this.resources.size < this.config.resources.maxCount) {
+        if (this.itemCount < this.config.resources.maxCount) {
           this.addNode(hub, slot, tick)
           progress = Math.max(0, progress - nodeEnergy)
         } else {
@@ -389,7 +422,112 @@ export class EnvironmentSystem {
       }
       hub.sproutProgress = progress
     }
+    if (seedKind >= 0) alive += this.updateSeeds(tick, alive)
     return alive
+  }
+
+  /**
+   * A full plant's seed (ADR 0032), draw-free: every `seeds.interval` seconds of the plant's age, if
+   * seeds are below their cap and the hub can spare the energy without eating into its reserve,
+   * `seeds.energy` moves out of the hub's store into a seed that lands a way off, in a direction and
+   * at a distance taken from a hash of the hub and the tick. A landing site inside an obstacle that
+   * blocks movement skips the drop (the energy stays in the hub).
+   */
+  private dropSeed(hub: ResourceState, born: number, tick: number): void {
+    const seeds = this.config.resources.seeds
+    const intervalTicks = Math.max(1, Math.round(seeds.interval / this.config.timestep))
+    const age = tick - born
+    if (age <= 0 || age % intervalTicks !== 0 || this.seedCount >= seeds.maxCount) return
+    const plants = this.config.resources.plants
+    const capacity = plants.hubEnergyScale * this.energyOf(hub.kind)
+    if (hub.remaining - seeds.energy < HUB_RESERVE * capacity) return
+    const angle = ringPhase(hub.id + tick)
+    const distance =
+      seeds.dispersalMin + unitHash(hub.id, tick, 1) * (seeds.dispersalMax - seeds.dispersalMin)
+    const { width, height } = this.config.environment
+    const x = Math.min(width, Math.max(0, hub.x + distance * cos(angle)))
+    const y = Math.min(height, Math.max(0, hub.y + distance * sin(angle)))
+    const field = this.obstacles
+    if (field !== null && field.maxMovementRadius > 0) {
+      if (field.blocksMovementAt(x, y, this.radiusOf(this.seedKind) + 1)) return
+    }
+    hub.remaining -= seeds.energy
+    this.add(
+      {
+        id: this.ids.allocate(),
+        x,
+        y,
+        remaining: seeds.energy,
+        kind: this.seedKind,
+        bornTick: tick
+      },
+      tick
+    )
+    this.seedCount += 1
+    this.seedTotals.dropped += 1
+  }
+
+  /**
+   * What happens to the seeds on the field (ADR 0032), draw-free, in ascending id order: one past its
+   * `lifespan` rots (its energy is lost), and one past its `dormancy` that is not eaten becomes a plant
+   * where it lies, once a second, if the food pattern is dense enough there, plants are below their cap
+   * and the site is clear: the seed is removed and a hub with its energy as the store (and no nodes, they
+   * regrow) takes its place, of a kind that grows there (taken from a hash of the seed, never a draw).
+   * Returns the plants started this tick.
+   */
+  private updateSeeds(tick: number, plantsAlive: number): number {
+    const seeds = this.config.resources.seeds
+    const plants = this.config.resources.plants
+    const dt = this.config.timestep
+    const checkTicks = Math.max(1, Math.round(1 / dt))
+    const eco = this.ecology
+    let started = 0
+    for (const seed of this.seedList) {
+      const born = seed.bornTick ?? tick
+      const age = (tick - born) * dt
+      if (age >= seeds.lifespan) {
+        this.resources.remove(seed.id)
+        this.seedCount -= 1
+        this.seedTotals.rotted += 1
+        continue
+      }
+      if (!seeds.germinate || age < seeds.dormancy || (tick - born) % checkTicks !== 0) continue
+      if (plantsAlive + started >= plants.maxPlants) continue
+      if (this.itemCount >= this.config.resources.maxCount) continue
+      if (
+        this.foodField !== null &&
+        this.foodField.density(seed.x, seed.y, this.time) < seeds.germinateDensity
+      )
+        continue
+      if (this.blockedByObstacle(seed.x, seed.y, 0)) continue
+      let kind = -1
+      if (eco !== null) {
+        for (let attempt = 0; attempt < PLACEMENT_ATTEMPTS && kind < 0; attempt++) {
+          const candidate = eco.chooseKind(unitHash(seed.id, tick, attempt + 2))
+          if (eco.kindGrowsAt(candidate, seed.x, seed.y)) kind = candidate
+        }
+      }
+      if (kind < 0) continue
+      this.resources.remove(seed.id)
+      this.seedCount -= 1
+      this.seedTotals.germinated += 1
+      this.add(
+        {
+          id: this.ids.allocate(),
+          x: seed.x,
+          y: seed.y,
+          remaining: seed.remaining,
+          kind,
+          parent: 0,
+          slot: HUB_SLOT,
+          bornTick: tick,
+          sproutProgress: 0
+        },
+        tick
+      )
+      started += 1
+    }
+    return started
   }
 
   /** Spawns the initial population at world creation. Called once, at tick 0, from `World`. */
@@ -503,7 +641,7 @@ export class EnvironmentSystem {
       const plants = this.config.resources.plants
       const alive = this.updatePlants(tick, regeneration)
       const room = Math.floor(
-        Math.max(0, this.config.resources.maxCount - this.resources.size) / (1 + plants.nodes)
+        Math.max(0, this.config.resources.maxCount - this.itemCount) / (1 + plants.nodes)
       )
       const toPlant = Math.min(
         Math.floor(this.spawnAccumulator),

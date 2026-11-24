@@ -93,10 +93,11 @@ describe('colors', () => {
 
   it('parses hex to a number and cycles resource colors', () => {
     expect(hexToNumber('#ff8000')).toBe(0xff8000)
-    expect(resourceColor(0)).toBe(resourceColor(5))
-    expect(resourceColor(-1)).toBe(resourceColor(4))
-    // The fifth colour is the carcass of a world with predation (ADR 0023): not the colour of any food.
-    expect(new Set([0, 1, 2, 3, 4].map(resourceColor)).size).toBe(5)
+    expect(resourceColor(0)).toBe(resourceColor(6))
+    expect(resourceColor(-1)).toBe(resourceColor(5))
+    // The fifth colour is the carcass of a world with predation (ADR 0023) and the sixth a seed (ADR 0032):
+    // not the colour of any food, nor of each other.
+    expect(new Set([0, 1, 2, 3, 4, 5].map(resourceColor)).size).toBe(6)
     for (const color of Object.values(REGION_COLORS)) expect(color).toMatch(/^#[0-9a-f]{6}$/)
   })
 

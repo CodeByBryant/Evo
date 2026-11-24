@@ -93,6 +93,7 @@ export type {
   OrganismConfig,
   FoodDistributionConfig,
   PlantConfig,
+  SeedConfig,
   ResourceConfig,
   ResourceConfigOverrides,
   FeedingConfig,

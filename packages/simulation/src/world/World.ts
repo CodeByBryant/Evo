@@ -118,6 +118,7 @@ import { ReproductionSystem } from '../systems/ReproductionSystem'
 import { ClusterLayout } from '../ecology/ClusterLayout'
 import { effectiveConfig } from './clusterScaling'
 import { CARRION_KIND, withCarrion } from './predationConfig'
+import { withSeeds } from './seedConfig'
 import { checkInvariants } from './invariants'
 
 export interface WorldCreateOptions extends WorldOptions {
@@ -223,7 +224,7 @@ export class World {
     }
 
     this.seed = options.seed
-    this.config = withCarrion(effectiveConfig(resolveWorldConfig(options.config)))
+    this.config = withSeeds(withCarrion(effectiveConfig(resolveWorldConfig(options.config))))
     this.validateEveryTicks = options.validateEveryTicks
 
     this.clockImpl = new SimulationClock(this.config.timestep)
@@ -973,6 +974,11 @@ export class World {
   /** The current tick, simulated time, and timestep. Read-only: `step()` is the only mutator. */
   get clock(): ClockState {
     return this.clockImpl.state()
+  }
+
+  /** Seeds dropped, germinated and rotted so far and on the field now (ADR 0032): a probe's view, not part of the state or the hash. */
+  get seedStats(): { dropped: number; germinated: number; rotted: number; alive: number } {
+    return this.environmentSystem.seedStats
   }
 
   /** Whether the population has ever reached zero. Never becomes `false` again once `true`. */

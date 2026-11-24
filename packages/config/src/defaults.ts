@@ -89,6 +89,23 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       photosynthesis: 1.5,
       lifespan: 300,
       maxPlants: 60
+    },
+    // Seeds (ADR 0032), off until measured: a full plant drops a hard, dense seed that a mouth eats
+    // or that grows into a new plant. Yields are provisional; the mandible is exactly 1.
+    seeds: {
+      enabled: false,
+      energy: 20,
+      radius: 2,
+      hardness: 3,
+      interval: 20,
+      dispersalMin: 8,
+      dispersalMax: 40,
+      maxCount: 60,
+      germinate: true,
+      dormancy: 60,
+      germinateDensity: 0.35,
+      lifespan: 240,
+      yields: { sprout: 0.5, proboscis: 0.2, mandible: 1, radula: 1.3, jaw: 0, scavenger: 0 }
     }
   },
   reproduction: {

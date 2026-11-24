@@ -248,6 +248,42 @@ export interface PlantConfig {
   maxPlants: number
 }
 
+/**
+ * Seeds (ADR 0032), off by default. A **full, idle plant** (its store at capacity, every node grown)
+ * drops a seed every `interval` seconds: `energy` moves out of the hub's store, the energy that would
+ * have been wasted at the cap, into a small hard food item a short way off. A seed that is not eaten
+ * becomes a new plant where it lies after `dormancy` seconds if the food pattern is dense enough there
+ * (`germinate`), else it rots after `lifespan`. Seeds are an added food kind (`seed`, appended last) that
+ * a mouth form eats at its `yields`; the mandible is exactly 1. They have their own cap and are not
+ * counted in `maxCount`. Needs plants and food kinds on; field layout only.
+ */
+export interface SeedConfig {
+  enabled: boolean
+  /** Energy in one seed, taken from the dropping hub's store. */
+  energy: number
+  /** Seed radius in world units. */
+  radius: number
+  /** How hard a seed is to bite (a bite takes `biteSize / hardness` of it). */
+  hardness: number
+  /** Seconds between seeds from one full plant. */
+  interval: number
+  /** Nearest and farthest a seed lands from its plant, in world units. */
+  dispersalMin: number
+  dispersalMax: number
+  /** Most seeds on the field at once. */
+  maxCount: number
+  /** Whether an uneaten seed can grow into a plant. */
+  germinate: boolean
+  /** Seconds before a seed can germinate. */
+  dormancy: number
+  /** The least food-pattern density, in `[0, 1]`, at which a seed germinates. */
+  germinateDensity: number
+  /** Seconds before an ungerminated seed rots. */
+  lifespan: number
+  /** Energy yield of a seed for each mouth form; the mandible is exactly 1. */
+  yields: Record<MouthForm, number>
+}
+
 export interface ResourceConfig {
   initialCount: number
   /** Upper bound on simultaneously existing resources. */
@@ -264,12 +300,17 @@ export interface ResourceConfig {
   distribution: FoodDistributionConfig
   /** Renewable plants. */
   plants: PlantConfig
+  /** Seeds that plants drop (ADR 0032). */
+  seeds: SeedConfig
 }
 
-/** Overrides merge field by field; `distribution` and `plants` too. */
-export type ResourceConfigOverrides = Partial<Omit<ResourceConfig, 'distribution' | 'plants'>> & {
+/** Overrides merge field by field; `distribution`, `plants` and `seeds` too (`yields` by form). */
+export type ResourceConfigOverrides = Partial<
+  Omit<ResourceConfig, 'distribution' | 'plants' | 'seeds'>
+> & {
   distribution?: Partial<FoodDistributionConfig>
   plants?: Partial<PlantConfig>
+  seeds?: Partial<Omit<SeedConfig, 'yields'>> & { yields?: Partial<Record<MouthForm, number>> }
 }
 
 /**
