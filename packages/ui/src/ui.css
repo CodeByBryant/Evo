@@ -862,3 +862,66 @@ select.evo-input option {
 .evo-strip-deaths {
   min-width: 190px;
 }
+
+/* ---------- the settings editor ---------- */
+.evo-settings-group {
+  border-top: 1px solid var(--evo-line);
+  padding: 6px 0;
+}
+.evo-settings-group summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--evo-text);
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.evo-settings-group summary em {
+  font-style: normal;
+  color: var(--evo-warn);
+  font-size: 0.72rem;
+}
+.evo-setting {
+  display: grid;
+  grid-template-columns: 1fr 84px;
+  column-gap: 8px;
+  align-items: center;
+  margin: 6px 0;
+}
+.evo-setting-label {
+  font-size: 0.8rem;
+  color: var(--evo-muted);
+}
+.evo-setting-input {
+  text-align: right;
+  font-family: var(--evo-mono);
+  font-variant-numeric: tabular-nums;
+}
+.evo-setting-switch {
+  justify-self: end;
+}
+.evo-setting-note {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  align-items: baseline;
+}
+.evo-setting-reset {
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--evo-warn);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.evo-error {
+  color: var(--evo-bad);
+  font-size: 0.75rem;
+}
+.evo-settings-actions {
+  margin: 10px 0 4px;
+}

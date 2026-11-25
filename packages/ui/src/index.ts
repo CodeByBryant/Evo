@@ -13,6 +13,8 @@ export {
 } from './panels'
 export type { PanelName, PanelState } from './panels'
 export { Section } from './Section'
+export { SettingsPanel, planDraft, readDraft } from './SettingsPanel'
+export type { SettingsDraft } from './SettingsPanel'
 export {
   ClusterPanel,
   DeathCauses,

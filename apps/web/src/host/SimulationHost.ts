@@ -1,5 +1,13 @@
-import { DEFAULT_PRESET, PRESETS } from '@evo/config'
-import type { WorldPreset } from '@evo/config'
+import {
+  ConfigValidationError,
+  DEFAULT_PRESET,
+  PRESETS,
+  changesToOverrides,
+  diffAgainst,
+  mergeOverrides,
+  resolveWorldConfig
+} from '@evo/config'
+import type { SettingValue, WorldPreset } from '@evo/config'
 import { DEFAULT_RENDER_LAYERS } from '@evo/contracts'
 import type {
   ClusterLayoutSnapshot,
@@ -12,6 +20,7 @@ import type {
   RenderLayerName,
   RenderLayers,
   RenderSnapshot,
+  SettingsState,
   SimulationControls,
   SpeciesRow,
   SpeedSetting,
@@ -28,6 +37,8 @@ import {
   historyPointOf,
   lineageCounts
 } from './viewState'
+import { EMPTY_SETTINGS, buildSettingsState, errorsByPath } from './settings'
+import type { UrlState } from './url'
 
 /** Real time is 10 ticks a second (`timestep` 0.1 s), so `1x` means 10 ticks per second. */
 export const TICKS_PER_SECOND_AT_1X = 10
@@ -87,7 +98,15 @@ export interface HostOptions {
   /** Minimum milliseconds between updates of the interface state. */
   readonly viewIntervalMs?: number
   readonly speciesIntervalMs?: number
-  readonly onWorldChange?: (seed: number, preset: string) => void
+  /** Settings changed from the preset, from an address (validated; ones the world rejects are dropped and reported). */
+  readonly settings?: Readonly<Record<string, SettingValue>>
+  /** Address parameters that were not applied, for the settings panel to say so. */
+  readonly ignored?: number
+  readonly onWorldChange?: (
+    seed: number,
+    preset: string,
+    settings: Readonly<Record<string, SettingValue>>
+  ) => void
 }
 
 /**
@@ -103,13 +122,18 @@ export class SimulationHost implements SimulationControls {
   private readonly stepBudgetOption: number | null
   private readonly viewIntervalMs: number
   private readonly speciesIntervalMs: number
-  private readonly onWorldChange: ((seed: number, preset: string) => void) | undefined
+  private readonly onWorldChange:
+    | ((seed: number, preset: string, settings: Readonly<Record<string, SettingValue>>) => void)
+    | undefined
   private readonly presetList: readonly WorldPreset[]
   private readonly presets: readonly PresetOption[]
 
   private world!: World
   private seed = 0
   private preset = DEFAULT_PRESET
+  /** Settings changed from the preset's values, by dotted path (the world runs with them). */
+  private changes: Readonly<Record<string, SettingValue>> = {}
+  private settingsState: SettingsState = EMPTY_SETTINGS
   private speed: SpeedSetting
   private layers: RenderLayers
   private following = false
@@ -180,12 +204,24 @@ export class SimulationHost implements SimulationControls {
     this.newWorld = this.newWorld.bind(this)
     this.setSpeed = this.setSpeed.bind(this)
     this.setPreset = this.setPreset.bind(this)
+    this.applySettings = this.applySettings.bind(this)
+    this.resetSettings = this.resetSettings.bind(this)
     this.select = this.select.bind(this)
     this.setLayer = this.setLayer.bind(this)
     this.focusSelected = this.focusSelected.bind(this)
     this.toggleFollow = this.toggleFollow.bind(this)
     this.fitWorld = this.fitWorld.bind(this)
-    this.createWorld(options.seed ?? this.env.randomSeed(), preset)
+    const seed = options.seed ?? this.env.randomSeed()
+    const given = options.settings ?? {}
+    try {
+      this.createWorld(seed, preset, given, options.ignored ?? 0)
+    } catch (error) {
+      // A link whose settings the validation rejects still opens the world, with none of them, and says why.
+      if (!(error instanceof ConfigValidationError)) throw error
+      this.createWorld(seed, preset, {}, (options.ignored ?? 0) + Object.keys(given).length)
+      this.settingsState = { ...this.settingsState, errors: errorsByPath(error.errors) }
+      this.view = { ...this.view, settings: this.settingsState }
+    }
     if (options.autoStart ?? true) this.start()
   }
 
@@ -284,12 +320,12 @@ export class SimulationHost implements SimulationControls {
   }
 
   reset(): void {
-    this.createWorld(this.seed, this.preset)
+    this.createWorld(this.seed, this.preset, this.changes, 0)
     this.start()
   }
 
   newWorld(seed?: number): void {
-    this.createWorld(seed ?? this.env.randomSeed(), this.preset)
+    this.createWorld(seed ?? this.env.randomSeed(), this.preset, this.changes, 0)
     this.start()
   }
 
@@ -301,7 +337,55 @@ export class SimulationHost implements SimulationControls {
 
   setPreset(name: string): void {
     if (this.findPreset(name) === undefined || name === this.preset) return
-    this.createWorld(this.seed, name)
+    // The settings are changes from the old preset's values: against a new preset they mean nothing.
+    this.createWorld(this.seed, name, {}, 0)
+    this.start()
+  }
+
+  applySettings(changes: Readonly<Record<string, SettingValue>>): void {
+    this.rebuildWith(this.seed, this.preset, changes)
+  }
+
+  resetSettings(): void {
+    this.rebuildWith(this.seed, this.preset, {})
+  }
+
+  /**
+   * Opens the world an address names (a pasted or edited link): its seed and preset where it gives them,
+   * with its settings. Does nothing when it is the world already running; a link whose settings the
+   * validation rejects changes nothing and says why.
+   */
+  loadAddress(state: UrlState): void {
+    const preset =
+      state.preset !== undefined && this.findPreset(state.preset) !== undefined
+        ? state.preset
+        : this.preset
+    const seed = state.seed ?? this.seed
+    const settings = state.settings ?? {}
+    const same =
+      seed === this.seed &&
+      preset === this.preset &&
+      JSON.stringify(Object.entries(settings).sort()) ===
+        JSON.stringify(Object.entries(this.changes).sort())
+    if (same) return
+    this.rebuildWith(seed, preset, settings, state.ignored ?? 0)
+  }
+
+  /** Builds the world again with `changes`, or keeps the one running and reports why not. */
+  private rebuildWith(
+    seed: number,
+    preset: string,
+    changes: Readonly<Record<string, SettingValue>>,
+    ignored = 0
+  ): void {
+    try {
+      this.createWorld(seed, preset, changes, ignored)
+    } catch (error) {
+      if (!(error instanceof ConfigValidationError)) throw error
+      this.settingsState = { ...this.settingsState, errors: errorsByPath(error.errors) }
+      this.publishView(true)
+      return
+    }
     this.start()
   }
 
@@ -344,11 +428,29 @@ export class SimulationHost implements SimulationControls {
 
   // ---- internals -------------------------------------------------------------------------
 
-  private createWorld(seed: number, presetName: string): void {
+  /**
+   * Builds the world for `seed`, `presetName` and `changes` (settings changed from the preset). The
+   * configuration is resolved first, so one the validation rejects throws a `ConfigValidationError`
+   * before anything of the running world is touched.
+   */
+  private createWorld(
+    seed: number,
+    presetName: string,
+    changes: Readonly<Record<string, SettingValue>>,
+    ignored: number
+  ): void {
     const preset = this.findPreset(presetName) ?? this.findPreset(DEFAULT_PRESET)
+    const base = preset?.overrides ?? {}
+    const baseline = resolveWorldConfig(base)
+    const overrides = mergeOverrides(base, changesToOverrides(changes))
+    const current = resolveWorldConfig(overrides)
+    // Only what really differs from the preset counts as a change (a value put back is no change).
+    const kept = diffAgainst(baseline, current)
     this.seed = seed
     this.preset = preset?.name ?? DEFAULT_PRESET
-    this.world = World.create({ seed, config: preset?.overrides ?? {} })
+    this.changes = kept
+    this.settingsState = buildSettingsState(baseline, current, {}, ignored)
+    this.world = World.create({ seed, config: overrides })
     this.selectedId = null
     this.following = false
     this.viewport?.setFollow(false)
@@ -388,7 +490,7 @@ export class SimulationHost implements SimulationControls {
     }
     for (const listener of this.worldListeners) listener(this.worldInfo)
     this.publishFrame(true)
-    this.onWorldChange?.(this.seed, this.preset)
+    this.onWorldChange?.(this.seed, this.preset, this.changes)
   }
 
   private scheduleFrame(): void {
@@ -571,6 +673,7 @@ export class SimulationHost implements SimulationControls {
       startingBody: this.worldInfo.startingBody,
       startingGroups: this.worldInfo.startingGroups,
       presets: this.presets,
+      settings: this.settingsState,
       speed: this.speed,
       achievedTicksPerSecond: this.achieved,
       history: this.history,

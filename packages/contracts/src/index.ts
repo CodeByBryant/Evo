@@ -162,6 +162,8 @@ export type {
   SpeedSetting,
   RunStatus,
   PresetOption,
+  SettingField,
+  SettingsState,
   HistoryPoint,
   SpeciesRow,
   GeneRow,

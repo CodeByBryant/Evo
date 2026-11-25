@@ -1,5 +1,6 @@
 import { ACTION_LABELS, OBSERVATION_LABELS, PART_STATS } from '@evo/contracts'
 import type {
+  SettingsState,
   ClusterReport,
   EntityId,
   GeneRow,
@@ -231,6 +232,7 @@ export interface ViewInputs {
   readonly startingBody: string | null
   readonly startingGroups: ViewState['startingGroups']
   readonly presets: readonly PresetOption[]
+  readonly settings: SettingsState
   readonly speed: SpeedSetting
   readonly achievedTicksPerSecond: number
   readonly history: readonly HistoryPoint[]
@@ -253,6 +255,7 @@ export function buildViewState(inputs: ViewInputs): ViewState {
     startingBody: inputs.startingBody,
     startingGroups: inputs.startingGroups,
     presets: inputs.presets,
+    settings: inputs.settings,
     speed: inputs.speed,
     achievedTicksPerSecond: inputs.achievedTicksPerSecond,
     tick: snapshot.tick,
