@@ -3,6 +3,7 @@ import { DEFAULT_RENDER_LAYERS, MAX_SEED } from '@evo/contracts'
 import { World } from '@evo/simulation'
 import { DEFAULT_PREFS, loadPrefs, savePrefs } from '../src/host/prefs'
 import type { KeyValueStore } from '../src/host/prefs'
+import { SETTINGS, settingByPath } from '@evo/config'
 import { formatHash, parseHash, randomSeedFrom } from '../src/host/url'
 import {
   buildInspector,
@@ -42,6 +43,65 @@ describe('url hash', () => {
     expect(randomSeedFrom(() => 0)).toBe(0)
     expect(randomSeedFrom(() => MAX_SEED)).toBe(MAX_SEED)
     expect(randomSeedFrom(() => 123456)).toBe(123456)
+  })
+})
+
+describe('url hash settings', () => {
+  it('carries only the changed settings after seed and preset, in path order, and round-trips them', () => {
+    const changes = {
+      'resources.seeds.energy': 30,
+      'anatomy.scavenger.enabled': true,
+      'ageing.enabled': false,
+      'genetics.mutationRateScale': 1.5
+    }
+    const hash = formatHash(9, 'lush', changes)
+    expect(hash).toBe(
+      '#seed=9&preset=lush&ageing.enabled=0&anatomy.scavenger.enabled=1&genetics.mutationRateScale=1.5&resources.seeds.energy=30'
+    )
+    expect(parseHash(hash)).toEqual({ seed: 9, preset: 'lush', settings: changes })
+    // nothing changed: the hash is the old one, so old links and old tests are untouched
+    expect(formatHash(9, 'lush', {})).toBe('#seed=9&preset=lush')
+    expect(formatHash(9, 'lush')).toBe('#seed=9&preset=lush')
+  })
+
+  it('stays short and readable with ten changes', () => {
+    const paths = SETTINGS.slice(0, 10).map((s) => s.path)
+    const changes: Record<string, number | boolean> = {}
+    for (const path of paths) {
+      const setting = settingByPath(path)!
+      changes[path] = setting.kind === 'boolean' ? true : (setting.max as number)
+    }
+    expect(formatHash(123456789, 'balanced', changes).length).toBeLessThan(420)
+  })
+
+  it('ignores and counts what is not an editable setting or does not fit (negatives)', () => {
+    const state = parseHash(
+      '#seed=3&preset=lush' +
+        '&environment.width=5' + // a real configuration leaf, but not one the editor offers
+        '&__proto__.polluted=1' +
+        '&resources.seeds.energy=9999' + // out of range
+        '&resources.seeds.energy=abc' + // not a number
+        '&organisms.initialCount=20.5' + // not whole
+        '&ageing.enabled=maybe' + // not a switch
+        '&resources.spawnRate=0.5' // fine
+    )
+    expect(state.settings).toEqual({ 'resources.spawnRate': 0.5 })
+    expect(state.ignored).toBe(6)
+    expect(state.seed).toBe(3)
+    // nothing leaked onto Object
+    expect(({} as Record<string, unknown>)['polluted']).toBeUndefined()
+  })
+
+  it('takes the first of a repeated setting and counts the rest', () => {
+    const state = parseHash('#resources.spawnRate=0.5&resources.spawnRate=1')
+    expect(state.settings).toEqual({ 'resources.spawnRate': 0.5 })
+    expect(state.ignored).toBe(1)
+  })
+
+  it('leaves a path the editor does not offer out of a written hash (negative)', () => {
+    expect(formatHash(1, 'balanced', { 'environment.width': 5, 'ageing.enabled': false })).toBe(
+      '#seed=1&preset=balanced&ageing.enabled=0'
+    )
   })
 })
 
