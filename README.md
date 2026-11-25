@@ -39,7 +39,8 @@ The engine is headless. The browser app is a viewer and controller on top of it:
 | Look around         | Drag to pan, mouse wheel or pinch to zoom, `0` to fit the world                      |
 | Inspect an organism | Click it: energy, health, genome, what its brain senses and chooses, lineage, region |
 | Follow it           | `F`, or `Z` to focus once                                                            |
-| Share a world       | The address keeps the seed and preset (`#seed=7&preset=balanced`); send the link     |
+| Share a world       | The address keeps the seed, preset and any settings you changed; send the link       |
+| Change a setting    | The Settings section of the left rail: edit, then Apply (restarts the same seed)     |
 | Presets             | Balanced, Lush, Harsh, Rapid evolution, and Classic (no regions, seasons or hazards) |
 
 Worlds can end. If every organism dies, the app says so and offers a new world or a replay of the same seed.

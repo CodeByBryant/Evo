@@ -2,6 +2,8 @@
 
 `WorldConfig` (in `@evo/contracts`) describes everything that shapes a world except its **seed**. Defaults and validation live in `@evo/config`.
 
+The settings the interface lets a person change (about thirty, each with its range) are listed in `packages/config/src/settings.ts` (`SETTINGS`); a link can carry only those, by dotted path, and only inside those ranges (see [the web app](../architecture/web-app.md)). A test sets both ends of every range against this validation, so a range the editor offers is always one the validation accepts on its own; rules that tie two settings together are reported by path when a combination is applied.
+
 ```ts
 import { resolveWorldConfig } from '@evo/config'
 

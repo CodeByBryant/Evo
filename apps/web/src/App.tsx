@@ -8,6 +8,7 @@ import {
   LayerPanel,
   PANELS_OPEN,
   PanelToggles,
+  SettingsPanel,
   SpeciesPanel,
   StatsPanel,
   Strip,
@@ -130,6 +131,7 @@ export function App({ host }: { host: SimulationHost }): React.JSX.Element {
         {phone && <Dock view={view} controls={host} />}
         <Hud view={view} />
         <WorldPanel view={view} controls={host} />
+        <SettingsPanel view={view} controls={host} />
         <SpeciesPanel view={view} />
         <LayerPanel view={view} controls={host} />
         <StatsPanel view={view} />
