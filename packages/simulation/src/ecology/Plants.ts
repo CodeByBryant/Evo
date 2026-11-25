@@ -7,6 +7,9 @@ import { MAX_NODES } from '../entities/ResourceStore'
  * plant is turned a little differently and nothing is drawn from a random stream.
  */
 
+/** The name of the resource kind a seed is (ADR 0032); `world/seedConfig` appends the kind itself. */
+export const SEED_KIND = 'seed'
+
 const TWO_PI = Math.PI * 2
 
 /** The turn of a hub's ring, in radians `[0, 2 pi)`, from its id. */
@@ -16,6 +19,21 @@ export function ringPhase(hubId: number): number {
   h = Math.imul(h, 0x85ebca6b)
   h ^= h >>> 13
   return ((h >>> 0) / 4294967296) * TWO_PI
+}
+
+/**
+ * A number in `[0, 1)` from a hash of `a`, `b` and `salt`: draw-free randomness for where a seed lands
+ * and what a germinating seed becomes (ADR 0032), the same arithmetic as `ringPhase`.
+ */
+export function unitHash(a: number, b: number, salt: number): number {
+  let h =
+    Math.imul(a | 0, 0x9e3779b1) ^ Math.imul(b | 0, 0x85ebca6b) ^ Math.imul(salt | 0, 0xc2b2ae35)
+  h ^= h >>> 16
+  h = Math.imul(h, 0x7feb352d)
+  h ^= h >>> 15
+  h = Math.imul(h, 0x846ca68b)
+  h ^= h >>> 16
+  return (h >>> 0) / 4294967296
 }
 
 /**

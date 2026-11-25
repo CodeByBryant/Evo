@@ -150,6 +150,10 @@ An eye sees a cone about its axis (its `orientation` placed on the outline), not
 - **The founder's eye is a 135 degree forward cone** (field of view 2.356 radians, looking straight ahead): it reaches about 1.63 times the sensor radius, and the sector covers the same area as the old full circle, so a stationary creature sees as much ground as before but only the ground it faces. A body whose eyes are all all-round, or that has no eye, is `omni` and takes the plain circle path (the test helper `ALL_ROUND` is the founder as it was). Evolution can widen or narrow the cone; two narrow eyes on opposite sides cover both ends and the sides stay blind.
 - A creature sees through the nearest-first rule inside its cones: the nearest visible food, the nearest visible peer, the nearest visible hazard edge.
 
+## Seeds as food (ADR 0032)
+
+Plants drop seeds, a hard food (three times the bites of grass) every mouth form eats at its own yield: mandible 1, radula 1.3, sprout 0.5, proboscis 0.2, jaw and scavenger 0. A wide gape pays. Measured, worlds with seeds carry more mouth forms (3.4 against 2.4 alive at 100,000 ticks); see [ADR 0032](../decisions/0032-seeds.md).
+
 ## The scavenger mouth (ADR 0031, off)
 
 A sixth mouth form, the scavenger, is built and switched off (`anatomy.scavenger.enabled`): a narrow band (mouth stat 0.95 and up) at the top of the jaw's, eating carrion at 1.6 and nothing else (no plant, creature or egg). Measured, it cannot live: a founder group of 2, 4 or 8 of 20 left a scavenger lineage alive at 30,000 ticks in 0 of 16 worlds each (4 and 8 founders lost 1 and 4 worlds), a ceiling arm with every carrion lever at its limit kept 0 of 8, and by emergence in the default world there were 5 births and 0 of 8 worlds with one alive at 100,000 ticks. Carrion is what dying bodies leave and most die starved and empty, so the niche is thin by construction. [ADR 0031](../decisions/0031-scavenger-mouth.md) has the table and what could make it viable.

@@ -1,4 +1,4 @@
-import { MAX_SEED } from '@evo/contracts'
+import { MAX_SEED, MOUTH_FORMS } from '@evo/contracts'
 import type { ValidationResult, WorldConfig, WorldConfigOverrides } from '@evo/contracts'
 import { DEFAULT_WORLD_CONFIG } from './defaults'
 import {
@@ -72,7 +72,24 @@ const RESOURCE_KEYS = [
   'radius',
   'region',
   'distribution',
-  'plants'
+  'plants',
+  'seeds'
+]
+const SEED_KEYS = [
+  'enabled',
+  'energy',
+  'radius',
+  'hardness',
+  'interval',
+  'dispersalMin',
+  'dispersalMax',
+  'maxCount',
+  'germinate',
+  'dormancy',
+  'germinateShare',
+  'germinateDensity',
+  'lifespan',
+  'yields'
 ]
 const DISTRIBUTION_KEYS = ['mode', 'scale', 'contrast', 'floor', 'turnover']
 const PLANT_KEYS = [
@@ -332,6 +349,8 @@ export function validateWorldConfig(value: unknown): ValidationResult {
         errors
       )
     }
+    const seeds = checkSection(resources, 'seeds', SEED_KEYS, errors, 'resources.seeds')
+    if (seeds) checkSeeds(seeds, errors)
     if (initialCount !== undefined && maxCount !== undefined && initialCount > maxCount) {
       errors.push('resources.initialCount must not exceed resources.maxCount')
     }
@@ -664,7 +683,72 @@ function mergeEcology(base: object, override: unknown): unknown {
   return merged
 }
 
-/** Merges the resources section: `distribution` and `plants` merge field by field. */
+/** The seeds section (ADR 0032): positive amounts, a density in `[0, 1]`, a yield for every mouth form. */
+function checkSeeds(seeds: PlainObject, errors: string[]): void {
+  for (const key of ['enabled', 'germinate'] as const) {
+    if (typeof seeds[key] !== 'boolean') errors.push(`resources.seeds.${key} must be a boolean`)
+  }
+  for (const key of ['energy', 'radius', 'interval', 'lifespan'] as const) {
+    checkNumber(seeds, key, `resources.seeds.${key}`, { positive: true }, errors)
+  }
+  checkNumber(seeds, 'dormancy', 'resources.seeds.dormancy', { nonnegative: true }, errors)
+  checkNumber(
+    seeds,
+    'maxCount',
+    'resources.seeds.maxCount',
+    { integer: true, positive: true },
+    errors
+  )
+  const hardness = checkNumber(seeds, 'hardness', 'resources.seeds.hardness', {}, errors)
+  if (hardness !== undefined && hardness < 1)
+    errors.push('resources.seeds.hardness must be at least 1')
+  const near = checkNumber(
+    seeds,
+    'dispersalMin',
+    'resources.seeds.dispersalMin',
+    { nonnegative: true },
+    errors
+  )
+  const far = checkNumber(
+    seeds,
+    'dispersalMax',
+    'resources.seeds.dispersalMax',
+    { nonnegative: true },
+    errors
+  )
+  if (near !== undefined && far !== undefined && far < near) {
+    errors.push('resources.seeds.dispersalMax must be at least resources.seeds.dispersalMin')
+  }
+  const share = checkNumber(seeds, 'germinateShare', 'resources.seeds.germinateShare', {}, errors)
+  if (share !== undefined && (share < 0 || share > 1)) {
+    errors.push('resources.seeds.germinateShare must be from 0 to 1')
+  }
+  const density = checkNumber(
+    seeds,
+    'germinateDensity',
+    'resources.seeds.germinateDensity',
+    {},
+    errors
+  )
+  if (density !== undefined && (density < 0 || density > 1)) {
+    errors.push('resources.seeds.germinateDensity must be from 0 to 1')
+  }
+  const lifespan = seeds['lifespan']
+  const dormancy = seeds['dormancy']
+  if (typeof lifespan === 'number' && typeof dormancy === 'number' && lifespan <= dormancy) {
+    errors.push('resources.seeds.lifespan must be longer than resources.seeds.dormancy')
+  }
+  const yields = checkSection(seeds, 'yields', [...MOUTH_FORMS], errors, 'resources.seeds.yields')
+  if (yields) {
+    for (const form of MOUTH_FORMS) {
+      checkNumber(yields, form, `resources.seeds.yields.${form}`, { nonnegative: true }, errors)
+    }
+    // The mandible is the generalist and the founder's: it takes every food at exactly 1 (ADR 0017).
+    if (yields['mandible'] !== 1) errors.push('resources.seeds.yields.mandible must be exactly 1')
+  }
+}
+
+/** Merges the resources section: `distribution`, `plants` and `seeds` merge field by field (`yields` by form). */
 function mergeResources(base: object, override: unknown): unknown {
   if (override === undefined || !isObject(override)) return mergeSection(base, override)
   const defaults = base as Record<string, object>
@@ -672,7 +756,18 @@ function mergeResources(base: object, override: unknown): unknown {
     ...base,
     ...override,
     distribution: mergeSection(defaults['distribution'] as object, override['distribution']),
-    plants: mergeSection(defaults['plants'] as object, override['plants'])
+    plants: mergeSection(defaults['plants'] as object, override['plants']),
+    seeds: mergeSeeds(defaults['seeds'] as object, override['seeds'])
+  }
+}
+
+function mergeSeeds(base: object, override: unknown): unknown {
+  if (override === undefined || !isObject(override)) return mergeSection(base, override)
+  const defaults = base as Record<string, object>
+  return {
+    ...base,
+    ...override,
+    yields: mergeSection(defaults['yields'] as object, override['yields'])
   }
 }
 

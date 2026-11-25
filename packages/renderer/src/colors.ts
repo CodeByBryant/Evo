@@ -95,7 +95,9 @@ export const RESOURCE_COLORS: readonly string[] = [
   '#c9a0ff',
   '#ffd166',
   // The fifth kind exists only with predation: a carcass (ADR 0023), a dull red.
-  '#b5524a'
+  '#b5524a',
+  // The sixth is a seed (ADR 0032), a pale tan (with predation off a seed is the fifth kind and takes the red).
+  '#d9b36a'
 ]
 
 export function resourceColor(kind: number): string {

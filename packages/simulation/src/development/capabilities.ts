@@ -20,6 +20,7 @@ import type {
 } from '@evo/contracts'
 import { cos, sin } from '../math/trig'
 import { CARRION_KIND } from '../world/predationConfig'
+import { SEED_KIND } from '../world/seedConfig'
 
 /** Which food kind a sniffer favors: its selectivity (a gene in `[0, 1]`) spread over the kinds. */
 export function sniffedKind(selectivity: number, kindCount: number): number {
@@ -264,7 +265,8 @@ export function capabilitiesOf(
         // Selectivity is spread over the food kinds a world grows, not the carcass kind that predation
         // appends last: with it counted, the nectar sipper's selectivity (0.875, nectar with four kinds)
         // landed on carrion with five (ADR 0026).
-        const grown = kindNames.filter((name) => name !== CARRION_KIND).length
+        // Seeds (ADR 0032) are appended too and are left out the same way.
+        const grown = kindNames.filter((name) => name !== CARRION_KIND && name !== SEED_KIND).length
         const kind = sniffedKind(part.stats[2] as number, grown > 0 ? grown : detection.length)
         detection[kind] =
           (detection[kind] as number) + p * 0.5 * (mult(part, 'range') + mult(part, 'sensitivity'))
