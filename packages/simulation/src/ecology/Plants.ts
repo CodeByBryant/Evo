@@ -7,6 +7,9 @@ import { MAX_NODES } from '../entities/ResourceStore'
  * plant is turned a little differently and nothing is drawn from a random stream.
  */
 
+/** The name of the resource kind a seed is (ADR 0032); `world/seedConfig` appends the kind itself. */
+export const SEED_KIND = 'seed'
+
 const TWO_PI = Math.PI * 2
 
 /** The turn of a hub's ring, in radians `[0, 2 pi)`, from its id. */

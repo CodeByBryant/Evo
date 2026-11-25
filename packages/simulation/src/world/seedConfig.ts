@@ -1,8 +1,9 @@
 import type { MouthForm, ResourceKindConfig, WorldConfig } from '@evo/contracts'
 import { MOUTH_FORMS } from '@evo/contracts'
 
-/** The name of the resource kind a seed is (ADR 0032). */
-export const SEED_KIND = 'seed'
+import { SEED_KIND } from '../ecology/Plants'
+
+export { SEED_KIND }
 
 /**
  * The configuration a world with seeds runs with (ADR 0032), as `withCarrion` is for carcasses: a
