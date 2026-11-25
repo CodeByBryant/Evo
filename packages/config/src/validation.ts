@@ -86,6 +86,7 @@ const SEED_KEYS = [
   'maxCount',
   'germinate',
   'dormancy',
+  'germinateShare',
   'germinateDensity',
   'lifespan',
   'yields'
@@ -349,7 +350,7 @@ export function validateWorldConfig(value: unknown): ValidationResult {
       )
     }
     const seeds = checkSection(resources, 'seeds', SEED_KEYS, errors, 'resources.seeds')
-    if (seeds) checkSeeds(seeds, plants, errors)
+    if (seeds) checkSeeds(seeds, errors)
     if (initialCount !== undefined && maxCount !== undefined && initialCount > maxCount) {
       errors.push('resources.initialCount must not exceed resources.maxCount')
     }
@@ -683,7 +684,7 @@ function mergeEcology(base: object, override: unknown): unknown {
 }
 
 /** The seeds section (ADR 0032): positive amounts, a density in `[0, 1]`, a yield for every mouth form. */
-function checkSeeds(seeds: PlainObject, plants: PlainObject | undefined, errors: string[]): void {
+function checkSeeds(seeds: PlainObject, errors: string[]): void {
   for (const key of ['enabled', 'germinate'] as const) {
     if (typeof seeds[key] !== 'boolean') errors.push(`resources.seeds.${key} must be a boolean`)
   }
@@ -718,6 +719,10 @@ function checkSeeds(seeds: PlainObject, plants: PlainObject | undefined, errors:
   if (near !== undefined && far !== undefined && far < near) {
     errors.push('resources.seeds.dispersalMax must be at least resources.seeds.dispersalMin')
   }
+  const share = checkNumber(seeds, 'germinateShare', 'resources.seeds.germinateShare', {}, errors)
+  if (share !== undefined && (share < 0 || share > 1)) {
+    errors.push('resources.seeds.germinateShare must be from 0 to 1')
+  }
   const density = checkNumber(
     seeds,
     'germinateDensity',
@@ -740,9 +745,6 @@ function checkSeeds(seeds: PlainObject, plants: PlainObject | undefined, errors:
     }
     // The mandible is the generalist and the founder's: it takes every food at exactly 1 (ADR 0017).
     if (yields['mandible'] !== 1) errors.push('resources.seeds.yields.mandible must be exactly 1')
-  }
-  if (seeds['enabled'] === true && plants !== undefined && plants['enabled'] !== true) {
-    errors.push('resources.seeds.enabled needs resources.plants.enabled (seeds come from plants)')
   }
 }
 

@@ -2550,6 +2550,9 @@
           "maxCount": 200,
           "distribution": {
             "mode": "uniform"
+          },
+          "seeds": {
+            "enabled": false
           }
         },
         "environment": {
@@ -2621,7 +2624,10 @@
             "maxPlants": 40
           },
           "initialCount": 100,
-          "maxCount": 200
+          "maxCount": 200,
+          "seeds": {
+            "enabled": false
+          }
         },
         "environment": {
           "width": 500,
@@ -2681,7 +2687,10 @@
             "maxPlants": 40
           },
           "initialCount": 100,
-          "maxCount": 200
+          "maxCount": 200,
+          "seeds": {
+            "enabled": false
+          }
         },
         "anatomy": {
           "startingBody": {
@@ -2767,6 +2776,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 1000,
@@ -2811,6 +2825,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 12000,
@@ -2858,6 +2877,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 8000,
@@ -2911,6 +2935,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 6000,
@@ -2937,6 +2966,9 @@
           "plants": {
             "maxPlants": 80,
             "photosynthesis": 2
+          },
+          "seeds": {
+            "enabled": false
           }
         },
         "ecology": {
@@ -3002,6 +3034,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 1000,
@@ -3041,6 +3078,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 12000,
@@ -3083,6 +3125,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 8000,
@@ -3131,6 +3178,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 6000,
@@ -3157,6 +3209,9 @@
           "plants": {
             "maxPlants": 80,
             "photosynthesis": 2
+          },
+          "seeds": {
+            "enabled": false
           }
         },
         "reproduction": {
@@ -3211,6 +3266,11 @@
           "effects": {
             "limbEfficiency": 1
           }
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 1000,
@@ -3243,6 +3303,11 @@
         "anatomy": {
           "effects": {
             "limbEfficiency": 1
+          }
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
           }
         }
       },
@@ -3279,6 +3344,11 @@
         "anatomy": {
           "effects": {
             "limbEfficiency": 1
+          }
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
           }
         }
       },
@@ -3322,6 +3392,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 6000,
@@ -3337,6 +3412,9 @@
           "plants": {
             "maxPlants": 80,
             "photosynthesis": 2
+          },
+          "seeds": {
+            "enabled": false
           }
         },
         "reproduction": {
@@ -3401,6 +3479,11 @@
         },
         "ageing": {
           "enabled": false
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 3000,
@@ -3413,6 +3496,11 @@
         "anatomy": {
           "effects": {
             "limbEfficiency": 1
+          }
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
           }
         }
       },
@@ -3429,6 +3517,11 @@
         "anatomy": {
           "effects": {
             "limbEfficiency": 1
+          }
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
           }
         }
       },
@@ -3451,6 +3544,11 @@
           "effects": {
             "limbEfficiency": 1
           }
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 6000,
@@ -3459,7 +3557,13 @@
     {
       "name": "limb-default-6k",
       "seed": 12345,
-      "config": {},
+      "config": {
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
+        }
+      },
       "steps": 6000,
       "expectedHash": "7c69e82c652e7cfb05c5e3f6b7ebf67b"
     },
@@ -4321,6 +4425,11 @@
           },
           "effects": {
             "limbEfficiency": 0.25
+          }
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
           }
         }
       },
@@ -5186,10 +5295,50 @@
           "effects": {
             "limbEfficiency": 1
           }
+        },
+        "resources": {
+          "seeds": {
+            "enabled": false
+          }
         }
       },
       "steps": 4000,
       "expectedHash": "723fb3c3e557567a8ee17a19a20036ed"
+    },
+    {
+      "name": "seeds-default-6k",
+      "seed": 12345,
+      "config": {},
+      "steps": 6000,
+      "expectedHash": "8d00b46963d07ebd6b39b742e6cfaaaf"
+    },
+    {
+      "name": "seeds-reflex-6k",
+      "seed": 7,
+      "config": {
+        "learning": {
+          "controller": "reflex"
+        }
+      },
+      "steps": 6000,
+      "expectedHash": "d44a854680dad2a07b700a2e07763a06"
+    },
+    {
+      "name": "seeds-germinate-4k",
+      "seed": 5,
+      "config": {
+        "resources": {
+          "seeds": {
+            "germinate": true,
+            "germinateShare": 0.5,
+            "dormancy": 20,
+            "interval": 10,
+            "lifespan": 120
+          }
+        }
+      },
+      "steps": 4000,
+      "expectedHash": "65a268b8949937dbac01df113c8f4c3c"
     }
   ]
 }

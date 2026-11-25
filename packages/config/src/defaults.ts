@@ -90,10 +90,12 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       lifespan: 300,
       maxPlants: 60
     },
-    // Seeds (ADR 0032), off until measured: a full plant drops a hard, dense seed that a mouth eats
-    // or that grows into a new plant. Yields are provisional; the mandible is exactly 1.
+    // Seeds (ADR 0032): a full plant drops a hard, dense seed that a mouth eats. On, as plain food: 16 seeds
+    // x 30,000 ticks and 8 x 100,000 gave more people (57 and 61 against 52 and 54), a higher floor and more
+    // mouth forms with no extinct world. Germination (a seed that grows into a plant) is built and off: it
+    // lost worlds at every share tried. Yields are provisional; the mandible is exactly 1.
     seeds: {
-      enabled: false,
+      enabled: true,
       energy: 20,
       radius: 2,
       hardness: 3,
@@ -101,8 +103,9 @@ export const DEFAULT_WORLD_CONFIG: Readonly<WorldConfig> = deepFreeze({
       dispersalMin: 8,
       dispersalMax: 40,
       maxCount: 60,
-      germinate: true,
+      germinate: false,
       dormancy: 60,
+      germinateShare: 0.3,
       germinateDensity: 0.35,
       lifespan: 240,
       yields: { sprout: 0.5, proboscis: 0.2, mandible: 1, radula: 1.3, jaw: 0, scavenger: 0 }

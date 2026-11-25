@@ -45,7 +45,15 @@ function seedWorld(seeds: object = {}, resources: object = {}, seed = 3): World 
         maxCount: 400,
         spawnRate: 0,
         plants: { enabled: true, lifespan: 0, photosynthesis: 0, maxPlants: 40 },
-        seeds: { enabled: true, interval: 20, dormancy: 5, lifespan: 60, ...seeds },
+        seeds: {
+          enabled: true,
+          interval: 20,
+          dormancy: 5,
+          lifespan: 60,
+          germinate: true,
+          germinateShare: 1,
+          ...seeds
+        },
         ...resources
       },
       ecology: ECOLOGY
@@ -95,18 +103,20 @@ describe('the seed kind', () => {
     expect(world.config.anatomy.mouthForms.jaw[SEED_KIND]).toBe(0)
   })
 
-  it('is off by default: the very same config comes back and no world has a seed (negative)', () => {
-    const base = resolveWorldConfig({})
+  it('is off when asked: the very same config comes back and no world has a seed (negative)', () => {
+    const base = resolveWorldConfig({ resources: { seeds: { enabled: false } } })
     expect(base.resources.seeds.enabled).toBe(false)
     expect(withSeeds(base)).toBe(base)
     // without plants or food kinds there is nothing to drop them or to eat them: also the same object
-    const noPlants = resolveWorldConfig({
-      resources: { plants: { enabled: false }, seeds: { enabled: false } }
-    })
+    const noPlants = resolveWorldConfig({ resources: { plants: { enabled: false } } })
+    expect(noPlants.resources.seeds.enabled).toBe(true)
     expect(withSeeds(noPlants)).toBe(noPlants)
     const off = World.create({
       seed: 3,
-      config: { organisms: { initialCount: 0 }, resources: { spawnRate: 0 } }
+      config: {
+        organisms: { initialCount: 0 },
+        resources: { spawnRate: 0, seeds: { enabled: false } }
+      }
     })
     run(off, 800)
     expect(off.config.ecology.resourceKinds.kinds.map((k) => k.name)).not.toContain(SEED_KIND)
@@ -205,28 +215,39 @@ describe('a plant drops a seed', () => {
 })
 
 describe('an uneaten seed', () => {
-  it('becomes a plant where it lies after dormancy, with its energy as the hub store and no nodes', () => {
-    const world = seedWorld({ interval: 10, germinateDensity: 0 })
+  it('becomes a whole plant where it lies once dormant, paid for from a spawn', () => {
+    const world = seedWorld({ interval: 10, germinateDensity: 0 }, { spawnRate: 0.2 })
     run(world, 100)
     const seed = seedsOf(world)[0]!
     const plantsBefore = hubsOf(world).length
-    // it was dropped at tick 100; dormancy is 5 s (50 ticks) and germination is checked once a second:
-    // still a seed at age 4.9 s, a plant at the check at 5 s
+    // dropped at tick 100; dormant for 5 s (50 ticks): still a seed at age 4.9 s
     run(world, 49)
     expect(seedsOf(world).some((s) => s.id === seed.id)).toBe(true)
-    run(world, 11)
+    // and a plant by the next spawn that is due (one every 5 s at 0.2 a second)
+    run(world, 100)
     expect(seedsOf(world).some((s) => s.id === seed.id)).toBe(false)
     const grown = hubsOf(world).find((h) => h.x === seed.x && h.y === seed.y)
     expect(grown).toBeDefined()
-    // the hub's store started as the seed's energy (and only shrinks as its first node regrows from it)
-    expect(grown!.remaining).toBeLessThanOrEqual(seed.remaining + 1e-9)
-    expect(grown!.remaining).toBeGreaterThan(0)
-    expect(hubsOf(world).length).toBeGreaterThan(plantsBefore)
+    // its hub store is a whole plant's (a free spawn's), not the seed's 20
+    expect(grown!.remaining).toBeGreaterThan(world.config.resources.seeds.energy)
+    expect(hubsOf(world).length).toBeGreaterThan(plantsBefore - 1)
     expect(world.seedStats.germinated).toBeGreaterThan(0)
+    // a whole plant: every node is there, as a free spawn makes it
+    const nodes = storeOf(world)
+      .values()
+      .filter((r) => r.parent === grown!.id && r.slot !== HUB_SLOT)
+    expect(nodes).toHaveLength(world.config.resources.plants.nodes)
+  })
+
+  it('needs a spawn to pay for it: with no spawning a seed never germinates (negative)', () => {
+    const world = seedWorld({ interval: 10, germinateDensity: 0, lifespan: 60 }, { spawnRate: 0 })
+    run(world, 500)
+    expect(world.seedStats.dropped).toBeGreaterThan(0)
+    expect(world.seedStats.germinated).toBe(0)
   })
 
   it('does not germinate with germination off, and rots at its lifespan (negative)', () => {
-    const world = seedWorld({ interval: 10, germinate: false, lifespan: 20 })
+    const world = seedWorld({ interval: 10, germinate: false, lifespan: 20 }, { spawnRate: 0.2 })
     run(world, 600)
     expect(world.seedStats.germinated).toBe(0)
     expect(world.seedStats.rotted).toBeGreaterThan(0)
@@ -239,7 +260,7 @@ describe('an uneaten seed', () => {
   })
 
   it('does not germinate above the plant cap, or on a site the pattern rejects (negatives)', () => {
-    const full = seedWorld({ interval: 10, germinateDensity: 0 }, {}, 3)
+    const full = seedWorld({ interval: 10, germinateDensity: 0 }, { spawnRate: 0.5 }, 3)
     const capped = World.create({
       seed: 3,
       config: {
@@ -247,9 +268,17 @@ describe('an uneaten seed', () => {
         resources: {
           initialCount: 14,
           maxCount: 400,
-          spawnRate: 0,
+          spawnRate: 0.5,
           plants: { enabled: true, lifespan: 0, photosynthesis: 0, maxPlants: 2 },
-          seeds: { enabled: true, interval: 10, dormancy: 5, lifespan: 60, germinateDensity: 0 }
+          seeds: {
+            enabled: true,
+            interval: 10,
+            dormancy: 5,
+            lifespan: 60,
+            germinate: true,
+            germinateShare: 1,
+            germinateDensity: 0
+          }
         },
         ecology: ECOLOGY
       } as WorldConfigOverrides
@@ -259,20 +288,48 @@ describe('an uneaten seed', () => {
     expect(full.seedStats.germinated).toBeGreaterThan(0)
     expect(capped.seedStats.germinated).toBe(0)
     expect(hubsOf(capped)).toHaveLength(2)
-    // a threshold of 1 asks for the very top of the pattern, which almost nowhere reaches
-    const strict = seedWorld({ interval: 10, germinateDensity: 1 })
+    // a strict threshold germinates fewer seeds than a lenient one in the very same world (negative)
+    const strict = seedWorld({ interval: 10, germinateDensity: 0.9 }, { spawnRate: 0.5 })
     run(strict, 400)
-    expect(strict.seedStats.germinated).toBe(0)
+    expect(strict.seedStats.germinated).toBeLessThan(full.seedStats.germinated)
+  })
+
+  it('takes only its share of the spawns: none at a share of 0, fewer at 0.3 than at 1 (negatives)', () => {
+    const at = (share: number): number => {
+      const world = seedWorld(
+        { interval: 10, germinateDensity: 0, germinateShare: share },
+        { spawnRate: 0.3, maxCount: 900 }
+      )
+      run(world, 1500)
+      return world.seedStats.germinated
+    }
+    expect(at(0)).toBe(0)
+    expect(at(0.3)).toBeGreaterThan(0)
+    expect(at(0.3)).toBeLessThan(at(1))
+  })
+
+  it('a germinated plant costs one spawn: plants born per second stay at the spawn rate (supply is not moved)', () => {
+    const on = seedWorld({ interval: 10, germinateDensity: 0 }, { spawnRate: 0.3, maxCount: 900 })
+    const born = new Set<number>()
+    for (let t = 0; t < 1500; t++) {
+      on.step()
+      for (const h of hubsOf(on)) born.add(h.id)
+    }
+    // two starting plants, then at most one plant per spawn due (0.3 a second for 150 s is 45)
+    expect(born.size - 2).toBeLessThanOrEqual(46)
+    expect(born.size - 2).toBeGreaterThan(30)
+    expect(on.seedStats.germinated).toBeGreaterThan(0)
   })
 
   it('a world with seeds is the same stepped or run in chunks, and passes the invariants', () => {
-    const a = seedWorld({ interval: 10, germinateDensity: 0 })
-    const b = seedWorld({ interval: 10, germinateDensity: 0 })
+    const a = seedWorld({ interval: 10, germinateDensity: 0 }, { spawnRate: 0.3 })
+    const b = seedWorld({ interval: 10, germinateDensity: 0 }, { spawnRate: 0.3 })
     run(a, 900)
     b.run(333)
     b.run(567)
     expect(a.stateHash()).toBe(b.stateHash())
     expect(a.validate()).toEqual({ ok: true, errors: [] })
+    expect(a.seedStats.germinated).toBeGreaterThan(0)
   })
 })
 
@@ -381,13 +438,14 @@ describe('sniffers', () => {
 })
 
 describe('config', () => {
-  it('rejects bad seeds: a mandible yield other than 1, seeds without plants, a bad density, a lifespan not past dormancy, dispersal backwards', () => {
+  it('rejects bad seeds: a mandible yield other than 1, a bad density, a lifespan not past dormancy, dispersal backwards', () => {
     const bad = (seeds: object, extra: object = {}) =>
       expect(() => resolveWorldConfig({ resources: { seeds, ...extra } } as never)).toThrow(/seeds/)
     bad({ yields: { mandible: 0.9 } })
-    bad({ enabled: true }, { plants: { enabled: false } })
     bad({ germinateDensity: 1.5 })
     bad({ germinateDensity: -0.1 })
+    bad({ germinateShare: 1.5 })
+    bad({ germinateShare: -0.1 })
     bad({ dormancy: 100, lifespan: 50 })
     bad({ dispersalMin: 30, dispersalMax: 10 })
     bad({ energy: 0 })
@@ -398,6 +456,9 @@ describe('config', () => {
     expect(() =>
       resolveWorldConfig({ resources: { seeds: { enabled: true, yields: { radula: 0 } } } })
     ).not.toThrow()
-    expect(resolveWorldConfig({}).resources.seeds.enabled).toBe(false)
+    // seeds are on by default (food only), and a world without plants is valid and simply has none
+    expect(resolveWorldConfig({}).resources.seeds.enabled).toBe(true)
+    expect(resolveWorldConfig({}).resources.seeds.germinate).toBe(false)
+    expect(() => resolveWorldConfig({ resources: { plants: { enabled: false } } })).not.toThrow()
   })
 })

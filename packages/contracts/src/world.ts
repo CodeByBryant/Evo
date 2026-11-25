@@ -253,7 +253,8 @@ export interface PlantConfig {
  * drops a seed every `interval` seconds: `energy` moves out of the hub's store, the energy that would
  * have been wasted at the cap, into a small hard food item a short way off. A seed that is not eaten
  * becomes a new plant where it lies after `dormancy` seconds if the food pattern is dense enough there
- * (`germinate`), else it rots after `lifespan`. Seeds are an added food kind (`seed`, appended last) that
+ * (`germinate`), paid for from the spawn budget like a free spawn (so it moves where a plant appears, not
+ * how many), else it rots after `lifespan`. Seeds are an added food kind (`seed`, appended last) that
  * a mouth form eats at its `yields`; the mandible is exactly 1. They have their own cap and are not
  * counted in `maxCount`. Needs plants and food kinds on; field layout only.
  */
@@ -276,6 +277,8 @@ export interface SeedConfig {
   germinate: boolean
   /** Seconds before a seed can germinate. */
   dormancy: number
+  /** The share, in `[0, 1]`, of due plant spawns a germinating seed may take; the rest are free spawns. */
+  germinateShare: number
   /** The least food-pattern density, in `[0, 1]`, at which a seed germinates. */
   germinateDensity: number
   /** Seconds before an ungerminated seed rots. */

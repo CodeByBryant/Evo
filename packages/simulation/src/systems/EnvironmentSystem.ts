@@ -329,13 +329,18 @@ export class EnvironmentSystem {
   private spawnPlant(tick: number): void {
     const site = this.site()
     if (site === null) return
+    this.placePlant(site.x, site.y, site.kind, tick)
+  }
+
+  /** A whole plant of `kind` at `(x, y)`: the hub with a full store and every node. */
+  private placePlant(x: number, y: number, kind: number, tick: number): void {
     const plants = this.config.resources.plants
     const hub: ResourceState = {
       id: this.ids.allocate(),
-      x: site.x,
-      y: site.y,
-      remaining: plants.hubEnergyScale * this.energyOf(site.kind),
-      kind: site.kind,
+      x,
+      y,
+      remaining: plants.hubEnergyScale * this.energyOf(kind),
+      kind,
       parent: 0,
       slot: HUB_SLOT,
       bornTick: tick,
@@ -470,18 +475,23 @@ export class EnvironmentSystem {
   /**
    * What happens to the seeds on the field (ADR 0032), draw-free, in ascending id order: one past its
    * `lifespan` rots (its energy is lost), and one past its `dormancy` that is not eaten becomes a plant
-   * where it lies, once a second, if the food pattern is dense enough there, plants are below their cap
-   * and the site is clear: the seed is removed and a hub with its energy as the store (and no nodes, they
-   * regrow) takes its place, of a kind that grows there (taken from a hash of the seed, never a draw).
+   * where it lies, on the tick a spawn is due, if the food pattern is dense enough there, plants are below their cap
+   * and the site is clear and a whole spawn is available (`spawnAccumulator` at least 1): the seed is
+   * removed and a whole plant, paid for from that spawn, takes its place, of a kind that grows there
+   * (taken from a hash of the seed, never a draw). A seed so moves where a new plant appears, not how many
+   * do or how much energy comes in: a cheap empty hub that took a plant slot instead locked the spawns out
+   * and starved every world (ADR 0032).
    * Returns the plants started this tick.
    */
   private updateSeeds(tick: number, plantsAlive: number): number {
     const seeds = this.config.resources.seeds
     const plants = this.config.resources.plants
     const dt = this.config.timestep
-    const checkTicks = Math.max(1, Math.round(1 / dt))
     const eco = this.ecology
     let started = 0
+    // Whether the spawn that is due this tick may go to a seed: a fixed share of them do, chosen by a hash
+    // of the tick (never a draw), so the rest stay free spawns anywhere the pattern accepts.
+    const seedsMayClaim = unitHash(tick, 0, 77) < seeds.germinateShare
     for (const seed of this.seedList) {
       const born = seed.bornTick ?? tick
       const age = (tick - born) * dt
@@ -491,9 +501,13 @@ export class EnvironmentSystem {
         this.seedTotals.rotted += 1
         continue
       }
-      if (!seeds.germinate || age < seeds.dormancy || (tick - born) % checkTicks !== 0) continue
+      if (!seeds.germinate || age < seeds.dormancy) continue
+      // A whole spawn is the price (below), so most ticks there is nothing to spend and nothing to check.
+      if (this.spawnAccumulator < 1 || !seedsMayClaim) continue
       if (plantsAlive + started >= plants.maxPlants) continue
-      if (this.itemCount >= this.config.resources.maxCount) continue
+      // A germinating seed is a new plant paid for from the spawn budget (a whole plant, as a spawn makes),
+      // so seeds change where new plants appear and not how many or how much energy comes in.
+      if (this.itemCount + 1 + plants.nodes > this.config.resources.maxCount) continue
       if (
         this.foodField !== null &&
         this.foodField.density(seed.x, seed.y, this.time) < seeds.germinateDensity
@@ -511,20 +525,8 @@ export class EnvironmentSystem {
       this.resources.remove(seed.id)
       this.seedCount -= 1
       this.seedTotals.germinated += 1
-      this.add(
-        {
-          id: this.ids.allocate(),
-          x: seed.x,
-          y: seed.y,
-          remaining: seed.remaining,
-          kind,
-          parent: 0,
-          slot: HUB_SLOT,
-          bornTick: tick,
-          sproutProgress: 0
-        },
-        tick
-      )
+      this.spawnAccumulator -= 1
+      this.placePlant(seed.x, seed.y, kind, tick)
       started += 1
     }
     return started
