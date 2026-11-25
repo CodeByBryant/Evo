@@ -15,6 +15,7 @@ export {
   applyDotted,
   changesToOverrides,
   diffAgainst,
+  mergeOverrides,
   formatSettingValue,
   parseSettingValue,
   settingByPath,

@@ -488,3 +488,166 @@ describe('SimulationHost: controls and the viewport', () => {
     expect(view.layers.organisms).toBe(true)
   })
 })
+
+describe('SimulationHost: the settings editor (Step 6)', () => {
+  it('offers every editable setting with its value and the preset value, none changed to begin with', () => {
+    const { host: h } = host()
+    const { settings } = h.getViewState()
+    expect(settings.fields.length).toBeGreaterThan(20)
+    expect(settings.changed).toBe(0)
+    expect(settings.errors).toEqual({})
+    expect(settings.ignored).toBe(0)
+    for (const field of settings.fields) expect(field.value).toBe(field.preset)
+    const spawn = settings.fields.find((f) => f.path === 'resources.spawnRate')!
+    expect(spawn.value).toBe(0.3)
+    expect(settings.groups.length).toBeGreaterThan(3)
+  })
+
+  it('a change builds the world a plain engine builds with the same overrides (same link, same world)', () => {
+    const { host: h } = host()
+    h.applySettings({ 'resources.spawnRate': 0.5, 'ageing.enabled': false })
+    h.pause()
+    expect(h.getViewState().tick).toBe(0)
+    h.step(200)
+    const overrides = { resources: { spawnRate: 0.5 }, ageing: { enabled: false } }
+    expect(h.stateHash()).toBe(reference(200, overrides))
+    // negative: it is not the unchanged world
+    expect(h.stateHash()).not.toBe(reference(200))
+    const view = h.getViewState()
+    expect(view.settings.changed).toBe(2)
+    expect(view.settings.fields.find((f) => f.path === 'ageing.enabled')?.value).toBe(false)
+    expect(view.settings.fields.find((f) => f.path === 'ageing.enabled')?.preset).toBe(true)
+    expect(view.seed).toBe(SEED)
+  })
+
+  it('lays the changes over the preset instead of replacing it', () => {
+    const { host: h } = host({ preset: 'lush' })
+    h.applySettings({ 'resources.spawnRate': 0.5 })
+    h.pause()
+    h.step(150)
+    // lush: maxCount 640 and plants 80 with photosynthesis 2, its own spawn rate replaced by the change
+    const lush = { resources: { maxCount: 640, plants: { maxPlants: 80, photosynthesis: 2 } } }
+    expect(h.stateHash()).toBe(reference(150, { resources: { ...lush.resources, spawnRate: 0.5 } }))
+    // the preset's own value is the baseline: lush's 0.4 is not a change, putting the default 0.3 is
+    const field = h.getViewState().settings.fields.find((f) => f.path === 'resources.spawnRate')!
+    expect(field.preset).toBe(0.4)
+    expect(field.value).toBe(0.5)
+  })
+
+  it('counts a value put back to the preset as no change (negative)', () => {
+    const { host: h } = host()
+    h.applySettings({ 'resources.spawnRate': 0.3, 'ageing.enabled': true })
+    expect(h.getViewState().settings.changed).toBe(0)
+    h.pause()
+    h.step(100)
+    expect(h.stateHash()).toBe(reference(100))
+  })
+
+  it('keeps the world and says which setting when a combination is rejected, and works again after a good one', () => {
+    const { host: h } = host({ preset: 'classic' })
+    h.pause()
+    h.step(30)
+    const before = h.stateHash()
+    // classic has one sex: eggs need two
+    h.applySettings({ 'reproduction.eggs.enabled': true })
+    const rejected = h.getViewState()
+    expect(h.stateHash()).toBe(before)
+    expect(rejected.tick).toBe(30)
+    expect(rejected.settings.errors['reproduction.eggs.enabled']).toMatch(/requires/)
+    expect(rejected.settings.changed).toBe(0)
+    // a valid change after it clears the errors and restarts
+    h.applySettings({ 'resources.spawnRate': 1 })
+    expect(h.getViewState().settings.errors).toEqual({})
+    expect(h.getViewState().tick).toBe(0)
+  })
+
+  it('resets to the preset, and a new preset clears the changes (they were against the old one)', () => {
+    const { host: h } = host()
+    h.applySettings({ 'genetics.mutationRateScale': 2 })
+    expect(h.getViewState().settings.changed).toBe(1)
+    h.resetSettings()
+    expect(h.getViewState().settings.changed).toBe(0)
+    h.pause()
+    h.step(50)
+    expect(h.stateHash()).toBe(reference(50))
+    h.applySettings({ 'genetics.mutationRateScale': 2 })
+    h.setPreset('lush')
+    expect(h.getViewState().settings.changed).toBe(0)
+    expect(h.getViewState().preset).toBe('lush')
+  })
+
+  it('keeps the changes for a new world and a restart of the same one', () => {
+    const { host: h } = host()
+    h.applySettings({ 'ageing.enabled': false })
+    h.newWorld(5)
+    expect(h.getViewState().settings.changed).toBe(1)
+    expect(h.getViewState().seed).toBe(5)
+    h.reset()
+    expect(h.getViewState().settings.changed).toBe(1)
+    h.pause()
+    h.step(80)
+    const plain = World.create({ seed: 5, config: { ageing: { enabled: false } } })
+    plain.run(80)
+    expect(h.stateHash()).toBe(plain.stateHash())
+  })
+
+  it('opens from an address with settings, and counts the parameters it did not apply', () => {
+    const calls: Array<[number, string, Record<string, unknown>]> = []
+    const { host: h } = host({
+      settings: { 'resources.seeds.energy': 30 },
+      ignored: 2,
+      onWorldChange: (seed, preset, settings) => calls.push([seed, preset, { ...settings }])
+    })
+    expect(h.getViewState().settings.changed).toBe(1)
+    expect(h.getViewState().settings.ignored).toBe(2)
+    expect(calls).toEqual([[SEED, 'balanced', { 'resources.seeds.energy': 30 }]])
+    h.pause()
+    h.step(100)
+    expect(h.stateHash()).toBe(reference(100, { resources: { seeds: { energy: 30 } } }))
+  })
+
+  it('opens an address whose settings the validation rejects with none of them, and says why (negative)', () => {
+    const { host: h } = host({
+      preset: 'classic',
+      settings: { 'reproduction.eggs.enabled': true, 'resources.spawnRate': 1 },
+      ignored: 0
+    })
+    const { settings } = h.getViewState()
+    expect(settings.changed).toBe(0)
+    expect(settings.errors['reproduction.eggs.enabled']).toMatch(/requires/)
+    expect(settings.ignored).toBe(2)
+    // the world it opened is the preset's own, as if no settings had been given
+    h.pause()
+    h.step(60)
+    const plain = host({ preset: 'classic' }).host
+    plain.pause()
+    plain.step(60)
+    expect(h.stateHash()).toBe(plain.stateHash())
+  })
+
+  it('loads a pasted address: a new world for a different one, nothing for the one already running', () => {
+    const { host: h } = host()
+    h.pause()
+    h.step(40)
+    const same = { seed: SEED, preset: 'balanced' }
+    h.loadAddress(same)
+    expect(h.getViewState().tick).toBe(40)
+    h.loadAddress({ seed: 9, preset: 'harsh', settings: { 'ageing.enabled': false } })
+    const view = h.getViewState()
+    expect(view.seed).toBe(9)
+    expect(view.preset).toBe('harsh')
+    expect(view.settings.changed).toBe(1)
+    expect(view.tick).toBe(0)
+    // an unknown preset keeps the current one; a rejected combination changes nothing
+    h.loadAddress({ preset: 'nonsense' })
+    expect(h.getViewState().preset).toBe('harsh')
+  })
+
+  it('does not disturb the run while its view is read: changes need an Apply, not a read (negative)', () => {
+    const { env, host: h } = host()
+    env.runUntil(() => h.getViewState().tick >= 100)
+    const hash = h.stateHash()
+    void h.getViewState().settings
+    expect(h.stateHash()).toBe(hash)
+  })
+})

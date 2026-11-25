@@ -19,6 +19,36 @@ export const SPEED_SETTINGS: readonly SpeedSetting[] = [1, 5, 25, 100, 'max']
 
 export type RunStatus = 'running' | 'paused' | 'extinct'
 
+/** One editable setting as the panel shows it (Step 6): what it is, its range, and its value now and in the preset. */
+export interface SettingField {
+  /** Where it lives in the configuration, dotted. */
+  readonly path: string
+  readonly label: string
+  readonly group: string
+  readonly kind: 'number' | 'integer' | 'boolean'
+  readonly min?: number
+  readonly max?: number
+  readonly step?: number
+  readonly unit?: string
+  readonly hint: string
+  /** The value this world runs with. */
+  readonly value: number | boolean
+  /** The value the preset gives it: what a reset returns to. */
+  readonly preset: number | boolean
+}
+
+/** The settings editor's state: every field, which have been changed, and what went wrong. */
+export interface SettingsState {
+  readonly groups: readonly { readonly name: string; readonly label: string }[]
+  readonly fields: readonly SettingField[]
+  /** How many fields differ from the preset. */
+  readonly changed: number
+  /** A message for a rejected change, by dotted path (`'*'` when it names no editable setting). */
+  readonly errors: Readonly<Record<string, string>>
+  /** Parameters of an address that were not applied (not editable, malformed or out of range). */
+  readonly ignored: number
+}
+
 export interface PresetOption {
   readonly name: string
   readonly label: string
@@ -179,6 +209,8 @@ export interface ViewState {
   /** Founder groups that started with a body of their own, with their founder counts (ADR 0023). */
   readonly startingGroups: readonly { readonly name: string; readonly count: number }[]
   readonly presets: readonly PresetOption[]
+  /** The settings editor (Step 6). */
+  readonly settings: SettingsState
   readonly speed: SpeedSetting
   /** Ticks per second actually achieved over the last second (0 while paused). */
   readonly achievedTicksPerSecond: number
@@ -220,6 +252,13 @@ export interface SimulationControls {
   newWorld(seed?: number): void
   setSpeed(speed: SpeedSetting): void
   setPreset(name: string): void
+  /**
+   * Changes settings from the preset's values (dotted path to value) and starts the same seed again with
+   * them. A change the validation rejects keeps the world as it was and reports the path in `settings.errors`.
+   */
+  applySettings(changes: Readonly<Record<string, number | boolean>>): void
+  /** Puts every setting back to the preset's value and starts the same seed again. */
+  resetSettings(): void
   select(id: EntityId | null): void
   setLayer(layer: RenderLayerName, on: boolean): void
   focusSelected(): void

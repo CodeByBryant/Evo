@@ -401,6 +401,23 @@ export function applyDotted(overrides: object, path: string, value: SettingValue
   return { ...base, [head]: applyDotted(child, rest.join('.'), value) }
 }
 
+/** `base` with `extra` laid over it, field by field through plain objects (anything else, arrays included, is replaced). Pure. */
+export function mergeOverrides(base: object, extra: object): object {
+  const out: Record<string, unknown> = { ...(base as Record<string, unknown>) }
+  for (const [key, value] of Object.entries(extra as Record<string, unknown>)) {
+    const was = out[key]
+    const bothPlain =
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value) &&
+      typeof was === 'object' &&
+      was !== null &&
+      !Array.isArray(was)
+    out[key] = bothPlain ? mergeOverrides(was as object, value as object) : value
+  }
+  return out
+}
+
 /** A change set (dotted path to value) as the nested overrides `World.create` takes. */
 export function changesToOverrides(
   changes: Readonly<Record<string, SettingValue>>

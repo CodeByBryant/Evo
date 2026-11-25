@@ -13,6 +13,51 @@ export function view(overrides: Partial<ViewState> = {}): ViewState {
       { name: 'balanced', label: 'Balanced', description: 'The default world.' },
       { name: 'harsh', label: 'Harsh', description: 'Scarce food.' }
     ],
+    settings: {
+      groups: [
+        { name: 'food', label: 'Population and food' },
+        { name: 'seeds', label: 'Seeds' }
+      ],
+      fields: [
+        {
+          path: 'organisms.initialCount',
+          label: 'Starting creatures',
+          group: 'food',
+          kind: 'integer',
+          min: 1,
+          max: 200,
+          step: 1,
+          hint: 'How many founders a world starts with.',
+          value: 20,
+          preset: 20
+        },
+        {
+          path: 'resources.spawnRate',
+          label: 'Plants a second',
+          group: 'food',
+          kind: 'number',
+          min: 0,
+          max: 2,
+          step: 0.05,
+          unit: '/s',
+          hint: 'How fast new plants appear.',
+          value: 0.3,
+          preset: 0.3
+        },
+        {
+          path: 'resources.seeds.enabled',
+          label: 'Seeds',
+          group: 'seeds',
+          kind: 'boolean',
+          hint: 'Full plants drop seeds.',
+          value: true,
+          preset: true
+        }
+      ],
+      changed: 0,
+      errors: {},
+      ignored: 0
+    },
     speed: 25,
     achievedTicksPerSecond: 248.6,
     tick: 12_345,
@@ -186,6 +231,8 @@ export function recorder(): { controls: SimulationControls; calls: string[] } {
     newWorld: (seed) => calls.push(`newWorld:${seed ?? ''}`),
     setSpeed: (speed) => calls.push(`speed:${speed}`),
     setPreset: (name) => calls.push(`preset:${name}`),
+    applySettings: (changes) => calls.push(`apply:${JSON.stringify(changes)}`),
+    resetSettings: () => calls.push('resetSettings'),
     select: (id) => calls.push(`select:${id}`),
     setLayer: (layer, on) => calls.push(`layer:${layer}:${on}`),
     focusSelected: () => calls.push('focus'),
